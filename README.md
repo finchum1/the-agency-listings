@@ -65,6 +65,12 @@ After confirming `/listings/1645-saratoga-way` looks right, the old
 `1645-saratoga-way` repo/Vercel project can be retired (stop pushing to it —
 don't delete the repo/project outright without a separate explicit step).
 
+### 6. Custom domain index (one-time, additive)
+
+SQL Editor → run `supabase/add-custom-domain-index.sql` — adds a
+case-insensitive unique index on `listings.custom_domain` (partial, so it
+doesn't block listings with no custom domain set).
+
 ## Deploy
 
 Same pattern as the other listing sites in this workspace — no `gh` CLI/
@@ -105,10 +111,33 @@ Redirect URLs**, or invite emails will land on an error page.
   listing's agent email server-side (never trusts a client-supplied email).
 - `api/admin/invite-agent.js` — admin-only agent invites (service role key).
 
+## Custom domain per listing
+
+Each listing can have its own domain (e.g. `1645SaratogaWay.com`) that
+serves that listing directly at `/` instead of `/listings/:slug`.
+
+1. **Buy/attach the domain to this Vercel project** — either via the Vercel
+   dashboard (Project → Domains → Add), or the CLI:
+   ```bash
+   vercel domains check 1645SaratogaWay.com   # availability
+   vercel domains price 1645SaratogaWay.com   # cost
+   vercel domains buy 1645SaratogaWay.com     # real purchase, real money —
+                                               # confirm with whoever owns
+                                               # the Vercel billing first
+   vercel domains add 1645SaratogaWay.com the-agency-listings
+   ```
+   (If the domain was bought elsewhere, use `vercel domains add` after
+   pointing its DNS at Vercel per their instructions — no `buy` needed.)
+2. **In the app**, edit the listing → **Custom Domain** field → enter the
+   domain (with or without `https://`/`www.`, it's normalized on save).
+3. That's it — `App.jsx` checks the request's hostname against
+   `src/lib/appHosts.js`'s known app hosts; anything else is looked up
+   against `listings.custom_domain` and served at `/` via
+   `pages/CustomDomainListingPage.jsx` (shares all rendering with the
+   normal `/listings/:slug` page via `pages/ListingSitePage.jsx`).
+
 ## Out of scope for v1
 
-- Custom domain per listing (schema has a reserved `custom_domain` column;
-  wiring it to Vercel's Domains API is a later phase).
 - Server-rendered OG/social-preview meta tags (client-side `document.title`
   only for now).
 - In-app video upload/compression — `hero_video_url` is a plain URL field;

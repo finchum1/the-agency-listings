@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
-// Fetches one listing (by slug, for the public site — or by id, for the
-// dashboard edit form) plus its photos and open houses. RLS handles
-// whether the row is actually visible to the current caller.
-export function useListing({ slug, id } = {}) {
+// Fetches one listing — by slug (public site path), id (dashboard edit
+// form), or customDomain (a listing reached via its own attached domain,
+// see App.jsx's host-based routing) — plus its photos and open houses.
+// RLS handles whether the row is actually visible to the current caller.
+export function useListing({ slug, id, customDomain } = {}) {
   const [listing, setListing] = useState(null);
   const [agent, setAgent] = useState(null);
   const [photos, setPhotos] = useState([]);
@@ -13,12 +14,14 @@ export function useListing({ slug, id } = {}) {
   const [notFound, setNotFound] = useState(false);
 
   const refresh = useCallback(async () => {
-    if (!slug && !id) return;
+    if (!slug && !id && !customDomain) return;
     setLoading(true);
     setNotFound(false);
 
     let query = supabase.from("listings").select("*, agent:profiles(*)");
-    query = slug ? query.eq("slug", slug) : query.eq("id", id);
+    if (slug) query = query.eq("slug", slug);
+    else if (id) query = query.eq("id", id);
+    else query = query.ilike("custom_domain", customDomain);
     const { data: listingRow, error: listingError } = await query.maybeSingle();
 
     if (listingError) console.error("Failed to load listing:", listingError);
@@ -49,7 +52,7 @@ export function useListing({ slug, id } = {}) {
     setPhotos(photoRows || []);
     setOpenHouses(openHouseRows || []);
     setLoading(false);
-  }, [slug, id]);
+  }, [slug, id, customDomain]);
 
   useEffect(() => {
     refresh();

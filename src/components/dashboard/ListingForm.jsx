@@ -11,6 +11,18 @@ function slugify(text) {
     .replace(/(^-|-$)/g, "");
 }
 
+// Accepts "https://1645SaratogaWay.com/" or "1645saratogaway.com" alike —
+// strip protocol/path/trailing slash, lowercase, so it matches whatever
+// App.jsx reads from window.location.hostname at runtime.
+function normalizeDomain(text) {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+  return trimmed
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/.*$/, "")
+    .toLowerCase();
+}
+
 const emptyListing = {
   slug: "",
   agent_id: "",
@@ -29,6 +41,7 @@ const emptyListing = {
   garage: "",
   property_type: "Single Family Home",
   hero_video_url: "",
+  custom_domain: "",
 };
 
 // mode: "create" | "edit". `listing` is the existing row for edit mode.
@@ -74,6 +87,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
         garage: listing.garage || "",
         property_type: listing.property_type || "Single Family Home",
         hero_video_url: listing.hero_video_url || "",
+        custom_domain: listing.custom_domain || "",
       });
       setDescriptionText((listing.description || []).join("\n\n"));
       setFeatures(
@@ -120,6 +134,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
       beds: form.beds === "" ? null : Number(form.beds),
       baths: form.baths === "" ? null : Number(form.baths),
       sqft: form.sqft === "" ? null : Number(form.sqft),
+      custom_domain: normalizeDomain(form.custom_domain),
       description: descriptionText
         .split(/\n\s*\n/)
         .map((p) => p.trim())
@@ -352,6 +367,22 @@ export default function ListingForm({ mode, listing, onSaved }) {
           onChange={update("hero_video_url")}
           className={inputClass}
           placeholder="/video/hero.mp4 or a full URL"
+        />
+      </div>
+
+      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-3">
+        <h2 className="font-display text-lg font-semibold">Custom Domain (optional)</h2>
+        <p className="text-xs text-[#1c1a17]/50">
+          Once a domain is purchased and pointed at this project (ask your admin), enter it here
+          and this listing will serve directly at that address — e.g. visiting{" "}
+          <span className="font-medium">1645SaratogaWay.com</span> shows this listing at the root
+          URL instead of <span className="font-medium">/listings/{form.slug || "…"}</span>.
+        </p>
+        <input
+          value={form.custom_domain}
+          onChange={update("custom_domain")}
+          className={inputClass}
+          placeholder="1645SaratogaWay.com"
         />
       </div>
 

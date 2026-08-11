@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
+import { isAppHost } from "./lib/appHosts";
 
 import LoginPage from "./components/auth/LoginPage";
 import SetPasswordPage from "./components/auth/SetPasswordPage";
@@ -11,6 +12,7 @@ import EditListingPage from "./components/dashboard/EditListingPage";
 import AgentsPage from "./components/dashboard/AgentsPage";
 import MyProfilePage from "./components/dashboard/MyProfilePage";
 import PublicListingPage from "./pages/PublicListingPage";
+import CustomDomainListingPage from "./pages/CustomDomainListingPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 function Root() {
@@ -20,6 +22,13 @@ function Root() {
 }
 
 export default function App() {
+  // A request arriving on a listing's own attached custom domain (e.g.
+  // 1645SaratogaWay.com) should just show that listing at "/", regardless
+  // of path — skip the app's normal routing entirely for that case.
+  if (!isAppHost(window.location.hostname)) {
+    return <CustomDomainListingPage />;
+  }
+
   return (
     <Routes>
       <Route path="/" element={<Root />} />
