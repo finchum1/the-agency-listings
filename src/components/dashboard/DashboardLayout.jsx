@@ -3,16 +3,29 @@ import { supabase } from "../../lib/supabaseClient";
 import brokerage from "../../lib/brokerage";
 import { useAuth } from "../../hooks/useAuth";
 
+// Each item's own `activeWhen` instead of a generic "starts with `to`"
+// check — the generic version broke down for Listings specifically,
+// since its `to` ("/dashboard") is a literal string-prefix of every other
+// tab's path ("/dashboard/site", "/dashboard/agents", …), so it matched
+// everywhere and stayed highlighted no matter which tab you were on.
+const NAV_ITEMS = [
+  { to: "/dashboard", label: "Listings", activeWhen: (p) => p === "/dashboard" || p.startsWith("/dashboard/listings/") },
+  { to: "/dashboard/site", label: "My Site", activeWhen: (p) => p === "/dashboard/site" },
+  { to: "/dashboard/sites", label: "Sites", activeWhen: (p) => p.startsWith("/dashboard/sites"), adminOnly: true },
+  { to: "/dashboard/agents", label: "Agents", activeWhen: (p) => p === "/dashboard/agents", adminOnly: true },
+];
+
 export default function DashboardLayout() {
   const { profile, isAdmin } = useAuth();
   const location = useLocation();
 
-  const navLink = (to, label) => (
+  const navLink = ({ to, label, activeWhen }) => (
     <Link
+      key={to}
       to={to}
-      className={`text-sm font-medium px-3 py-2 rounded-lg transition-colors ${
-        location.pathname === to || location.pathname.startsWith(to + "/")
-          ? "bg-[#1c1a17] text-white"
+      className={`text-sm font-medium px-4 py-2 rounded-full transition-colors ${
+        activeWhen(location.pathname)
+          ? "bg-[#1c1a17]/10 text-[#1c1a17]"
           : "text-[#1c1a17]/70 hover:bg-black/5"
       }`}
     >
@@ -27,10 +40,7 @@ export default function DashboardLayout() {
           <div className="flex items-center gap-6">
             <img src={brokerage.logo} alt={brokerage.name} className="h-9 w-auto" />
             <nav className="flex items-center gap-1">
-              {navLink("/dashboard", "Listings")}
-              {navLink("/dashboard/site", "My Site")}
-              {isAdmin && navLink("/dashboard/sites", "Sites")}
-              {isAdmin && navLink("/dashboard/agents", "Agents")}
+              {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map(navLink)}
             </nav>
           </div>
           <div className="flex items-center gap-4">

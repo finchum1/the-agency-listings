@@ -154,7 +154,7 @@ Two radius steps cover the whole system: full pill (`rounded-full`, buttons, bad
 - **Style:** background is the status color at ~10% opacity (`{color}1a` hex-alpha), text is the full-opacity status color, no border, `rounded-full`, `px-3 py-1.5`, 12px semibold. Applied identically as a `<select>` in the dashboard table and as a static badge on the public listing hero — same visual token, different interactivity.
 
 ### Navigation
-- Dashboard: text links, active state gets a solid `bg-ink text-white` pill; inactive is `ink/70` with a subtle `hover:bg-black/5`. No underline, no icon-led nav items.
+- Dashboard: text links, active state gets a translucent `bg-ink/10 text-ink` pill (`rounded-full`); inactive is `ink/70` with a subtle `hover:bg-black/5`. No underline, no icon-led nav items. Each tab's active state is its own `activeWhen(pathname)` check (see `DashboardLayout.jsx`'s `NAV_ITEMS`), not a generic string-prefix match — Listings' path (`/dashboard`) is a literal prefix of every other tab's path, so a naive prefix check kept it permanently highlighted.
 - Landing page: single "Sign In" pill top-right (outline on the sticky header, filled ink in the hero CTA); sticky header is translucent cream with backdrop blur over a hairline border.
 
 ### Browser Frame (signature component)
