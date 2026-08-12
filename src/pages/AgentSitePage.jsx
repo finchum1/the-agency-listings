@@ -36,7 +36,11 @@ export default function AgentSitePage({ site, agent, testimonials, areas, posts,
 
   return (
     <AgentSiteProvider value={{ site: adapted, siteId: site.id }}>
-      <div className="min-h-screen bg-[#f7f4ee] font-agent-sans">
+      <div
+        className="min-h-screen bg-[var(--as-bg)] font-agent-sans"
+        data-theme={adapted.theme}
+        data-font={adapted.fontPairing}
+      >
         <Navbar />
         <Hero />
         <Bio />

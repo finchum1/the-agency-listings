@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { normalizeDomain } from "../../lib/normalizeDomain";
 import ImageUploadField from "./ImageUploadField";
 
 // Splits/joins bio paragraphs on blank lines, so the textarea is just
@@ -10,6 +11,51 @@ const splitParagraphs = (text) =>
     .split(/\n\s*\n/)
     .map((p) => p.trim())
     .filter(Boolean);
+
+// Kept in sync with the CSS custom properties in src/index.css
+// ([data-theme="…"] / [data-font="…"]) and the check constraints in
+// supabase/agent-sites-theming-and-domain.sql.
+const THEMES = [
+  {
+    value: "classic",
+    label: "Classic",
+    description: "Cream & white sections, dark hero + testimonials + footer, red accent. The current look.",
+    swatches: ["#f7f4ee", "#14130f", "#8a1c2b"],
+  },
+  {
+    value: "light",
+    label: "Light",
+    description: "Mostly white and bright throughout, same layout.",
+    swatches: ["#ffffff", "#14130f", "#8a1c2b"],
+  },
+  {
+    value: "dark",
+    label: "Dark",
+    description: "Ink backgrounds throughout with cream text, brighter accent.",
+    swatches: ["#14130f", "#26241d", "#c23c4d"],
+  },
+];
+
+const FONT_PAIRINGS = [
+  {
+    value: "playfair-jost",
+    label: "Playfair Display + Jost",
+    display: "'Playfair Display', Georgia, serif",
+    body: "'Jost', sans-serif",
+  },
+  {
+    value: "fraunces-inter",
+    label: "Fraunces + Inter",
+    display: "'Fraunces', Georgia, serif",
+    body: "'Inter', sans-serif",
+  },
+  {
+    value: "cormorant-worksans",
+    label: "Cormorant Garamond + Work Sans",
+    display: "'Cormorant Garamond', Georgia, serif",
+    body: "'Work Sans', sans-serif",
+  },
+];
 
 export default function SiteForm({ site, onSaved }) {
   const [form, setForm] = useState(() => toForm(site));
@@ -25,6 +71,9 @@ export default function SiteForm({ site, onSaved }) {
       status: s.status || "draft",
       tagline: s.tagline || "",
       region: s.region || "",
+      theme: s.theme || "classic",
+      font_pairing: s.font_pairing || "playfair-jost",
+      secondary_logo_url: s.secondary_logo_url || "",
       hero_photo_url: s.hero_photo_url || "",
       hero_video_url: s.hero_video_url || "",
       bio: joinParagraphs(s.bio),
@@ -32,12 +81,18 @@ export default function SiteForm({ site, onSaved }) {
       instagram_url: s.instagram_url || "",
       facebook_url: s.facebook_url || "",
       linkedin_url: s.linkedin_url || "",
+      custom_domain: s.custom_domain || "",
     };
   }
 
   const update = (field) => (e) => {
     setSaved(false);
     setForm((f) => ({ ...f, [field]: e.target.value }));
+  };
+
+  const set = (field, value) => {
+    setSaved(false);
+    setForm((f) => ({ ...f, [field]: value }));
   };
 
   const updateStat = (i, field, value) => {
@@ -64,6 +119,9 @@ export default function SiteForm({ site, onSaved }) {
       status: form.status,
       tagline: form.tagline,
       region: form.region,
+      theme: form.theme,
+      font_pairing: form.font_pairing,
+      secondary_logo_url: form.secondary_logo_url || null,
       hero_photo_url: form.hero_photo_url || null,
       hero_video_url: form.hero_video_url || null,
       bio: splitParagraphs(form.bio),
@@ -71,11 +129,16 @@ export default function SiteForm({ site, onSaved }) {
       instagram_url: form.instagram_url,
       facebook_url: form.facebook_url,
       linkedin_url: form.linkedin_url,
+      custom_domain: normalizeDomain(form.custom_domain),
     };
     const { error } = await supabase.from("agent_sites").update(payload).eq("id", site.id);
     setSaving(false);
     if (error) {
-      setError(error.message);
+      setError(
+        error.code === "23505"
+          ? "That custom domain is already attached to another site."
+          : error.message,
+      );
       return;
     }
     setSaved(true);
@@ -148,13 +211,68 @@ export default function SiteForm({ site, onSaved }) {
         />
       </div>
 
+      <div>
+        <label className={labelClass}>Template</label>
+        <div className="grid sm:grid-cols-3 gap-3">
+          {THEMES.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => set("theme", t.value)}
+              className={`text-left rounded-xl border p-3.5 transition-colors ${
+                form.theme === t.value
+                  ? "border-[#8a7a5c] ring-2 ring-[#8a7a5c]/30"
+                  : "border-black/10 hover:border-black/20"
+              }`}
+            >
+              <div className="flex gap-1.5 mb-2.5">
+                {t.swatches.map((c, i) => (
+                  <span key={i} className="h-5 w-5 rounded-full border border-black/10" style={{ background: c }} />
+                ))}
+              </div>
+              <p className="text-sm font-semibold">{t.label}</p>
+              <p className="text-xs text-[#1c1a17]/50 mt-0.5 leading-snug">{t.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className={labelClass}>Font pairing</label>
+        <div className="grid sm:grid-cols-3 gap-3">
+          {FONT_PAIRINGS.map((f) => (
+            <button
+              key={f.value}
+              type="button"
+              onClick={() => set("font_pairing", f.value)}
+              className={`text-left rounded-xl border p-3.5 transition-colors ${
+                form.font_pairing === f.value
+                  ? "border-[#8a7a5c] ring-2 ring-[#8a7a5c]/30"
+                  : "border-black/10 hover:border-black/20"
+              }`}
+            >
+              <p className="text-lg leading-none mb-2" style={{ fontFamily: f.display }}>
+                Aa
+              </p>
+              <p className="text-xs font-semibold" style={{ fontFamily: f.body }}>
+                {f.label}
+              </p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <ImageUploadField
+        agentSiteId={site.id}
+        value={form.secondary_logo_url}
+        onChange={(url) => set("secondary_logo_url", url || "")}
+        label="Secondary logo (optional — shown next to The Agency logo in your header and footer)"
+      />
+
       <ImageUploadField
         agentSiteId={site.id}
         value={form.hero_photo_url}
-        onChange={(url) => {
-          setSaved(false);
-          setForm((f) => ({ ...f, hero_photo_url: url || "" }));
-        }}
+        onChange={(url) => set("hero_photo_url", url || "")}
         label="Hero photo"
       />
 
@@ -229,6 +347,23 @@ export default function SiteForm({ site, onSaved }) {
           <label className={labelClass}>LinkedIn URL</label>
           <input value={form.linkedin_url} onChange={update("linkedin_url")} className={inputClass} />
         </div>
+      </div>
+
+      <div className="bg-[#faf9f7] border border-black/5 rounded-2xl p-5 space-y-3">
+        <h3 className="font-display text-base font-semibold">Custom Domain (optional)</h3>
+        <p className="text-xs text-[#1c1a17]/50">
+          Once a domain is purchased — or an existing one is pointed at this project (ask your
+          admin either way) — enter it here and your site will serve directly at that address,
+          e.g. visiting <span className="font-medium">TerrenceFinchumRealty.com</span> shows this
+          site at the root URL instead of{" "}
+          <span className="font-medium">/sites/{form.slug || "…"}</span>.
+        </p>
+        <input
+          value={form.custom_domain}
+          onChange={update("custom_domain")}
+          className={inputClass}
+          placeholder="TerrenceFinchumRealty.com"
+        />
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

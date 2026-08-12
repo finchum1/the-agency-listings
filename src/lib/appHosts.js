@@ -1,6 +1,7 @@
-// Hostnames where the app's normal routing (login, dashboard, /listings/:slug)
-// applies. Any OTHER hostname is treated as a listing's own attached custom
-// domain — see App.jsx and pages/CustomDomainListingPage.jsx.
+// Hostnames where the app's normal routing (login, dashboard, /listings/:slug,
+// /sites/:slug) applies. Any OTHER hostname is treated as a listing's or an
+// agent site's own attached custom domain — see App.jsx and
+// pages/CustomDomainSitePage.jsx.
 //
 // Pure function, deliberately separate from window.location so it's testable
 // without a browser (e.g. `node -e` against this file).

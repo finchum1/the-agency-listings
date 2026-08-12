@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
+import { normalizeDomain } from "../../lib/normalizeDomain";
 import StatusSelect from "./StatusSelect";
 
 function slugify(text) {
@@ -9,18 +10,6 @@ function slugify(text) {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
-}
-
-// Accepts "https://1645SaratogaWay.com/" or "1645saratogaway.com" alike —
-// strip protocol/path/trailing slash, lowercase, so it matches whatever
-// App.jsx reads from window.location.hostname at runtime.
-function normalizeDomain(text) {
-  const trimmed = text.trim();
-  if (!trimmed) return null;
-  return trimmed
-    .replace(/^https?:\/\//i, "")
-    .replace(/\/.*$/, "")
-    .toLowerCase();
 }
 
 const emptyListing = {

@@ -115,30 +115,47 @@ Redirect URLs**, or invite emails will land on an error page.
 - `api/admin/add-agent.js` — admin-only, creates an agent's profile (service
   role key), optionally inviting them to log in immediately.
 
-## Custom domain per listing
+## Custom domain per listing or agent site
 
-Each listing can have its own domain (e.g. `1645SaratogaWay.com`) that
-serves that listing directly at `/` instead of `/listings/:slug`.
+Each listing **and** each agent site can have its own domain (e.g.
+`1645SaratogaWay.com`, `TerrenceFinchumRealty.com`) that serves it directly
+at `/` instead of `/listings/:slug` or `/sites/:slug`.
 
-1. **Buy/attach the domain to this Vercel project** — either via the Vercel
-   dashboard (Project → Domains → Add), or the CLI:
-   ```bash
-   vercel domains check 1645SaratogaWay.com   # availability
-   vercel domains price 1645SaratogaWay.com   # cost
-   vercel domains buy 1645SaratogaWay.com     # real purchase, real money —
-                                               # confirm with whoever owns
-                                               # the Vercel billing first
-   vercel domains add 1645SaratogaWay.com the-agency-listings
-   ```
-   (If the domain was bought elsewhere, use `vercel domains add` after
-   pointing its DNS at Vercel per their instructions — no `buy` needed.)
-2. **In the app**, edit the listing → **Custom Domain** field → enter the
-   domain (with or without `https://`/`www.`, it's normalized on save).
+1. **Attach the domain to this Vercel project.** Two cases:
+   - **Buying a brand-new domain** — via the Vercel dashboard (Project →
+     Domains → Add), or the CLI:
+     ```bash
+     vercel domains check TerrenceFinchumRealty.com   # availability
+     vercel domains price TerrenceFinchumRealty.com   # cost
+     vercel domains buy TerrenceFinchumRealty.com     # real purchase, real
+                                                        # money — confirm with
+                                                        # whoever owns the
+                                                        # Vercel billing first
+     vercel domains add TerrenceFinchumRealty.com the-agency-listings
+     ```
+   - **Transferring/using a domain already bought elsewhere** (a different
+     registrar, e.g. GoDaddy/Namecheap/Google Domains) — no purchase or
+     registrar transfer needed to make it work; you don't have to move the
+     domain's registration to Vercel at all:
+     ```bash
+     vercel domains add TerrenceFinchumRealty.com the-agency-listings
+     ```
+     Vercel then shows the DNS records to add (an `A`/`ALIAS` or `CNAME`
+     record) — add those in the *existing* registrar's DNS settings, and it
+     resolves to this project within minutes to hours. A full registrar
+     transfer (moving where the domain is *registered*, not just where it
+     *points*) is a separate, optional step Vercel walks through if you
+     ever want it, and requires the domain's own auth/EPP code from the
+     current registrar — never needed just to attach it here.
+2. **In the app**, edit the listing (or, for an agent site, go to **My
+   Site**/**Dashboard → Sites → edit**) → **Custom Domain** field → enter
+   the domain (with or without `https://`/`www.`, it's normalized on save).
 3. That's it — `App.jsx` checks the request's hostname against
    `src/lib/appHosts.js`'s known app hosts; anything else is looked up
-   against `listings.custom_domain` and served at `/` via
-   `pages/CustomDomainListingPage.jsx` (shares all rendering with the
-   normal `/listings/:slug` page via `pages/ListingSitePage.jsx`).
+   first against `listings.custom_domain`, then `agent_sites.custom_domain`,
+   and served at `/` via `pages/CustomDomainSitePage.jsx` (shares all
+   rendering with the normal `/listings/:slug` and `/sites/:slug` pages via
+   `pages/ListingSitePage.jsx` / `pages/AgentSitePage.jsx`).
 
 ## Out of scope for v1
 

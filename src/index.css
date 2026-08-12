@@ -46,6 +46,57 @@
     letter-spacing: 0.22em;
   }
   .font-agent-sans {
-    font-family: "Jost", ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--as-font-sans, "Jost", ui-sans-serif, system-ui, sans-serif);
+  }
+}
+
+@layer base {
+  /* Agent Sites — font pairings. Each agent picks one in their site editor
+     (agent_sites.font_pairing). Scoped to [data-font] on the page's root
+     element: overriding --font-display here only cascades to that
+     element's descendants, so it never leaks into the dashboard or
+     landing page, which keep the app-wide Playfair Display default. */
+  [data-font="playfair-jost"] {
+    --font-display: "Playfair Display", "Georgia", serif;
+    --as-font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
+  }
+  [data-font="fraunces-inter"] {
+    --font-display: "Fraunces", "Georgia", serif;
+    --as-font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  }
+  [data-font="cormorant-worksans"] {
+    --font-display: "Cormorant Garamond", "Georgia", serif;
+    --as-font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  /* Agent Sites — templates (agent_sites.theme). Color tokens only; every
+     template shares the exact same layout/components. Components read
+     these via arbitrary-value classes, e.g. bg-[var(--as-bg)]. */
+  [data-theme="classic"] {
+    --as-bg: #f7f4ee;      /* page background */
+    --as-bg-alt: #ffffff;  /* alternating/bordered section background */
+    --as-dark: #14130f;    /* hero overlay, testimonials, footer */
+    --as-on-dark: #f7f4ee; /* text on --as-dark */
+    --as-surface: #e7e2d6; /* card/photo placeholder fill */
+    --as-text: #14130f;    /* primary text on light backgrounds */
+    --as-accent: #8a1c2b;  /* CTA fill, price, links, eyebrow labels */
+  }
+  [data-theme="light"] {
+    --as-bg: #ffffff;
+    --as-bg-alt: #f7f4ee;
+    --as-dark: #14130f;
+    --as-on-dark: #f7f4ee;
+    --as-surface: #efece4;
+    --as-text: #14130f;
+    --as-accent: #8a1c2b;
+  }
+  [data-theme="dark"] {
+    --as-bg: #14130f;
+    --as-bg-alt: #1c1a15;
+    --as-dark: #0b0a08;
+    --as-on-dark: #f7f4ee;
+    --as-surface: #26241d;
+    --as-text: #f7f4ee;
+    --as-accent: #c23c4d;
   }
 }

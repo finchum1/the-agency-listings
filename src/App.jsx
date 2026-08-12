@@ -15,7 +15,7 @@ import MySitePage from "./components/dashboard/MySitePage";
 import SitesPage from "./components/dashboard/SitesPage";
 import EditAgentSitePage from "./components/dashboard/EditAgentSitePage";
 import PublicListingPage from "./pages/PublicListingPage";
-import CustomDomainListingPage from "./pages/CustomDomainListingPage";
+import CustomDomainSitePage from "./pages/CustomDomainSitePage";
 import PublicAgentSitePage from "./pages/PublicAgentSitePage";
 import PublicAgentPostPage from "./pages/PublicAgentPostPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -29,11 +29,12 @@ function Root() {
 }
 
 export default function App() {
-  // A request arriving on a listing's own attached custom domain (e.g.
-  // 1645SaratogaWay.com) should just show that listing at "/", regardless
-  // of path — skip the app's normal routing entirely for that case.
+  // A request arriving on a listing's or an agent site's own attached
+  // custom domain (e.g. 1645SaratogaWay.com, TerrenceFinchumRealty.com)
+  // should just show that listing/site at "/", regardless of path — skip
+  // the app's normal routing entirely for that case.
   if (!isAppHost(window.location.hostname)) {
-    return <CustomDomainListingPage />;
+    return <CustomDomainSitePage />;
   }
 
   return (

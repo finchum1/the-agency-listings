@@ -16,7 +16,7 @@ import Footer from "../components/listing-site/Footer";
 
 // Shared rendering for a single listing's public site — used both at
 // /listings/:slug (PublicListingPage.jsx) and when a request arrives on a
-// listing's own attached custom domain (CustomDomainListingPage.jsx).
+// listing's own attached custom domain (CustomDomainSitePage.jsx).
 // Takes the raw shape returned by useListing().
 export default function ListingSitePage({ listing, agent, photos, openHouses, loading, notFound }) {
   const adapted = listing ? adaptListing({ listing, agent, photos }) : null;

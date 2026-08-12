@@ -24,13 +24,19 @@ export default function Navbar() {
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-colors duration-300 ${
-        scrolled || open ? "bg-[#14130f] shadow-md" : "bg-transparent"
+        scrolled || open ? "bg-[var(--as-dark)] shadow-md" : "bg-transparent"
       }`}
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-10 flex items-center justify-between py-4">
         <a href="#" className="flex items-center gap-3 min-w-0">
           <img src={site.brokerage.logo} alt={site.brokerage.name} className="h-9 sm:h-11 w-auto" />
-          <span className="hidden sm:block text-sm font-display tracked-wide whitespace-nowrap text-[#f7f4ee]">
+          {site.secondaryLogo && (
+            <>
+              <span className="h-8 w-px bg-[var(--as-on-dark)]/25 shrink-0" aria-hidden="true" />
+              <img src={site.secondaryLogo} alt="" className="h-8 sm:h-10 w-auto" />
+            </>
+          )}
+          <span className="hidden sm:block text-sm font-display tracked-wide whitespace-nowrap text-[var(--as-on-dark)]">
             {site.agent.name}
           </span>
         </a>
@@ -40,21 +46,21 @@ export default function Navbar() {
             <a
               key={link.href}
               href={link.href}
-              className="text-xs font-medium tracked-wide uppercase transition-colors whitespace-nowrap text-[#f7f4ee]/75 hover:text-[#f7f4ee]"
+              className="text-xs font-medium tracked-wide uppercase transition-colors whitespace-nowrap text-[var(--as-on-dark)]/75 hover:text-[var(--as-on-dark)]"
             >
               {link.label}
             </a>
           ))}
           <a
             href="#contact"
-            className="text-xs font-medium tracked-wide uppercase px-5 py-2.5 border border-[#f7f4ee]/70 text-[#f7f4ee] whitespace-nowrap transition-colors hover:bg-[#f7f4ee] hover:text-[#14130f]"
+            className="text-xs font-medium tracked-wide uppercase px-5 py-2.5 border border-[var(--as-on-dark)]/70 text-[var(--as-on-dark)] whitespace-nowrap transition-colors hover:bg-[var(--as-on-dark)] hover:text-[var(--as-dark)]"
           >
             Let&rsquo;s Connect
           </a>
         </nav>
 
         <button
-          className="lg:hidden p-2 shrink-0 text-[#f7f4ee]"
+          className="lg:hidden p-2 shrink-0 text-[var(--as-on-dark)]"
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
         >
@@ -69,13 +75,13 @@ export default function Navbar() {
       </div>
 
       {open && (
-        <div className="lg:hidden bg-[#14130f] border-t border-[#f7f4ee]/10 px-6 py-4 flex flex-col gap-4">
+        <div className="lg:hidden bg-[var(--as-dark)] border-t border-[var(--as-on-dark)]/10 px-6 py-4 flex flex-col gap-4">
           {links.map((link) => (
             <a
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
-              className="text-xs font-medium tracked-wide uppercase text-[#f7f4ee]/80"
+              className="text-xs font-medium tracked-wide uppercase text-[var(--as-on-dark)]/80"
             >
               {link.label}
             </a>
@@ -83,7 +89,7 @@ export default function Navbar() {
           <a
             href="#contact"
             onClick={() => setOpen(false)}
-            className="text-xs font-medium tracked-wide uppercase px-5 py-3 bg-[#8a1c2b] text-white text-center"
+            className="text-xs font-medium tracked-wide uppercase px-5 py-3 bg-[var(--as-accent)] text-white text-center"
           >
             Let&rsquo;s Connect
           </a>
