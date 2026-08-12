@@ -21,6 +21,14 @@ import PublicAgentPostPage from "./pages/PublicAgentPostPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import LandingPage from "./pages/LandingPage";
 
+import Hero from "./components/agent-site/Hero";
+import Bio from "./components/agent-site/Bio";
+import Testimonials from "./components/agent-site/Testimonials";
+import FeaturedListings from "./components/agent-site/FeaturedListings";
+import ServiceAreas from "./components/agent-site/ServiceAreas";
+import BlogTeaser from "./components/agent-site/BlogTeaser";
+import Contact from "./components/agent-site/Contact";
+
 function Root() {
   const { session, loading } = useAuth();
   if (loading) return null;
@@ -44,7 +52,59 @@ export default function App() {
       <Route path="/accept-invite" element={<SetPasswordPage />} />
 
       <Route path="/listings/:slug" element={<PublicListingPage />} />
-      <Route path="/sites/:slug" element={<PublicAgentSitePage />} />
+
+      {/* Each agent site is several real pages sharing one PublicAgentSitePage
+          (data-fetching) + AgentSitePage (chrome) pair — not one long
+          scrolled page — see Navbar.jsx's PAGES list, which must match. */}
+      <Route
+        path="/sites/:slug"
+        element={
+          <PublicAgentSitePage>
+            <Hero />
+            <Testimonials />
+          </PublicAgentSitePage>
+        }
+      />
+      <Route
+        path="/sites/:slug/about"
+        element={
+          <PublicAgentSitePage pageTitle="About">
+            <Bio />
+          </PublicAgentSitePage>
+        }
+      />
+      <Route
+        path="/sites/:slug/listings"
+        element={
+          <PublicAgentSitePage pageTitle="Listings">
+            <FeaturedListings />
+          </PublicAgentSitePage>
+        }
+      />
+      <Route
+        path="/sites/:slug/areas"
+        element={
+          <PublicAgentSitePage pageTitle="Areas">
+            <ServiceAreas />
+          </PublicAgentSitePage>
+        }
+      />
+      <Route
+        path="/sites/:slug/blog"
+        element={
+          <PublicAgentSitePage pageTitle="Blog">
+            <BlogTeaser />
+          </PublicAgentSitePage>
+        }
+      />
+      <Route
+        path="/sites/:slug/contact"
+        element={
+          <PublicAgentSitePage pageTitle="Contact">
+            <Contact />
+          </PublicAgentSitePage>
+        }
+      />
       <Route path="/sites/:slug/blog/:postSlug" element={<PublicAgentPostPage />} />
 
       <Route

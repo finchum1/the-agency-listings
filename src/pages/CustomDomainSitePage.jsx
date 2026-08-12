@@ -3,6 +3,8 @@ import { useAgentSite } from "../hooks/useAgentSite";
 import ListingSitePage from "./ListingSitePage";
 import AgentSitePage from "./AgentSitePage";
 import NotFoundPage from "./NotFoundPage";
+import Hero from "../components/agent-site/Hero";
+import Testimonials from "../components/agent-site/Testimonials";
 
 // Rendered at "/" whenever the request's hostname isn't a recognized app
 // host (see lib/appHosts.js) — i.e. a visitor arrived via a listing's or an
@@ -11,6 +13,16 @@ import NotFoundPage from "./NotFoundPage";
 // Tries a listing first, then an agent site — both looked up by
 // custom_domain instead of slug — and renders whichever one owns the
 // domain, sharing all normal rendering with the slug-based routes.
+//
+// This ignores the request path and always renders the agent site's home
+// page — the site's own subpages (about/listings/areas/blog/contact,
+// see App.jsx) only exist as /sites/:slug/... routes, which a request to
+// a bare custom domain never matches. Navbar's subpage links account for
+// this (see lib/agentSiteLinks.js) by pointing to the full working page
+// on the canonical app host instead. No agent site has a custom domain
+// attached yet, so this hasn't come up in practice; if one ever does,
+// teaching this component to be path-aware (mirroring App.jsx's mapping)
+// is the next step.
 export default function CustomDomainSitePage() {
   const hostname = window.location.hostname;
   const listingResult = useListing({ customDomain: hostname });
@@ -22,6 +34,13 @@ export default function CustomDomainSitePage() {
     return null;
   }
   if (listingResult.listing) return <ListingSitePage {...listingResult} />;
-  if (agentSiteResult.site) return <AgentSitePage {...agentSiteResult} />;
+  if (agentSiteResult.site) {
+    return (
+      <AgentSitePage {...agentSiteResult}>
+        <Hero />
+        <Testimonials />
+      </AgentSitePage>
+    );
+  }
   return <NotFoundPage />;
 }

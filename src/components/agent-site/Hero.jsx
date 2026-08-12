@@ -1,7 +1,11 @@
+import { Link } from "react-router-dom";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
+import { agentSiteHref, isAgentSiteAppHost } from "../../lib/agentSiteLinks";
 
 export default function Hero() {
   const { site } = useAgentSiteContext();
+  const CtaLink = isAgentSiteAppHost() ? Link : "a";
+  const ctaProp = isAgentSiteAppHost() ? "to" : "href";
 
   return (
     <section className="relative h-screen min-h-[640px] w-full">
@@ -34,12 +38,12 @@ export default function Hero() {
         )}
 
         <div className="mt-9">
-          <a
-            href="#contact"
+          <CtaLink
+            {...{ [ctaProp]: agentSiteHref(site.slug, "/contact") }}
             className="inline-block text-xs font-medium tracked-wide uppercase px-8 py-4 bg-[var(--as-accent)] text-white transition duration-150 hover:opacity-90 active:scale-[0.98]"
           >
             Let&rsquo;s Connect
-          </a>
+          </CtaLink>
         </div>
       </div>
     </section>

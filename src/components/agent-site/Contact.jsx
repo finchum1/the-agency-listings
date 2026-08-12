@@ -60,7 +60,7 @@ export default function Contact() {
               <img
                 src={agent.photo}
                 alt={agent.name}
-                className="h-16 w-16 object-cover bg-[var(--as-surface)]"
+                className="h-16 w-16 rounded-full object-cover bg-[var(--as-surface)]"
               />
             )}
             <div>

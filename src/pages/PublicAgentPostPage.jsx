@@ -92,7 +92,7 @@ export default function PublicAgentPostPage() {
                   {adapted.agent.name}
                 </Link>
               </p>
-              <Link to={`/sites/${siteSlug}#blog`} className="text-sm text-[var(--as-accent)] hover:underline">
+              <Link to={`/sites/${siteSlug}/blog`} className="text-sm text-[var(--as-accent)] hover:underline">
                 ← More posts
               </Link>
             </div>

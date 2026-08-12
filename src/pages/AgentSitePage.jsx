@@ -7,26 +7,38 @@ import { trackView } from "../lib/trackView";
 import { AgentSiteProvider } from "../context/AgentSiteContext";
 
 import Navbar from "../components/agent-site/Navbar";
-import Hero from "../components/agent-site/Hero";
-import Bio from "../components/agent-site/Bio";
-import Testimonials from "../components/agent-site/Testimonials";
-import FeaturedListings from "../components/agent-site/FeaturedListings";
-import ServiceAreas from "../components/agent-site/ServiceAreas";
-import BlogTeaser from "../components/agent-site/BlogTeaser";
-import Contact from "../components/agent-site/Contact";
 import Footer from "../components/agent-site/Footer";
 
-// Shared rendering for an agent's public site — takes the raw shape
-// returned by useAgentSite().
-export default function AgentSitePage({ site, agent, testimonials, areas, posts, listings, loading, notFound }) {
+// Shared chrome (data loading, theme, Navbar/Footer, meta, view tracking)
+// for every page of an agent's public site — home, about, listings,
+// areas, blog, contact. Each page passes whichever section(s) it wants to
+// render as `children` (see App.jsx's routes) plus an optional
+// `pageTitle` used in the browser tab title. Takes the raw shape returned
+// by useAgentSite().
+export default function AgentSitePage({
+  site,
+  agent,
+  testimonials,
+  areas,
+  posts,
+  listings,
+  loading,
+  notFound,
+  pageTitle,
+  children,
+}) {
   const adapted = site ? adaptAgentSite({ site, agent, testimonials, areas, posts, listings }) : null;
 
   useEffect(() => {
     if (!site) return;
     const meta = buildAgentSiteMeta(site, agent);
-    applyPageMeta({ ...meta, url: `${SITE_ORIGIN}/sites/${site.slug}` });
+    applyPageMeta({
+      ...meta,
+      title: pageTitle ? `${pageTitle} | ${meta.title}` : meta.title,
+      url: `${SITE_ORIGIN}/sites/${site.slug}`,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [site, agent]);
+  }, [site, agent, pageTitle]);
 
   useEffect(() => {
     if (site?.id) trackView("agent_site", site.id);
@@ -52,13 +64,7 @@ export default function AgentSitePage({ site, agent, testimonials, areas, posts,
         data-font={adapted.fontPairing}
       >
         <Navbar />
-        <Hero />
-        <Bio />
-        <Testimonials />
-        <FeaturedListings />
-        <ServiceAreas />
-        <BlogTeaser />
-        <Contact />
+        {children}
         <Footer />
       </div>
     </AgentSiteProvider>
