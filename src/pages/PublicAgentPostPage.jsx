@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { useParams, Navigate, Link } from "react-router-dom";
 import { useAgentPost } from "../hooks/useAgentPost";
 import { adaptAgentSite } from "../lib/adaptAgentSite";
+import { buildAgentPostMeta, SITE_ORIGIN } from "../lib/seo";
+import { applyPageMeta } from "../lib/pageMeta";
 import { AgentSiteProvider } from "../context/AgentSiteContext";
 import Navbar from "../components/agent-site/Navbar";
 import Footer from "../components/agent-site/Footer";
@@ -15,9 +17,11 @@ export default function PublicAgentPostPage() {
     : null;
 
   useEffect(() => {
-    if (post) document.title = `${post.title} | ${adapted?.agent.name}`;
+    if (!post || !site) return;
+    const meta = buildAgentPostMeta(post, site, agent);
+    applyPageMeta({ ...meta, url: `${SITE_ORIGIN}/sites/${siteSlug}/blog/${postSlug}` });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [post]);
+  }, [post, site, agent]);
 
   if (loading) {
     return (

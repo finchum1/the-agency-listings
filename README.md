@@ -114,6 +114,7 @@ Redirect URLs**, or invite emails will land on an error page.
   listing's agent email server-side (never trusts a client-supplied email).
 - `api/admin/add-agent.js` — admin-only, creates an agent's profile (service
   role key), optionally inviting them to log in immediately.
+- `src/lib/seo.js` / `api/meta-*.js` / `api/sitemap.js` — see "SEO" below.
 
 ## Custom domain per listing or agent site
 
@@ -157,10 +158,42 @@ at `/` instead of `/listings/:slug` or `/sites/:slug`.
    rendering with the normal `/listings/:slug` and `/sites/:slug` pages via
    `pages/ListingSitePage.jsx` / `pages/AgentSitePage.jsx`).
 
+## SEO
+
+This is a pure client-rendered SPA (`vercel.json` rewrites every non-`/api`
+path to `index.html`), which splits "SEO" into two different problems with
+two different fixes:
+
+- **Search engines / real browsers** — `src/lib/seo.js` (a framework-agnostic
+  module, no `document`/`window`) computes `{title, description, image}` for
+  a listing/agent-site/post from its data, falling back to sensible defaults
+  when the optional `seo_title` / `seo_description` / `og_image_url` columns
+  (editable in the dashboard forms) are unset. `src/lib/pageMeta.js` writes
+  that into the live DOM (title + meta description + OG/Twitter tags) from
+  each page's `useEffect`. Googlebot executes JS before indexing, so this is
+  sufficient for search ranking and gives real visitors a correct tab title.
+- **Social/link-preview crawlers** (iMessage, Slack, Facebook, Twitter/X,
+  Discord, etc.) — these fetch raw HTML and never run JS, so the above is
+  invisible to them; they'd otherwise all see index.html's one generic
+  title forever. `vercel.json` has `has`-header rewrites that match known
+  bot/crawler user-agents on `/listings/:slug`, `/sites/:slug`, and
+  `/sites/:slug/blog/:postSlug` and route *only those requests* to
+  `api/meta-listing.js` / `api/meta-agent-site.js` / `api/meta-agent-post.js`
+  — small serverless functions that query Supabase directly and return a
+  real server-rendered HTML page with correct `<title>`/meta/OG tags (using
+  the exact same `lib/seo.js` logic, so the two paths never disagree).
+  Normal browsers never hit these; they still get the full SPA.
+
+`api/sitemap.js` generates `/sitemap.xml` live from Supabase (listings,
+published agent sites, published posts) on every request, edge-cached for an
+hour. `public/robots.txt` is a static file pointing at it and disallowing
+`/dashboard`, `/login`, `/accept-invite`.
+
+Run `supabase/seo-fields.sql` once for the `seo_title`/`seo_description`/
+`og_image_url` columns.
+
 ## Out of scope for v1
 
-- Server-rendered OG/social-preview meta tags (client-side `document.title`
-  only for now).
 - In-app video upload/compression — `hero_video_url` is a plain URL field;
   compress and host a video externally first (e.g. macOS's built-in
   `avconvert`, same as was done for the Saratoga hero video).

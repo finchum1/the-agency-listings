@@ -31,6 +31,9 @@ const emptyListing = {
   property_type: "Single Family Home",
   hero_video_url: "",
   custom_domain: "",
+  seo_title: "",
+  seo_description: "",
+  og_image_url: "",
 };
 
 // mode: "create" | "edit". `listing` is the existing row for edit mode.
@@ -77,6 +80,9 @@ export default function ListingForm({ mode, listing, onSaved }) {
         property_type: listing.property_type || "Single Family Home",
         hero_video_url: listing.hero_video_url || "",
         custom_domain: listing.custom_domain || "",
+        seo_title: listing.seo_title || "",
+        seo_description: listing.seo_description || "",
+        og_image_url: listing.og_image_url || "",
       });
       setDescriptionText((listing.description || []).join("\n\n"));
       setFeatures(
@@ -357,6 +363,45 @@ export default function ListingForm({ mode, listing, onSaved }) {
           className={inputClass}
           placeholder="/video/hero.mp4 or a full URL"
         />
+      </div>
+
+      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+        <div>
+          <h2 className="font-display text-lg font-semibold">SEO &amp; Sharing (optional)</h2>
+          <p className="text-xs text-[#1c1a17]/50 mt-1">
+            Controls the title/description search engines show and the preview card when this
+            listing is shared in text messages, Slack, or social apps. Leave blank to use sensible
+            defaults built from the address and description above.
+          </p>
+        </div>
+        <div>
+          <label className={labelClass}>SEO title</label>
+          <input
+            value={form.seo_title}
+            onChange={update("seo_title")}
+            className={inputClass}
+            placeholder={`${form.address_line1 || "1645 Saratoga Way"} | ${form.city || "Edmond"}, ${form.state || "OK"} — The Agency`}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>SEO / share description</label>
+          <textarea
+            rows={2}
+            value={form.seo_description}
+            onChange={update("seo_description")}
+            className={inputClass}
+            placeholder="Defaults to the first paragraph of the description above."
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Share image URL</label>
+          <input
+            value={form.og_image_url}
+            onChange={update("og_image_url")}
+            className={inputClass}
+            placeholder="Defaults to the hero photo."
+          />
+        </div>
       </div>
 
       <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-3">

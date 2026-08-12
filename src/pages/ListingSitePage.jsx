@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { adaptListing } from "../lib/adaptListing";
+import { buildListingMeta, SITE_ORIGIN } from "../lib/seo";
+import { applyPageMeta } from "../lib/pageMeta";
 import { ListingProvider } from "../context/ListingContext";
 
 import Navbar from "../components/listing-site/Navbar";
@@ -22,10 +24,12 @@ export default function ListingSitePage({ listing, agent, photos, openHouses, lo
   const adapted = listing ? adaptListing({ listing, agent, photos }) : null;
 
   useEffect(() => {
-    if (adapted) {
-      document.title = `${adapted.address.line1} | ${adapted.address.city}, ${adapted.address.state}`;
-    }
-  }, [adapted]);
+    if (!listing) return;
+    const heroPhoto = photos?.find((p) => p.is_hero)?.url || photos?.[0]?.url || "";
+    const meta = buildListingMeta(listing, agent, heroPhoto);
+    applyPageMeta({ ...meta, url: `${SITE_ORIGIN}/listings/${listing.slug}` });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listing, agent, photos]);
 
   if (loading) {
     return (

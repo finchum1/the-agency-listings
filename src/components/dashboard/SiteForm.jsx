@@ -82,6 +82,9 @@ export default function SiteForm({ site, onSaved }) {
       facebook_url: s.facebook_url || "",
       linkedin_url: s.linkedin_url || "",
       custom_domain: s.custom_domain || "",
+      seo_title: s.seo_title || "",
+      seo_description: s.seo_description || "",
+      og_image_url: s.og_image_url || "",
     };
   }
 
@@ -130,6 +133,9 @@ export default function SiteForm({ site, onSaved }) {
       facebook_url: form.facebook_url,
       linkedin_url: form.linkedin_url,
       custom_domain: normalizeDomain(form.custom_domain),
+      seo_title: form.seo_title || null,
+      seo_description: form.seo_description || null,
+      og_image_url: form.og_image_url || null,
     };
     const { error } = await supabase.from("agent_sites").update(payload).eq("id", site.id);
     setSaving(false);
@@ -347,6 +353,42 @@ export default function SiteForm({ site, onSaved }) {
           <label className={labelClass}>LinkedIn URL</label>
           <input value={form.linkedin_url} onChange={update("linkedin_url")} className={inputClass} />
         </div>
+      </div>
+
+      <div className="bg-[#faf9f7] border border-black/5 rounded-2xl p-5 space-y-4">
+        <div>
+          <h3 className="font-display text-base font-semibold">SEO &amp; Sharing (optional)</h3>
+          <p className="text-xs text-[#1c1a17]/50 mt-1">
+            Controls the title/description search engines show and the preview card when your
+            site is shared in text messages, Slack, or social apps. Leave blank to use sensible
+            defaults built from your name and tagline/bio above.
+          </p>
+        </div>
+        <div>
+          <label className={labelClass}>SEO title</label>
+          <input
+            value={form.seo_title}
+            onChange={update("seo_title")}
+            className={inputClass}
+            placeholder="Defaults to your name + The Agency."
+          />
+        </div>
+        <div>
+          <label className={labelClass}>SEO / share description</label>
+          <textarea
+            rows={2}
+            value={form.seo_description}
+            onChange={update("seo_description")}
+            className={inputClass}
+            placeholder="Defaults to your tagline, or the first line of your bio."
+          />
+        </div>
+        <ImageUploadField
+          agentSiteId={site.id}
+          value={form.og_image_url}
+          onChange={(url) => set("og_image_url", url || "")}
+          label="Share image (optional — defaults to your hero photo)"
+        />
       </div>
 
       <div className="bg-[#faf9f7] border border-black/5 rounded-2xl p-5 space-y-3">
