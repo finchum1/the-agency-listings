@@ -43,10 +43,13 @@ account directly:
    a password, check **Auto Confirm User**.
 2. SQL Editor:
    ```sql
-   update profiles set role = 'admin' where email = 'you@example.com';
+   update profiles set role = 'admin', login_enabled = true where email = 'you@example.com';
    ```
-3. Sign in at `/login`. From there, invite every other agent yourself via
-   **Dashboard → Agents → Invite** — no one else needs steps 1–2.
+3. Sign in at `/login`. From there, add every other agent yourself via
+   **Dashboard → Agents** — no one else needs steps 1–2. Each agent can be
+   added as a profile-only record you manage on their behalf (no email
+   sent, no login) or invited to log in immediately by checking "Let this
+   agent log in" — either way, **Enable Login** can turn on access later.
 
 ### 5. Migrate 1645 Saratoga Way (optional, one-time)
 
@@ -88,7 +91,7 @@ npx vercel git connect     # auto-deploy on future pushes
 In the **Vercel dashboard → Project → Settings → Environment Variables**,
 add (these are never set from chat/code):
 - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` — same values as your `.env`
-- `SUPABASE_SERVICE_ROLE_KEY` — used only by `api/admin/invite-agent.js`
+- `SUPABASE_SERVICE_ROLE_KEY` — used only by `api/admin/add-agent.js`
 - `RESEND_API_KEY`, optionally `LEAD_FROM_EMAIL` — from resend.com, used by
   `api/contact.js`
 
@@ -106,10 +109,11 @@ Redirect URLs**, or invite emails will land on an error page.
   ported from `property-site-template/src/components/`. Same JSX/Tailwind,
   just reading from `useListingContext()` instead of a static import.
 - `src/components/dashboard/` — the admin/agent app: listings table, the
-  create/edit form, photo manager, open-house manager, agent invites.
+  create/edit form, photo manager, open-house manager, agent management.
 - `api/contact.js` — "Send Inquiry" form backend (Resend), looks up the
   listing's agent email server-side (never trusts a client-supplied email).
-- `api/admin/invite-agent.js` — admin-only agent invites (service role key).
+- `api/admin/add-agent.js` — admin-only, creates an agent's profile (service
+  role key), optionally inviting them to log in immediately.
 
 ## Custom domain per listing
 

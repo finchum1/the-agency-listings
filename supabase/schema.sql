@@ -17,6 +17,10 @@ create table if not exists profiles (
   phone text not null default '',
   photo_url text,
   role text not null default 'agent' check (role in ('admin', 'agent')),
+  -- Every profile still has a real auth.users row (see below), but not
+  -- every agent needs to log in themselves — an admin can create/manage a
+  -- profile-only agent and flip this on later via "Enable Login".
+  login_enabled boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -38,20 +42,24 @@ create policy "profiles_update_own_or_admin" on profiles
   );
 
 -- A profile row is auto-created whenever a new auth user appears, whether
--- created via api/admin/invite-agent.js or directly in the Supabase
--- dashboard (needed to bootstrap the very first admin — see bottom of file).
+-- created via api/admin/add-agent.js (invited, or profile-only) or
+-- directly in the Supabase dashboard (needed to bootstrap the very first
+-- admin — see bottom of file). login_enabled comes from the new user's
+-- metadata: true when add-agent.js sent them a real invite, false when it
+-- just created a profile-only account on an admin's behalf.
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email, full_name, role)
+  insert into public.profiles (id, email, full_name, role, login_enabled)
   values (
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data->>'full_name', ''),
-    coalesce(new.raw_user_meta_data->>'role', 'agent')
+    coalesce(new.raw_user_meta_data->>'role', 'agent'),
+    coalesce((new.raw_user_meta_data->>'login_enabled')::boolean, false)
   )
   on conflict (id) do nothing;
   return new;
@@ -247,10 +255,15 @@ alter publication supabase_realtime add table open_houses;
 -- 1. Supabase dashboard > Authentication > Users > Add user > enter your
 --    email + a password, and check "Auto Confirm User". The trigger
 --    above auto-creates your profiles row with role='agent'.
--- 2. Run this, with your real email, to promote yourself to admin:
+-- 2. Run this, with your real email, to promote yourself to admin and
+--    mark yourself as able to log in (the dashboard-created user bypasses
+--    add-agent.js, so login_enabled defaults to false otherwise):
 --
---      update profiles set role = 'admin' where email = 'you@example.com';
+--      update profiles set role = 'admin', login_enabled = true
+--      where email = 'you@example.com';
 --
--- After that, invite every other agent from inside the app itself
--- (Dashboard > Agents > Invite) — no one else needs this manual step.
+-- After that, add every other agent from inside the app itself
+-- (Dashboard > Agents) — no one else needs this manual step. Each agent
+-- can be added as a profile-only record (no login) or invited to log in
+-- immediately; either way "Enable Login" can turn on access later.
 -- =====================================================================
