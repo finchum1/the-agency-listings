@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { agentSiteHref, isAgentSiteAppHost } from "../../lib/agentSiteLinks";
+import SiteLink from "./SiteLink";
 
 const PAGES = [
   { path: "/about", label: "About" },
@@ -10,24 +11,6 @@ const PAGES = [
   { path: "/blog", label: "Blog" },
   { path: "/contact", label: "Contact" },
 ];
-
-// Real SPA route on the app host, plain (possibly cross-host) anchor
-// otherwise — see lib/agentSiteLinks.js.
-function NavItem({ slug, path, className, onClick, children }) {
-  const href = agentSiteHref(slug, path);
-  if (isAgentSiteAppHost()) {
-    return (
-      <Link to={href} className={className} onClick={onClick}>
-        {children}
-      </Link>
-    );
-  }
-  return (
-    <a href={href} className={className} onClick={onClick}>
-      {children}
-    </a>
-  );
-}
 
 export default function Navbar() {
   const { site } = useAgentSiteContext();
@@ -62,7 +45,7 @@ export default function Navbar() {
       }`}
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-10 flex items-center justify-between py-4">
-        <NavItem slug={site.slug} path="" className="flex items-center gap-3 min-w-0">
+        <SiteLink slug={site.slug} path="" className="flex items-center gap-3 min-w-0">
           <img src={site.brokerage.logo} alt={site.brokerage.name} className="h-9 sm:h-11 w-auto" />
           {site.secondaryLogo && (
             <>
@@ -73,20 +56,20 @@ export default function Navbar() {
           <span className="hidden sm:block text-sm font-display tracked-wide whitespace-nowrap text-[var(--as-on-dark)]">
             {site.agent.name}
           </span>
-        </NavItem>
+        </SiteLink>
 
         <nav className="hidden lg:flex items-center gap-6 xl:gap-8 shrink-0">
           {PAGES.map((page) => {
             const active = isAgentSiteAppHost() && location.pathname === agentSiteHref(site.slug, page.path);
             return (
-              <NavItem
+              <SiteLink
                 key={page.path}
                 slug={site.slug}
                 path={page.path}
                 className={`${linkClass} ${active ? "text-[var(--as-on-dark)]" : ""}`}
               >
                 {page.label}
-              </NavItem>
+              </SiteLink>
             );
           })}
           {site.agent.phone ? (
@@ -97,13 +80,13 @@ export default function Navbar() {
               {site.agent.phone}
             </a>
           ) : (
-            <NavItem
+            <SiteLink
               slug={site.slug}
               path="/contact"
               className="text-xs font-medium tracked-wide uppercase px-5 py-2.5 border border-[var(--as-on-dark)]/70 text-[var(--as-on-dark)] whitespace-nowrap transition-colors hover:bg-[var(--as-on-dark)] hover:text-[var(--as-dark)]"
             >
               Let&rsquo;s Connect
-            </NavItem>
+            </SiteLink>
           )}
         </nav>
 
@@ -125,7 +108,7 @@ export default function Navbar() {
       {open && (
         <div className="lg:hidden bg-[var(--as-dark)] border-t border-[var(--as-on-dark)]/10 px-6 py-4 flex flex-col gap-4">
           {PAGES.map((page) => (
-            <NavItem
+            <SiteLink
               key={page.path}
               slug={site.slug}
               path={page.path}
@@ -133,7 +116,7 @@ export default function Navbar() {
               className="text-xs font-medium tracked-wide uppercase text-[var(--as-on-dark)]/80"
             >
               {page.label}
-            </NavItem>
+            </SiteLink>
           ))}
           {site.agent.phone ? (
             <a
@@ -144,14 +127,14 @@ export default function Navbar() {
               {site.agent.phone}
             </a>
           ) : (
-            <NavItem
+            <SiteLink
               slug={site.slug}
               path="/contact"
               onClick={() => setOpen(false)}
               className="text-xs font-medium tracked-wide uppercase px-5 py-3 bg-[var(--as-accent)] text-white text-center"
             >
               Let&rsquo;s Connect
-            </NavItem>
+            </SiteLink>
           )}
         </div>
       )}
