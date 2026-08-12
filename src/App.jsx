@@ -53,15 +53,22 @@ export default function App() {
 
       <Route path="/listings/:slug" element={<PublicListingPage />} />
 
-      {/* Each agent site is several real pages sharing one PublicAgentSitePage
-          (data-fetching) + AgentSitePage (chrome) pair — not one long
-          scrolled page — see Navbar.jsx's PAGES list, which must match. */}
+      {/* Home is the full overview (every section, in order — same as the
+          original one-page design), and each section is ALSO its own
+          standalone page reachable from Navbar.jsx's nav links (which
+          always point at those dedicated pages, never Home's anchors) —
+          see Navbar.jsx's PAGES list, which must match these paths. */}
       <Route
         path="/sites/:slug"
         element={
           <PublicAgentSitePage>
             <Hero />
+            <Bio />
             <Testimonials />
+            <FeaturedListings />
+            <ServiceAreas />
+            <BlogTeaser />
+            <Contact />
           </PublicAgentSitePage>
         }
       />
@@ -70,6 +77,7 @@ export default function App() {
         element={
           <PublicAgentSitePage pageTitle="About">
             <Bio />
+            <Testimonials />
           </PublicAgentSitePage>
         }
       />
