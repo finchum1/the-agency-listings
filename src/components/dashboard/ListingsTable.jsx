@@ -1,13 +1,20 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useListings } from "../../hooks/useListings";
+import { useListingsAnalytics } from "../../hooks/useListingsAnalytics";
 import { supabase } from "../../lib/supabaseClient";
 import { formatPrice, STATUS_LABELS } from "../../lib/format";
 import StatusSelect from "./StatusSelect";
+import AnalyticsStats from "./AnalyticsStats";
 
 export default function ListingsTable() {
   const { listings, loading, error, refresh } = useListings();
   const [filter, setFilter] = useState("all");
+
+  // useListings() already scopes rows to "my listings, or all if admin"
+  // via RLS — the stats strip just aggregates whatever's already loaded.
+  const listingIds = useMemo(() => listings.map((l) => l.id), [listings]);
+  const analytics = useListingsAnalytics(listingIds);
 
   const filtered = useMemo(() => {
     if (filter === "all") return listings;
@@ -40,6 +47,8 @@ export default function ListingsTable() {
           + New Listing
         </Link>
       </div>
+
+      <AnalyticsStats stats={analytics} />
 
       <div className="flex items-center gap-2 mb-5 flex-wrap">
         <button

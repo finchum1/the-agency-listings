@@ -192,6 +192,32 @@ hour. `public/robots.txt` is a static file pointing at it and disallowing
 Run `supabase/seo-fields.sql` once for the `seo_title`/`seo_description`/
 `og_image_url` columns.
 
+## Analytics
+
+Stat cards (views + leads, all-time and last 30 days) at the top of the
+Listings module and the site editor ("My Site" / admin's per-agent editor).
+Two new tables, both written *only* server-side with the service-role key —
+neither has a client-facing insert policy, so a browser can never write (or
+forge) analytics data directly:
+
+- `page_views` — one row per page load of a listing / agent site / agent
+  post. `src/lib/trackView.js` fires a fire-and-forget beacon to
+  `api/track-view.js` from each public page's `useEffect`; that function
+  does the actual insert. Bot/crawler traffic mostly doesn't reach this at
+  all — the same user-agent-matched rewrites from the SEO section above
+  intercept it before the SPA (and `trackView`) ever loads.
+- `leads` — a durable copy of every contact-form submission, written by
+  `api/contact.js` / `api/agent-site-contact.js` alongside the outbound
+  email (previously a submission only ever existed as that email; a Resend
+  outage would lose it entirely — now it's stored either way).
+
+Reads go through normal RLS (`useListingsAnalytics.js` / `useSiteAnalytics.js`
+query Supabase directly with the logged-in session) — an agent only ever
+sees counts for their own listings/site, same owner-or-admin pattern as
+everything else in this app.
+
+Run `supabase/analytics.sql` once for both tables.
+
 ## Out of scope for v1
 
 - In-app video upload/compression — `hero_video_url` is a plain URL field;

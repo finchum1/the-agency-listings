@@ -10,6 +10,10 @@
 // Setup (Vercel dashboard > Project > Settings > Environment Variables):
 //   RESEND_API_KEY   — from resend.com (required)
 //   LEAD_FROM_EMAIL  — optional, e.g. "Listing Inquiries <onboarding@resend.dev>"
+//   SUPABASE_SERVICE_ROLE_KEY — already configured (see api/admin/add-agent.js);
+//     used here only to store a durable copy of the submission in `leads`
+//     (see supabase/analytics.sql), best-effort, so a Resend outage never
+//     loses the lead even if the email fails.
 // (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are read too — same values
 // already set for the client build; Vercel functions can read them
 // regardless of the VITE_ prefix, which only affects client bundling.)
@@ -37,13 +41,28 @@ export default async function handler(req, res) {
 
   const { data: listing, error: listingError } = await supabase
     .from("listings")
-    .select("address_line1, agent:profiles(email, full_name)")
+    .select("address_line1, agent_id, agent:profiles(email, full_name)")
     .eq("id", listingId)
     .maybeSingle();
 
   if (listingError || !listing || !listing.agent?.email) {
     console.error("Contact form: listing/agent lookup failed:", listingError);
     return res.status(404).json({ error: "Listing not found." });
+  }
+
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (serviceKey) {
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+    const { error: leadError } = await supabaseAdmin.from("leads").insert({
+      target_type: "listing",
+      target_id: listingId,
+      agent_id: listing.agent_id,
+      name,
+      email,
+      phone: phone || "",
+      message: message || "",
+    });
+    if (leadError) console.error("Failed to store lead:", leadError);
   }
 
   const apiKey = process.env.RESEND_API_KEY;

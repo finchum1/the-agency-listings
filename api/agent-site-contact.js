@@ -5,7 +5,10 @@
 // trusting a client-supplied recipient address.
 //
 // Setup: same RESEND_API_KEY / LEAD_FROM_EMAIL env vars as api/contact.js
-// (already configured if that one works).
+// (already configured if that one works), plus SUPABASE_SERVICE_ROLE_KEY
+// (already configured — see api/admin/add-agent.js) used here only to
+// store a durable copy of the submission in `leads` (see
+// supabase/analytics.sql), best-effort, alongside the email.
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -30,13 +33,28 @@ export default async function handler(req, res) {
 
   const { data: site, error: siteError } = await supabase
     .from("agent_sites")
-    .select("agent:profiles(full_name, email)")
+    .select("agent_id, agent:profiles(full_name, email)")
     .eq("id", agentSiteId)
     .maybeSingle();
 
   if (siteError || !site || !site.agent?.email) {
     console.error("Agent site contact: lookup failed:", siteError);
     return res.status(404).json({ error: "Site not found." });
+  }
+
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (serviceKey) {
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+    const { error: leadError } = await supabaseAdmin.from("leads").insert({
+      target_type: "agent_site",
+      target_id: agentSiteId,
+      agent_id: site.agent_id,
+      name,
+      email,
+      phone: phone || "",
+      message: message || "",
+    });
+    if (leadError) console.error("Failed to store lead:", leadError);
   }
 
   const apiKey = process.env.RESEND_API_KEY;

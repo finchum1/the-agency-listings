@@ -4,6 +4,7 @@ import { useAgentPost } from "../hooks/useAgentPost";
 import { adaptAgentSite } from "../lib/adaptAgentSite";
 import { buildAgentPostMeta, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta } from "../lib/pageMeta";
+import { trackView } from "../lib/trackView";
 import { AgentSiteProvider } from "../context/AgentSiteContext";
 import Navbar from "../components/agent-site/Navbar";
 import Footer from "../components/agent-site/Footer";
@@ -22,6 +23,10 @@ export default function PublicAgentPostPage() {
     applyPageMeta({ ...meta, url: `${SITE_ORIGIN}/sites/${siteSlug}/blog/${postSlug}` });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [post, site, agent]);
+
+  useEffect(() => {
+    if (post?.id) trackView("agent_post", post.id);
+  }, [post?.id]);
 
   if (loading) {
     return (

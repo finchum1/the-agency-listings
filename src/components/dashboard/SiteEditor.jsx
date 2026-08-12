@@ -1,8 +1,11 @@
+import { useMemo } from "react";
 import { useAgentSiteEditor } from "../../hooks/useAgentSiteEditor";
+import { useSiteAnalytics } from "../../hooks/useSiteAnalytics";
 import SiteForm from "./SiteForm";
 import TestimonialsManager from "./TestimonialsManager";
 import AreasManager from "./AreasManager";
 import PostsManager from "./PostsManager";
+import AnalyticsStats from "./AnalyticsStats";
 
 // Shared editor for an agent's personal site — used both as "My Site"
 // (agentId = the logged-in user, everyone has access) and, for admins, to
@@ -14,6 +17,9 @@ export default function SiteEditor({ agentId, agentName, heading }) {
     agentId,
     agentName,
   );
+
+  const postIds = useMemo(() => posts.map((p) => p.id), [posts]);
+  const analytics = useSiteAnalytics({ siteId: site?.id, postIds });
 
   if (loading) return <p className="text-sm text-[#1c1a17]/50">Loading…</p>;
   if (error) return <p className="text-sm text-red-600">{error}</p>;
@@ -28,6 +34,8 @@ export default function SiteEditor({ agentId, agentName, heading }) {
           automatically — no separate step needed.
         </p>
       </div>
+
+      <AnalyticsStats stats={analytics} viewsLabel="Site Views" />
 
       <SiteForm site={site} onSaved={refresh} />
       <TestimonialsManager agentSiteId={site.id} testimonials={testimonials} onChanged={refresh} />

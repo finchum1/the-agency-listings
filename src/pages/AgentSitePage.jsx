@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { adaptAgentSite } from "../lib/adaptAgentSite";
 import { buildAgentSiteMeta, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta } from "../lib/pageMeta";
+import { trackView } from "../lib/trackView";
 import { AgentSiteProvider } from "../context/AgentSiteContext";
 
 import Navbar from "../components/agent-site/Navbar";
@@ -26,6 +27,10 @@ export default function AgentSitePage({ site, agent, testimonials, areas, posts,
     applyPageMeta({ ...meta, url: `${SITE_ORIGIN}/sites/${site.slug}` });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site, agent]);
+
+  useEffect(() => {
+    if (site?.id) trackView("agent_site", site.id);
+  }, [site?.id]);
 
   if (loading) {
     return (

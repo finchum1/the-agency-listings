@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { adaptListing } from "../lib/adaptListing";
 import { buildListingMeta, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta } from "../lib/pageMeta";
+import { trackView } from "../lib/trackView";
 import { ListingProvider } from "../context/ListingContext";
 
 import Navbar from "../components/listing-site/Navbar";
@@ -30,6 +31,13 @@ export default function ListingSitePage({ listing, agent, photos, openHouses, lo
     applyPageMeta({ ...meta, url: `${SITE_ORIGIN}/listings/${listing.slug}` });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listing, agent, photos]);
+
+  // Separate effect, keyed only on the id, so a re-render (e.g. from a
+  // realtime update to the listing) never fires a second view for the
+  // same visit.
+  useEffect(() => {
+    if (listing?.id) trackView("listing", listing.id);
+  }, [listing?.id]);
 
   if (loading) {
     return (
