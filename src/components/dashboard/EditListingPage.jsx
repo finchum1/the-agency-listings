@@ -1,12 +1,20 @@
+import { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useListing } from "../../hooks/useListing";
+import { useListingsAnalytics } from "../../hooks/useListingsAnalytics";
 import ListingForm from "./ListingForm";
 import PhotoManager from "./PhotoManager";
 import OpenHouseManager from "./OpenHouseManager";
+import AnalyticsStats from "./AnalyticsStats";
 
 export default function EditListingPage() {
   const { id } = useParams();
   const { listing, photos, openHouses, loading, notFound, refresh } = useListing({ id });
+
+  // Reuses the same aggregate hook as the Listings module's stats strip,
+  // just scoped to this one listing (a single-id array is a valid input).
+  const listingIds = useMemo(() => (listing ? [listing.id] : []), [listing]);
+  const analytics = useListingsAnalytics(listingIds);
 
   if (loading) return <p className="text-sm text-[#1c1a17]/50">Loading…</p>;
   if (notFound) {
@@ -37,6 +45,8 @@ export default function EditListingPage() {
           </a>
         )}
       </div>
+
+      <AnalyticsStats stats={analytics} />
 
       <ListingForm mode="edit" listing={listing} onSaved={refresh} />
       <PhotoManager listingId={listing.id} photos={photos} onChanged={refresh} />
