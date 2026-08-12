@@ -35,4 +35,17 @@
   .tracking-wider-plus {
     letter-spacing: 0.18em;
   }
+
+  /* Agent Sites world — a deliberately distinct skin for public agent
+     pages only (see DESIGN.md, "Agent Sites (distinct world)"). Not
+     used by the dashboard or public listing sites. */
+  .tracked {
+    letter-spacing: 0.14em;
+  }
+  .tracked-wide {
+    letter-spacing: 0.22em;
+  }
+  .font-agent-sans {
+    font-family: "Jost", ui-sans-serif, system-ui, sans-serif;
+  }
 }

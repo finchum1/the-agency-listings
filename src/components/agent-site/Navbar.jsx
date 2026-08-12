@@ -24,17 +24,13 @@ export default function Navbar() {
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-colors duration-300 ${
-        scrolled ? "bg-[#faf9f7]/95 backdrop-blur shadow-sm" : "bg-transparent"
+        scrolled || open ? "bg-[#14130f] shadow-md" : "bg-transparent"
       }`}
     >
-      <div className="mx-auto max-w-7xl px-6 lg:px-10 flex items-center justify-between py-3">
+      <div className="mx-auto max-w-7xl px-6 lg:px-10 flex items-center justify-between py-4">
         <a href="#" className="flex items-center gap-3 min-w-0">
-          <img src={site.brokerage.logo} alt={site.brokerage.name} className="h-10 sm:h-12 w-auto" />
-          <span
-            className={`hidden sm:block text-sm font-display font-semibold tracking-wide whitespace-nowrap ${
-              scrolled ? "text-[#1c1a17]" : "text-white"
-            }`}
-          >
+          <img src={site.brokerage.logo} alt={site.brokerage.name} className="h-9 sm:h-11 w-auto" />
+          <span className="hidden sm:block text-sm font-display tracked-wide whitespace-nowrap text-[#f7f4ee]">
             {site.agent.name}
           </span>
         </a>
@@ -44,27 +40,21 @@ export default function Navbar() {
             <a
               key={link.href}
               href={link.href}
-              className={`text-sm font-medium tracking-wide transition-colors whitespace-nowrap ${
-                scrolled ? "text-[#1c1a17]/80 hover:text-[#1c1a17]" : "text-white/85 hover:text-white"
-              }`}
+              className="text-xs font-medium tracked-wide uppercase transition-colors whitespace-nowrap text-[#f7f4ee]/75 hover:text-[#f7f4ee]"
             >
               {link.label}
             </a>
           ))}
           <a
             href="#contact"
-            className={`text-sm font-semibold px-5 py-2.5 rounded-full border whitespace-nowrap transition-colors ${
-              scrolled
-                ? "border-[#1c1a17] text-[#1c1a17] hover:bg-[#1c1a17] hover:text-white"
-                : "border-white text-white hover:bg-white hover:text-[#1c1a17]"
-            }`}
+            className="text-xs font-medium tracked-wide uppercase px-5 py-2.5 border border-[#f7f4ee]/70 text-[#f7f4ee] whitespace-nowrap transition-colors hover:bg-[#f7f4ee] hover:text-[#14130f]"
           >
             Let&rsquo;s Connect
           </a>
         </nav>
 
         <button
-          className={`lg:hidden p-2 shrink-0 ${scrolled ? "text-[#1c1a17]" : "text-white"}`}
+          className="lg:hidden p-2 shrink-0 text-[#f7f4ee]"
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
         >
@@ -79,13 +69,13 @@ export default function Navbar() {
       </div>
 
       {open && (
-        <div className="lg:hidden bg-[#faf9f7] border-t border-black/5 px-6 py-4 flex flex-col gap-4">
+        <div className="lg:hidden bg-[#14130f] border-t border-[#f7f4ee]/10 px-6 py-4 flex flex-col gap-4">
           {links.map((link) => (
             <a
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
-              className="text-sm font-medium text-[#1c1a17]/80"
+              className="text-xs font-medium tracked-wide uppercase text-[#f7f4ee]/80"
             >
               {link.label}
             </a>
@@ -93,7 +83,7 @@ export default function Navbar() {
           <a
             href="#contact"
             onClick={() => setOpen(false)}
-            className="text-sm font-semibold px-5 py-2.5 rounded-full bg-[#1c1a17] text-white text-center"
+            className="text-xs font-medium tracked-wide uppercase px-5 py-3 bg-[#8a1c2b] text-white text-center"
           >
             Let&rsquo;s Connect
           </a>

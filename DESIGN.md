@@ -174,3 +174,16 @@ A rounded, bordered, white-chrome container with three colored traffic-light dot
 - **Don't** add kicker/eyebrow labels above headings — the shipped system uses none; headings stand alone with no small-caps label sitting above them.
 - **Don't** introduce a second accent color or expand the palette beyond ink/cream/gold-brown/status-three; a new UI need should be solved with opacity or scale of the existing tokens, not a new hue.
 - **Don't** reuse the browser-frame device outside proof/screenshot contexts — it is a landing-page device, not a general image container.
+
+## Agent Sites (distinct world — intentional exception)
+
+The public agent-site pages (`/sites/:slug` and `/sites/:slug/blog/:postSlug`, i.e. `src/components/agent-site/*` and `src/pages/AgentSitePage.jsx` / `PublicAgentPostPage.jsx`) are a **deliberate second visual world**, not a drift from the system above. Per the site owner's explicit request, they're styled to match his personal site (terrence-finchum-realty.vercel.app) instead of "The Broker's Own Dashboard" skin. This section documents that exception so it isn't "fixed" back to the main system by mistake.
+
+**Do not apply this world to the dashboard or to public listing sites (`/listings/:slug`)** — those stay on the cream/ink/gold-brown system above.
+
+- **Colors:** ink `#14130f` (near-black, replaces `#1c1a17` in this world only), cream `#f7f4ee` (page ground, replaces `#faf9f7`), stone `#e7e2d6` (card/image placeholder fill, replaces `black/5`), accent `#8a1c2b` (deep red — a *second* accent color, used only inside `agent-site/*`, never bled into the dashboard or listing sites).
+- **Type:** Playfair Display for headings (shared with the rest of the app — unchanged), but body/UI copy is **Jost**, not Inter, applied via the `.font-agent-sans` utility wrapping the page root. Labels use the new `.tracked` (0.14em) / `.tracked-wide` (0.22em) utilities instead of `.tracking-wider-plus`, and — unlike the main system's explicit "no eyebrow labels" rule — this world uses small uppercase accent-colored eyebrow labels above every section heading, matching terrence-finchum-realty.
+- **Shape:** sharp corners throughout — no `rounded-full`, no `rounded-2xl`. Buttons are rectangles (`.btn-primary`-style: solid accent fill, white text, uppercase tracked-wide label); cards and photo frames have zero border-radius.
+- **Header:** fixed, `bg-transparent` over the hero, `bg-[#14130f]` once scrolled (or mobile menu open) — text stays cream in both states rather than swapping between dark/light.
+
+If a new agent-site component is added, match this world (ink/cream/stone/accent, Jost, sharp corners, eyebrow labels) rather than the dashboard's cream/ink/gold-brown system.

@@ -24,8 +24,8 @@ export default function AgentSitePage({ site, agent, testimonials, areas, posts,
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#faf9f7]">
-        <p className="text-[#1c1a17]/40 text-sm">Loading…</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f4ee] font-agent-sans">
+        <p className="text-[#14130f]/40 text-sm">Loading…</p>
       </div>
     );
   }
@@ -36,7 +36,7 @@ export default function AgentSitePage({ site, agent, testimonials, areas, posts,
 
   return (
     <AgentSiteProvider value={{ site: adapted, siteId: site.id }}>
-      <div className="min-h-screen bg-[#faf9f7]">
+      <div className="min-h-screen bg-[#f7f4ee] font-agent-sans">
         <Navbar />
         <Hero />
         <Bio />

@@ -21,8 +21,8 @@ export default function PublicAgentPostPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#faf9f7]">
-        <p className="text-[#1c1a17]/40 text-sm">Loading…</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f4ee] font-agent-sans">
+        <p className="text-[#14130f]/40 text-sm">Loading…</p>
       </div>
     );
   }
@@ -33,18 +33,18 @@ export default function PublicAgentPostPage() {
 
   return (
     <AgentSiteProvider value={{ site: adapted, siteId: site.id }}>
-      <div className="min-h-screen bg-[#faf9f7]">
+      <div className="min-h-screen bg-[#f7f4ee] font-agent-sans">
         <Navbar />
 
         <article className="pt-32 pb-24 px-6 lg:px-10">
           <div className="mx-auto max-w-3xl">
             {post.category && (
-              <p className="text-xs font-semibold tracking-wider-plus uppercase text-[#8a7a5c] mb-3">
+              <p className="text-xs font-medium tracked-wide uppercase text-[#8a1c2b] mb-3">
                 {post.category}
               </p>
             )}
-            <h1 className="text-3xl sm:text-4xl font-display font-semibold mb-3">{post.title}</h1>
-            <p className="text-sm text-[#1c1a17]/50 mb-10">
+            <h1 className="text-3xl sm:text-4xl font-display font-semibold mb-3 text-[#14130f]">{post.title}</h1>
+            <p className="text-sm text-[#14130f]/50 mb-10">
               {new Date(`${post.post_date}T00:00:00`).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "long",
@@ -53,15 +53,15 @@ export default function PublicAgentPostPage() {
             </p>
 
             {post.image_url && (
-              <div className="rounded-2xl overflow-hidden bg-black/5 aspect-[16/9] mb-10">
+              <div className="overflow-hidden bg-[#e7e2d6] aspect-[16/9] mb-10">
                 <img src={post.image_url} alt="" className="h-full w-full object-cover" />
               </div>
             )}
 
-            <div className="space-y-5 text-[15.5px] leading-relaxed text-[#1c1a17]/80">
+            <div className="space-y-5 text-[15.5px] leading-relaxed text-[#14130f]/80">
               {(post.body || []).map((block, i) =>
                 block.type === "h3" ? (
-                  <h3 key={i} className="text-xl font-display font-semibold !mt-10 text-[#1c1a17]">
+                  <h3 key={i} className="text-xl font-display font-semibold !mt-10 text-[#14130f]">
                     {block.text}
                   </h3>
                 ) : (
@@ -70,14 +70,14 @@ export default function PublicAgentPostPage() {
               )}
             </div>
 
-            <div className="mt-14 pt-6 border-t border-black/10 flex items-center justify-between">
-              <p className="text-sm text-[#1c1a17]/60">
+            <div className="mt-14 pt-6 border-t border-[#14130f]/10 flex items-center justify-between">
+              <p className="text-sm text-[#14130f]/60">
                 Written by{" "}
-                <Link to={`/sites/${siteSlug}`} className="text-[#1c1a17] hover:underline">
+                <Link to={`/sites/${siteSlug}`} className="text-[#14130f] hover:underline">
                   {adapted.agent.name}
                 </Link>
               </p>
-              <Link to={`/sites/${siteSlug}#blog`} className="text-sm text-[#8a7a5c] hover:underline">
+              <Link to={`/sites/${siteSlug}#blog`} className="text-sm text-[#8a1c2b] hover:underline">
                 ← More posts
               </Link>
             </div>
