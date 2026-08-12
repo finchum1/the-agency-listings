@@ -14,11 +14,13 @@ import MyProfilePage from "./components/dashboard/MyProfilePage";
 import PublicListingPage from "./pages/PublicListingPage";
 import CustomDomainListingPage from "./pages/CustomDomainListingPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import LandingPage from "./pages/LandingPage";
 
 function Root() {
   const { session, loading } = useAuth();
   if (loading) return null;
-  return <Navigate to={session ? "/dashboard" : "/login"} replace />;
+  if (session) return <Navigate to="/dashboard" replace />;
+  return <LandingPage />;
 }
 
 export default function App() {

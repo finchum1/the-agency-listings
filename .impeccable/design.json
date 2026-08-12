@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-11T00:00:00Z",
+  "title": "Design System: The Agency Listings",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "primary",
+        "displayName": "Ink",
+        "canonical": "#1c1a17",
+        "tonalRamp": ["#0e0d0c", "#1c1a17", "#2b2822", "#4a453c", "#6b6459", "#8f887a", "#b8b1a2", "#e5e1d8"]
+      },
+      "gold-brown": {
+        "role": "secondary",
+        "displayName": "Gold-Brown",
+        "canonical": "#8a7a5c",
+        "tonalRamp": ["#3a3327", "#544a38", "#6d604a", "#8a7a5c", "#a4977d", "#bfb5a0", "#dad3c4", "#f2efe8"]
+      },
+      "cream-bg": {
+        "role": "neutral",
+        "displayName": "Cream",
+        "canonical": "#faf9f7",
+        "tonalRamp": ["#e8e5df", "#eeece7", "#f2f0ea", "#f6f4ef", "#faf9f7", "#fcfbfa", "#fdfcfc", "#ffffff"]
+      },
+      "status-positive": {
+        "role": "status",
+        "displayName": "Status Positive Green",
+        "canonical": "#3fae5c",
+        "tonalRamp": ["#1c4b28", "#296938", "#358748", "#3fae5c", "#66c17e", "#8fd4a0", "#bce8c4", "#e8f8ec"]
+      },
+      "status-warning": {
+        "role": "status",
+        "displayName": "Status Warning Amber",
+        "canonical": "#e8b23d",
+        "tonalRamp": ["#5c4413", "#7e5d1a", "#a97b22", "#e8b23d", "#eec468", "#f3d896", "#f8e9c3", "#fdf6e8"]
+      },
+      "status-alert": {
+        "role": "status",
+        "displayName": "Status Alert Red",
+        "canonical": "#e4574c",
+        "tonalRamp": ["#5c1d17", "#7e2820", "#a9352a", "#e4574c", "#ea7d74", "#f0a49d", "#f6cac5", "#fbe9e7"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display / Playfair", "purpose": "Hero headlines, listing addresses. Largest step of the type scale." },
+      "headline": { "displayName": "Section Headline", "purpose": "Section h2s across landing page and listing sites." },
+      "body": { "displayName": "Body / Inter", "purpose": "All paragraph copy, at ink 65-85% opacity." },
+      "label": { "displayName": "Uppercase Label", "purpose": "Status badges, MLS number, ADMIN tag — always uppercase, tracked wide." }
+    },
+    "shadows": [
+      { "name": "frame-shadow", "value": "shadow-2xl shadow-black/20 (0 25px 50px -12px rgba(0,0,0,0.20))", "purpose": "Browser-framed proof screenshots; the heaviest shadow in the system." },
+      { "name": "toast-shadow", "value": "shadow-lg shadow-black/10 (0 10px 15px -3px rgba(0,0,0,0.10))", "purpose": "Floating status toasts and capability cards." },
+      { "name": "card-shadow", "value": "shadow-xl shadow-black/5 (0 20px 25px -5px rgba(0,0,0,0.05))", "purpose": "Resting cards on white/cream surfaces." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Standard entrance easing for section reveals (landing page)." },
+      { "name": "reveal-rise", "value": "opacity 0->1, translateY 28px->0, 0.7s", "purpose": "Default section entrance." },
+      { "name": "reveal-fromLeft", "value": "opacity 0->1, translateX -36px->0, 0.7s", "purpose": "Text-block entrance paired with a right-side visual." },
+      { "name": "reveal-fromRight", "value": "opacity 0->1, translateX 36px->0, 0.7s", "purpose": "Visual entrance paired with a left-side text block." },
+      { "name": "reveal-scaleIn", "value": "opacity 0->1, scale 0.94->1, 0.6s", "purpose": "Card grids and centered CTAs." },
+      { "name": "reveal-clip", "value": "clipPath inset(0 0 100% 0) -> inset(0 0 0% 0), 0.85s", "purpose": "Full-bleed showcase image reveal (used once, for the real-listing showcase)." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ink-filled pill CTA; the system's default action button.",
+      "html": "<a class=\"ds-btn-primary\" href=\"#\">Sign In to Get Started</a>",
+      "css": ".ds-btn-primary { display: inline-block; background: #1c1a17; color: #ffffff; font-size: 14px; font-weight: 600; padding: 14px 28px; border-radius: 9999px; text-decoration: none; transition: background-color 0.2s; } .ds-btn-primary:hover { background: rgba(28,26,23,0.9); } .ds-btn-primary:focus-visible { outline: 2px solid #8a7a5c; outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Outline pill button; used for Sign In in the sticky nav.",
+      "html": "<a class=\"ds-btn-ghost\" href=\"#\">Sign In</a>",
+      "css": ".ds-btn-ghost { display: inline-block; background: transparent; color: #1c1a17; font-size: 14px; font-weight: 600; padding: 10px 20px; border-radius: 9999px; border: 1px solid #1c1a17; text-decoration: none; transition: background-color 0.2s, color 0.2s; } .ds-btn-ghost:hover { background: #1c1a17; color: #ffffff; } .ds-btn-ghost:focus-visible { outline: 2px solid #8a7a5c; outline-offset: 2px; }"
+    },
+    {
+      "name": "Status Pill Select",
+      "kind": "chip",
+      "refersTo": "status-select",
+      "description": "Interactive status selector; background is the status color at 10% opacity, text is the full-opacity color.",
+      "html": "<select class=\"ds-status-select\" style=\"background:#3fae5c1a;color:#3fae5c\"><option>For Sale</option></select>",
+      "css": ".ds-status-select { font-size: 12px; font-weight: 600; border-radius: 9999px; padding: 6px 12px; border: none; outline: none; cursor: pointer; } .ds-status-select:disabled { opacity: 0.6; cursor: not-allowed; } .ds-status-select:focus-visible { outline: 2px solid #8a7a5c; outline-offset: 2px; }"
+    },
+    {
+      "name": "Capability Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "White rounded card on cream/white section background; used for the capability strip and other grid content.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Status that means it</h3><p class=\"ds-card-copy\">Coming Soon, For Sale, Pending, Closed, Off Market — one field, always current.</p></div>",
+      "css": ".ds-card { background: #ffffff; border-radius: 16px; padding: 24px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05); } .ds-card-title { font-family: 'Playfair Display', Georgia, serif; font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #1c1a17; } .ds-card-copy { font-family: Inter, sans-serif; font-size: 14px; line-height: 1.6; color: rgba(28,26,23,0.65); }"
+    },
+    {
+      "name": "Browser Frame",
+      "kind": "custom",
+      "refersTo": "browser-frame",
+      "description": "Signature proof device: rounded white chrome with three traffic-light dots over a full-bleed screenshot. Landing-page only.",
+      "html": "<div class=\"ds-browser-frame\"><div class=\"ds-browser-frame-bar\"><span class=\"ds-dot ds-dot-red\"></span><span class=\"ds-dot ds-dot-amber\"></span><span class=\"ds-dot ds-dot-green\"></span></div><img class=\"ds-browser-frame-img\" src=\"dashboard.png\" alt=\"Dashboard\" /></div>",
+      "css": ".ds-browser-frame { border-radius: 12px; overflow: hidden; border: 1px solid rgba(0,0,0,0.1); background: #ffffff; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.20); } .ds-browser-frame-bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: #f1efe9; border-bottom: 1px solid rgba(0,0,0,0.05); } .ds-dot { height: 10px; width: 10px; border-radius: 9999px; display: inline-block; } .ds-dot-red { background: #e4574c; } .ds-dot-amber { background: #e8b23d; } .ds-dot-green { background: #3fae5c; } .ds-browser-frame-img { width: 100%; height: auto; display: block; }"
+    },
+    {
+      "name": "Status Toast",
+      "kind": "custom",
+      "refersTo": "status-toast",
+      "description": "Floating pill notification used around the landing-page hero's browser frame to dramatize live status changes.",
+      "html": "<div class=\"ds-toast\"><span class=\"ds-toast-dot\"></span>Status: For Sale</div>",
+      "css": ".ds-toast { display: inline-flex; align-items: center; gap: 8px; background: #ffffff; border-radius: 9999px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.10); border: 1px solid rgba(0,0,0,0.05); padding: 8px 16px; font-size: 12px; font-weight: 600; color: #1c1a17; } .ds-toast-dot { height: 6px; width: 6px; border-radius: 9999px; background: #3fae5c; flex-shrink: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Broker's Own Dashboard",
+    "overview": "This is one product wearing one skin: the internal dashboard where agents manage listings, and the public listing sites those listings generate, share a single visual language down to the pixel. The system reads as a warm, editorial real-estate brand rather than generic SaaS chrome — cream paper, near-black ink, a muted gold-brown accent used sparingly, Playfair Display headlines over plain Inter body copy. Nothing about it performs \"software\"; it performs \"brokerage,\" because the public-facing artifact (the listing site) is the product's real storefront and the dashboard simply manages it.\n\nThe landing page (the newest surface) inherited this world rather than introducing one: same cream/ink/gold-brown palette, same Playfair/Inter pairing, same pill buttons and rounded-2xl cards as the dashboard and every listing site it screenshots. Its one addition — the browser-chrome \"device frame\" around dashboard/listing screenshots — is a proof device for an already-live product, not a new material language, and is documented below as a signature component.",
+    "keyCharacteristics": [
+      "Cream-and-ink editorial base with a single warm accent, not a multi-color UI palette.",
+      "Playfair Display reserved for headings only; Inter carries everything else, including labels.",
+      "Pills and soft-rounded cards throughout; no sharp rectangles, no hard-offset shadows.",
+      "Status is always color-coded via a shared status-color map, never by icon or shape alone.",
+      "Motion is a light, single-direction reveal per section — not a decorative layer."
+    ],
+    "rules": [
+      { "name": "The Low-Opacity Border Rule", "body": "Every divider, hairline, and card edge is black at 5-10% opacity, not a separate gray token. This keeps the whole system tied to two colors (ink, cream) instead of accumulating a gray scale.", "section": "colors" },
+      { "name": "The One Accent Rule", "body": "Gold-brown appears as text, a thin selection tint, or a small dot — never as a button fill or large surface. Its rarity is what makes it read as premium rather than decorative.", "section": "colors" },
+      { "name": "The Serif-Only-For-Headings Rule", "body": "Playfair Display never appears in body copy, labels, or UI chrome — only h1-h4. Inter carries every functional and small-scale text role, including uppercase labels.", "section": "typography" },
+      { "name": "The Soft-Shadow-Only Rule", "body": "All shadows are diffuse black at low opacity (shadow-black/10-/20); no hard offset, no colored shadow, no neobrutalist drop-shadow. Depth signals importance (frame > card > flat), not decoration.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use rounded-full for every button, badge, and status indicator; rounded-2xl/rounded-xl for every card and framed panel. No other radius steps.",
+      "Do keep gold-brown (#8a7a5c) rare — text accents, selection tint, focus ring, small dots — never a large fill.",
+      "Do use soft black-opacity shadows only (shadow-black/5 to /20); scale intensity with importance, not with hover states.",
+      "Do reserve Playfair Display for h1-h4; keep Inter everywhere else, including uppercase labels.",
+      "Do drive status color from the single shared STATUS_COLORS/STATUS_LABELS map so dashboard and public sites never drift."
+    ],
+    "donts": [
+      "Don't introduce hard-offset or colored drop-shadows; this is a soft-shadow, editorial world, not a neobrutalist one.",
+      "Don't add kicker/eyebrow labels above headings — the shipped system uses none; headings stand alone with no small-caps label sitting above them.",
+      "Don't introduce a second accent color or expand the palette beyond ink/cream/gold-brown/status-three; a new UI need should be solved with opacity or scale of the existing tokens, not a new hue.",
+      "Don't reuse the browser-frame device outside proof/screenshot contexts — it is a landing-page device, not a general image container."
+    ]
+  }
+}
