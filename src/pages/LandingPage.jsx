@@ -15,8 +15,7 @@ STORY: An agent who hasn't logged in yet sees the real dashboard and a
   because the proof is real, and signs in.
 FIRST VIEWPORT: A large, elevated, browser-framed screenshot of the real
   Listings dashboard as the hero's visual centerpiece, headline + subhead
-  + primary CTA to its left, Sign In pill top-right, animated status
-  toasts drifting in around the frame (stacked below the frame on mobile).
+  + primary CTA to its left, Sign In pill top-right.
 FORM: Dashboard-first hero, candidate 6 of 7 grounded structural
   candidates, seed key 1c654562.
 FINISH: unreviewed and undocumented is unfinished; this build ends with
@@ -74,26 +73,6 @@ function BrowserFrame({ src, alt, className }) {
   );
 }
 
-const toasts = [
-  { label: "Status: For Sale", delay: 1.0, desktopClass: "-top-5 -left-6 lg:-left-16" },
-  { label: "Open house added", delay: 1.3, desktopClass: "-bottom-5 -right-4 lg:-right-14" },
-  { label: "Listing published", delay: 1.6, desktopClass: "top-1/2 -translate-y-1/2 -right-6 lg:-right-20" },
-];
-
-function StatusToast({ label, delay, desktopClass }) {
-  return (
-    <motion.div
-      className={`flex lg:absolute ${desktopClass} items-center gap-2 bg-white rounded-full shadow-lg shadow-black/10 border border-black/5 px-4 py-2 text-xs font-semibold text-[#1c1a17] w-fit`}
-      initial={{ opacity: 0, y: 10, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.5, delay, ease: easeOut }}
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-[#3fae5c] shrink-0" />
-      {label}
-    </motion.div>
-  );
-}
-
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#faf9f7] overflow-x-clip">
@@ -147,18 +126,6 @@ export default function LandingPage() {
             >
               <BrowserFrame src="/images/landing/dashboard-table.png" alt="The Agency Listings dashboard" />
             </motion.div>
-
-            {/* Two-column layout (lg+): float outside the frame's corners. Below that: stack below it. */}
-            <div className="hidden lg:block">
-              {toasts.map((t) => (
-                <StatusToast key={t.label} {...t} />
-              ))}
-            </div>
-            <div className="lg:hidden flex flex-col items-start gap-2 mt-4">
-              {toasts.map((t) => (
-                <StatusToast key={t.label} {...t} desktopClass="" />
-              ))}
-            </div>
           </div>
         </div>
       </section>
