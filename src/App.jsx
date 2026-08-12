@@ -11,8 +11,13 @@ import NewListingPage from "./components/dashboard/NewListingPage";
 import EditListingPage from "./components/dashboard/EditListingPage";
 import AgentsPage from "./components/dashboard/AgentsPage";
 import MyProfilePage from "./components/dashboard/MyProfilePage";
+import MySitePage from "./components/dashboard/MySitePage";
+import SitesPage from "./components/dashboard/SitesPage";
+import EditAgentSitePage from "./components/dashboard/EditAgentSitePage";
 import PublicListingPage from "./pages/PublicListingPage";
 import CustomDomainListingPage from "./pages/CustomDomainListingPage";
+import PublicAgentSitePage from "./pages/PublicAgentSitePage";
+import PublicAgentPostPage from "./pages/PublicAgentPostPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import LandingPage from "./pages/LandingPage";
 
@@ -38,6 +43,8 @@ export default function App() {
       <Route path="/accept-invite" element={<SetPasswordPage />} />
 
       <Route path="/listings/:slug" element={<PublicListingPage />} />
+      <Route path="/sites/:slug" element={<PublicAgentSitePage />} />
+      <Route path="/sites/:slug/blog/:postSlug" element={<PublicAgentPostPage />} />
 
       <Route
         path="/dashboard"
@@ -51,11 +58,28 @@ export default function App() {
         <Route path="listings/new" element={<NewListingPage />} />
         <Route path="listings/:id/edit" element={<EditListingPage />} />
         <Route path="profile" element={<MyProfilePage />} />
+        <Route path="site" element={<MySitePage />} />
         <Route
           path="agents"
           element={
             <ProtectedRoute adminOnly>
               <AgentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="sites"
+          element={
+            <ProtectedRoute adminOnly>
+              <SitesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="sites/:agentId"
+          element={
+            <ProtectedRoute adminOnly>
+              <EditAgentSitePage />
             </ProtectedRoute>
           }
         />

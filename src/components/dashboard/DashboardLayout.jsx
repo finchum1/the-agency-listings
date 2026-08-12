@@ -28,6 +28,8 @@ export default function DashboardLayout() {
             <img src={brokerage.logo} alt={brokerage.name} className="h-9 w-auto" />
             <nav className="flex items-center gap-1">
               {navLink("/dashboard", "Listings")}
+              {navLink("/dashboard/site", "My Site")}
+              {isAdmin && navLink("/dashboard/sites", "Sites")}
               {isAdmin && navLink("/dashboard/agents", "Agents")}
             </nav>
           </div>
