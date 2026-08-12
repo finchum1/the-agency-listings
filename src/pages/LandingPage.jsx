@@ -118,13 +118,10 @@ export default function LandingPage() {
               Every listing.
               <br />
               One dashboard.
-              <br />
-              No developer.
             </h1>
             <p className="text-[17px] text-[#1c1a17]/70 leading-relaxed mb-8 max-w-md">
               Create a property site by filling out a form. Update status the moment a deal
-              changes. Add an open house in seconds. What used to take a repo and a deploy is
-              now a save button.
+              changes. Add an open house in seconds.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <Link
