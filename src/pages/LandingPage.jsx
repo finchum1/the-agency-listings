@@ -44,10 +44,6 @@ const variants = {
     hidden: { opacity: 0, scale: 0.94 },
     show: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: easeOut } },
   },
-  clip: {
-    hidden: { opacity: 0, clipPath: "inset(0 0 100% 0)" },
-    show: { opacity: 1, clipPath: "inset(0 0 0% 0)", transition: { duration: 0.85, ease: easeOut } },
-  },
 };
 
 function Reveal({ children, className, delay = 0, variant = "rise" }) {
@@ -79,15 +75,15 @@ function BrowserFrame({ src, alt, className }) {
 }
 
 const toasts = [
-  { label: "Status: For Sale", delay: 1.0, desktopClass: "-top-5 -left-6 sm:-left-16" },
-  { label: "Open house added", delay: 1.3, desktopClass: "-bottom-5 -right-4 sm:-right-14" },
-  { label: "Listing published", delay: 1.6, desktopClass: "top-1/2 -translate-y-1/2 -right-6 sm:-right-20" },
+  { label: "Status: For Sale", delay: 1.0, desktopClass: "-top-5 -left-6 lg:-left-16" },
+  { label: "Open house added", delay: 1.3, desktopClass: "-bottom-5 -right-4 lg:-right-14" },
+  { label: "Listing published", delay: 1.6, desktopClass: "top-1/2 -translate-y-1/2 -right-6 lg:-right-20" },
 ];
 
 function StatusToast({ label, delay, desktopClass }) {
   return (
     <motion.div
-      className={`flex sm:absolute ${desktopClass} items-center gap-2 bg-white rounded-full shadow-lg shadow-black/10 border border-black/5 px-4 py-2 text-xs font-semibold text-[#1c1a17] w-fit`}
+      className={`flex lg:absolute ${desktopClass} items-center gap-2 bg-white rounded-full shadow-lg shadow-black/10 border border-black/5 px-4 py-2 text-xs font-semibold text-[#1c1a17] w-fit`}
       initial={{ opacity: 0, y: 10, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.5, delay, ease: easeOut }}
@@ -155,13 +151,13 @@ export default function LandingPage() {
               <BrowserFrame src="/images/landing/dashboard-table.png" alt="The Agency Listings dashboard" />
             </motion.div>
 
-            {/* Desktop: float outside the frame's corners. Mobile: stack below it. */}
-            <div className="hidden sm:block">
+            {/* Two-column layout (lg+): float outside the frame's corners. Below that: stack below it. */}
+            <div className="hidden lg:block">
               {toasts.map((t) => (
                 <StatusToast key={t.label} {...t} />
               ))}
             </div>
-            <div className="sm:hidden flex flex-col items-start gap-2 mt-4">
+            <div className="lg:hidden flex flex-col items-start gap-2 mt-4">
               {toasts.map((t) => (
                 <StatusToast key={t.label} {...t} desktopClass="" />
               ))}
@@ -232,7 +228,7 @@ export default function LandingPage() {
               directly. This one took minutes to set up.
             </p>
           </Reveal>
-          <Reveal delay={0.1} variant="clip">
+          <Reveal delay={0.1} variant="rise">
             <BrowserFrame
               src="/images/landing/listing-hero.jpg"
               alt="1645 Saratoga Way public listing site"
