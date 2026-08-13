@@ -174,7 +174,8 @@ export default function AreasManager({ agentSiteId, areas, onChanged }) {
             <textarea value={form.description} onChange={update("description")} rows={4} className={inputClass} />
           </div>
           <ImageUploadField
-            agentSiteId={newAreaTempId}
+            bucket="agent-site-photos"
+            folder={newAreaTempId}
             value={form.photo_url}
             onChange={(url) => setForm((f) => ({ ...f, photo_url: url || "" }))}
           />

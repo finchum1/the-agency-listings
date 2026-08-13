@@ -36,6 +36,9 @@ Supabase dashboard → **SQL Editor** → paste and run, in order:
 7. `supabase/agent-sites-theming-and-domain.sql`
 8. `supabase/seo-fields.sql`
 9. `supabase/analytics.sql`
+10. `supabase/profile-photos-storage-policies.sql` — first create its bucket:
+    **Storage → New bucket** → name `profile-photos` → **Public bucket: ON**
+11. `supabase/flyer-fields.sql`
 
 ### 3. Local env
 
@@ -120,6 +123,16 @@ Redirect URLs**, or invite emails will land on an error page.
   listing's agent email server-side (never trusts a client-supplied email).
 - `api/admin/add-agent.js` — admin-only, creates an agent's profile (service
   role key), optionally inviting them to log in immediately.
+- `api/admin/delete-agent.js` — admin-only, permanently deletes an agent
+  (blocked with a clear error if they still have listings assigned, rather
+  than the raw FK-violation `listings.agent_id` ON DELETE RESTRICT would
+  otherwise surface).
+- `src/components/dashboard/FlyerPage.jsx` — printable 8.5x11 listing
+  flyer (`/dashboard/listings/:id/flyer`), styled like the public listing
+  page. Editable headline/blurb/photo selection stored on the listing
+  (`flyer_*` columns); printing is just the browser's own Print dialog
+  ("Save as PDF") against a `@media print` rule in `index.css` that shows
+  nothing but `#flyer-sheet` — no PDF library.
 - `src/lib/seo.js` / `api/meta-*.js` / `api/sitemap.js` — see "SEO" below.
 
 ## Custom domain per listing or agent site

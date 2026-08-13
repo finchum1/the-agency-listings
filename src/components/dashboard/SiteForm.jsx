@@ -269,14 +269,16 @@ export default function SiteForm({ site, onSaved }) {
       </div>
 
       <ImageUploadField
-        agentSiteId={site.id}
+        bucket="agent-site-photos"
+        folder={site.id}
         value={form.secondary_logo_url}
         onChange={(url) => set("secondary_logo_url", url || "")}
         label="Secondary logo (optional — shown next to The Agency logo in your header and footer)"
       />
 
       <ImageUploadField
-        agentSiteId={site.id}
+        bucket="agent-site-photos"
+        folder={site.id}
         value={form.hero_photo_url}
         onChange={(url) => set("hero_photo_url", url || "")}
         label="Hero photo"
@@ -384,7 +386,8 @@ export default function SiteForm({ site, onSaved }) {
           />
         </div>
         <ImageUploadField
-          agentSiteId={site.id}
+          bucket="agent-site-photos"
+          folder={site.id}
           value={form.og_image_url}
           onChange={(url) => set("og_image_url", url || "")}
           label="Share image (optional — defaults to your hero photo)"

@@ -40,22 +40,14 @@ placeholder example.
 
 ## 3. New Supabase project
 
-Follow the main **README → Setup** steps 1, 3, and 4 (create the project,
-local env, bootstrap the first admin), but run **all** of these SQL files
-in the SQL Editor, in this order (the README's own list is short — this is
-the complete, current one):
-
-1. `supabase/schema.sql`
-2. `supabase/storage-policies.sql` — first create the bucket it expects:
-   **Storage → New bucket** → name `listing-photos` → **Public bucket: ON**
-3. `supabase/add-login-enabled-column.sql`
-4. `supabase/add-custom-domain-index.sql`
-5. `supabase/agent-sites-schema.sql`
-6. `supabase/agent-sites-storage-policies.sql` — first create its bucket:
-   **Storage → New bucket** → name `agent-site-photos` → **Public bucket: ON**
-7. `supabase/agent-sites-theming-and-domain.sql`
-8. `supabase/seo-fields.sql`
-9. `supabase/analytics.sql`
+Follow the main **README → Setup**, steps 1 through 4 in full (create the
+project, run every SQL file listed there in order — including creating
+each bucket step 2 calls for — set up the local env, bootstrap the first
+admin). Deliberately not re-listed here: keeping the same migration order
+documented in two places is exactly how the README's own list went stale
+before (six files added over time, only three ever made it into that
+list) — this doc pointing at the README instead means there's only ever
+one list to keep current.
 
 Then add the new deployment's URL + `/accept-invite` path to **Supabase →
 Authentication → URL Configuration → Redirect URLs** (README's Deploy

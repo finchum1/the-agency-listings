@@ -5,6 +5,8 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [dragId, setDragId] = useState(null);
+  const [overId, setOverId] = useState(null);
 
   const handleUpload = async (e) => {
     const files = Array.from(e.target.files || []);
@@ -37,14 +39,46 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
     onChanged?.();
   };
 
-  const move = async (photo, direction) => {
-    const idx = photos.findIndex((p) => p.id === photo.id);
-    const swapWith = photos[idx + direction];
-    if (!swapWith) return;
-    await Promise.all([
-      supabase.from("listing_photos").update({ sort_order: swapWith.sort_order }).eq("id", photo.id),
-      supabase.from("listing_photos").update({ sort_order: photo.sort_order }).eq("id", swapWith.id),
-    ]);
+  // Drag-and-drop reorder — plain HTML5 DnD, no extra dependency. Dropping
+  // re-indexes the whole array (not just a pairwise swap), so a photo can
+  // move any distance in one drag, then every photo's sort_order is
+  // persisted to match its new position.
+  const handleDragStart = (photo) => (e) => {
+    setDragId(photo.id);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (photo) => (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (photo.id !== dragId) setOverId(photo.id);
+  };
+
+  const handleDragEnd = () => {
+    setDragId(null);
+    setOverId(null);
+  };
+
+  const handleDrop = (targetPhoto) => async (e) => {
+    e.preventDefault();
+    setDragId(null);
+    setOverId(null);
+    if (!dragId || dragId === targetPhoto.id) return;
+
+    const reordered = [...photos];
+    const fromIndex = reordered.findIndex((p) => p.id === dragId);
+    const toIndex = reordered.findIndex((p) => p.id === targetPhoto.id);
+    if (fromIndex === -1 || toIndex === -1) return;
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+
+    await Promise.all(
+      reordered.map((photo, i) =>
+        photo.sort_order === i
+          ? Promise.resolve()
+          : supabase.from("listing_photos").update({ sort_order: i }).eq("id", photo.id),
+      ),
+    );
     onChanged?.();
   };
 
@@ -85,54 +119,58 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
       {photos.length === 0 ? (
         <p className="text-sm text-[#1c1a17]/40">No photos yet.</p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {photos.map((photo, i) => (
-            <div key={photo.id} className="relative group border border-black/10 rounded-lg overflow-hidden">
-              <img src={photo.url} alt={photo.alt || ""} className="w-full h-32 object-cover" />
-              {photo.is_hero && (
-                <span className="absolute top-1.5 left-1.5 bg-[#1c1a17] text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                  HERO
-                </span>
-              )}
-              <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm flex items-center justify-center gap-2 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  type="button"
-                  onClick={() => move(photo, -1)}
-                  disabled={i === 0}
-                  className="text-white text-xs disabled:opacity-30"
-                  title="Move earlier"
-                >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  onClick={() => move(photo, 1)}
-                  disabled={i === photos.length - 1}
-                  className="text-white text-xs disabled:opacity-30"
-                  title="Move later"
-                >
-                  ↓
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setHero(photo)}
-                  className="text-white text-xs"
-                  title="Set as hero"
-                >
-                  ★
-                </button>
-                <button
-                  type="button"
-                  onClick={() => remove(photo)}
-                  className="text-white text-xs"
-                  title="Delete"
-                >
-                  ✕
-                </button>
+        <>
+          <p className="text-xs text-[#1c1a17]/40">Drag to reorder. First photo is the hero unless you star another.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {photos.map((photo) => (
+              <div
+                key={photo.id}
+                draggable
+                onDragStart={handleDragStart(photo)}
+                onDragOver={handleDragOver(photo)}
+                onDrop={handleDrop(photo)}
+                onDragEnd={handleDragEnd}
+                className={`relative group border rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-all ${
+                  dragId === photo.id
+                    ? "opacity-40 border-black/10"
+                    : overId === photo.id
+                      ? "border-[#8a7a5c] ring-2 ring-[#8a7a5c]/30"
+                      : "border-black/10"
+                }`}
+              >
+                <img
+                  src={photo.url}
+                  alt={photo.alt || ""}
+                  className="w-full h-32 object-cover pointer-events-none"
+                  draggable={false}
+                />
+                {photo.is_hero && (
+                  <span className="absolute top-1.5 left-1.5 bg-[#1c1a17] text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                    HERO
+                  </span>
+                )}
+                <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm flex items-center justify-center gap-3 py-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    onClick={() => setHero(photo)}
+                    className="text-white text-xs"
+                    title="Set as hero"
+                  >
+                    ★
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => remove(photo)}
+                    className="text-white text-xs"
+                    title="Delete"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

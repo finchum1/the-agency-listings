@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
+import ImageUploadField from "./ImageUploadField";
 
 // Self-service profile editing — the one gap left over from bootstrapping
 // the first admin directly in the Supabase dashboard (which skips the
@@ -64,22 +65,16 @@ export default function MyProfilePage() {
       </p>
 
       <form onSubmit={handleSubmit} className="bg-white border border-black/5 rounded-2xl p-6 space-y-5">
-        <div className="flex items-center gap-4">
-          <img
-            src={form.photo_url || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4' fill='%23e5e0d8'/%3E%3Cpath d='M4 20c0-4 4-6 8-6s8 2 8 6' fill='%23e5e0d8'/%3E%3C/svg%3E"}
-            alt=""
-            className="h-16 w-16 rounded-full object-cover bg-black/5"
-          />
-          <div className="flex-1">
-            <label className={labelClass}>Headshot URL</label>
-            <input
-              value={form.photo_url}
-              onChange={update("photo_url")}
-              className={inputClass}
-              placeholder="https://…"
-            />
-          </div>
-        </div>
+        <ImageUploadField
+          bucket="profile-photos"
+          folder={user.id}
+          value={form.photo_url}
+          onChange={(url) => {
+            setSaved(false);
+            setForm((f) => ({ ...f, photo_url: url || "" }));
+          }}
+          label="Headshot"
+        />
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div>

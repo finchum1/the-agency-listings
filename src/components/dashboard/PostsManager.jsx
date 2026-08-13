@@ -201,7 +201,8 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
             <textarea value={form.excerpt} onChange={update("excerpt")} rows={2} className={inputClass} />
           </div>
           <ImageUploadField
-            agentSiteId={agentSiteId}
+            bucket="agent-site-photos"
+            folder={agentSiteId}
             value={form.image_url}
             onChange={(url) => setForm((f) => ({ ...f, image_url: url || "" }))}
           />

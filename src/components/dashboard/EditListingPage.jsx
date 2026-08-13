@@ -34,16 +34,21 @@ export default function EditListingPage() {
     <div className="max-w-3xl space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-semibold">{listing.address_line1}</h1>
-        {listing.status !== "draft" && (
-          <a
-            href={`/listings/${listing.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-[#8a7a5c] hover:underline"
-          >
-            View live site →
-          </a>
-        )}
+        <div className="flex items-center gap-4">
+          <Link to={`/dashboard/listings/${listing.id}/flyer`} className="text-sm text-[#8a7a5c] hover:underline">
+            Flyer →
+          </Link>
+          {listing.status !== "draft" && (
+            <a
+              href={`/listings/${listing.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-[#8a7a5c] hover:underline"
+            >
+              View live site →
+            </a>
+          )}
+        </div>
       </div>
 
       <AnalyticsStats stats={analytics} />

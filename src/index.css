@@ -100,3 +100,32 @@
     --as-accent: #c23c4d;
   }
 }
+
+/* Listing flyer printing (FlyerPage.jsx) — print ONLY #flyer-sheet, full
+   bleed at exactly 8.5x11in, nothing else on the page (dashboard chrome,
+   the edit form) ever reaches paper. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #flyer-sheet,
+  #flyer-sheet * {
+    visibility: visible;
+  }
+  #flyer-sheet {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 8.5in;
+    min-height: 11in;
+    margin: 0;
+    box-shadow: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  @page {
+    size: 8.5in 11in;
+    margin: 0;
+  }
+}

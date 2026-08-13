@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../hooks/useAuth";
+import ImageUploadField from "./ImageUploadField";
 
 const emptyForm = {
   email: "",
@@ -13,13 +15,21 @@ const emptyForm = {
 };
 
 export default function AgentsPage() {
+  const { user } = useAuth();
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(emptyForm);
+  // A not-yet-created agent has no id to key their photo upload's storage
+  // folder by — this stands in for one. Admin uploads bypass the
+  // folder-ownership check entirely (see supabase/profile-photos-storage-policies.sql),
+  // so any placeholder works; a fresh one just keeps each pending upload
+  // in its own folder rather than piling them into one shared bucket.
+  const [pendingPhotoFolder, setPendingPhotoFolder] = useState(() => crypto.randomUUID());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [enablingId, setEnablingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   const refresh = () => {
     setLoading(true);
@@ -37,31 +47,37 @@ export default function AgentsPage() {
 
   const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
+  const authedFetch = async (url, body) => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session?.access_token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    const responseBody = await res.json();
+    if (!res.ok) throw new Error(responseBody.error || "Request failed");
+    return responseBody;
+  };
+
   const handleAdd = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
     setSaving(true);
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const res = await fetch("/api/admin/add-agent", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify(form),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error || "Failed to add agent");
+      await authedFetch("/api/admin/add-agent", form);
       setSuccess(
         form.sendInvite
           ? `Invited ${form.email} — they'll get an email to set their password.`
           : `Added ${form.full_name}. They can't log in yet — use "Enable Login" whenever you're ready.`
       );
       setForm(emptyForm);
+      setPendingPhotoFolder(crypto.randomUUID());
       refresh();
     } catch (err) {
       setError(err.message);
@@ -93,6 +109,28 @@ export default function AgentsPage() {
     }
   };
 
+  const handleDelete = async (agent) => {
+    if (
+      !confirm(
+        `Permanently delete ${agent.full_name || agent.email}? This removes their login, profile, and their agent site (if they have one). This can't be undone.`,
+      )
+    ) {
+      return;
+    }
+    setError("");
+    setSuccess("");
+    setDeletingId(agent.id);
+    try {
+      await authedFetch("/api/admin/delete-agent", { agentId: agent.id });
+      setSuccess(`Deleted ${agent.full_name || agent.email}.`);
+      refresh();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const inputClass =
     "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#8a7a5c]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
@@ -107,9 +145,19 @@ export default function AgentsPage() {
           <div className="bg-white border border-black/5 rounded-2xl divide-y divide-black/5">
             {agents.map((a) => (
               <div key={a.id} className="px-5 py-4 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-medium text-sm truncate">{a.full_name || "(no name yet)"}</p>
-                  <p className="text-xs text-[#1c1a17]/50 truncate">{a.email}</p>
+                <div className="flex items-center gap-3 min-w-0">
+                  <img
+                    src={
+                      a.photo_url ||
+                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4' fill='%23e5e0d8'/%3E%3Cpath d='M4 20c0-4 4-6 8-6s8 2 8 6' fill='%23e5e0d8'/%3E%3C/svg%3E"
+                    }
+                    alt=""
+                    className="h-9 w-9 rounded-full object-cover bg-black/5 shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm truncate">{a.full_name || "(no name yet)"}</p>
+                    <p className="text-xs text-[#1c1a17]/50 truncate">{a.email}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span
@@ -134,6 +182,16 @@ export default function AgentsPage() {
                       className="text-xs font-semibold text-[#8a7a5c] hover:underline disabled:opacity-50 whitespace-nowrap"
                     >
                       {enablingId === a.id ? "Sending…" : "Enable Login"}
+                    </button>
+                  )}
+                  {a.id !== user?.id && (
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(a)}
+                      disabled={deletingId === a.id}
+                      className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {deletingId === a.id ? "Deleting…" : "Delete"}
                     </button>
                   )}
                 </div>
@@ -184,10 +242,13 @@ export default function AgentsPage() {
               </select>
             </div>
           </div>
-          <div>
-            <label className={labelClass}>Headshot URL (optional)</label>
-            <input value={form.photo_url} onChange={update("photo_url")} className={inputClass} placeholder="https://…" />
-          </div>
+          <ImageUploadField
+            bucket="profile-photos"
+            folder={pendingPhotoFolder}
+            value={form.photo_url}
+            onChange={(url) => setForm((f) => ({ ...f, photo_url: url || "" }))}
+            label="Headshot (optional)"
+          />
 
           <label className="flex items-start gap-2.5 pt-1 cursor-pointer">
             <input

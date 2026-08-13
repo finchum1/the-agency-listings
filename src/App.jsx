@@ -9,6 +9,7 @@ import DashboardLayout from "./components/dashboard/DashboardLayout";
 import ListingsTable from "./components/dashboard/ListingsTable";
 import NewListingPage from "./components/dashboard/NewListingPage";
 import EditListingPage from "./components/dashboard/EditListingPage";
+import FlyerPage from "./components/dashboard/FlyerPage";
 import AgentsPage from "./components/dashboard/AgentsPage";
 import MyProfilePage from "./components/dashboard/MyProfilePage";
 import MySitePage from "./components/dashboard/MySitePage";
@@ -126,6 +127,7 @@ export default function App() {
         <Route index element={<ListingsTable />} />
         <Route path="listings/new" element={<NewListingPage />} />
         <Route path="listings/:id/edit" element={<EditListingPage />} />
+        <Route path="listings/:id/flyer" element={<FlyerPage />} />
         <Route path="profile" element={<MyProfilePage />} />
         <Route path="site" element={<MySitePage />} />
         <Route

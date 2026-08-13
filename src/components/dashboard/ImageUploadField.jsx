@@ -1,11 +1,14 @@
 import { useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
-// Single-image upload field, shared by SiteForm (hero photo), AreasManager
-// (area photo), and PostsManager (post image) — all agent-site content
-// that needs exactly one image, not a gallery (PhotoManager is the
-// gallery version, used only by listings).
-export default function ImageUploadField({ agentSiteId, value, onChange, label = "Photo" }) {
+// Single-image upload field, shared by SiteForm (hero photo, secondary
+// logo, OG image), AreasManager (area photo), PostsManager (post image),
+// and MyProfilePage/AgentsPage (headshot) — anything that needs exactly
+// one image, not a gallery (PhotoManager is the gallery version, used
+// only by listings). `bucket`/`folder` decide where it lands — e.g.
+// bucket="agent-site-photos" folder={site.id}, or
+// bucket="profile-photos" folder={profileId}.
+export default function ImageUploadField({ bucket, folder, value, onChange, label = "Photo" }) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -16,16 +19,14 @@ export default function ImageUploadField({ agentSiteId, value, onChange, label =
     setUploading(true);
     setError("");
 
-    const path = `${agentSiteId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "-")}`;
-    const { error: uploadError } = await supabase.storage
-      .from("agent-site-photos")
-      .upload(path, file);
+    const path = `${folder}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "-")}`;
+    const { error: uploadError } = await supabase.storage.from(bucket).upload(path, file);
     if (uploadError) {
       setError(uploadError.message);
       setUploading(false);
       return;
     }
-    const { data } = supabase.storage.from("agent-site-photos").getPublicUrl(path);
+    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
     onChange(data.publicUrl);
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
