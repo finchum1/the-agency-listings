@@ -38,7 +38,13 @@ export default function DashboardLayout() {
       <header className="border-b border-black/5 bg-white">
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <img src={brokerage.logo} alt={brokerage.name} className="h-9 w-auto" />
+            <div className="flex items-center gap-3">
+              <img src={brokerage.logo} alt={brokerage.name} className="h-9 w-auto" />
+              <span className="h-6 w-px bg-black/10" aria-hidden="true" />
+              <span className="text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50">
+                Oklahoma
+              </span>
+            </div>
             <nav className="flex items-center gap-1">
               {NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin).map(navLink)}
             </nav>
