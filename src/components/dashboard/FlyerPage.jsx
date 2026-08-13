@@ -15,18 +15,34 @@ const STAT_ICONS = {
 
 const MAX_FLYER_PHOTOS = 6;
 
+// "{category}|||{item}" — a stable key for one feature-list line, so
+// toggling it on/off for the flyer never has to touch the listing's real
+// features data (listings.features), just the flyer's own exclude-list.
+const featureKey = (category, item) => `${category}|||${item}`;
+
+// Default photo order for a listing whose flyer has never been
+// configured: the marked hero photo first (matching what a visitor sees
+// as the hero on the real listing site), then the rest by their existing
+// sort order.
+function defaultPhotoIds(photos) {
+  const hero = photos.find((p) => p.is_hero);
+  const rest = photos.filter((p) => !hero || p.id !== hero.id);
+  return [...(hero ? [hero] : []), ...rest].slice(0, MAX_FLYER_PHOTOS).map((p) => p.id);
+}
+
 // Printable 8.5x11 listing flyer — echoes the public listing site's look
 // (same fonts/colors/photo treatment) but is its own page, not a reuse of
 // listing-site/* components, since a print sheet needs fixed inch
 // dimensions and a completely different layout (one page, no scroll
 // sections) rather than anything those components already do. "Edit"
-// means picking a punchier headline/blurb and which photos appear —
-// stored on the listing (flyer_headline/flyer_blurb/flyer_photo_ids, see
-// supabase/flyer-fields.sql), separate from the real web copy so editing
-// one never touches the other. Printing is the browser's own Print
-// dialog (Save as PDF) via the .no-print / #flyer-sheet rules in
-// index.css — no PDF library, so what you see here is exactly what
-// prints.
+// means picking a punchier headline/blurb, which photos appear, and
+// which features appear — stored on the listing
+// (flyer_headline/flyer_blurb/flyer_photo_ids/flyer_excluded_features,
+// see supabase/flyer-fields.sql + flyer-features-field.sql), separate
+// from the real web copy so editing one never touches the other.
+// Printing is the browser's own Print dialog (Save as PDF) via the
+// .no-print / #flyer-sheet rules in index.css — no PDF library, so what
+// you see here is exactly what prints.
 export default function FlyerPage() {
   const { id } = useParams();
   const { listing, agent, photos, loading, notFound, refresh } = useListing({ id });
@@ -34,20 +50,30 @@ export default function FlyerPage() {
   const [headline, setHeadline] = useState("");
   const [blurb, setBlurb] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
+  const [excludedFeatures, setExcludedFeatures] = useState([]);
+  const [initialized, setInitialized] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Gated on `loading` (not e.g. photos.length) and only ever runs once
+  // per listing — a fetch that resolves with zero photos, then gets more
+  // added a moment later, must never silently re-clobber choices the
+  // agent already made. This also fixes a real bug: initializing off a
+  // still-empty `photos` array (before useListing's fetch finished) could
+  // save an empty flyer_photo_ids, which is why the hero photo sometimes
+  // failed to appear after Save.
   useEffect(() => {
-    if (!listing) return;
+    if (loading || !listing || initialized) return;
     setHeadline(listing.flyer_headline || listing.address_line1);
     setBlurb(listing.flyer_blurb || listing.description?.[0] || "");
     setSelectedIds(
       listing.flyer_photo_ids?.length
         ? listing.flyer_photo_ids.filter((pid) => photos.some((p) => p.id === pid))
-        : photos.slice(0, MAX_FLYER_PHOTOS).map((p) => p.id),
+        : defaultPhotoIds(photos),
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listing?.id, photos.length]);
+    setExcludedFeatures(listing.flyer_excluded_features || []);
+    setInitialized(true);
+  }, [loading, listing, photos, initialized]);
 
   const orderedSelected = useMemo(
     () => selectedIds.map((pid) => photos.find((p) => p.id === pid)).filter(Boolean),
@@ -56,6 +82,16 @@ export default function FlyerPage() {
   const heroPhoto = orderedSelected[0] || photos.find((p) => p.is_hero) || photos[0];
   const galleryPhotos = orderedSelected.slice(1);
 
+  const includedFeatures = useMemo(
+    () =>
+      (listing?.features || []).flatMap((group) =>
+        group.items
+          .filter((item) => !excludedFeatures.includes(featureKey(group.category, item)))
+          .map((item) => item),
+      ),
+    [listing?.features, excludedFeatures],
+  );
+
   const togglePhoto = (photoId) => {
     setSaved(false);
     setSelectedIds((ids) =>
@@ -63,11 +99,21 @@ export default function FlyerPage() {
     );
   };
 
+  const toggleFeature = (key) => {
+    setSaved(false);
+    setExcludedFeatures((keys) => (keys.includes(key) ? keys.filter((k) => k !== key) : [...keys, key]));
+  };
+
   const handleSave = async () => {
     setSaving(true);
     await supabase
       .from("listings")
-      .update({ flyer_headline: headline, flyer_blurb: blurb, flyer_photo_ids: selectedIds })
+      .update({
+        flyer_headline: headline,
+        flyer_blurb: blurb,
+        flyer_photo_ids: selectedIds,
+        flyer_excluded_features: excludedFeatures,
+      })
       .eq("id", id);
     setSaving(false);
     setSaved(true);
@@ -177,6 +223,38 @@ export default function FlyerPage() {
             )}
           </div>
 
+          {listing.features?.length > 0 && (
+            <div>
+              <label className={labelClass}>Features on the flyer — uncheck any to remove them</label>
+              <div className="space-y-3">
+                {listing.features.map((group) => (
+                  <div key={group.category}>
+                    <p className="text-xs font-semibold text-[#1c1a17]/70 mb-1.5">{group.category}</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+                      {group.items.map((item) => {
+                        const key = featureKey(group.category, item);
+                        const included = !excludedFeatures.includes(key);
+                        return (
+                          <label key={key} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={included}
+                              onChange={() => toggleFeature(key)}
+                              className="accent-[#8a7a5c]"
+                            />
+                            <span className={included ? "text-[#1c1a17]" : "text-[#1c1a17]/35 line-through"}>
+                              {item}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -191,13 +269,19 @@ export default function FlyerPage() {
         </div>
       </div>
 
-      {/* The actual flyer — the only thing that prints, see index.css */}
+      {/* The actual flyer — the only thing that prints, see index.css.
+          Flex column, not fixed-height absolute blocks: the footer always
+          sits right after the content instead of being pinned to the
+          bottom of whatever ancestor happens to be positioned (the bug
+          this replaced), and if the content ever runs long the sheet
+          just grows/overflows onto a second printed page instead of
+          silently overlapping. */}
       <div
         id="flyer-sheet"
-        className="mx-auto bg-[#faf9f7] text-[#1c1a17] overflow-hidden shadow-xl shadow-black/10"
+        className="relative mx-auto flex flex-col bg-[#faf9f7] text-[#1c1a17] overflow-hidden shadow-xl shadow-black/10"
         style={{ width: "8.5in", minHeight: "11in" }}
       >
-        <div className="relative h-[4.2in] w-full">
+        <div className="relative h-[4.2in] w-full shrink-0">
           {heroPhoto ? (
             <img src={heroPhoto.url} alt="" className="absolute inset-0 h-full w-full object-cover" />
           ) : (
@@ -218,7 +302,7 @@ export default function FlyerPage() {
           </div>
         </div>
 
-        <div className="px-6 pt-5">
+        <div className="px-6 pt-5 flex-1">
           <div className="flex items-center justify-between">
             <span className="text-2xl font-display font-semibold text-[#1c1a17]">
               {formatPrice(listing.price)}
@@ -250,6 +334,19 @@ export default function FlyerPage() {
 
           {blurb && <p className="mt-4 text-[13px] leading-relaxed text-[#1c1a17]/75">{blurb}</p>}
 
+          {includedFeatures.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1">
+              {includedFeatures.map((item, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-[11px] text-[#1c1a17]/75">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8a7a5c" strokeWidth="2.5" className="shrink-0">
+                    <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span className="truncate">{item}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {galleryPhotos.length > 0 && (
             <div className="mt-4 grid grid-cols-5 gap-2">
               {galleryPhotos.map((photo) => (
@@ -261,7 +358,7 @@ export default function FlyerPage() {
           )}
         </div>
 
-        <div className="absolute bottom-0 inset-x-0 px-6 py-4 bg-white border-t border-black/5 flex items-center justify-between">
+        <div className="shrink-0 px-6 py-4 bg-white border-t border-black/5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {agent?.photo_url && (
               <img src={agent.photo_url} alt="" className="h-11 w-11 rounded-full object-cover bg-black/5" />

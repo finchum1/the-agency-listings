@@ -39,6 +39,7 @@ Supabase dashboard → **SQL Editor** → paste and run, in order:
 10. `supabase/profile-photos-storage-policies.sql` — first create its bucket:
     **Storage → New bucket** → name `profile-photos` → **Public bucket: ON**
 11. `supabase/flyer-fields.sql`
+12. `supabase/flyer-features-field.sql`
 
 ### 3. Local env
 

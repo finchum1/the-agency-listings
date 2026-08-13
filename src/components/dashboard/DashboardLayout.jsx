@@ -52,11 +52,19 @@ export default function DashboardLayout() {
           <div className="flex items-center gap-4">
             <Link
               to="/dashboard/profile"
-              className="text-sm text-[#1c1a17]/60 hover:text-[#1c1a17] transition-colors"
+              className="flex items-center gap-2.5 text-sm text-[#1c1a17]/60 hover:text-[#1c1a17] transition-colors"
             >
+              <img
+                src={
+                  profile?.photo_url ||
+                  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4' fill='%23e5e0d8'/%3E%3Cpath d='M4 20c0-4 4-6 8-6s8 2 8 6' fill='%23e5e0d8'/%3E%3C/svg%3E"
+                }
+                alt=""
+                className="h-7 w-7 rounded-full object-cover bg-black/5"
+              />
               {profile?.full_name || profile?.email}
               {isAdmin && (
-                <span className="ml-2 text-xs font-semibold text-[#8a7a5c]">ADMIN</span>
+                <span className="text-xs font-semibold text-[#8a7a5c]">ADMIN</span>
               )}
             </Link>
             <button
