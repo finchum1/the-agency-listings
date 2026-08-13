@@ -45,7 +45,7 @@ function defaultPhotoIds(photos) {
 // you see here is exactly what prints.
 export default function FlyerPage() {
   const { id } = useParams();
-  const { listing, agent, photos, loading, notFound, refresh } = useListing({ id });
+  const { listing, agent, photos, loading, notFound } = useListing({ id });
 
   const [headline, setHeadline] = useState("");
   const [blurb, setBlurb] = useState("");
@@ -55,6 +55,7 @@ export default function FlyerPage() {
   const [photosTouched, setPhotosTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   // Text/features init — a one-time gate is fine here since it doesn't
   // depend on an async photos fetch settling.
@@ -114,7 +115,8 @@ export default function FlyerPage() {
 
   const handleSave = async () => {
     setSaving(true);
-    await supabase
+    setSaveError("");
+    const { error } = await supabase
       .from("listings")
       .update({
         flyer_headline: headline,
@@ -124,8 +126,17 @@ export default function FlyerPage() {
       })
       .eq("id", id);
     setSaving(false);
+    if (error) {
+      console.error("Flyer save failed:", error);
+      setSaveError(error.message);
+      return;
+    }
+    // No refresh() here on purpose: local state already holds exactly
+    // what was just persisted, so re-fetching immediately adds nothing —
+    // and it used to actively cause a real bug, racing against the
+    // refresh useListing's own realtime subscription fires in reaction
+    // to this same update.
     setSaved(true);
-    refresh();
   };
 
   const inputClass =
@@ -279,6 +290,7 @@ export default function FlyerPage() {
               {saving ? "Saving…" : "Save Flyer Content"}
             </button>
             {saved && <p className="text-sm text-emerald-700">Saved.</p>}
+            {saveError && <p className="text-sm text-red-600">Couldn't save: {saveError}</p>}
           </div>
         </div>
       </div>
