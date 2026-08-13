@@ -8,6 +8,10 @@ Each listing lives at `/listings/:slug` inside this one app.
 Replaces the old one-repo-per-listing approach (`property-site-template/`
 + `1645-saratoga-way/`) — a listing is now a database row, not a git repo.
 
+This app is single-office (see `src/lib/brokerage.js`) — for standing up a
+second office as its own independent copy, see
+[`DUPLICATING-FOR-A-NEW-OFFICE.md`](./DUPLICATING-FOR-A-NEW-OFFICE.md).
+
 ## Setup
 
 ### 1. Create a Supabase project
@@ -24,6 +28,14 @@ Supabase dashboard → **SQL Editor** → paste and run, in order:
 1. `supabase/schema.sql`
 2. `supabase/storage-policies.sql` — but first create the bucket it expects:
    **Storage → New bucket** → name `listing-photos` → **Public bucket: ON**
+3. `supabase/add-login-enabled-column.sql`
+4. `supabase/add-custom-domain-index.sql`
+5. `supabase/agent-sites-schema.sql`
+6. `supabase/agent-sites-storage-policies.sql` — first create its bucket:
+   **Storage → New bucket** → name `agent-site-photos` → **Public bucket: ON**
+7. `supabase/agent-sites-theming-and-domain.sql`
+8. `supabase/seo-fields.sql`
+9. `supabase/analytics.sql`
 
 ### 3. Local env
 
@@ -67,12 +79,6 @@ node --env-file=.env scripts/migrate-saratoga.mjs
 After confirming `/listings/1645-saratoga-way` looks right, the old
 `1645-saratoga-way` repo/Vercel project can be retired (stop pushing to it —
 don't delete the repo/project outright without a separate explicit step).
-
-### 6. Custom domain index (one-time, additive)
-
-SQL Editor → run `supabase/add-custom-domain-index.sql` — adds a
-case-insensitive unique index on `listings.custom_domain` (partial, so it
-doesn't block listings with no custom domain set).
 
 ## Deploy
 
