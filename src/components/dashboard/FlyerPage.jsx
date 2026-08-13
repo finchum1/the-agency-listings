@@ -51,29 +51,36 @@ export default function FlyerPage() {
   const [blurb, setBlurb] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
   const [excludedFeatures, setExcludedFeatures] = useState([]);
-  const [initialized, setInitialized] = useState(false);
+  const [textInitialized, setTextInitialized] = useState(false);
+  const [photosTouched, setPhotosTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Gated on `loading` (not e.g. photos.length) and only ever runs once
-  // per listing — a fetch that resolves with zero photos, then gets more
-  // added a moment later, must never silently re-clobber choices the
-  // agent already made. This also fixes a real bug: initializing off a
-  // still-empty `photos` array (before useListing's fetch finished) could
-  // save an empty flyer_photo_ids, which is why the hero photo sometimes
-  // failed to appear after Save.
+  // Text/features init — a one-time gate is fine here since it doesn't
+  // depend on an async photos fetch settling.
   useEffect(() => {
-    if (loading || !listing || initialized) return;
+    if (loading || !listing || textInitialized) return;
     setHeadline(listing.flyer_headline || listing.address_line1);
     setBlurb(listing.flyer_blurb || listing.description?.[0] || "");
-    setSelectedIds(
-      listing.flyer_photo_ids?.length
-        ? listing.flyer_photo_ids.filter((pid) => photos.some((p) => p.id === pid))
-        : defaultPhotoIds(photos),
-    );
     setExcludedFeatures(listing.flyer_excluded_features || []);
-    setInitialized(true);
-  }, [loading, listing, photos, initialized]);
+    setTextInitialized(true);
+  }, [loading, listing, textInitialized]);
+
+  // Photo selection — deliberately NOT a one-time gate like the effect
+  // above. It keeps re-syncing from the saved/default selection on every
+  // `photos` update until the agent actually touches a photo themselves
+  // (photosTouched, set only inside togglePhoto) — otherwise a listing
+  // whose photos hadn't finished loading yet on the very first render
+  // would get permanently stuck with an empty selection, which is
+  // exactly what "hero photo not populating" looked like. Also falls
+  // back to defaults if every *saved* id turns out stale (e.g. from
+  // before this fix existed) instead of only checking the raw array's
+  // length before filtering.
+  useEffect(() => {
+    if (loading || !listing || photosTouched || photos.length === 0) return;
+    const savedIds = (listing.flyer_photo_ids || []).filter((pid) => photos.some((p) => p.id === pid));
+    setSelectedIds(savedIds.length > 0 ? savedIds : defaultPhotoIds(photos));
+  }, [loading, listing, photos, photosTouched]);
 
   const orderedSelected = useMemo(
     () => selectedIds.map((pid) => photos.find((p) => p.id === pid)).filter(Boolean),
@@ -94,6 +101,7 @@ export default function FlyerPage() {
 
   const togglePhoto = (photoId) => {
     setSaved(false);
+    setPhotosTouched(true);
     setSelectedIds((ids) =>
       ids.includes(photoId) ? ids.filter((i) => i !== photoId) : [...ids, photoId].slice(0, MAX_FLYER_PHOTOS),
     );
@@ -124,7 +132,13 @@ export default function FlyerPage() {
     "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#8a7a5c]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
 
-  if (loading) return <p className="text-sm text-[#1c1a17]/50">Loading…</p>;
+  // Only the very first load shows this — NOT a refresh triggered by
+  // Save (handleSave calls refresh() itself, and saving also fires the
+  // realtime subscription in useListing, both flipping `loading` true
+  // again). Unmounting the whole flyer preview on every save was a real
+  // bug: the hero photo (and everything else) would flash blank while
+  // the refresh was in flight, easy to mistake for "didn't save."
+  if (loading && !listing) return <p className="text-sm text-[#1c1a17]/50">Loading…</p>;
   if (notFound || !listing) {
     return (
       <div>
