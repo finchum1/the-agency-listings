@@ -9,7 +9,14 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
       name: agent?.full_name || "",
       tagline: site.tagline || "",
     },
-    brokerage,
+    // logo_variant picks among brokerage.logos (red/white/black) — falls
+    // back to the default red mark for older sites saved before this
+    // existed, or an unrecognized value.
+    brokerage: {
+      ...brokerage,
+      logo: brokerage.logos[site.logo_variant] || brokerage.logo,
+    },
+    logoVariant: site.logo_variant || "red",
     slug: site.slug,
     tagline: site.tagline || "",
     region: site.region || "",

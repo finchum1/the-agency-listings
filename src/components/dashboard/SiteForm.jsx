@@ -14,52 +14,62 @@ const splitParagraphs = (text) =>
 
 // Kept in sync with the CSS custom properties in src/index.css
 // ([data-theme="…"] / [data-font="…"]) and the check constraints in
-// supabase/agent-sites-more-customization.sql.
+// supabase/agent-sites-more-customization.sql +
+// agent-sites-brand-compliance.sql. Every template's accent is The
+// Agency's own brand red (theagencyre.com) — templates only vary
+// background/surface neutrals, never the brand color.
 const THEMES = [
   {
     value: "classic",
     label: "Classic",
-    description: "Cream & white sections, dark hero + testimonials + footer, red accent. The current look.",
-    swatches: ["#f7f4ee", "#14130f", "#8a1c2b"],
+    description: "Cream & white sections, dark hero + testimonials + footer. The current look.",
+    swatches: ["#f7f4ee", "#14130f", "#ed2127"],
   },
   {
     value: "light",
     label: "Light",
     description: "Mostly white and bright throughout, same layout.",
-    swatches: ["#ffffff", "#14130f", "#8a1c2b"],
+    swatches: ["#ffffff", "#14130f", "#ed2127"],
   },
   {
     value: "dark",
     label: "Dark",
-    description: "Ink backgrounds throughout with cream text, brighter accent.",
-    swatches: ["#14130f", "#26241d", "#c23c4d"],
+    description: "Ink backgrounds throughout with cream text.",
+    swatches: ["#14130f", "#26241d", "#f2454b"],
   },
   {
     value: "sand",
     label: "Sand",
-    description: "Warmer, earthier take on Classic — taupe ground, terracotta accent.",
-    swatches: ["#f0e9df", "#211a12", "#b5654a"],
+    description: "Warmer, earthier take on Classic — taupe ground.",
+    swatches: ["#f0e9df", "#211a12", "#ed2127"],
   },
   {
     value: "midnight",
     label: "Midnight",
-    description: "A cooler dark — navy-black instead of warm ink, gold accent.",
-    swatches: ["#0d1420", "#1f2937", "#c9a961"],
+    description: "A cooler dark — navy-black instead of warm ink.",
+    swatches: ["#0d1420", "#1f2937", "#f2454b"],
   },
   {
     value: "ivory",
     label: "Ivory",
-    description: "Ultra-minimal near-white, neutral and quiet, sage accent.",
-    swatches: ["#fefefe", "#1a1a1a", "#6b7d6a"],
+    description: "Ultra-minimal near-white, neutral and quiet.",
+    swatches: ["#fefefe", "#1a1a1a", "#ed2127"],
   },
 ];
 
+// The first entry (kept under its original "playfair-jost" value so
+// existing picks don't move) is The Agency's own pairing, straight off
+// theagencyre.com — the recommended default for new sites. The rest are
+// alternate serif/sans pairings in the same spirit, for agents who want a
+// bit of their own personality; they don't touch color or logo, so they
+// stay within brand.
 const FONT_PAIRINGS = [
   {
     value: "playfair-jost",
-    label: "Playfair Display + Jost",
+    label: "Playfair Display + Lato",
+    tag: "The Agency's pairing",
     display: "'Playfair Display', Georgia, serif",
-    body: "'Jost', sans-serif",
+    body: "'Lato', sans-serif",
   },
   {
     value: "fraunces-inter",
@@ -93,9 +103,24 @@ const FONT_PAIRINGS = [
   },
 ];
 
-// A curated starting point, not a limit — the free-form color input next
-// to these covers anything else.
-const ACCENT_PRESETS = ["#8a1c2b", "#c23c4d", "#b5654a", "#c9a961", "#6b7d6a", "#1c3f5e", "#5b3a5c"];
+// Restricted to The Agency's own brand red and black (its neutral/
+// secondary color per theagencyre.com) — deliberately not a free-color
+// picker, so an agent can't drift off-brand. Enforced again at the
+// database level (agent_sites_accent_color_check).
+const ACCENT_OPTIONS = [
+  { value: "", label: "Template default", swatch: null },
+  { value: "#ed2127", label: "Corporate Red", swatch: "#ed2127" },
+  { value: "#000000", label: "Black", swatch: "#000000" },
+];
+
+// Three official-color versions of the same mark (see brokerage.js /
+// public/images/brokerage-logo*.png) — white and black need a preview
+// chip with contrasting backdrop to actually be visible while picking.
+const LOGO_VARIANTS = [
+  { value: "red", label: "Red", chipBg: "#ffffff", src: "/images/brokerage-logo.png" },
+  { value: "white", label: "White", chipBg: "#14130f", src: "/images/brokerage-logo-white.png" },
+  { value: "black", label: "Black", chipBg: "#f0eee9", src: "/images/brokerage-logo-black.png" },
+];
 
 // Hero and Contact are always shown, in fixed position (Hero first,
 // Contact last) — see HomeSections.jsx — so they're not in this list.
@@ -126,6 +151,7 @@ export default function SiteForm({ site, onSaved }) {
       theme: s.theme || "classic",
       font_pairing: s.font_pairing || "playfair-jost",
       accent_color: s.accent_color || "",
+      logo_variant: s.logo_variant || "red",
       home_sections: s.home_sections?.length ? s.home_sections : DEFAULT_HOME_SECTIONS,
       secondary_logo_url: s.secondary_logo_url || "",
       hero_photo_url: s.hero_photo_url || "",
@@ -200,6 +226,7 @@ export default function SiteForm({ site, onSaved }) {
       theme: form.theme,
       font_pairing: form.font_pairing,
       accent_color: form.accent_color || null,
+      logo_variant: form.logo_variant,
       home_sections: form.home_sections,
       secondary_logo_url: form.secondary_logo_url || null,
       hero_photo_url: form.hero_photo_url || null,
@@ -321,36 +348,30 @@ export default function SiteForm({ site, onSaved }) {
       </div>
 
       <div>
-        <label className={labelClass}>Accent color (optional — overrides the template's default)</label>
+        <label className={labelClass}>Accent color</label>
+        <p className="text-xs text-[#1c1a17]/40 mb-2">
+          Kept to The Agency's own brand colors — not a free color picker.
+        </p>
         <div className="flex items-center gap-2 flex-wrap">
-          {ACCENT_PRESETS.map((c) => (
+          {ACCENT_OPTIONS.map((opt) => (
             <button
-              key={c}
+              key={opt.value}
               type="button"
-              onClick={() => set("accent_color", c)}
-              title={c}
-              className={`h-7 w-7 rounded-full border-2 transition-colors ${
-                form.accent_color === c ? "border-[#1c1a17]" : "border-transparent hover:border-black/20"
+              onClick={() => set("accent_color", opt.value)}
+              title={opt.label}
+              className={`flex items-center gap-1.5 rounded-full border pl-1.5 pr-3 py-1.5 text-xs font-medium transition-colors ${
+                form.accent_color === opt.value
+                  ? "border-[#1c1a17] text-[#1c1a17]"
+                  : "border-black/10 text-[#1c1a17]/60 hover:border-black/20"
               }`}
-              style={{ background: c }}
-            />
-          ))}
-          <input
-            type="color"
-            value={form.accent_color || "#8a1c2b"}
-            onChange={(e) => set("accent_color", e.target.value)}
-            className="h-7 w-9 rounded cursor-pointer border border-black/10"
-            aria-label="Custom accent color"
-          />
-          {form.accent_color && (
-            <button
-              type="button"
-              onClick={() => set("accent_color", "")}
-              className="text-xs text-[#1c1a17]/50 hover:text-[#1c1a17] ml-1"
             >
-              Use template default
+              <span
+                className="h-5 w-5 rounded-full border border-black/10"
+                style={{ background: opt.swatch || "repeating-conic-gradient(#e7e2d6 0% 25%, #fff 0% 50%) 0 / 8px 8px" }}
+              />
+              {opt.label}
             </button>
-          )}
+          ))}
         </div>
       </div>
 
@@ -368,12 +389,41 @@ export default function SiteForm({ site, onSaved }) {
                   : "border-black/10 hover:border-black/20"
               }`}
             >
+              {f.tag && (
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8a7a5c] mb-1.5">{f.tag}</p>
+              )}
               <p className="text-lg leading-none mb-2" style={{ fontFamily: f.display }}>
                 Aa
               </p>
               <p className="text-xs font-semibold" style={{ fontFamily: f.body }}>
                 {f.label}
               </p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className={labelClass}>Logo</label>
+        <p className="text-xs text-[#1c1a17]/40 mb-2">
+          Same official mark, three colors — pick whichever reads best against your template.
+        </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          {LOGO_VARIANTS.map((v) => (
+            <button
+              key={v.value}
+              type="button"
+              onClick={() => set("logo_variant", v.value)}
+              className={`rounded-xl border p-2.5 transition-colors ${
+                form.logo_variant === v.value
+                  ? "border-[#8a7a5c] ring-2 ring-[#8a7a5c]/30"
+                  : "border-black/10 hover:border-black/20"
+              }`}
+            >
+              <div className="h-10 w-24 rounded-md flex items-center justify-center px-2" style={{ background: v.chipBg }}>
+                <img src={v.src} alt={`${v.label} logo`} className="max-h-6 w-auto" />
+              </div>
+              <p className="text-xs font-medium text-center mt-1.5">{v.label}</p>
             </button>
           ))}
         </div>

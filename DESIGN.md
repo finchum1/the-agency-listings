@@ -184,11 +184,20 @@ The public agent-site pages (`/sites/:slug` and `/sites/:slug/blog/:postSlug`, i
 - **Shape:** sharp corners throughout — no `rounded-full`, no `rounded-2xl`. Buttons are rectangles (solid accent fill, white text, uppercase tracked-wide label); cards and photo frames have zero border-radius. This is constant across every template.
 - **Labels:** small uppercase accent-colored eyebrow labels above every section heading — unlike the main system's explicit "no eyebrow labels" rule, this world uses them everywhere, matching terrence-finchum-realty. Uses the `.tracked` (0.14em) / `.tracked-wide` (0.22em) utilities instead of `.tracking-wider-plus`.
 
-### Per-agent customization (`agent_sites.theme` / `.font_pairing` / `.accent_color` / `.home_sections` / `.secondary_logo_url`)
+### Brand compliance (corporate = theagencyre.com)
 
-Each agent picks their own **template**, **font pairing**, optional **accent color** override, and **Home section** selection/order in their site editor (`SiteForm.jsx`, under "My Site"); an admin can do the same for any agent from **Dashboard → Sites**. Template and font pairing are driven entirely by CSS custom properties set on the page's root element via `data-theme="…"` / `data-font="…"` attributes (see `src/index.css`) — every component reads colors as `bg-[var(--as-bg)]`, `text-[var(--as-accent)]`, etc., never a literal hex, so adding a template or font pairing never means touching component code.
+Everything in this customization system is bounded by what's actually on brand for The Agency corporate (`theagencyre.com`), inspected directly (computed styles + CSS custom properties) rather than guessed:
+- **Brand red**: `#ed2127` (their own `--primary-color-500`). This is the *only* accent color the system offers — see below.
+- **Fonts**: `Playfair Display` (display/headings) + `Lato` (body) — corporate's actual pairing, confirmed via computed `font-family` on their own `h1`/nav.
+- **Secondary/neutral**: black (`--secondary-color-500: rgb(0,0,0)`), used for the Black logo/accent option.
 
-**Templates** (`theme` column, six options, all sharing the exact same layout/components — colors only):
+Templates and font-pairing *variety* (below) are still offered for agent personality, but color and logo are deliberately narrower than that — see each subsection.
+
+### Per-agent customization (`agent_sites.theme` / `.font_pairing` / `.accent_color` / `.logo_variant` / `.home_sections` / `.secondary_logo_url`)
+
+Each agent picks their own **template**, **font pairing**, **accent color**, **logo color**, and **Home section** selection/order in their site editor (`SiteForm.jsx`, under "My Site"); an admin can do the same for any agent from **Dashboard → Sites**. Template and font pairing are driven entirely by CSS custom properties set on the page's root element via `data-theme="…"` / `data-font="…"` attributes (see `src/index.css`) — every component reads colors as `bg-[var(--as-bg)]`, `text-[var(--as-accent)]`, etc., never a literal hex, so adding a template or font pairing never means touching component code.
+
+**Templates** (`theme` column, six options, all sharing the exact same layout/components — neutrals only, accent is always brand red, see below):
 | Token | Classic (default) | Light | Dark | Sand | Midnight | Ivory |
 |---|---|---|---|---|---|---|
 | `--as-bg` (page bg) | `#f7f4ee` cream | `#ffffff` white | `#14130f` ink | `#f0e9df` taupe | `#0d1420` navy-black | `#fefefe` near-white |
@@ -197,14 +206,16 @@ Each agent picks their own **template**, **font pairing**, optional **accent col
 | `--as-on-dark` (text on `--as-dark`) | `#f7f4ee` | `#f7f4ee` | `#f7f4ee` | `#f5efe4` | `#f1f5f9` | `#fafafa` |
 | `--as-surface` (card/photo placeholder) | `#e7e2d6` stone | `#efece4` | `#26241d` | `#e0d3bd` | `#1f2937` | `#ececea` |
 | `--as-text` (text on `--as-bg`) | `#14130f` | `#14130f` | `#f7f4ee` | `#2a2118` | `#f1f5f9` | `#1a1a1a` |
-| `--as-accent` | `#8a1c2b` deep red | `#8a1c2b` | `#c23c4d` (brighter, for contrast on dark) | `#b5654a` terracotta | `#c9a961` gold | `#6b7d6a` sage |
+| `--as-accent` | `#ed2127` brand red | `#ed2127` | `#f2454b` (brighter, for contrast on dark) | `#ed2127` | `#f2454b` | `#ed2127` |
 
-**Accent color override** (`accent_color` column, optional): a per-agent hex color that overrides just `--as-accent` from the chosen template, via an inline `style={{"--as-accent": accent_color}}` on the same root element that carries `data-theme`/`data-font` (`AgentSitePage.jsx`, `PublicAgentPostPage.jsx`) — inline style wins over the `[data-theme]` CSS rule for that one token, every other token still comes from the template. `null`/empty means "use the template's own accent." `SiteForm.jsx` offers a preset swatch row plus a native color input.
+**Accent color** (`accent_color` column, optional): a per-agent override of just `--as-accent`, via an inline `style={{"--as-accent": accent_color}}` on the same root element that carries `data-theme`/`data-font` (`AgentSitePage.jsx`, `PublicAgentPostPage.jsx`) — inline style wins over the `[data-theme]` CSS rule for that one token, every other token still comes from the template. `null`/empty means "use the template's own accent" (brand red, per the table above). **Restricted to two values — brand red `#ed2127` or black `#000000`** (`SiteForm.jsx`'s `ACCENT_OPTIONS`; enforced again at the DB level by `agent_sites_accent_color_check`) — this is deliberately *not* a free-color picker, so an agent can't drift off corporate brand.
+
+**Logo** (`logo_variant` column — `red` (default) / `white` / `black`): which of three official-color versions of the same mark (`public/images/brokerage-logo{,-white,-black}.png`, pixel-identical shape, recolored via alpha-preserving PIL, not redrawn) shows in `Navbar.jsx`/`Footer.jsx`. Resolved in `adaptAgentSite.js` (`brokerage.logos[site.logo_variant]`); every other context (dashboard, login, listing sites, flyers) always uses the plain red default from `brokerage.js` — only the agent-site header/footer offer a choice.
 
 **Font pairings** (`font_pairing` column, six options — display font overrides the app-wide `--font-display` var, but only within the agent-site page's DOM subtree; body font is `--as-font-sans`, read by the `.font-agent-sans` utility):
-- `playfair-jost` (default): Playfair Display + Jost — the original look.
-- `fraunces-inter`: Fraunces + Inter — warmer serif.
-- `cormorant-worksans`: Cormorant Garamond + Work Sans — airy/luxury.
+- `playfair-jost` (default): **Playfair Display + Lato — The Agency's own pairing**, straight off theagencyre.com (kept under its original `playfair-jost` key so existing picks weren't moved when the body font was corrected from a Jost placeholder to the real corporate font — only what the value *renders as* changed).
+- `fraunces-inter`: Fraunces + Inter — warmer serif alternate.
+- `cormorant-worksans`: Cormorant Garamond + Work Sans — airy/luxury alternate.
 - `libre-karla`: Libre Baskerville + Karla.
 - `bodoni-manrope`: Bodoni Moda + Manrope.
 - `dmserif-dmsans`: DM Serif Display + DM Sans.

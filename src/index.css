@@ -46,7 +46,7 @@
     letter-spacing: 0.22em;
   }
   .font-agent-sans {
-    font-family: var(--as-font-sans, "Jost", ui-sans-serif, system-ui, sans-serif);
+    font-family: var(--as-font-sans, "Lato", ui-sans-serif, system-ui, sans-serif);
   }
 }
 
@@ -56,9 +56,14 @@
      element: overriding --font-display here only cascades to that
      element's descendants, so it never leaks into the dashboard or
      landing page, which keep the app-wide Playfair Display default. */
+  /* The Agency's own pairing (theagencyre.com: Playfair Display display
+     font, Lato body font) — the default for every new site. Kept under
+     its original "playfair-jost" value/selector so existing agents who
+     picked it aren't silently switched to a different font pairing by a
+     value rename — only what it renders as changed, from Jost to Lato. */
   [data-font="playfair-jost"] {
     --font-display: "Playfair Display", "Georgia", serif;
-    --as-font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
+    --as-font-sans: "Lato", ui-sans-serif, system-ui, sans-serif;
   }
   [data-font="fraunces-inter"] {
     --font-display: "Fraunces", "Georgia", serif;
@@ -87,7 +92,13 @@
      is a *default* — an agent's own agent_sites.accent_color, when set, is
      applied as an inline style on the page root (see AgentSitePage.jsx),
      which naturally wins over this class-based value without needing a
-     7th "custom" theme. */
+     7th "custom" theme.
+
+     --as-accent is always The Agency's own brand red (theagencyre.com's
+     --primary-color-500, #ed2127) or, on the two dark-background
+     templates, the brighter #f2454b (primary-300) for legibility against
+     a near-black page — never an arbitrary hue. Every template only
+     varies neutrals (background/surface/text), matching corporate. */
   [data-theme="classic"] {
     --as-bg: #f7f4ee;      /* page background */
     --as-bg-alt: #ffffff;  /* alternating/bordered section background */
@@ -95,7 +106,7 @@
     --as-on-dark: #f7f4ee; /* text on --as-dark */
     --as-surface: #e7e2d6; /* card/photo placeholder fill */
     --as-text: #14130f;    /* primary text on light backgrounds */
-    --as-accent: #8a1c2b;  /* CTA fill, price, links, eyebrow labels */
+    --as-accent: #ed2127;  /* CTA fill, price, links, eyebrow labels */
   }
   [data-theme="light"] {
     --as-bg: #ffffff;
@@ -104,7 +115,7 @@
     --as-on-dark: #f7f4ee;
     --as-surface: #efece4;
     --as-text: #14130f;
-    --as-accent: #8a1c2b;
+    --as-accent: #ed2127;
   }
   [data-theme="dark"] {
     --as-bg: #14130f;
@@ -113,7 +124,7 @@
     --as-on-dark: #f7f4ee;
     --as-surface: #26241d;
     --as-text: #f7f4ee;
-    --as-accent: #c23c4d;
+    --as-accent: #f2454b;
   }
   /* Warmer, earthier variant of Classic — taupe/sand ground instead of cream. */
   [data-theme="sand"] {
@@ -123,10 +134,9 @@
     --as-on-dark: #f5efe4;
     --as-surface: #e0d3bd;
     --as-text: #2a2118;
-    --as-accent: #b5654a;
+    --as-accent: #ed2127;
   }
-  /* A second, COOL dark variant — navy-black instead of Dark's warm ink,
-     paired with gold instead of red. */
+  /* A second, COOL dark variant — navy-black instead of Dark's warm ink. */
   [data-theme="midnight"] {
     --as-bg: #0d1420;
     --as-bg-alt: #16202f;
@@ -134,7 +144,7 @@
     --as-on-dark: #f1f5f9;
     --as-surface: #1f2937;
     --as-text: #f1f5f9;
-    --as-accent: #c9a961;
+    --as-accent: #f2454b;
   }
   /* Ultra-minimal, neutral near-white — cooler and quieter than Light. */
   [data-theme="ivory"] {
@@ -144,7 +154,7 @@
     --as-on-dark: #fafafa;
     --as-surface: #ececea;
     --as-text: #1a1a1a;
-    --as-accent: #6b7d6a;
+    --as-accent: #ed2127;
   }
 }
 
