@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 import { useListings } from "../../hooks/useListings";
 import { useListingsAnalytics } from "../../hooks/useListingsAnalytics";
 import { supabase } from "../../lib/supabaseClient";
@@ -8,11 +9,17 @@ import StatusSelect from "./StatusSelect";
 import AnalyticsStats from "./AnalyticsStats";
 
 export default function ListingsTable() {
-  const { listings, loading, error, refresh } = useListings();
+  const { user, isAdmin, loading: authLoading } = useAuth();
+  // Admins see everything (agentId left unset); everyone else is scoped
+  // to their own listings only — see useListings.js for why this can't
+  // just be left to RLS. `ready: !authLoading` avoids a flash of every
+  // listing before the scope narrows down once we know who's asking.
+  const { listings, loading, error, refresh } = useListings({
+    agentId: isAdmin ? undefined : user?.id,
+    ready: !authLoading,
+  });
   const [filter, setFilter] = useState("all");
 
-  // useListings() already scopes rows to "my listings, or all if admin"
-  // via RLS — the stats strip just aggregates whatever's already loaded.
   const listingIds = useMemo(() => listings.map((l) => l.id), [listings]);
   const analytics = useListingsAnalytics(listingIds);
 

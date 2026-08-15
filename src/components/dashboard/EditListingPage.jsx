@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 import { useListing } from "../../hooks/useListing";
 import { useListingsAnalytics } from "../../hooks/useListingsAnalytics";
 import ListingForm from "./ListingForm";
@@ -9,6 +10,7 @@ import AnalyticsStats from "./AnalyticsStats";
 
 export default function EditListingPage() {
   const { id } = useParams();
+  const { user, isAdmin } = useAuth();
   const { listing, photos, openHouses, loading, notFound, refresh } = useListing({ id });
 
   // Reuses the same aggregate hook as the Listings module's stats strip,
@@ -16,8 +18,16 @@ export default function EditListingPage() {
   const listingIds = useMemo(() => (listing ? [listing.id] : []), [listing]);
   const analytics = useListingsAnalytics(listingIds);
 
+  // RLS lets anyone read a *published* listing by id (same policy that
+  // powers the public /listings/:slug page — see useListings.js), so a
+  // non-owning agent could otherwise open another agent's edit page
+  // directly by URL and read it, even though saving would still be
+  // correctly blocked by the update policy. Treated identically to
+  // notFound — no hint that a listing exists there at all.
+  const noAccess = listing && !isAdmin && listing.agent_id !== user?.id;
+
   if (loading) return <p className="text-sm text-[#1c1a17]/50">Loading…</p>;
-  if (notFound) {
+  if (notFound || noAccess) {
     return (
       <div>
         <p className="text-sm text-[#1c1a17]/60 mb-4">

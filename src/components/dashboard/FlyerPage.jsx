@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 import { useListing } from "../../hooks/useListing";
 import { supabase } from "../../lib/supabaseClient";
 import { formatPrice, formatNumber, STATUS_LABELS } from "../../lib/format";
@@ -45,7 +46,12 @@ function defaultPhotoIds(photos) {
 // you see here is exactly what prints.
 export default function FlyerPage() {
   const { id } = useParams();
+  const { user, isAdmin } = useAuth();
   const { listing, agent, photos, loading, notFound } = useListing({ id });
+  // Same reasoning as EditListingPage.jsx's noAccess guard — RLS lets
+  // anyone read a published listing by id, so this blocks a non-owning
+  // agent from opening another agent's flyer page directly by URL.
+  const noAccess = listing && !isAdmin && listing.agent_id !== user?.id;
 
   const [headline, setHeadline] = useState("");
   const [blurb, setBlurb] = useState("");
@@ -150,7 +156,7 @@ export default function FlyerPage() {
   // bug: the hero photo (and everything else) would flash blank while
   // the refresh was in flight, easy to mistake for "didn't save."
   if (loading && !listing) return <p className="text-sm text-[#1c1a17]/50">Loading…</p>;
-  if (notFound || !listing) {
+  if (notFound || !listing || noAccess) {
     return (
       <div>
         <p className="text-sm text-[#1c1a17]/60 mb-4">Listing not found, or you don't have access to it.</p>
