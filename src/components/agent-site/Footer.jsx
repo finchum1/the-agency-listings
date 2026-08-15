@@ -2,11 +2,13 @@ import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import SiteLink from "./SiteLink";
 
 // "Explore" column — only pages that actually exist today. label can read
-// the agent's first name for the About link.
+// the agent's first name for the About link. sectionKey mirrors
+// Navbar.jsx's PAGES — a link whose section is off isn't advertised here
+// either. Contact has no sectionKey since it's never optional.
 const EXPLORE_LINKS = [
-  { path: "/about", label: (firstName) => `About ${firstName}` },
-  { path: "/listings", label: () => "Properties" },
-  { path: "/blog", label: () => "Blog" },
+  { path: "/about", label: (firstName) => `About ${firstName}`, sectionKey: "bio" },
+  { path: "/listings", label: () => "Properties", sectionKey: "listings" },
+  { path: "/blog", label: () => "Blog", sectionKey: "blog" },
   { path: "/contact", label: () => "Let’s Connect" },
 ];
 
@@ -58,6 +60,9 @@ export default function Footer() {
   const { site } = useAgentSiteContext();
   const { agent, brokerage } = site;
   const firstName = agent.name.split(" ")[0];
+  const visibleLinks = EXPLORE_LINKS.filter(
+    (link) => !link.sectionKey || site.homeSections.includes(link.sectionKey),
+  );
 
   return (
     <footer className="bg-[var(--as-dark)] text-[var(--as-on-dark)]/65 px-6 lg:px-10 py-16">
@@ -112,7 +117,7 @@ export default function Footer() {
               Explore
             </p>
             <div className="space-y-1.5">
-              {EXPLORE_LINKS.map((link) => (
+              {visibleLinks.map((link) => (
                 <SiteLink
                   key={link.path}
                   slug={site.slug}

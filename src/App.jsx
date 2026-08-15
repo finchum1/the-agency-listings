@@ -22,7 +22,7 @@ import PublicAgentPostPage from "./pages/PublicAgentPostPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import LandingPage from "./pages/LandingPage";
 
-import Hero from "./components/agent-site/Hero";
+import HomeSections from "./components/agent-site/HomeSections";
 import Bio from "./components/agent-site/Bio";
 import Testimonials from "./components/agent-site/Testimonials";
 import FeaturedListings from "./components/agent-site/FeaturedListings";
@@ -54,8 +54,9 @@ export default function App() {
 
       <Route path="/listings/:slug" element={<PublicListingPage />} />
 
-      {/* Home is the full overview (every section, in order — same as the
-          original one-page design), and each section is ALSO its own
+      {/* Home is the full overview — HomeSections.jsx composes it from
+          agent_sites.home_sections (which optional sections, what order;
+          Hero/Contact are fixed) — and each section is ALSO its own
           standalone page reachable from Navbar.jsx's nav links (which
           always point at those dedicated pages, never Home's anchors) —
           see Navbar.jsx's PAGES list, which must match these paths. */}
@@ -63,13 +64,7 @@ export default function App() {
         path="/sites/:slug"
         element={
           <PublicAgentSitePage>
-            <Hero />
-            <Bio />
-            <Testimonials />
-            <FeaturedListings />
-            <ServiceAreas />
-            <BlogTeaser />
-            <Contact />
+            <HomeSections />
           </PublicAgentSitePage>
         }
       />

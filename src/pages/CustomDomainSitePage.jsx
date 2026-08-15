@@ -3,13 +3,7 @@ import { useAgentSite } from "../hooks/useAgentSite";
 import ListingSitePage from "./ListingSitePage";
 import AgentSitePage from "./AgentSitePage";
 import NotFoundPage from "./NotFoundPage";
-import Hero from "../components/agent-site/Hero";
-import Bio from "../components/agent-site/Bio";
-import Testimonials from "../components/agent-site/Testimonials";
-import FeaturedListings from "../components/agent-site/FeaturedListings";
-import ServiceAreas from "../components/agent-site/ServiceAreas";
-import BlogTeaser from "../components/agent-site/BlogTeaser";
-import Contact from "../components/agent-site/Contact";
+import HomeSections from "../components/agent-site/HomeSections";
 
 // Rendered at "/" whenever the request's hostname isn't a recognized app
 // host (see lib/appHosts.js) — i.e. a visitor arrived via a listing's or an
@@ -42,13 +36,7 @@ export default function CustomDomainSitePage() {
   if (agentSiteResult.site) {
     return (
       <AgentSitePage {...agentSiteResult}>
-        <Hero />
-        <Bio />
-        <Testimonials />
-        <FeaturedListings />
-        <ServiceAreas />
-        <BlogTeaser />
-        <Contact />
+        <HomeSections />
       </AgentSitePage>
     );
   }

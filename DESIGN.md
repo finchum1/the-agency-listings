@@ -177,32 +177,39 @@ A rounded, bordered, white-chrome container with three colored traffic-light dot
 
 ## Agent Sites (distinct world — intentional exception)
 
-The public agent-site pages (`/sites/:slug` and `/sites/:slug/blog/:postSlug`, i.e. `src/components/agent-site/*` and `src/pages/AgentSitePage.jsx` / `PublicAgentPostPage.jsx`) are a **deliberate second visual world**, not a drift from the system above. Per the site owner's explicit request, they're styled to match his personal site (terrence-finchum-realty.vercel.app) instead of "The Broker's Own Dashboard" skin, and — per a later request — each agent can further customize their own site's template and font pairing. This section documents that exception so it isn't "fixed" back to the main system by mistake.
+The public agent-site pages (`/sites/:slug` and `/sites/:slug/blog/:postSlug`, i.e. `src/components/agent-site/*` and `src/pages/AgentSitePage.jsx` / `PublicAgentPostPage.jsx`) are a **deliberate second visual world**, not a drift from the system above. Per the site owner's explicit request, they're styled to match his personal site (terrence-finchum-realty.vercel.app) instead of "The Broker's Own Dashboard" skin, and — per later requests — each agent can further customize their own site's template, font pairing, accent color, and which Home page sections appear (and in what order). This section documents that exception so it isn't "fixed" back to the main system by mistake.
 
 **Do not apply this world to the dashboard or to public listing sites (`/listings/:slug`)** — those stay on the cream/ink/gold-brown system above.
 
 - **Shape:** sharp corners throughout — no `rounded-full`, no `rounded-2xl`. Buttons are rectangles (solid accent fill, white text, uppercase tracked-wide label); cards and photo frames have zero border-radius. This is constant across every template.
 - **Labels:** small uppercase accent-colored eyebrow labels above every section heading — unlike the main system's explicit "no eyebrow labels" rule, this world uses them everywhere, matching terrence-finchum-realty. Uses the `.tracked` (0.14em) / `.tracked-wide` (0.22em) utilities instead of `.tracking-wider-plus`.
 
-### Per-agent customization (`agent_sites.theme` / `.font_pairing` / `.secondary_logo_url`)
+### Per-agent customization (`agent_sites.theme` / `.font_pairing` / `.accent_color` / `.home_sections` / `.secondary_logo_url`)
 
-Each agent picks their own **template** and **font pairing** in their site editor (`SiteForm.jsx`, under "My Site"); an admin can do the same for any agent from **Dashboard → Sites**. Both are driven entirely by CSS custom properties set on the page's root element via `data-theme="…"` / `data-font="…"` attributes (see `src/index.css`) — every component reads colors as `bg-[var(--as-bg)]`, `text-[var(--as-accent)]`, etc., never a literal hex, so adding a template or font pairing never means touching component code.
+Each agent picks their own **template**, **font pairing**, optional **accent color** override, and **Home section** selection/order in their site editor (`SiteForm.jsx`, under "My Site"); an admin can do the same for any agent from **Dashboard → Sites**. Template and font pairing are driven entirely by CSS custom properties set on the page's root element via `data-theme="…"` / `data-font="…"` attributes (see `src/index.css`) — every component reads colors as `bg-[var(--as-bg)]`, `text-[var(--as-accent)]`, etc., never a literal hex, so adding a template or font pairing never means touching component code.
 
-**Templates** (`theme` column — `classic` | `light` | `dark`, all three sharing the exact same layout/components, colors only):
-| Token | Classic (default) | Light | Dark |
-|---|---|---|---|
-| `--as-bg` (page bg) | `#f7f4ee` cream | `#ffffff` white | `#14130f` ink |
-| `--as-bg-alt` (bordered/alt sections) | `#ffffff` white | `#f7f4ee` cream | `#1c1a15` |
-| `--as-dark` (hero overlay, testimonials, footer) | `#14130f` | `#14130f` | `#0b0a08` |
-| `--as-on-dark` (text on `--as-dark`) | `#f7f4ee` | `#f7f4ee` | `#f7f4ee` |
-| `--as-surface` (card/photo placeholder) | `#e7e2d6` stone | `#efece4` | `#26241d` |
-| `--as-text` (text on `--as-bg`) | `#14130f` | `#14130f` | `#f7f4ee` |
-| `--as-accent` | `#8a1c2b` deep red | `#8a1c2b` | `#c23c4d` (brighter, for contrast on dark) |
+**Templates** (`theme` column, six options, all sharing the exact same layout/components — colors only):
+| Token | Classic (default) | Light | Dark | Sand | Midnight | Ivory |
+|---|---|---|---|---|---|---|
+| `--as-bg` (page bg) | `#f7f4ee` cream | `#ffffff` white | `#14130f` ink | `#f0e9df` taupe | `#0d1420` navy-black | `#fefefe` near-white |
+| `--as-bg-alt` (bordered/alt sections) | `#ffffff` white | `#f7f4ee` cream | `#1c1a15` | `#ffffff` | `#16202f` | `#f7f7f5` |
+| `--as-dark` (hero overlay, testimonials, footer) | `#14130f` | `#14130f` | `#0b0a08` | `#211a12` | `#070b12` | `#1a1a1a` |
+| `--as-on-dark` (text on `--as-dark`) | `#f7f4ee` | `#f7f4ee` | `#f7f4ee` | `#f5efe4` | `#f1f5f9` | `#fafafa` |
+| `--as-surface` (card/photo placeholder) | `#e7e2d6` stone | `#efece4` | `#26241d` | `#e0d3bd` | `#1f2937` | `#ececea` |
+| `--as-text` (text on `--as-bg`) | `#14130f` | `#14130f` | `#f7f4ee` | `#2a2118` | `#f1f5f9` | `#1a1a1a` |
+| `--as-accent` | `#8a1c2b` deep red | `#8a1c2b` | `#c23c4d` (brighter, for contrast on dark) | `#b5654a` terracotta | `#c9a961` gold | `#6b7d6a` sage |
 
-**Font pairings** (`font_pairing` column — display font overrides the app-wide `--font-display` var, but only within the agent-site page's DOM subtree; body font is `--as-font-sans`, read by the `.font-agent-sans` utility):
+**Accent color override** (`accent_color` column, optional): a per-agent hex color that overrides just `--as-accent` from the chosen template, via an inline `style={{"--as-accent": accent_color}}` on the same root element that carries `data-theme`/`data-font` (`AgentSitePage.jsx`, `PublicAgentPostPage.jsx`) — inline style wins over the `[data-theme]` CSS rule for that one token, every other token still comes from the template. `null`/empty means "use the template's own accent." `SiteForm.jsx` offers a preset swatch row plus a native color input.
+
+**Font pairings** (`font_pairing` column, six options — display font overrides the app-wide `--font-display` var, but only within the agent-site page's DOM subtree; body font is `--as-font-sans`, read by the `.font-agent-sans` utility):
 - `playfair-jost` (default): Playfair Display + Jost — the original look.
 - `fraunces-inter`: Fraunces + Inter — warmer serif.
 - `cormorant-worksans`: Cormorant Garamond + Work Sans — airy/luxury.
+- `libre-karla`: Libre Baskerville + Karla.
+- `bodoni-manrope`: Bodoni Moda + Manrope.
+- `dmserif-dmsans`: DM Serif Display + DM Sans.
+
+**Home sections** (`home_sections` column, `text[]`, default `{bio,testimonials,listings,areas,blog}`): controls which sections render on the site's Home page (`/sites/:slug`) and in what order — rendered by `HomeSections.jsx`, which always wraps the list with `Hero` first and `Contact` last (those two are never optional or reorderable). `Navbar.jsx` and `Footer.jsx` each filter their own link lists (`PAGES` / `EXPLORE_LINKS`, both carrying a matching `sectionKey`) against `home_sections` too, so a disabled section isn't advertised in nav or footer either — **but the standalone page route itself (`/about`, `/listings`, `/areas`, `/blog`) still works if linked to directly**; turning a section "off" only affects Home composition and nav/footer advertising, not route-level access. `SiteForm.jsx`'s section editor is a simple checkbox + ↑/↓ reorder list, not drag-and-drop — deliberately, since the list is short (5 toggleable entries).
 
 **Secondary logo** (`secondary_logo_url`): an optional per-agent logo shown next to the brokerage logo (a thin vertical divider between them) in both `Navbar.jsx` and `Footer.jsx`. Omitted entirely when not set — agents without one just show the brokerage logo alone.
 

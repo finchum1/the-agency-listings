@@ -4,11 +4,16 @@ import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { agentSiteHref, isAgentSiteAppHost } from "../../lib/agentSiteLinks";
 import SiteLink from "./SiteLink";
 
+// sectionKey matches agent_sites.home_sections entries (see
+// HomeSections.jsx) — a page whose section an agent has turned off isn't
+// advertised in the nav, though the page itself still works if linked to
+// directly (see SiteForm.jsx's section toggle for why). Contact has no
+// sectionKey since it's never optional.
 const PAGES = [
-  { path: "/about", label: "About" },
-  { path: "/listings", label: "Listings" },
-  { path: "/areas", label: "Areas" },
-  { path: "/blog", label: "Blog" },
+  { path: "/about", label: "About", sectionKey: "bio" },
+  { path: "/listings", label: "Listings", sectionKey: "listings" },
+  { path: "/areas", label: "Areas", sectionKey: "areas" },
+  { path: "/blog", label: "Blog", sectionKey: "blog" },
   { path: "/contact", label: "Contact" },
 ];
 
@@ -35,6 +40,8 @@ export default function Navbar() {
   const isHome = location.pathname === agentSiteHref(site.slug) || location.pathname === "/";
   const solid = scrolled || open || !isHome;
 
+  const visiblePages = PAGES.filter((page) => !page.sectionKey || site.homeSections.includes(page.sectionKey));
+
   const linkClass =
     "text-xs font-medium tracked-wide uppercase transition-colors whitespace-nowrap text-[var(--as-on-dark)]/75 hover:text-[var(--as-on-dark)]";
 
@@ -59,7 +66,7 @@ export default function Navbar() {
         </SiteLink>
 
         <nav className="hidden lg:flex items-center gap-6 xl:gap-8 shrink-0">
-          {PAGES.map((page) => {
+          {visiblePages.map((page) => {
             const active = isAgentSiteAppHost() && location.pathname === agentSiteHref(site.slug, page.path);
             return (
               <SiteLink
@@ -107,7 +114,7 @@ export default function Navbar() {
 
       {open && (
         <div className="lg:hidden bg-[var(--as-dark)] border-t border-[var(--as-on-dark)]/10 px-6 py-4 flex flex-col gap-4">
-          {PAGES.map((page) => (
+          {visiblePages.map((page) => (
             <SiteLink
               key={page.path}
               slug={site.slug}

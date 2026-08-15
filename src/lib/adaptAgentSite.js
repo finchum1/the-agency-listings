@@ -15,6 +15,10 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     region: site.region || "",
     theme: site.theme || "classic",
     fontPairing: site.font_pairing || "playfair-jost",
+    accentColor: site.accent_color || "",
+    homeSections: site.home_sections?.length
+      ? site.home_sections
+      : ["bio", "testimonials", "listings", "areas", "blog"],
     secondaryLogo: site.secondary_logo_url || "",
     heroPhoto: site.hero_photo_url || agent?.photo_url || "",
     heroVideo: site.hero_video_url || null,

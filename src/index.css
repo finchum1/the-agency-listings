@@ -68,10 +68,26 @@
     --font-display: "Cormorant Garamond", "Georgia", serif;
     --as-font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
   }
+  [data-font="libre-karla"] {
+    --font-display: "Libre Baskerville", "Georgia", serif;
+    --as-font-sans: "Karla", ui-sans-serif, system-ui, sans-serif;
+  }
+  [data-font="bodoni-manrope"] {
+    --font-display: "Bodoni Moda", "Georgia", serif;
+    --as-font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  }
+  [data-font="dmserif-dmsans"] {
+    --font-display: "DM Serif Display", "Georgia", serif;
+    --as-font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  }
 
   /* Agent Sites — templates (agent_sites.theme). Color tokens only; every
      template shares the exact same layout/components. Components read
-     these via arbitrary-value classes, e.g. bg-[var(--as-bg)]. */
+     these via arbitrary-value classes, e.g. bg-[var(--as-bg)]. --as-accent
+     is a *default* — an agent's own agent_sites.accent_color, when set, is
+     applied as an inline style on the page root (see AgentSitePage.jsx),
+     which naturally wins over this class-based value without needing a
+     7th "custom" theme. */
   [data-theme="classic"] {
     --as-bg: #f7f4ee;      /* page background */
     --as-bg-alt: #ffffff;  /* alternating/bordered section background */
@@ -98,6 +114,37 @@
     --as-surface: #26241d;
     --as-text: #f7f4ee;
     --as-accent: #c23c4d;
+  }
+  /* Warmer, earthier variant of Classic — taupe/sand ground instead of cream. */
+  [data-theme="sand"] {
+    --as-bg: #f0e9df;
+    --as-bg-alt: #ffffff;
+    --as-dark: #211a12;
+    --as-on-dark: #f5efe4;
+    --as-surface: #e0d3bd;
+    --as-text: #2a2118;
+    --as-accent: #b5654a;
+  }
+  /* A second, COOL dark variant — navy-black instead of Dark's warm ink,
+     paired with gold instead of red. */
+  [data-theme="midnight"] {
+    --as-bg: #0d1420;
+    --as-bg-alt: #16202f;
+    --as-dark: #070b12;
+    --as-on-dark: #f1f5f9;
+    --as-surface: #1f2937;
+    --as-text: #f1f5f9;
+    --as-accent: #c9a961;
+  }
+  /* Ultra-minimal, neutral near-white — cooler and quieter than Light. */
+  [data-theme="ivory"] {
+    --as-bg: #fefefe;
+    --as-bg-alt: #f7f7f5;
+    --as-dark: #1a1a1a;
+    --as-on-dark: #fafafa;
+    --as-surface: #ececea;
+    --as-text: #1a1a1a;
+    --as-accent: #6b7d6a;
   }
 }
 

@@ -62,6 +62,7 @@ export default function AgentSitePage({
         className="min-h-screen bg-[var(--as-bg)] font-agent-sans"
         data-theme={adapted.theme}
         data-font={adapted.fontPairing}
+        style={adapted.accentColor ? { "--as-accent": adapted.accentColor } : undefined}
       >
         <Navbar />
         {children}

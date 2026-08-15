@@ -14,7 +14,7 @@ const splitParagraphs = (text) =>
 
 // Kept in sync with the CSS custom properties in src/index.css
 // ([data-theme="…"] / [data-font="…"]) and the check constraints in
-// supabase/agent-sites-theming-and-domain.sql.
+// supabase/agent-sites-more-customization.sql.
 const THEMES = [
   {
     value: "classic",
@@ -33,6 +33,24 @@ const THEMES = [
     label: "Dark",
     description: "Ink backgrounds throughout with cream text, brighter accent.",
     swatches: ["#14130f", "#26241d", "#c23c4d"],
+  },
+  {
+    value: "sand",
+    label: "Sand",
+    description: "Warmer, earthier take on Classic — taupe ground, terracotta accent.",
+    swatches: ["#f0e9df", "#211a12", "#b5654a"],
+  },
+  {
+    value: "midnight",
+    label: "Midnight",
+    description: "A cooler dark — navy-black instead of warm ink, gold accent.",
+    swatches: ["#0d1420", "#1f2937", "#c9a961"],
+  },
+  {
+    value: "ivory",
+    label: "Ivory",
+    description: "Ultra-minimal near-white, neutral and quiet, sage accent.",
+    swatches: ["#fefefe", "#1a1a1a", "#6b7d6a"],
   },
 ];
 
@@ -55,7 +73,41 @@ const FONT_PAIRINGS = [
     display: "'Cormorant Garamond', Georgia, serif",
     body: "'Work Sans', sans-serif",
   },
+  {
+    value: "libre-karla",
+    label: "Libre Baskerville + Karla",
+    display: "'Libre Baskerville', Georgia, serif",
+    body: "'Karla', sans-serif",
+  },
+  {
+    value: "bodoni-manrope",
+    label: "Bodoni Moda + Manrope",
+    display: "'Bodoni Moda', Georgia, serif",
+    body: "'Manrope', sans-serif",
+  },
+  {
+    value: "dmserif-dmsans",
+    label: "DM Serif Display + DM Sans",
+    display: "'DM Serif Display', Georgia, serif",
+    body: "'DM Sans', sans-serif",
+  },
 ];
+
+// A curated starting point, not a limit — the free-form color input next
+// to these covers anything else.
+const ACCENT_PRESETS = ["#8a1c2b", "#c23c4d", "#b5654a", "#c9a961", "#6b7d6a", "#1c3f5e", "#5b3a5c"];
+
+// Hero and Contact are always shown, in fixed position (Hero first,
+// Contact last) — see HomeSections.jsx — so they're not in this list.
+const HOME_SECTION_LABELS = {
+  bio: "About / Bio",
+  testimonials: "Testimonials",
+  listings: "Featured Listings",
+  areas: "Service Areas",
+  blog: "Blog",
+};
+const ALL_SECTION_KEYS = Object.keys(HOME_SECTION_LABELS);
+const DEFAULT_HOME_SECTIONS = ["bio", "testimonials", "listings", "areas", "blog"];
 
 export default function SiteForm({ site, onSaved }) {
   const [form, setForm] = useState(() => toForm(site));
@@ -73,6 +125,8 @@ export default function SiteForm({ site, onSaved }) {
       region: s.region || "",
       theme: s.theme || "classic",
       font_pairing: s.font_pairing || "playfair-jost",
+      accent_color: s.accent_color || "",
+      home_sections: s.home_sections?.length ? s.home_sections : DEFAULT_HOME_SECTIONS,
       secondary_logo_url: s.secondary_logo_url || "",
       hero_photo_url: s.hero_photo_url || "",
       hero_video_url: s.hero_video_url || "",
@@ -113,6 +167,27 @@ export default function SiteForm({ site, onSaved }) {
   const removeStat = (i) =>
     setForm((f) => ({ ...f, stats: f.stats.filter((_, idx) => idx !== i) }));
 
+  const enableSection = (key) => {
+    setSaved(false);
+    setForm((f) => ({ ...f, home_sections: [...f.home_sections, key] }));
+  };
+
+  const disableSection = (key) => {
+    setSaved(false);
+    setForm((f) => ({ ...f, home_sections: f.home_sections.filter((k) => k !== key) }));
+  };
+
+  const moveSection = (i, direction) => {
+    setSaved(false);
+    setForm((f) => {
+      const j = i + direction;
+      if (j < 0 || j >= f.home_sections.length) return f;
+      const arr = [...f.home_sections];
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      return { ...f, home_sections: arr };
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -124,6 +199,8 @@ export default function SiteForm({ site, onSaved }) {
       region: form.region,
       theme: form.theme,
       font_pairing: form.font_pairing,
+      accent_color: form.accent_color || null,
+      home_sections: form.home_sections,
       secondary_logo_url: form.secondary_logo_url || null,
       hero_photo_url: form.hero_photo_url || null,
       hero_video_url: form.hero_video_url || null,
@@ -244,6 +321,40 @@ export default function SiteForm({ site, onSaved }) {
       </div>
 
       <div>
+        <label className={labelClass}>Accent color (optional — overrides the template's default)</label>
+        <div className="flex items-center gap-2 flex-wrap">
+          {ACCENT_PRESETS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => set("accent_color", c)}
+              title={c}
+              className={`h-7 w-7 rounded-full border-2 transition-colors ${
+                form.accent_color === c ? "border-[#1c1a17]" : "border-transparent hover:border-black/20"
+              }`}
+              style={{ background: c }}
+            />
+          ))}
+          <input
+            type="color"
+            value={form.accent_color || "#8a1c2b"}
+            onChange={(e) => set("accent_color", e.target.value)}
+            className="h-7 w-9 rounded cursor-pointer border border-black/10"
+            aria-label="Custom accent color"
+          />
+          {form.accent_color && (
+            <button
+              type="button"
+              onClick={() => set("accent_color", "")}
+              className="text-xs text-[#1c1a17]/50 hover:text-[#1c1a17] ml-1"
+            >
+              Use template default
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div>
         <label className={labelClass}>Font pairing</label>
         <div className="grid sm:grid-cols-3 gap-3">
           {FONT_PAIRINGS.map((f) => (
@@ -264,6 +375,55 @@ export default function SiteForm({ site, onSaved }) {
                 {f.label}
               </p>
             </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className={labelClass}>Home page sections</label>
+        <p className="text-xs text-[#1c1a17]/40 mb-2">
+          What shows on your home page, and in what order — Hero and Contact are always included.
+          A page stays reachable on its own even if you turn it off here.
+        </p>
+        <div className="space-y-1.5">
+          {form.home_sections.map((key, i) => (
+            <div key={key} className="flex items-center gap-2 bg-white border border-black/10 rounded-lg px-3 py-2">
+              <input
+                type="checkbox"
+                checked
+                onChange={() => disableSection(key)}
+                className="accent-[#8a7a5c]"
+              />
+              <span className="flex-1 text-sm">{HOME_SECTION_LABELS[key]}</span>
+              <button
+                type="button"
+                onClick={() => moveSection(i, -1)}
+                disabled={i === 0}
+                className="text-[#1c1a17]/40 hover:text-[#1c1a17] disabled:opacity-20 disabled:hover:text-[#1c1a17]/40 px-1"
+                title="Move earlier"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                onClick={() => moveSection(i, 1)}
+                disabled={i === form.home_sections.length - 1}
+                className="text-[#1c1a17]/40 hover:text-[#1c1a17] disabled:opacity-20 disabled:hover:text-[#1c1a17]/40 px-1"
+                title="Move later"
+              >
+                ↓
+              </button>
+            </div>
+          ))}
+          {ALL_SECTION_KEYS.filter((key) => !form.home_sections.includes(key)).map((key) => (
+            <div
+              key={key}
+              className="flex items-center gap-2 border border-dashed border-black/15 rounded-lg px-3 py-2"
+            >
+              <input type="checkbox" checked={false} onChange={() => enableSection(key)} className="accent-[#8a7a5c]" />
+              <span className="flex-1 text-sm text-[#1c1a17]/50">{HOME_SECTION_LABELS[key]}</span>
+              <span className="text-xs text-[#1c1a17]/35">Hidden from home</span>
+            </div>
           ))}
         </div>
       </div>
