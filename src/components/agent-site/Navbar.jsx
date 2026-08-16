@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
-import { agentSiteHref, isAgentSiteAppHost } from "../../lib/agentSiteLinks";
+import { agentSiteHref } from "../../lib/agentSiteLinks";
 import SiteLink from "./SiteLink";
 
 // sectionKey matches agent_sites.home_sections entries (see
@@ -67,7 +67,7 @@ export default function Navbar() {
 
         <nav className="hidden lg:flex items-center gap-6 xl:gap-8 shrink-0">
           {visiblePages.map((page) => {
-            const active = isAgentSiteAppHost() && location.pathname === agentSiteHref(site.slug, page.path);
+            const active = location.pathname === agentSiteHref(site.slug, page.path);
             return (
               <SiteLink
                 key={page.path}
