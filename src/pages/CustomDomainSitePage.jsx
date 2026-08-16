@@ -1,4 +1,5 @@
 import { Routes, Route, useParams } from "react-router-dom";
+import { bareHost } from "../lib/appHosts";
 import { useListing } from "../hooks/useListing";
 import { useAgentSite } from "../hooks/useAgentSite";
 import { useAgentPost } from "../hooks/useAgentPost";
@@ -21,7 +22,7 @@ import Contact from "../components/agent-site/Contact";
 // listing site has never been more than one page), so only "/" attempts
 // the listing lookup; every other path below is agent-site-only.
 function CustomDomainHomePage() {
-  const hostname = window.location.hostname;
+  const hostname = bareHost(window.location.hostname);
   const listingResult = useListing({ customDomain: hostname });
   const agentSiteResult = useAgentSite({ customDomain: hostname });
 
@@ -44,7 +45,7 @@ function CustomDomainHomePage() {
 // Equivalent of PublicAgentSitePage.jsx, but resolving the site by this
 // request's hostname (custom_domain) instead of a :slug route param.
 function CustomDomainAgentSitePage({ pageTitle, children }) {
-  const hostname = window.location.hostname;
+  const hostname = bareHost(window.location.hostname);
   const result = useAgentSite({ customDomain: hostname });
   return (
     <AgentSitePage {...result} pageTitle={pageTitle}>
@@ -57,7 +58,7 @@ function CustomDomainAgentSitePage({ pageTitle, children }) {
 // hostname instead of :slug.
 function CustomDomainAgentPostPage() {
   const { postSlug } = useParams();
-  const result = useAgentPost({ siteCustomDomain: window.location.hostname, postSlug });
+  const result = useAgentPost({ siteCustomDomain: bareHost(window.location.hostname), postSlug });
   return <AgentPostPage {...result} />;
 }
 
