@@ -1,4 +1,5 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
+import SiteLink from "./SiteLink";
 
 export default function BlogTeaser() {
   const { site } = useAgentSiteContext();
@@ -16,7 +17,7 @@ export default function BlogTeaser() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {site.posts.map((post) => (
-            <a key={post.id} href={`/sites/${site.slug}/blog/${post.slug}`} className="group block">
+            <SiteLink key={post.id} slug={site.slug} path={`/blog/${post.slug}`} className="group block">
               <div className="overflow-hidden bg-[var(--as-surface)] aspect-[4/3]">
                 {post.image_url && (
                   <img
@@ -34,7 +35,7 @@ export default function BlogTeaser() {
               <p className="mt-2 font-medium leading-snug text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">
                 {post.title}
               </p>
-            </a>
+            </SiteLink>
           ))}
         </div>
       </div>
