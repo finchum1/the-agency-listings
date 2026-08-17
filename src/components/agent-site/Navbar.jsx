@@ -60,7 +60,7 @@ export default function Navbar() {
               <img src={site.secondaryLogo} alt="" className="h-8 sm:h-10 w-auto" />
             </>
           )}
-          <span className="hidden sm:block text-sm font-display tracked-wide whitespace-nowrap text-[var(--as-on-dark)]">
+          <span className="hidden sm:block ml-2 text-sm font-display tracked-wide whitespace-nowrap text-[var(--as-on-dark)]">
             {site.agent.name}
           </span>
         </SiteLink>
