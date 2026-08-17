@@ -52,9 +52,12 @@ export default function PropertyWebsitesPage() {
                 href="/listings/1645-saratoga-way"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-semibold text-[#1c1a17]/70 hover:text-[#1c1a17] transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1c1a17]/70 hover:text-[#1c1a17] transition-colors"
               >
-                View a live example ↗
+                View a live example
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M7 17L17 7M7 7h10v10" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </a>
             </div>
           </motion.div>

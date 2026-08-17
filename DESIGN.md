@@ -155,10 +155,15 @@ Two radius steps cover the whole system: full pill (`rounded-full`, buttons, bad
 
 ### Navigation
 - Dashboard: text links, active state gets a translucent `bg-ink/10 text-ink` pill (`rounded-full`); inactive is `ink/70` with a subtle `hover:bg-black/5`. No underline, no icon-led nav items. Each tab's active state is its own `activeWhen(pathname)` check (see `DashboardLayout.jsx`'s `NAV_ITEMS`), not a generic string-prefix match — Listings' path (`/dashboard`) is a literal prefix of every other tab's path, so a naive prefix check kept it permanently highlighted.
-- Landing page: single "Sign In" pill top-right (outline on the sticky header, filled ink in the hero CTA); sticky header is translucent cream with backdrop blur over a hairline border.
+- Marketing pages (`MarketingNav.jsx`, shared by the home page and both product deep-dives): logo left, "Agent Websites" / "Property Sites" tab links center (same translucent ink/10 active pill as the dashboard nav), "Sign In" pill top-right (outline, filled ink on hover); sticky header is translucent cream with backdrop blur over a hairline border. Nav links collapse below `sm` on mobile — logo and Sign In stay, the two tabs are reachable via each page's own content links and the footer instead.
 
 ### Browser Frame (signature component)
 A rounded, bordered, white-chrome container with three colored traffic-light dots (`#e4574c` / `#e8b23d` / `#3fae5c`) over any full-bleed screenshot — the landing page's device for proving the dashboard and listing sites are real, not mockups. `rounded-xl overflow-hidden border border-black/10 shadow-2xl shadow-black/20`. This is a landing-page-specific proof device, not a general content container; don't reuse it to frame arbitrary images elsewhere in the product.
+
+**Phone Frame** (`src/components/marketing/DeviceFrames.jsx`, sibling of Browser Frame): the same proof-device family sized for a mobile screenshot instead of a desktop one — dark rounded device chrome with a notch, same soft-shadow language, used wherever a marketing page proves "this works on mobile too." Same rule applies: a marketing-proof device, not a general image container.
+
+### Marketing pages (`src/pages/LandingPage.jsx`, `AgentWebsitesPage.jsx`, `PropertyWebsitesPage.jsx`)
+Three pages sharing one set of chrome components (`src/components/marketing/`: `MarketingNav.jsx`, `MarketingFooter.jsx`, `DeviceFrames.jsx`, `motion.jsx` — the `Reveal`/`variants`/`easeOut` entrance language, moved out of `LandingPage.jsx` so all three pages reuse the exact same motion): the home page gives a short highlight of each product (Agent Websites, Property Websites) with a link to that product's own deep-dive page, which carries the full pitch — hero, capability sections, a mobile-device proof, and a closing CTA. Sign-up is invite-only (see PRODUCT.md), so the two deep-dive pages' CTAs are a `mailto:` ("Get in Touch," via `src/lib/marketingContact.js`) rather than "Sign In" — "Sign In" stays reserved for the home page's own CTAs, aimed at agents who already have an account.
 
 ## Do's and Don'ts
 

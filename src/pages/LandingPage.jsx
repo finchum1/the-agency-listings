@@ -54,9 +54,12 @@ export default function LandingPage() {
               </Link>
               <a
                 href="#products"
-                className="text-sm font-semibold text-[#1c1a17]/70 hover:text-[#1c1a17] transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1c1a17]/70 hover:text-[#1c1a17] transition-colors"
               >
-                See how it works ↓
+                See how it works
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14M6 13l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </a>
             </div>
           </motion.div>

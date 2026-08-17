@@ -32,6 +32,7 @@ export function PhoneFrame({ src, alt, className }) {
     <motion.div
       initial={{ opacity: 0, rotateY: -18, scale: 0.92 }}
       whileInView={{ opacity: 1, rotateY: 0, scale: 1 }}
+      whileHover={{ y: -6, transition: { duration: 0.4, ease: easeOut } }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.8, ease: easeOut }}
       style={{ perspective: 1000 }}
