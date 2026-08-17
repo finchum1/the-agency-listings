@@ -242,6 +242,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
       beds: form.beds === "" ? null : Number(form.beds),
       baths: form.baths === "" ? null : Number(form.baths),
       sqft: form.sqft === "" ? null : Number(form.sqft),
+      accent_color: form.accent_color || null,
       custom_domain: normalizeDomain(form.custom_domain),
       description: descriptionText
         .split(/\n\s*\n/)
