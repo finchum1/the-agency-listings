@@ -120,7 +120,6 @@ const LOGO_VARIANTS = [
   { value: "red", label: "Red", chipBg: "#ffffff", src: "/images/brokerage-logo.png" },
   { value: "white", label: "White", chipBg: "#14130f", src: "/images/brokerage-logo-white.png" },
   { value: "black", label: "Black", chipBg: "#f0eee9", src: "/images/brokerage-logo-black.png" },
-  { value: "square", label: "Square", chipBg: "#ffffff", src: "/images/brokerage-logo-square.png" },
 ];
 
 // Hero and Contact are always shown, in fixed position (Hero first,
