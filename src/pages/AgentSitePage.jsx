@@ -4,6 +4,7 @@ import { adaptAgentSite } from "../lib/adaptAgentSite";
 import { buildAgentSiteMeta, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta } from "../lib/pageMeta";
 import { trackView } from "../lib/trackView";
+import { isAgentSiteAppHost } from "../lib/agentSiteLinks";
 import { AgentSiteProvider } from "../context/AgentSiteContext";
 
 import Navbar from "../components/agent-site/Navbar";
@@ -35,7 +36,12 @@ export default function AgentSitePage({
     applyPageMeta({
       ...meta,
       title: pageTitle ? `${pageTitle} | ${meta.title}` : meta.title,
-      url: `${SITE_ORIGIN}/sites/${site.slug}`,
+      // On the app host, always the site's canonical /sites/:slug URL. On
+      // the site's own custom domain, omit it — applyPageMeta then falls
+      // back to the real current URL, which is exactly right per page
+      // (e.g. https://terrencefinchum.com/about) instead of pointing
+      // every page back at a single app-host URL.
+      url: isAgentSiteAppHost() ? `${SITE_ORIGIN}/sites/${site.slug}` : undefined,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site, agent, pageTitle]);
