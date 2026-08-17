@@ -100,7 +100,7 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
     <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-semibold">Photos</h2>
-        <label className="text-xs font-semibold text-[#8a7a5c] hover:underline cursor-pointer">
+        <label className="text-xs font-semibold text-[#ed2127] hover:underline cursor-pointer">
           {uploading ? "Uploading…" : "+ Add photos"}
           <input
             ref={fileInputRef}
@@ -134,7 +134,7 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
                   dragId === photo.id
                     ? "opacity-40 border-black/10"
                     : overId === photo.id
-                      ? "border-[#8a7a5c] ring-2 ring-[#8a7a5c]/30"
+                      ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
                       : "border-black/10"
                 }`}
               >

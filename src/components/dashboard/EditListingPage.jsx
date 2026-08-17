@@ -33,7 +33,7 @@ export default function EditListingPage() {
         <p className="text-sm text-[#1c1a17]/60 mb-4">
           Listing not found, or you don't have access to it.
         </p>
-        <Link to="/dashboard" className="text-sm text-[#8a7a5c] hover:underline">
+        <Link to="/dashboard" className="text-sm text-[#ed2127] hover:underline">
           ← Back to listings
         </Link>
       </div>
@@ -45,7 +45,7 @@ export default function EditListingPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-semibold">{listing.address_line1}</h1>
         <div className="flex items-center gap-4">
-          <Link to={`/dashboard/listings/${listing.id}/flyer`} className="text-sm text-[#8a7a5c] hover:underline">
+          <Link to={`/dashboard/listings/${listing.id}/flyer`} className="text-sm text-[#ed2127] hover:underline">
             Flyer →
           </Link>
           {listing.status !== "draft" && (
@@ -53,7 +53,7 @@ export default function EditListingPage() {
               href={`/listings/${listing.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-[#8a7a5c] hover:underline"
+              className="text-sm text-[#ed2127] hover:underline"
             >
               View live site →
             </a>

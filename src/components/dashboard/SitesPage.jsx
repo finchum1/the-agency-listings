@@ -83,7 +83,7 @@ export default function SitesPage() {
                             href={`/sites/${site.slug}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-[#8a7a5c] hover:underline"
+                            className="text-xs text-[#ed2127] hover:underline"
                           >
                             View live
                           </a>

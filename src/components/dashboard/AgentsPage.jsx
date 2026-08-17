@@ -132,7 +132,7 @@ export default function AgentsPage() {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#8a7a5c]/40";
+    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
 
   return (
@@ -169,7 +169,7 @@ export default function AgentsPage() {
                   </span>
                   <span
                     className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                      a.role === "admin" ? "bg-[#8a7a5c]/15 text-[#8a7a5c]" : "bg-black/5 text-[#1c1a17]/60"
+                      a.role === "admin" ? "bg-[#ed2127]/15 text-[#ed2127]" : "bg-black/5 text-[#1c1a17]/60"
                     }`}
                   >
                     {a.role === "admin" ? "Admin" : "Agent"}
@@ -179,7 +179,7 @@ export default function AgentsPage() {
                       type="button"
                       onClick={() => handleEnableLogin(a)}
                       disabled={enablingId === a.id}
-                      className="text-xs font-semibold text-[#8a7a5c] hover:underline disabled:opacity-50 whitespace-nowrap"
+                      className="text-xs font-semibold text-[#ed2127] hover:underline disabled:opacity-50 whitespace-nowrap"
                     >
                       {enablingId === a.id ? "Sending…" : "Enable Login"}
                     </button>

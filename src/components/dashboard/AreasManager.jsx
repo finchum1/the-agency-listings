@@ -19,7 +19,7 @@ export default function AreasManager({ agentSiteId, areas, onChanged }) {
   const [error, setError] = useState("");
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#8a7a5c]/40";
+    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
 
   const startAdd = () => {
@@ -113,7 +113,7 @@ export default function AreasManager({ agentSiteId, areas, onChanged }) {
           <button
             type="button"
             onClick={startAdd}
-            className="text-xs font-semibold text-[#8a7a5c] hover:underline"
+            className="text-xs font-semibold text-[#ed2127] hover:underline"
           >
             + Add area
           </button>

@@ -27,7 +27,7 @@ export default function EditAgentSitePage() {
     return (
       <div>
         <p className="text-sm text-[#1c1a17]/60 mb-4">Agent not found.</p>
-        <Link to="/dashboard/sites" className="text-sm text-[#8a7a5c] hover:underline">
+        <Link to="/dashboard/sites" className="text-sm text-[#ed2127] hover:underline">
           ← Back to sites
         </Link>
       </div>

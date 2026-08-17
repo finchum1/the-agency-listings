@@ -64,7 +64,7 @@ export default function DashboardLayout() {
               />
               {profile?.full_name || profile?.email}
               {isAdmin && (
-                <span className="text-xs font-semibold text-[#8a7a5c]">ADMIN</span>
+                <span className="text-xs font-semibold text-[#ed2127]">ADMIN</span>
               )}
             </Link>
             <button

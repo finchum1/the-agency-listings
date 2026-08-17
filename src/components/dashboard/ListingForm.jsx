@@ -14,47 +14,46 @@ function slugify(text) {
 
 // Kept in sync with the --ls-* CSS custom properties in src/index.css and
 // the check constraint in supabase/listing-themes.sql. Same six template
-// names as agent_sites.theme (see SiteForm.jsx's THEMES), but every swatch
-// here ends in the dashboard's own gold-brown (#8a7a5c) instead of brand
-// red — Listing Sites are the main "Broker's Own Dashboard" world, a
-// deliberately different system from Agent Sites (see DESIGN.md); its one
-// accent color is gold-brown, never red, on every template.
+// names as agent_sites.theme (see SiteForm.jsx's THEMES). Listing Sites'
+// "one accent" used to be a gold-brown that was never actually part of
+// The Agency's brand — corrected to the same corporate red every swatch
+// below now shows, matching Agent Sites' accent exactly.
 const THEMES = [
   {
     value: "classic",
     label: "Classic",
     description: "Cream & white sections, dark footer. The current look.",
-    swatches: ["#faf9f7", "#1c1a17", "#8a7a5c"],
+    swatches: ["#faf9f7", "#1c1a17", "#ed2127"],
   },
   {
     value: "light",
     label: "Light",
     description: "Mostly white and bright throughout, same layout.",
-    swatches: ["#ffffff", "#1c1a17", "#8a7a5c"],
+    swatches: ["#ffffff", "#1c1a17", "#ed2127"],
   },
   {
     value: "dark",
     label: "Dark",
     description: "Ink backgrounds throughout with cream text, brighter accent.",
-    swatches: ["#1c1a17", "#2e2b24", "#b5a179"],
+    swatches: ["#1c1a17", "#2e2b24", "#f2454b"],
   },
   {
     value: "sand",
     label: "Sand",
     description: "Warmer, earthier take on Classic — taupe ground.",
-    swatches: ["#f0e9df", "#211a12", "#8a7a5c"],
+    swatches: ["#f0e9df", "#211a12", "#ed2127"],
   },
   {
     value: "midnight",
     label: "Midnight",
-    description: "A cooler dark — navy-black instead of warm ink, brighter gold.",
-    swatches: ["#0d1420", "#1f2937", "#c9a961"],
+    description: "A cooler dark — navy-black instead of warm ink.",
+    swatches: ["#0d1420", "#1f2937", "#f2454b"],
   },
   {
     value: "ivory",
     label: "Ivory",
     description: "Ultra-minimal near-white, neutral and quiet.",
-    swatches: ["#fefefe", "#1a1a1a", "#8a7a5c"],
+    swatches: ["#fefefe", "#1a1a1a", "#ed2127"],
   },
 ];
 
@@ -211,7 +210,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#8a7a5c]/40";
+    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
 
   return (
@@ -309,7 +308,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
           <h2 className="font-display text-lg font-semibold">Template</h2>
           <p className="text-xs text-[#1c1a17]/50 mt-1">
             Changes how this listing's public site looks — every template still uses The
-            Agency's own gold-brown accent, only the background/text neutrals change.
+            Agency's own brand red, only the background/text neutrals change.
           </p>
         </div>
         <div className="grid sm:grid-cols-3 gap-3">
@@ -320,7 +319,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
               onClick={() => setForm((f) => ({ ...f, theme: t.value }))}
               className={`text-left rounded-xl border p-3.5 transition-colors ${
                 form.theme === t.value
-                  ? "border-[#8a7a5c] ring-2 ring-[#8a7a5c]/30"
+                  ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
                   : "border-black/10 hover:border-black/20"
               }`}
             >
@@ -395,7 +394,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
           <button
             type="button"
             onClick={addFeatureGroup}
-            className="text-xs font-semibold text-[#8a7a5c] hover:underline"
+            className="text-xs font-semibold text-[#ed2127] hover:underline"
           >
             + Add category
           </button>

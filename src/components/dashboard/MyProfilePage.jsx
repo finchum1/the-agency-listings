@@ -52,7 +52,7 @@ export default function MyProfilePage() {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#8a7a5c]/40";
+    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
 
   if (!profile) return <p className="text-sm text-[#1c1a17]/50">Loading…</p>;

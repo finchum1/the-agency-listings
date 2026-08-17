@@ -56,7 +56,7 @@ export default function SetPasswordPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#8a7a5c]/40"
+                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
                 placeholder="At least 8 characters"
               />
             </div>
@@ -69,7 +69,7 @@ export default function SetPasswordPage() {
                 type="password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#8a7a5c]/40"
+                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
               />
             </div>
 

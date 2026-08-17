@@ -4,7 +4,7 @@ description: A shared multi-agent listings dashboard and premium public listing 
 colors:
   cream-bg: "#faf9f7"
   ink: "#1c1a17"
-  gold-brown: "#8a7a5c"
+  brand-red: "#ed2127"
   white: "#ffffff"
   hairline-black: "rgba(0,0,0,0.05)"
   status-positive: "#3fae5c"
@@ -62,9 +62,9 @@ components:
 
 **Creative North Star: "The Broker's Own Dashboard"**
 
-This is one product wearing one skin: the internal dashboard where agents manage listings, and the public listing sites those listings generate, share a single visual language down to the pixel. The system reads as a warm, editorial real-estate brand rather than generic SaaS chrome — cream paper, near-black ink, a muted gold-brown accent used sparingly, Playfair Display headlines over plain Inter body copy. Nothing about it performs "software"; it performs "brokerage," because the public-facing artifact (the listing site) is the product's real storefront and the dashboard simply manages it.
+This is one product wearing one skin: the internal dashboard where agents manage listings, and the public listing sites those listings generate, share a single visual language down to the pixel. The system reads as a warm, editorial real-estate brand rather than generic SaaS chrome — cream paper, near-black ink, The Agency's own brand red used sparingly as the one accent, Playfair Display headlines over plain Inter body copy. Nothing about it performs "software"; it performs "brokerage," because the public-facing artifact (the listing site) is the product's real storefront and the dashboard simply manages it.
 
-The landing page (the newest surface) inherited this world rather than introducing one: same cream/ink/gold-brown palette, same Playfair/Inter pairing, same pill buttons and rounded-2xl cards as the dashboard and every listing site it screenshots. Its one addition — the browser-chrome "device frame" around dashboard/listing screenshots — is a proof device for an already-live product, not a new material language, and is documented below as a signature component.
+The landing page (the newest surface) inherited this world rather than introducing one: same cream/ink/brand-red palette, same Playfair/Inter pairing, same pill buttons and rounded-2xl cards as the dashboard and every listing site it screenshots. Its one addition — the browser-chrome "device frame" around dashboard/listing screenshots — is a proof device for an already-live product, not a new material language, and is documented below as a signature component.
 
 **Key Characteristics:**
 - Cream-and-ink editorial base with a single warm accent, not a multi-color UI palette.
@@ -75,13 +75,13 @@ The landing page (the newest surface) inherited this world rather than introduci
 
 ## Colors
 
-A restrained editorial palette: warm neutral ground, near-black ink for text and primary actions, one muted accent used at low frequency, plus a small fixed status vocabulary for listing state.
+A restrained editorial palette: warm neutral ground, near-black ink for text and primary actions, one brand accent used at low frequency, plus a small fixed status vocabulary for listing state.
 
 ### Primary
 - **Ink** (`#1c1a17`): body text, primary buttons, active nav state, footer background. Functions as both the "dark neutral" and the primary call-to-action color — there is no separate brand-hue primary button color.
 
 ### Secondary
-- **Gold-Brown** (`#8a7a5c`): the one accent color. Used at low frequency — the "ADMIN" tag, the `::selection` and `:focus-visible` treatment, italic emphasis words in the landing page's positioning strip, checkmark icon strokes. Never used as a large fill.
+- **Brand Red** (`#ed2127`): the one accent color — The Agency's actual corporate red (theagencyre.com's own `--primary-color-500`, confirmed by inspecting their site directly). Used at low frequency — the "ADMIN" tag, the `::selection` and `:focus-visible` treatment, italic emphasis words in the landing page's positioning strip, checkmark icon strokes. Never used as a large fill. This corrected an earlier, long-standing mistake: the system used a muted gold-brown (`#8a7a5c`) here for most of this app's life, which was never actually part of The Agency's brand — it was an invented color nobody had checked against corporate. Don't reintroduce gold-brown, muted, or off-brand accent hues anywhere in this system; if a task ever calls for "the dashboard's accent color," it means this red.
 
 ### Neutral
 - **Cream** (`#faf9f7`): page background across dashboard, public sites, and the landing page. The system's paper.
@@ -169,7 +169,7 @@ Three pages sharing one set of chrome components (`src/components/marketing/`: `
 
 ### Do:
 - **Do** use `rounded-full` for every button, badge, and status indicator; `rounded-2xl`/`rounded-xl` for every card and framed panel. No other radius steps.
-- **Do** keep gold-brown (`#8a7a5c`) rare — text accents, selection tint, focus ring, small dots — never a large fill.
+- **Do** keep brand red (`#ed2127`) rare — text accents, selection tint, focus ring, small dots — never a large fill.
 - **Do** use soft black-opacity shadows only (`shadow-black/5` to `/20`); scale intensity with importance, not with hover states.
 - **Do** reserve Playfair Display for h1–h4; keep Inter everywhere else, including uppercase labels.
 - **Do** drive status color from the single shared `STATUS_COLORS`/`STATUS_LABELS` map so dashboard and public sites never drift.
@@ -177,14 +177,14 @@ Three pages sharing one set of chrome components (`src/components/marketing/`: `
 ### Don't:
 - **Don't** introduce hard-offset or colored drop-shadows; this is a soft-shadow, editorial world, not a neobrutalist one.
 - **Don't** add kicker/eyebrow labels above headings — the shipped system uses none; headings stand alone with no small-caps label sitting above them.
-- **Don't** introduce a second accent color or expand the palette beyond ink/cream/gold-brown/status-three; a new UI need should be solved with opacity or scale of the existing tokens, not a new hue.
+- **Don't** introduce a second accent color or expand the palette beyond ink/cream/brand-red/status-three; a new UI need should be solved with opacity or scale of the existing tokens, not a new hue.
 - **Don't** reuse the browser-frame device outside proof/screenshot contexts — it is a landing-page device, not a general image container.
 
 ## Agent Sites (distinct world — intentional exception)
 
 The public agent-site pages (`/sites/:slug` and `/sites/:slug/blog/:postSlug`, i.e. `src/components/agent-site/*` and `src/pages/AgentSitePage.jsx` / `PublicAgentPostPage.jsx`) are a **deliberate second visual world**, not a drift from the system above. Per the site owner's explicit request, they're styled to match his personal site (terrence-finchum-realty.vercel.app) instead of "The Broker's Own Dashboard" skin, and — per later requests — each agent can further customize their own site's template, font pairing, accent color, and which Home page sections appear (and in what order). This section documents that exception so it isn't "fixed" back to the main system by mistake.
 
-**Do not apply this world to the dashboard or to public listing sites (`/listings/:slug`)** — those stay on the cream/ink/gold-brown system above.
+**Do not apply this world to the dashboard or to public listing sites (`/listings/:slug`)** — those stay on the cream/ink/brand-red system above.
 
 - **Shape:** sharp corners throughout — no `rounded-full`, no `rounded-2xl`. Buttons are rectangles (solid accent fill, white text, uppercase tracked-wide label); cards and photo frames have zero border-radius. This is constant across every template.
 - **Labels:** small uppercase accent-colored eyebrow labels above every section heading — unlike the main system's explicit "no eyebrow labels" rule, this world uses them everywhere, matching terrence-finchum-realty. Uses the `.tracked` (0.14em) / `.tracked-wide` (0.22em) utilities instead of `.tracking-wider-plus`.
@@ -231,4 +231,4 @@ Each agent picks their own **template**, **font pairing**, **accent color**, **l
 
 **Secondary logo** (`secondary_logo_url`): an optional per-agent logo shown next to the brokerage logo (a thin vertical divider between them) in both `Navbar.jsx` and `Footer.jsx`. Omitted entirely when not set — agents without one just show the brokerage logo alone.
 
-If a new agent-site component is added, match this world (sharp corners, eyebrow labels, `--as-*` var-driven colors, `.font-agent-sans`) rather than the dashboard's cream/ink/gold-brown system — and never hardcode a hex color where a `--as-*` token exists, or it'll only render correctly in one template.
+If a new agent-site component is added, match this world (sharp corners, eyebrow labels, `--as-*` var-driven colors, `.font-agent-sans`) rather than the dashboard's cream/ink/brand-red system — and never hardcode a hex color where a `--as-*` token exists, or it'll only render correctly in one template.

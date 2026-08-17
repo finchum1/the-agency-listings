@@ -37,7 +37,7 @@ export default function OpenHouseManager({ listingId, openHouses, onChanged }) {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#8a7a5c]/40";
+    "w-full rounded-lg border border-black/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
 
   return (
     <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">

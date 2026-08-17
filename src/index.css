@@ -21,12 +21,12 @@
   }
 
   ::selection {
-    background-color: #8a7a5c40;
+    background-color: #ed212740;
     color: #1c1a17;
   }
 
   :focus-visible {
-    outline: 2px solid #8a7a5c;
+    outline: 2px solid #ed2127;
     outline-offset: 2px;
   }
 }
@@ -105,10 +105,12 @@
      listings.theme; see EditListingPage.jsx's ListingForm.jsx). Kept in
      the same [data-theme] selectors rather than a parallel set of rules
      so a 7th template only ever needs adding once. Listing Sites are the
-     main "Broker's Own Dashboard" world (see DESIGN.md), not the Agent
-     Sites world — --ls-accent is always the dashboard's own gold-brown
-     (#8a7a5c), matching that world's "One Accent Rule," never red;
-     templates vary neutrals only, exactly like --as-*. */
+     main "Broker's Own Dashboard" world (see DESIGN.md); its "one accent"
+     was gold-brown (#8a7a5c) for most of this app's life, but that was
+     never actually The Agency's brand color — corrected the whole
+     dashboard to corporate red (#ed2127) to match, so --ls-accent uses
+     the exact same red/#f2454b split as --as-accent now. Templates still
+     only vary neutrals. */
   [data-theme="classic"] {
     --as-bg: #f7f4ee;      /* page background */
     --as-bg-alt: #ffffff;  /* alternating/bordered section background */
@@ -124,7 +126,7 @@
     --ls-on-dark: #faf9f7;
     --ls-surface: #e7e2d6;
     --ls-text: #1c1a17;
-    --ls-accent: #8a7a5c;
+    --ls-accent: #ed2127;
   }
   [data-theme="light"] {
     --as-bg: #ffffff;
@@ -141,7 +143,7 @@
     --ls-on-dark: #faf9f7;
     --ls-surface: #f2f0ea;
     --ls-text: #1c1a17;
-    --ls-accent: #8a7a5c;
+    --ls-accent: #ed2127;
   }
   [data-theme="dark"] {
     --as-bg: #14130f;
@@ -158,7 +160,7 @@
     --ls-on-dark: #faf9f7;
     --ls-surface: #2e2b24;
     --ls-text: #faf9f7;
-    --ls-accent: #b5a179;
+    --ls-accent: #f2454b;
   }
   /* Warmer, earthier variant of Classic — taupe/sand ground instead of cream. */
   [data-theme="sand"] {
@@ -176,7 +178,7 @@
     --ls-on-dark: #f5efe4;
     --ls-surface: #e0d3bd;
     --ls-text: #2a2118;
-    --ls-accent: #8a7a5c;
+    --ls-accent: #ed2127;
   }
   /* A second, COOL dark variant — navy-black instead of Dark's warm ink. */
   [data-theme="midnight"] {
@@ -194,7 +196,7 @@
     --ls-on-dark: #f1f5f9;
     --ls-surface: #1f2937;
     --ls-text: #f1f5f9;
-    --ls-accent: #c9a961;
+    --ls-accent: #f2454b;
   }
   /* Ultra-minimal, neutral near-white — cooler and quieter than Light. */
   [data-theme="ivory"] {
@@ -212,7 +214,7 @@
     --ls-on-dark: #fafafa;
     --ls-surface: #ececea;
     --ls-text: #1a1a1a;
-    --ls-accent: #8a7a5c;
+    --ls-accent: #ed2127;
   }
 }
 

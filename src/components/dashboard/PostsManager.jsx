@@ -56,7 +56,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
   }, [agentId]);
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#8a7a5c]/40";
+    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
 
   const startAdd = () => {
@@ -137,7 +137,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
       <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-semibold">Blog Posts</h2>
         {editingId === null && (
-          <button type="button" onClick={startAdd} className="text-xs font-semibold text-[#8a7a5c] hover:underline">
+          <button type="button" onClick={startAdd} className="text-xs font-semibold text-[#ed2127] hover:underline">
             + Add post
           </button>
         )}

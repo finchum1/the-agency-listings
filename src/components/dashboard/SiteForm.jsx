@@ -256,7 +256,7 @@ export default function SiteForm({ site, onSaved }) {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#8a7a5c]/40";
+    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
 
   return (
@@ -288,7 +288,7 @@ export default function SiteForm({ site, onSaved }) {
           href={`/sites/${form.slug}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sm text-[#8a7a5c] hover:underline inline-block"
+          className="text-sm text-[#ed2127] hover:underline inline-block"
         >
           View live site →
         </a>
@@ -331,7 +331,7 @@ export default function SiteForm({ site, onSaved }) {
               onClick={() => set("theme", t.value)}
               className={`text-left rounded-xl border p-3.5 transition-colors ${
                 form.theme === t.value
-                  ? "border-[#8a7a5c] ring-2 ring-[#8a7a5c]/30"
+                  ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
                   : "border-black/10 hover:border-black/20"
               }`}
             >
@@ -385,12 +385,12 @@ export default function SiteForm({ site, onSaved }) {
               onClick={() => set("font_pairing", f.value)}
               className={`text-left rounded-xl border p-3.5 transition-colors ${
                 form.font_pairing === f.value
-                  ? "border-[#8a7a5c] ring-2 ring-[#8a7a5c]/30"
+                  ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
                   : "border-black/10 hover:border-black/20"
               }`}
             >
               {f.tag && (
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8a7a5c] mb-1.5">{f.tag}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#ed2127] mb-1.5">{f.tag}</p>
               )}
               <p className="text-lg leading-none mb-2" style={{ fontFamily: f.display }}>
                 Aa
@@ -416,7 +416,7 @@ export default function SiteForm({ site, onSaved }) {
               onClick={() => set("logo_variant", v.value)}
               className={`rounded-xl border p-2.5 transition-colors ${
                 form.logo_variant === v.value
-                  ? "border-[#8a7a5c] ring-2 ring-[#8a7a5c]/30"
+                  ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
                   : "border-black/10 hover:border-black/20"
               }`}
             >
@@ -442,7 +442,7 @@ export default function SiteForm({ site, onSaved }) {
                 type="checkbox"
                 checked
                 onChange={() => disableSection(key)}
-                className="accent-[#8a7a5c]"
+                className="accent-[#ed2127]"
               />
               <span className="flex-1 text-sm">{HOME_SECTION_LABELS[key]}</span>
               <button
@@ -470,7 +470,7 @@ export default function SiteForm({ site, onSaved }) {
               key={key}
               className="flex items-center gap-2 border border-dashed border-black/15 rounded-lg px-3 py-2"
             >
-              <input type="checkbox" checked={false} onChange={() => enableSection(key)} className="accent-[#8a7a5c]" />
+              <input type="checkbox" checked={false} onChange={() => enableSection(key)} className="accent-[#ed2127]" />
               <span className="flex-1 text-sm text-[#1c1a17]/50">{HOME_SECTION_LABELS[key]}</span>
               <span className="text-xs text-[#1c1a17]/35">Hidden from home</span>
             </div>
@@ -546,7 +546,7 @@ export default function SiteForm({ site, onSaved }) {
         <button
           type="button"
           onClick={addStat}
-          className="text-xs font-semibold text-[#8a7a5c] hover:underline mt-2"
+          className="text-xs font-semibold text-[#ed2127] hover:underline mt-2"
         >
           + Add stat
         </button>

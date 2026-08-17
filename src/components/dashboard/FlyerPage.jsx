@@ -146,7 +146,7 @@ export default function FlyerPage() {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#8a7a5c]/40";
+    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
 
   // Only the very first load shows this — NOT a refresh triggered by
@@ -160,7 +160,7 @@ export default function FlyerPage() {
     return (
       <div>
         <p className="text-sm text-[#1c1a17]/60 mb-4">Listing not found, or you don't have access to it.</p>
-        <Link to="/dashboard" className="text-sm text-[#8a7a5c] hover:underline">
+        <Link to="/dashboard" className="text-sm text-[#ed2127] hover:underline">
           ← Back to listings
         </Link>
       </div>
@@ -238,12 +238,12 @@ export default function FlyerPage() {
                       type="button"
                       onClick={() => togglePhoto(photo.id)}
                       className={`relative rounded-lg overflow-hidden border-2 aspect-square ${
-                        idx !== -1 ? "border-[#8a7a5c]" : "border-transparent"
+                        idx !== -1 ? "border-[#ed2127]" : "border-transparent"
                       }`}
                     >
                       <img src={photo.url} alt="" className="w-full h-full object-cover" />
                       {idx !== -1 && (
-                        <span className="absolute top-1 left-1 h-5 w-5 rounded-full bg-[#8a7a5c] text-white text-[10px] font-semibold flex items-center justify-center">
+                        <span className="absolute top-1 left-1 h-5 w-5 rounded-full bg-[#ed2127] text-white text-[10px] font-semibold flex items-center justify-center">
                           {idx + 1}
                         </span>
                       )}
@@ -271,7 +271,7 @@ export default function FlyerPage() {
                               type="checkbox"
                               checked={included}
                               onChange={() => toggleFeature(key)}
-                              className="accent-[#8a7a5c]"
+                              className="accent-[#ed2127]"
                             />
                             <span className={included ? "text-[#1c1a17]" : "text-[#1c1a17]/35 line-through"}>
                               {item}
@@ -355,7 +355,7 @@ export default function FlyerPage() {
               { key: "year", label: "Built", value: f.year },
             ].map((s) => (
               <div key={s.key} className="flex flex-col items-center justify-center gap-1 py-3 px-1 text-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a7a5c" strokeWidth="1.6">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="1.6">
                   {STAT_ICONS[s.key]}
                 </svg>
                 <span className="text-sm font-semibold text-[#1c1a17]">{s.value}</span>
@@ -370,7 +370,7 @@ export default function FlyerPage() {
             <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1">
               {includedFeatures.map((item, i) => (
                 <div key={i} className="flex items-center gap-1.5 text-[11px] text-[#1c1a17]/75">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8a7a5c" strokeWidth="2.5" className="shrink-0">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2.5" className="shrink-0">
                     <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <span className="truncate">{item}</span>

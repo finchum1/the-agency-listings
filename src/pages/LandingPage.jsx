@@ -9,7 +9,7 @@ import { Reveal, variants, easeOut } from "../components/marketing/motion";
 THESIS: One shared platform runs both halves of an agent's online
   presence — the mechanism is the pitch, not a feature list.
 OWN-WORLD: The Agency's existing system — red mark, Playfair Display
-  headings, Inter body, cream/black/gold-brown palette, pill buttons,
+  headings, Inter body, cream/black/brand-red palette, pill buttons,
   rounded-2xl cards — identical to the dashboard and every public site
   this page is pitching.
 STORY: A visitor (agent or office leadership) lands on the dashboard's
@@ -86,7 +86,7 @@ export default function LandingPage() {
           ].map(([word, copy], i) => (
             <Reveal key={word} delay={i * 0.1} variant="scaleIn">
               <p className="text-lg leading-snug">
-                <span className="font-display italic text-[#8a7a5c]">{word}</span>{" "}
+                <span className="font-display italic text-[#ed2127]">{word}</span>{" "}
                 <span className="text-[#1c1a17]/80">{copy}</span>
               </p>
             </Reveal>
@@ -108,7 +108,7 @@ export default function LandingPage() {
             </p>
             <Link
               to="/property-websites"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#8a7a5c] transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
             >
               See how it works
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -140,7 +140,7 @@ export default function LandingPage() {
             </p>
             <Link
               to="/agent-websites"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#8a7a5c] transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
             >
               See how it works
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

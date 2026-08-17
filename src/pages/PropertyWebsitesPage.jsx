@@ -90,7 +90,7 @@ export default function PropertyWebsitesPage() {
               {["No code changes, ever", "No redeploys, ever", "Changes visible to visitors instantly"].map(
                 (item) => (
                   <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a7a5c" strokeWidth="2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2">
                       <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     {item}

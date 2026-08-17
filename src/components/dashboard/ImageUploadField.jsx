@@ -40,7 +40,7 @@ export default function ImageUploadField({ bucket, folder, value, onChange, labe
           {value && <img src={value} alt="" className="h-full w-full object-cover" />}
         </div>
         <div className="flex-1 min-w-0">
-          <label className="text-xs font-semibold text-[#8a7a5c] hover:underline cursor-pointer">
+          <label className="text-xs font-semibold text-[#ed2127] hover:underline cursor-pointer">
             {uploading ? "Uploading…" : value ? "Replace photo" : "Upload photo"}
             <input
               ref={fileInputRef}

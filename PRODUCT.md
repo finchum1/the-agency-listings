@@ -64,11 +64,13 @@ fallback if delivery fails, so no lead is ever silently lost).
 
 **The Agency** — red mark + wordmark logo (`public/images/brokerage-logo.png`).
 Playfair Display for headings, Inter for body text. Cream background
-(`#faf9f7`), near-black text (`#1c1a17`), warm gold-brown accent
-(`#8a7a5c`). Pill-shaped buttons, `rounded-2xl` cards. This palette and
-type pairing is consistent across the dashboard and every public listing
-site already shipped — the landing page should read as unmistakably the
-same product, not a separate marketing skin.
+(`#faf9f7`), near-black text (`#1c1a17`), The Agency's own brand red as
+the one accent (`#ed2127`, confirmed against theagencyre.com directly —
+an earlier gold-brown here was never actually part of the brand).
+Pill-shaped buttons, `rounded-2xl` cards. This palette and type pairing
+is consistent across the dashboard and every public listing site already
+shipped — the landing page should read as unmistakably the same
+product, not a separate marketing skin.
 
 ## Evidence on Hand
 

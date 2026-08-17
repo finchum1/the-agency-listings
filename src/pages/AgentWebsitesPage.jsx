@@ -122,7 +122,7 @@ export default function AgentWebsitesPage() {
               {["Your own photo, bio, and stats", "Real client testimonials", "Service areas you actually work"].map(
                 (item) => (
                   <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a7a5c" strokeWidth="2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2">
                       <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     {item}
@@ -179,7 +179,7 @@ export default function AgentWebsitesPage() {
             {FONT_PAIRINGS.map((f) => (
               <motion.div key={f.label} variants={chip} className="bg-white rounded-2xl shadow-xl shadow-black/5 p-5">
                 {f.tag && (
-                  <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#8a7a5c] mb-2">{f.tag}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-2">{f.tag}</p>
                 )}
                 <p className="text-2xl leading-none mb-2.5" style={{ fontFamily: f.display }}>
                   Aa
