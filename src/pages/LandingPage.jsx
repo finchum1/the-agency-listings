@@ -1,93 +1,36 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import brokerage from "../lib/brokerage";
+import MarketingNav from "../components/marketing/MarketingNav";
+import MarketingFooter from "../components/marketing/MarketingFooter";
+import { BrowserFrame } from "../components/marketing/DeviceFrames";
+import { Reveal, variants, easeOut } from "../components/marketing/motion";
 
 /*
-THESIS: One shared dashboard replaces one repo per listing — the mechanism
-  is the pitch, not a feature list.
+THESIS: One shared platform runs both halves of an agent's online
+  presence — the mechanism is the pitch, not a feature list.
 OWN-WORLD: The Agency's existing system — red mark, Playfair Display
   headings, Inter body, cream/black/gold-brown palette, pill buttons,
-  rounded-2xl cards — identical to the dashboard and every public listing
-  site this page is pitching.
-STORY: An agent who hasn't logged in yet sees the real dashboard and a
-  real live listing, understands creating/managing a listing is now
-  instant and centralized instead of a repo-per-property, trusts it
-  because the proof is real, and signs in.
-FIRST VIEWPORT: A large, elevated, browser-framed screenshot of the real
-  Listings dashboard as the hero's visual centerpiece, headline + subhead
-  + primary CTA to its left, Sign In pill top-right.
-FORM: Dashboard-first hero, candidate 6 of 7 grounded structural
-  candidates, seed key 1c654562.
+  rounded-2xl cards — identical to the dashboard and every public site
+  this page is pitching.
+STORY: A visitor (agent or office leadership) lands on the dashboard's
+  own pitch, sees the real dashboard first (still the daily tool), then
+  meets both products it powers — property sites and agent sites — each
+  proven with a real, live screenshot, and clicks through to whichever
+  one they came to learn about.
+FIRST VIEWPORT: The existing dashboard-first hero, unchanged — headline +
+  subhead + Sign In CTA to its left, browser-framed Listings dashboard
+  screenshot to its right.
+FORM: Extension of the existing landing page (not a redesign) — two new
+  peer highlight sections replace the property-only deep content that
+  used to live here, which moved to its own page.
 FINISH: unreviewed and undocumented is unfinished; this build ends with
   the finish review, the verdict, and DESIGN.md.
 */
 
-const easeOut = [0.16, 1, 0.3, 1];
-
-// One authored entrance per section — not the same fade-up repeated down
-// the page.
-const variants = {
-  rise: {
-    hidden: { opacity: 0, y: 28 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: easeOut } },
-  },
-  fromLeft: {
-    hidden: { opacity: 0, x: -36 },
-    show: { opacity: 1, x: 0, transition: { duration: 0.7, ease: easeOut } },
-  },
-  fromRight: {
-    hidden: { opacity: 0, x: 36 },
-    show: { opacity: 1, x: 0, transition: { duration: 0.7, ease: easeOut } },
-  },
-  scaleIn: {
-    hidden: { opacity: 0, scale: 0.94 },
-    show: { opacity: 1, scale: 1, transition: { duration: 0.6, ease: easeOut } },
-  },
-};
-
-function Reveal({ children, className, delay = 0, variant = "rise" }) {
-  return (
-    <motion.div
-      className={className}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: "-80px" }}
-      variants={variants[variant]}
-      transition={{ delay }}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-function BrowserFrame({ src, alt, className }) {
-  return (
-    <div className={`rounded-xl overflow-hidden border border-black/10 bg-white shadow-2xl shadow-black/20 ${className || ""}`}>
-      <div className="flex items-center gap-1.5 px-3.5 py-2.5 bg-[#f1efe9] border-b border-black/5">
-        <span className="h-2.5 w-2.5 rounded-full bg-[#e4574c]" />
-        <span className="h-2.5 w-2.5 rounded-full bg-[#e8b23d]" />
-        <span className="h-2.5 w-2.5 rounded-full bg-[#3fae5c]" />
-      </div>
-      <img src={src} alt={alt} className="w-full h-auto block" />
-    </div>
-  );
-}
-
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#faf9f7] overflow-x-clip">
-      {/* Nav */}
-      <header className="sticky top-0 z-40 bg-[#faf9f7]/90 backdrop-blur border-b border-black/5">
-        <div className="mx-auto max-w-7xl px-6 lg:px-10 h-20 flex items-center justify-between">
-          <img src={brokerage.logo} alt={brokerage.name} className="h-9 w-auto" />
-          <Link
-            to="/login"
-            className="text-sm font-semibold px-5 py-2.5 rounded-full border border-[#1c1a17] text-[#1c1a17] hover:bg-[#1c1a17] hover:text-white transition-colors"
-          >
-            Sign In
-          </Link>
-        </div>
-      </header>
+      <MarketingNav />
 
       {/* Hero — dashboard-first */}
       <section className="relative px-6 lg:px-10 pt-16 pb-16 lg:pt-24 lg:pb-36">
@@ -110,7 +53,7 @@ export default function LandingPage() {
                 Sign In to Get Started
               </Link>
               <a
-                href="#see-it-work"
+                href="#products"
                 className="text-sm font-semibold text-[#1c1a17]/70 hover:text-[#1c1a17] transition-colors"
               >
                 See how it works ↓
@@ -148,103 +91,60 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Editor showcase */}
-      <section id="see-it-work" className="px-6 lg:px-10 py-24 lg:py-32">
+      {/* Two products — peer highlights, each linking to its own deep-dive page */}
+      <section id="products" className="px-6 lg:px-10 py-24 lg:py-32">
         <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
           <Reveal variant="fromLeft">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
-              Status, photos, and open houses — updated live.
+              A premium site for every listing — instantly.
             </h2>
             <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
-              Move a listing from Coming Soon to For Sale to Pending with one click. Upload,
-              reorder, and set the hero photo. Schedule an open house — it shows up on the public
-              site automatically. Every change is live the second you save it.
+              Fill out a form and a full property site goes live: gallery, hero video, open
+              houses, a contact form that reaches you directly. Update status the moment a deal
+              changes — no redeploy, ever.
             </p>
-            <ul className="space-y-3">
-              {["No code changes, ever", "No redeploys, ever", "Changes visible to visitors instantly"].map(
-                (item) => (
-                  <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8a7a5c" strokeWidth="2">
-                      <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    {item}
-                  </li>
-                )
-              )}
-            </ul>
+            <Link
+              to="/property-websites"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#8a7a5c] transition-colors"
+            >
+              See how it works
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
           </Reveal>
           <Reveal variant="fromRight" delay={0.1}>
-            <BrowserFrame src="/images/landing/editor.png" alt="Editing a listing" />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Real listing showcase */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
-        <div className="mx-auto max-w-6xl">
-          <Reveal className="max-w-2xl mb-12">
-            <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
-              This is 1645 Saratoga Way — live right now.
-            </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed">
-              Same premium design on every listing, regardless of which agent built it. Real
-              photos, a real hero video, a real contact form that emails the assigned agent
-              directly. This one took minutes to set up.
-            </p>
-          </Reveal>
-          <Reveal delay={0.1} variant="rise">
             <BrowserFrame
-              src="/images/landing/listing-hero.jpg"
+              src="/images/landing/listing-home-fresh.jpg"
               alt="1645 Saratoga Way public listing site"
-              className="max-w-5xl mx-auto"
             />
           </Reveal>
         </div>
       </section>
 
-      {/* Gallery detail */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32">
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
         <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
           <Reveal variant="fromLeft" className="order-2 lg:order-1">
-            <BrowserFrame src="/images/landing/listing-gallery.jpg" alt="Listing photo gallery" />
+            <BrowserFrame src="/images/landing/agent-site-home.jpg" alt="Terrence Finchum's agent website" />
           </Reveal>
           <Reveal variant="fromRight" delay={0.1} className="order-1 lg:order-2">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
-              Upload once. It looks this good everywhere.
+              Every agent's own site, on the same trusted brand.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed max-w-md">
-              A full gallery with lightbox viewing, built in from the first photo you upload —
-              no extra setup, no separate tool.
+            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+              Your own bio, your own listings, your own blog — styled the way you want it, built
+              on The Agency's brand. This one is live right now, and it took minutes to set up.
             </p>
+            <Link
+              to="/agent-websites"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#8a7a5c] transition-colors"
+            >
+              See how it works
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
           </Reveal>
-        </div>
-      </section>
-
-      {/* Capability strip */}
-      <section className="px-6 lg:px-10 py-24 bg-white border-y border-black/5">
-        <div className="mx-auto max-w-6xl">
-          <Reveal className="max-w-xl mb-14">
-            <h2 className="text-3xl sm:text-4xl font-display font-semibold leading-tight">
-              Everything a listing needs, nothing it doesn't.
-            </h2>
-          </Reveal>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              ["Status that means it", "Coming Soon, For Sale, Pending, Closed, Off Market — one field, always current."],
-              ["Open houses, public automatically", "Add a date, it shows as a banner on the live site — no extra step."],
-              ["Your own domain, optional", "Point a purchased domain at a listing and it serves right at the root."],
-              ["Invite-only access", "Agents don't sign themselves up — you invite who's on the team."],
-              ["Every listing, on-brand", "The Agency's design on every property site, automatically, every time."],
-              ["Leads land in your inbox", "The contact form emails the assigned agent directly — no manual routing."],
-            ].map(([title, copy], i) => (
-              <Reveal key={title} delay={(i % 3) * 0.08} variant="scaleIn">
-                <div className="bg-white rounded-2xl shadow-xl shadow-black/5 p-6 h-full">
-                  <h3 className="font-display text-lg font-semibold mb-2">{title}</h3>
-                  <p className="text-sm text-[#1c1a17]/65 leading-relaxed">{copy}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -266,16 +166,7 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[#1c1a17] text-white/60 px-6 lg:px-10 py-10">
-        <div className="mx-auto max-w-6xl flex flex-wrap items-center justify-between gap-4">
-          <img src={brokerage.logo} alt={brokerage.name} className="h-8 w-auto" />
-          <p className="text-xs">
-            {brokerage.address.line1}, {brokerage.address.city}, {brokerage.address.state}{" "}
-            {brokerage.address.zip}
-          </p>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 }

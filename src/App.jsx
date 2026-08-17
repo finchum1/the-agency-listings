@@ -21,6 +21,8 @@ import PublicAgentSitePage from "./pages/PublicAgentSitePage";
 import PublicAgentPostPage from "./pages/PublicAgentPostPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import LandingPage from "./pages/LandingPage";
+import AgentWebsitesPage from "./pages/AgentWebsitesPage";
+import PropertyWebsitesPage from "./pages/PropertyWebsitesPage";
 
 import HomeSections from "./components/agent-site/HomeSections";
 import Bio from "./components/agent-site/Bio";
@@ -49,6 +51,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Root />} />
+      <Route path="/agent-websites" element={<AgentWebsitesPage />} />
+      <Route path="/property-websites" element={<PropertyWebsitesPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/accept-invite" element={<SetPasswordPage />} />
 
