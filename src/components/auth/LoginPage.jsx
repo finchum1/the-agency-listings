@@ -29,10 +29,16 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#faf9f7] px-6">
       <div className="w-full max-w-sm">
-        <img src={brokerage.logo} alt={brokerage.name} className="h-14 w-auto mx-auto mb-8" />
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <img src={brokerage.logo} alt={brokerage.name} className="h-14 w-auto" />
+          <span className="h-9 w-px bg-black/10" aria-hidden="true" />
+          <span className="text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50">
+            Oklahoma
+          </span>
+        </div>
         <div className="bg-white border border-black/5 rounded-2xl p-8 shadow-sm">
           <h1 className="text-xl font-display font-semibold mb-1 text-center">
-            Listings Dashboard
+            Dashboard
           </h1>
           <p className="text-sm text-[#1c1a17]/60 text-center mb-6">
             Sign in with your agent account
