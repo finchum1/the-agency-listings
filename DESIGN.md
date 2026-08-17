@@ -180,6 +180,17 @@ Three pages sharing one set of chrome components (`src/components/marketing/`: `
 - **Don't** introduce a second accent color or expand the palette beyond ink/cream/brand-red/status-three; a new UI need should be solved with opacity or scale of the existing tokens, not a new hue.
 - **Don't** reuse the browser-frame device outside proof/screenshot contexts — it is a landing-page device, not a general image container.
 
+## Listing Sites — per-listing customization
+
+Each listing can be customized from its editor (`ListingForm.jsx`, under **Template** / **Accent color** / **Font pairing** / **Logo**) — full parity with what Agent Sites already offer (below), staying inside this main system rather than the Agent Sites world: same shapes (pill buttons, `rounded-2xl` cards, no eyebrow labels), same brand-red-only accent rule, just four axes an agent can now vary per listing instead of one fixed look.
+
+- **Template** (`listings.theme`, six options — Classic/Light/Dark/Sand/Midnight/Ivory, same names as `agent_sites.theme`): CSS custom properties (`--ls-bg`, `--ls-bg-alt`, `--ls-dark`, `--ls-on-dark`, `--ls-surface`, `--ls-text`, `--ls-accent`), scoped via `[data-theme]` on `ListingSitePage.jsx`'s root, in the exact same `[data-theme]` blocks Agent Sites' `--as-*` set lives in (`src/index.css`) — a 7th template only ever needs adding once. `--ls-accent` is always brand red (`#ed2127`, or `#f2454b` on the two dark templates) on every template, never a hue that varies — templates vary neutrals only.
+- **Accent color** (`listings.accent_color`, optional): overrides just `--ls-accent` via an inline style on the page root, same brand-locked two options as Agent Sites (`#ed2127` / `#000000`, enforced again by `listings_accent_color_check`) — not a free color picker.
+- **Font pairing** (`listings.font_pairing`, same six pairings as `agent_sites.font_pairing`): reuses the identical `[data-font]` blocks, reading `--ls-font-sans` instead of `--as-font-sans` (display font is the shared `--font-display` var, so both worlds already override it from the same blocks). Applied via the `.font-ls-sans` utility class on the page root, falling back to Inter when unset.
+- **Logo** (`listings.logo_variant` — `red` (default) / `white` / `black`): same three official-color versions of the mark as Agent Sites, resolved in `adaptListing.js` (`brokerage.logos[listing.logo_variant]`). No "square" option — that was tried and removed on the Agent Sites side (see below); don't add it here either.
+
+All three new columns default to today's exact look (`playfair-jost`/null/`red`), so this shipped with zero visual change to any existing listing until an agent actually picks something else.
+
 ## Agent Sites (distinct world — intentional exception)
 
 The public agent-site pages (`/sites/:slug` and `/sites/:slug/blog/:postSlug`, i.e. `src/components/agent-site/*` and `src/pages/AgentSitePage.jsx` / `PublicAgentPostPage.jsx`) are a **deliberate second visual world**, not a drift from the system above. Per the site owner's explicit request, they're styled to match his personal site (terrence-finchum-realty.vercel.app) instead of "The Broker's Own Dashboard" skin, and — per later requests — each agent can further customize their own site's template, font pairing, accent color, and which Home page sections appear (and in what order). This section documents that exception so it isn't "fixed" back to the main system by mistake.

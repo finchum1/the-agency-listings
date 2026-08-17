@@ -53,7 +53,12 @@ export default function ListingSitePage({ listing, agent, photos, openHouses, lo
 
   return (
     <ListingProvider value={{ listing: adapted, openHouses, listingId: listing.id }}>
-      <div className="min-h-screen bg-[var(--ls-bg)]" data-theme={adapted.theme}>
+      <div
+        className="min-h-screen bg-[var(--ls-bg)] font-ls-sans"
+        data-theme={adapted.theme}
+        data-font={adapted.fontPairing}
+        style={adapted.accentColor ? { "--ls-accent": adapted.accentColor } : undefined}
+      >
         <Navbar />
         <Hero />
         <StatsBar />

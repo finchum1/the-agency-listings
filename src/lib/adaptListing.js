@@ -12,8 +12,16 @@ export function adaptListing({ listing, agent, photos }) {
       name: listing.address_line1,
       tagline: `${agent?.full_name || "The Agency"} — ${brokerage.name}`,
     },
-    brokerage,
+    // logo_variant picks among brokerage.logos (red/white/black) — falls
+    // back to the default red mark for older listings saved before this
+    // existed, or an unrecognized value. Mirrors adaptAgentSite.js.
+    brokerage: {
+      ...brokerage,
+      logo: brokerage.logos[listing.logo_variant] || brokerage.logo,
+    },
     theme: listing.theme || "classic",
+    fontPairing: listing.font_pairing || "playfair-jost",
+    accentColor: listing.accent_color || "",
     status: STATUS_LABELS[listing.status] || listing.status,
     mlsNumber,
     address: {
