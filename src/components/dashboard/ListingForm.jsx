@@ -12,10 +12,57 @@ function slugify(text) {
     .replace(/(^-|-$)/g, "");
 }
 
+// Kept in sync with the --ls-* CSS custom properties in src/index.css and
+// the check constraint in supabase/listing-themes.sql. Same six template
+// names as agent_sites.theme (see SiteForm.jsx's THEMES), but every swatch
+// here ends in the dashboard's own gold-brown (#8a7a5c) instead of brand
+// red — Listing Sites are the main "Broker's Own Dashboard" world, a
+// deliberately different system from Agent Sites (see DESIGN.md); its one
+// accent color is gold-brown, never red, on every template.
+const THEMES = [
+  {
+    value: "classic",
+    label: "Classic",
+    description: "Cream & white sections, dark footer. The current look.",
+    swatches: ["#faf9f7", "#1c1a17", "#8a7a5c"],
+  },
+  {
+    value: "light",
+    label: "Light",
+    description: "Mostly white and bright throughout, same layout.",
+    swatches: ["#ffffff", "#1c1a17", "#8a7a5c"],
+  },
+  {
+    value: "dark",
+    label: "Dark",
+    description: "Ink backgrounds throughout with cream text, brighter accent.",
+    swatches: ["#1c1a17", "#2e2b24", "#b5a179"],
+  },
+  {
+    value: "sand",
+    label: "Sand",
+    description: "Warmer, earthier take on Classic — taupe ground.",
+    swatches: ["#f0e9df", "#211a12", "#8a7a5c"],
+  },
+  {
+    value: "midnight",
+    label: "Midnight",
+    description: "A cooler dark — navy-black instead of warm ink, brighter gold.",
+    swatches: ["#0d1420", "#1f2937", "#c9a961"],
+  },
+  {
+    value: "ivory",
+    label: "Ivory",
+    description: "Ultra-minimal near-white, neutral and quiet.",
+    swatches: ["#fefefe", "#1a1a1a", "#8a7a5c"],
+  },
+];
+
 const emptyListing = {
   slug: "",
   agent_id: "",
   status: "draft",
+  theme: "classic",
   mls_number: "",
   address_line1: "",
   city: "",
@@ -65,6 +112,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
         slug: listing.slug || "",
         agent_id: listing.agent_id || "",
         status: listing.status || "draft",
+        theme: listing.theme || "classic",
         mls_number: listing.mls_number || "",
         address_line1: listing.address_line1 || "",
         city: listing.city || "",
@@ -254,6 +302,38 @@ export default function ListingForm({ mode, listing, onSaved }) {
             </select>
           </div>
         )}
+      </div>
+
+      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+        <div>
+          <h2 className="font-display text-lg font-semibold">Template</h2>
+          <p className="text-xs text-[#1c1a17]/50 mt-1">
+            Changes how this listing's public site looks — every template still uses The
+            Agency's own gold-brown accent, only the background/text neutrals change.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-3">
+          {THEMES.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, theme: t.value }))}
+              className={`text-left rounded-xl border p-3.5 transition-colors ${
+                form.theme === t.value
+                  ? "border-[#8a7a5c] ring-2 ring-[#8a7a5c]/30"
+                  : "border-black/10 hover:border-black/20"
+              }`}
+            >
+              <div className="flex gap-1.5 mb-2.5">
+                {t.swatches.map((c, i) => (
+                  <span key={i} className="h-5 w-5 rounded-full border border-black/10" style={{ background: c }} />
+                ))}
+              </div>
+              <p className="text-sm font-semibold">{t.label}</p>
+              <p className="text-xs text-[#1c1a17]/50 mt-0.5 leading-snug">{t.description}</p>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-5">

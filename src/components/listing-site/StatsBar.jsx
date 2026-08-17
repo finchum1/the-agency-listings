@@ -31,14 +31,14 @@ export default function StatsBar() {
 
   return (
     <section id="facts" className="relative z-20 -mt-14 px-6 lg:px-10">
-      <div className="mx-auto max-w-6xl bg-white rounded-2xl shadow-xl shadow-black/10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-y sm:divide-y-0 divide-x-0 sm:divide-x divide-black/5">
+      <div className="mx-auto max-w-6xl bg-[var(--ls-bg-alt)] rounded-2xl shadow-xl shadow-black/10 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-y sm:divide-y-0 divide-x-0 sm:divide-x divide-black/5">
         {stats.map((s) => (
           <div key={s.key} className="flex flex-col items-center justify-center gap-2 py-7 px-4 text-center">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8a7a5c" strokeWidth="1.6">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ls-accent)" strokeWidth="1.6">
               {icons[s.key]}
             </svg>
-            <span className="text-lg font-semibold text-[#1c1a17]">{s.value(f)}</span>
-            <span className="text-[11px] uppercase tracking-wider-plus text-[#1c1a17]/50">
+            <span className="text-lg font-semibold text-[var(--ls-text)]">{s.value(f)}</span>
+            <span className="text-[11px] uppercase tracking-wider-plus text-[var(--ls-text)]/50">
               {s.label}
             </span>
           </div>

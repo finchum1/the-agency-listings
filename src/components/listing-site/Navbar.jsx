@@ -23,7 +23,7 @@ export default function Navbar() {
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-colors duration-300 ${
-        scrolled ? "bg-[#faf9f7]/95 backdrop-blur shadow-sm" : "bg-transparent"
+        scrolled ? "bg-[var(--ls-bg)]/95 backdrop-blur shadow-sm" : "bg-transparent"
       }`}
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-10 flex items-center justify-between py-3">
@@ -42,8 +42,8 @@ export default function Navbar() {
               href={link.href}
               className={`text-sm font-medium tracking-wide transition-colors whitespace-nowrap ${
                 scrolled
-                  ? "text-[#1c1a17]/80 hover:text-[#1c1a17]"
-                  : "text-white/85 hover:text-white"
+                  ? "text-[var(--ls-text)]/80 hover:text-[var(--ls-text)]"
+                  : "text-[var(--ls-on-dark)]/85 hover:text-[var(--ls-on-dark)]"
               }`}
             >
               {link.label}
@@ -53,8 +53,8 @@ export default function Navbar() {
             href="#contact"
             className={`text-sm font-semibold px-5 py-2.5 rounded-full border whitespace-nowrap transition-colors ${
               scrolled
-                ? "border-[#1c1a17] text-[#1c1a17] hover:bg-[#1c1a17] hover:text-white"
-                : "border-white text-white hover:bg-white hover:text-[#1c1a17]"
+                ? "border-[var(--ls-text)] text-[var(--ls-text)] hover:bg-[var(--ls-text)] hover:text-[var(--ls-bg)]"
+                : "border-[var(--ls-on-dark)] text-[var(--ls-on-dark)] hover:bg-[var(--ls-on-dark)] hover:text-[var(--ls-text)]"
             }`}
           >
             Schedule a Tour
@@ -62,7 +62,7 @@ export default function Navbar() {
         </nav>
 
         <button
-          className={`lg:hidden p-2 shrink-0 ${scrolled ? "text-[#1c1a17]" : "text-white"}`}
+          className={`lg:hidden p-2 shrink-0 ${scrolled ? "text-[var(--ls-text)]" : "text-[var(--ls-on-dark)]"}`}
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
         >
@@ -77,13 +77,13 @@ export default function Navbar() {
       </div>
 
       {open && (
-        <div className="lg:hidden bg-[#faf9f7] border-t border-black/5 px-6 py-4 flex flex-col gap-4">
+        <div className="lg:hidden bg-[var(--ls-bg)] border-t border-black/5 px-6 py-4 flex flex-col gap-4">
           {links.map((link) => (
             <a
               key={link.href}
               href={link.href}
               onClick={() => setOpen(false)}
-              className="text-sm font-medium text-[#1c1a17]/80"
+              className="text-sm font-medium text-[var(--ls-text)]/80"
             >
               {link.label}
             </a>
@@ -91,7 +91,7 @@ export default function Navbar() {
           <a
             href="#contact"
             onClick={() => setOpen(false)}
-            className="text-sm font-semibold px-5 py-2.5 rounded-full bg-[#1c1a17] text-white text-center"
+            className="text-sm font-semibold px-5 py-2.5 rounded-full bg-[var(--ls-text)] text-[var(--ls-bg)] text-center"
           >
             Schedule a Tour
           </a>

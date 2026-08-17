@@ -98,7 +98,17 @@
      --primary-color-500, #ed2127) or, on the two dark-background
      templates, the brighter #f2454b (primary-300) for legibility against
      a near-black page — never an arbitrary hue. Every template only
-     varies neutrals (background/surface/text), matching corporate. */
+     varies neutrals (background/surface/text), matching corporate.
+
+     Each block below ALSO carries a --ls-* set — the same six template
+     names, reused for Listing Sites (agent_sites.theme's counterpart is
+     listings.theme; see EditListingPage.jsx's ListingForm.jsx). Kept in
+     the same [data-theme] selectors rather than a parallel set of rules
+     so a 7th template only ever needs adding once. Listing Sites are the
+     main "Broker's Own Dashboard" world (see DESIGN.md), not the Agent
+     Sites world — --ls-accent is always the dashboard's own gold-brown
+     (#8a7a5c), matching that world's "One Accent Rule," never red;
+     templates vary neutrals only, exactly like --as-*. */
   [data-theme="classic"] {
     --as-bg: #f7f4ee;      /* page background */
     --as-bg-alt: #ffffff;  /* alternating/bordered section background */
@@ -107,6 +117,14 @@
     --as-surface: #e7e2d6; /* card/photo placeholder fill */
     --as-text: #14130f;    /* primary text on light backgrounds */
     --as-accent: #ed2127;  /* CTA fill, price, links, eyebrow labels */
+
+    --ls-bg: #faf9f7;
+    --ls-bg-alt: #ffffff;
+    --ls-dark: #1c1a17;
+    --ls-on-dark: #faf9f7;
+    --ls-surface: #e7e2d6;
+    --ls-text: #1c1a17;
+    --ls-accent: #8a7a5c;
   }
   [data-theme="light"] {
     --as-bg: #ffffff;
@@ -116,6 +134,14 @@
     --as-surface: #efece4;
     --as-text: #14130f;
     --as-accent: #ed2127;
+
+    --ls-bg: #ffffff;
+    --ls-bg-alt: #faf9f7;
+    --ls-dark: #1c1a17;
+    --ls-on-dark: #faf9f7;
+    --ls-surface: #f2f0ea;
+    --ls-text: #1c1a17;
+    --ls-accent: #8a7a5c;
   }
   [data-theme="dark"] {
     --as-bg: #14130f;
@@ -125,6 +151,14 @@
     --as-surface: #26241d;
     --as-text: #f7f4ee;
     --as-accent: #f2454b;
+
+    --ls-bg: #1c1a17;
+    --ls-bg-alt: #262420;
+    --ls-dark: #0f0e0c;
+    --ls-on-dark: #faf9f7;
+    --ls-surface: #2e2b24;
+    --ls-text: #faf9f7;
+    --ls-accent: #b5a179;
   }
   /* Warmer, earthier variant of Classic — taupe/sand ground instead of cream. */
   [data-theme="sand"] {
@@ -135,6 +169,14 @@
     --as-surface: #e0d3bd;
     --as-text: #2a2118;
     --as-accent: #ed2127;
+
+    --ls-bg: #f0e9df;
+    --ls-bg-alt: #ffffff;
+    --ls-dark: #211a12;
+    --ls-on-dark: #f5efe4;
+    --ls-surface: #e0d3bd;
+    --ls-text: #2a2118;
+    --ls-accent: #8a7a5c;
   }
   /* A second, COOL dark variant — navy-black instead of Dark's warm ink. */
   [data-theme="midnight"] {
@@ -145,6 +187,14 @@
     --as-surface: #1f2937;
     --as-text: #f1f5f9;
     --as-accent: #f2454b;
+
+    --ls-bg: #0d1420;
+    --ls-bg-alt: #16202f;
+    --ls-dark: #070b12;
+    --ls-on-dark: #f1f5f9;
+    --ls-surface: #1f2937;
+    --ls-text: #f1f5f9;
+    --ls-accent: #c9a961;
   }
   /* Ultra-minimal, neutral near-white — cooler and quieter than Light. */
   [data-theme="ivory"] {
@@ -155,6 +205,14 @@
     --as-surface: #ececea;
     --as-text: #1a1a1a;
     --as-accent: #ed2127;
+
+    --ls-bg: #fefefe;
+    --ls-bg-alt: #f7f7f5;
+    --ls-dark: #1a1a1a;
+    --ls-on-dark: #fafafa;
+    --ls-surface: #ececea;
+    --ls-text: #1a1a1a;
+    --ls-accent: #8a7a5c;
   }
 }
 

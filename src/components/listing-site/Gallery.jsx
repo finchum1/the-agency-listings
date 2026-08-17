@@ -30,12 +30,12 @@ export default function Gallery() {
   if (images.length === 0) return null;
 
   return (
-    <section id="gallery" className="px-6 lg:px-10 py-24 bg-white">
+    <section id="gallery" className="px-6 lg:px-10 py-24 bg-[var(--ls-bg-alt)]">
       <div className="mx-auto max-w-6xl">
-        <p className="text-xs font-semibold tracking-wider-plus uppercase text-[#8a7a5c] mb-3">
+        <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent)] mb-3">
           Gallery
         </p>
-        <h2 className="text-3xl sm:text-4xl font-semibold mb-10">Take a look inside</h2>
+        <h2 className="text-3xl sm:text-4xl font-semibold mb-10 text-[var(--ls-text)]">Take a look inside</h2>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 auto-rows-[160px] sm:auto-rows-[200px]">
           {images.map((img, i) => (

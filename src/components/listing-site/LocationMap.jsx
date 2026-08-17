@@ -7,15 +7,15 @@ export default function LocationMap() {
   )}&z=14&output=embed`;
 
   return (
-    <section id="location" className="px-6 lg:px-10 py-24 bg-white">
+    <section id="location" className="px-6 lg:px-10 py-24 bg-[var(--ls-bg-alt)]">
       <div className="mx-auto max-w-6xl">
-        <p className="text-xs font-semibold tracking-wider-plus uppercase text-[#8a7a5c] mb-3">
+        <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent)] mb-3">
           Location
         </p>
-        <h2 className="text-3xl sm:text-4xl font-semibold mb-6">
+        <h2 className="text-3xl sm:text-4xl font-semibold mb-6 text-[var(--ls-text)]">
           {listing.address.city}, {listing.address.state}
         </h2>
-        <p className="text-[#1c1a17]/70 max-w-2xl mb-10 leading-relaxed text-[15.5px]">
+        <p className="text-[var(--ls-text)]/70 max-w-2xl mb-10 leading-relaxed text-[15.5px]">
           Located in a sought-after neighborhood close to top-rated schools, parks, and
           everyday conveniences — with easy access to major commuter routes.
         </p>

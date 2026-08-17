@@ -13,6 +13,7 @@ export function adaptListing({ listing, agent, photos }) {
       tagline: `${agent?.full_name || "The Agency"} — ${brokerage.name}`,
     },
     brokerage,
+    theme: listing.theme || "classic",
     status: STATUS_LABELS[listing.status] || listing.status,
     mlsNumber,
     address: {

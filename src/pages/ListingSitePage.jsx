@@ -53,7 +53,7 @@ export default function ListingSitePage({ listing, agent, photos, openHouses, lo
 
   return (
     <ListingProvider value={{ listing: adapted, openHouses, listingId: listing.id }}>
-      <div className="min-h-screen bg-[#faf9f7]">
+      <div className="min-h-screen bg-[var(--ls-bg)]" data-theme={adapted.theme}>
         <Navbar />
         <Hero />
         <StatsBar />

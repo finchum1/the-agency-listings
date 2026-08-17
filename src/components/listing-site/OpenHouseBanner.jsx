@@ -10,7 +10,7 @@ export default function OpenHouseBanner() {
   if (upcoming.length === 0) return null;
 
   return (
-    <section className="bg-[#8a7a5c] text-white">
+    <section className="bg-[var(--ls-accent)] text-white">
       <div className="mx-auto max-w-6xl px-6 lg:px-10 py-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-sm font-medium">
         <span className="flex items-center gap-2">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
