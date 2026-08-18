@@ -1,5 +1,12 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import RichTextEditor from "./RichTextEditor";
+import { sanitizeHtml } from "../../lib/sanitizeHtml";
+
+// Plain-text emptiness check for HTML content — good enough to gate the
+// submit button (an editor with only an empty <p></p> shouldn't count as
+// "has a quote"), not used for anything that touches storage or display.
+const isBlankHtml = (html) => !html || !html.replace(/<[^>]*>/g, "").trim();
 
 export default function TestimonialsManager({ agentSiteId, testimonials, onChanged }) {
   const [form, setForm] = useState({ quote: "", author: "" });
@@ -11,12 +18,12 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
 
   const handleAdd = async (e) => {
     e.preventDefault();
-    if (!form.quote.trim() || !form.author.trim()) return;
+    if (isBlankHtml(form.quote) || !form.author.trim()) return;
     setSaving(true);
     setError("");
     const { error } = await supabase.from("agent_site_testimonials").insert({
       agent_site_id: agentSiteId,
-      quote: form.quote.trim(),
+      quote: form.quote,
       author: form.author.trim(),
       sort_order: testimonials.length,
     });
@@ -57,7 +64,14 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
           {testimonials.map((t, i) => (
             <div key={t.id} className="border border-black/10 rounded-xl p-4 flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="text-sm text-[#1c1a17]/80 italic">“{t.quote}”</p>
+                <div className="text-sm text-[#1c1a17]/80 italic">
+                  “
+                  <div
+                    className="rich-text inline [&>*]:inline"
+                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(t.quote) }}
+                  />
+                  ”
+                </div>
                 <p className="text-xs text-[#1c1a17]/50 mt-1">— {t.author}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0 text-xs">
@@ -91,12 +105,11 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
       )}
 
       <form onSubmit={handleAdd} className="space-y-2 pt-2 border-t border-black/5">
-        <textarea
+        <RichTextEditor
           value={form.quote}
-          onChange={(e) => setForm((f) => ({ ...f, quote: e.target.value }))}
-          rows={2}
-          className={inputClass}
+          onChange={(html) => setForm((f) => ({ ...f, quote: html }))}
           placeholder="Quote"
+          minHeight="4rem"
         />
         <div className="flex gap-2">
           <input

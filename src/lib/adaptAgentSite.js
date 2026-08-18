@@ -1,4 +1,5 @@
 import brokerage from "./brokerage";
+import { paragraphsToHtml } from "./richTextFallback";
 
 // Shapes a Supabase agent_sites row (+ profile + testimonials + areas +
 // posts + the agent's own listings) into one convenient object for the
@@ -30,6 +31,12 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     heroPhoto: site.hero_photo_url || agent?.photo_url || "",
     heroVideo: site.hero_video_url || null,
     bio: site.bio || [],
+    // bio_html is the new rich-text source of truth (RichTextEditor.jsx /
+    // Bio.jsx). Falls back to converting the old bio text[] array on the
+    // fly for any row the SQL backfill hasn't reached yet, or before
+    // supabase/rich-text-fields.sql has been run at all — zero visual
+    // change either way.
+    bioHtml: site.bio_html || paragraphsToHtml(site.bio),
     stats: site.stats || [],
     social: {
       instagram: site.instagram_url || "",

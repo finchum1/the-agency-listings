@@ -29,6 +29,26 @@ export function escapeHtml(value) {
   );
 }
 
+// Plain-text excerpt from a bio_html/body_html rich-text field, for a meta
+// description — not for rendering (no DOM here; this file also runs in
+// the Vercel serverless functions under Node, see the header note above).
+// A regex strip is safe for this narrow purpose since ALLOWED_TAGS
+// (lib/sanitizeHtml.js) is a small, known set with no attributes. Takes
+// just the first block (paragraph or heading), matching what the old
+// bio[0]/body.find(p) callers below used to take from the array formats.
+function firstBlockText(html) {
+  if (!html) return "";
+  const match = html.match(/<(p|h3)>([\s\S]*?)<\/\1>/i);
+  const inner = match ? match[2] : html;
+  return inner
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 // listing: a raw `listings` row. agent: its `profiles` row (nullable).
 // heroPhotoUrl: resolved separately since it lives in `listing_photos`.
 export function buildListingMeta(listing, agent, heroPhotoUrl) {
@@ -62,6 +82,7 @@ export function buildAgentSiteMeta(site, agent) {
   const description =
     site.seo_description?.trim() ||
     site.tagline?.trim() ||
+    firstBlockText(site.bio_html) ||
     site.bio?.[0] ||
     `${agent?.full_name || "An agent"} at ${brokerage.name}${site.region ? ` serving ${site.region}` : ""}.`;
 
@@ -73,7 +94,11 @@ export function buildAgentSiteMeta(site, agent) {
 // post: a raw `agent_site_posts` row. site/agent: the parent site + its agent.
 export function buildAgentPostMeta(post, site, agent) {
   const title = `${post.title} | ${agent?.full_name || brokerage.name}`;
-  const description = post.excerpt?.trim() || post.body?.find((b) => b.type === "p")?.text || "";
+  const description =
+    post.excerpt?.trim() ||
+    firstBlockText(post.body_html) ||
+    post.body?.find((b) => b.type === "p")?.text ||
+    "";
   const image = absoluteUrl(post.image_url || site?.hero_photo_url || agent?.photo_url || brokerage.logo);
   return { title, description, image };
 }

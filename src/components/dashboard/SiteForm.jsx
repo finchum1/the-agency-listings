@@ -2,15 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { normalizeDomain } from "../../lib/normalizeDomain";
 import ImageUploadField from "./ImageUploadField";
-
-// Splits/joins bio paragraphs on blank lines, so the textarea is just
-// "paragraph, blank line, paragraph" — no special syntax to teach.
-const joinParagraphs = (arr) => (arr || []).join("\n\n");
-const splitParagraphs = (text) =>
-  text
-    .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter(Boolean);
+import RichTextEditor from "./RichTextEditor";
+import { paragraphsToHtml } from "../../lib/richTextFallback";
 
 // Kept in sync with the CSS custom properties in src/index.css
 // ([data-theme="…"] / [data-font="…"]) and the check constraints in
@@ -156,7 +149,10 @@ export default function SiteForm({ site, onSaved }) {
       secondary_logo_url: s.secondary_logo_url || "",
       hero_photo_url: s.hero_photo_url || "",
       hero_video_url: s.hero_video_url || "",
-      bio: joinParagraphs(s.bio),
+      // bio_html is the new source of truth (RichTextEditor); falls back
+      // to converting the old bio text[] array so a site saved before
+      // this migration still loads with its existing content intact.
+      bio_html: s.bio_html || paragraphsToHtml(s.bio),
       stats: s.stats?.length ? s.stats : [{ label: "", value: "" }],
       instagram_url: s.instagram_url || "",
       facebook_url: s.facebook_url || "",
@@ -231,7 +227,7 @@ export default function SiteForm({ site, onSaved }) {
       secondary_logo_url: form.secondary_logo_url || null,
       hero_photo_url: form.hero_photo_url || null,
       hero_video_url: form.hero_video_url || null,
-      bio: splitParagraphs(form.bio),
+      bio_html: form.bio_html,
       stats: form.stats.filter((s) => s.label.trim() || s.value.trim()),
       instagram_url: form.instagram_url,
       facebook_url: form.facebook_url,
@@ -506,12 +502,11 @@ export default function SiteForm({ site, onSaved }) {
 
       <div>
         <label className={labelClass}>Bio</label>
-        <textarea
-          value={form.bio}
-          onChange={update("bio")}
-          rows={8}
-          className={inputClass}
-          placeholder={"One paragraph per block, separated by a blank line."}
+        <RichTextEditor
+          value={form.bio_html}
+          onChange={(html) => set("bio_html", html)}
+          placeholder="Tell your story…"
+          minHeight="10rem"
         />
       </div>
 

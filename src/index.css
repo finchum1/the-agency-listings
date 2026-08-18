@@ -263,3 +263,50 @@
     margin: 0;
   }
 }
+
+/* RichTextEditor.jsx (dashboard: Bio, Testimonials, Areas of Expertise,
+   Blog posts) — TipTap's Placeholder extension renders via a ::before on
+   the empty paragraph rather than real DOM text, using its own default
+   class/attribute names (emptyEditorClass: "is-editor-empty", data
+   attribute: data-placeholder). ".tiptap" is TipTap's own default root
+   class on the editable element, not something we chose. */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: rgb(28 26 23 / 0.35);
+  pointer-events: none;
+}
+
+/* This app has no @tailwindcss/typography plugin, and Tailwind's own
+   preflight resets h1-h6 to inherit font-size/weight — so the editor's
+   one heading level needs its look defined explicitly here, or the H
+   toolbar button would produce text visually identical to a paragraph. */
+.tiptap h3 {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin-top: 0.75em;
+  margin-bottom: 0.25em;
+}
+.tiptap p + p {
+  margin-top: 0.6em;
+}
+
+/* Public-facing rendering of the same content (Bio.jsx, Testimonials.jsx,
+   ServiceAreas.jsx, AgentPostPage.jsx) — sanitizeHtml.js's ALLOWED_TAGS
+   only ever produces p/h3/strong/em/u/br, so this is the full surface.
+   Uses --font-display (already themed per agent/listing site) rather than
+   a fixed font so a heading inside bio/blog copy matches that site's own
+   headings. */
+.rich-text h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.3;
+  font-size: 1.15em;
+  margin-top: 1.4em;
+  margin-bottom: 0.35em;
+}
+.rich-text h3:first-child {
+  margin-top: 0;
+}

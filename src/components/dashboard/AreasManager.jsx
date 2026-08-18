@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import ImageUploadField from "./ImageUploadField";
+import RichTextEditor from "./RichTextEditor";
 
 const emptyForm = { slug: "", name: "", blurb: "", description: "", photo_url: "" };
 
@@ -52,6 +53,8 @@ export default function AreasManager({ agentSiteId, areas, onChanged }) {
       ...(field === "name" && editingId === "new" ? { slug: slugify(value) } : {}),
     }));
   };
+
+  const setField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -171,7 +174,11 @@ export default function AreasManager({ agentSiteId, areas, onChanged }) {
           </div>
           <div>
             <label className={labelClass}>Full description (shown on the area's own page)</label>
-            <textarea value={form.description} onChange={update("description")} rows={4} className={inputClass} />
+            <RichTextEditor
+              value={form.description}
+              onChange={(html) => setField("description", html)}
+              minHeight="6rem"
+            />
           </div>
           <ImageUploadField
             bucket="agent-site-photos"

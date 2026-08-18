@@ -1,8 +1,9 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
+import { sanitizeHtml } from "../../lib/sanitizeHtml";
 
 export default function Bio() {
   const { site } = useAgentSiteContext();
-  if (site.bio.length === 0 && site.stats.length === 0) return null;
+  if (!site.bioHtml && site.stats.length === 0) return null;
 
   return (
     <section id="bio" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
@@ -22,11 +23,10 @@ export default function Bio() {
             {site.region ? ` — ${site.region}` : ""}
           </h2>
 
-          <div className="space-y-4 text-[15.5px] leading-relaxed text-[var(--as-text)]/75 max-w-xl">
-            {site.bio.map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-          </div>
+          <div
+            className="rich-text space-y-4 text-[15.5px] leading-relaxed text-[var(--as-text)]/75 max-w-xl"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(site.bioHtml) }}
+          />
 
           {site.stats.length > 0 && (
             <div className="mt-10 grid grid-cols-2 sm:grid-cols-3 gap-6 border-t border-[var(--as-text)]/10 pt-6 max-w-xl">

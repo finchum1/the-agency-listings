@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import ImageUploadField from "./ImageUploadField";
+import RichTextEditor from "./RichTextEditor";
+import { blocksToHtml } from "../../lib/richTextFallback";
 
 const emptyForm = {
   slug: "",
@@ -9,7 +11,7 @@ const emptyForm = {
   post_date: new Date().toISOString().slice(0, 10),
   excerpt: "",
   image_url: "",
-  bodyText: "",
+  body_html: "",
   related_listing_id: "",
   status: "draft",
 };
@@ -20,23 +22,6 @@ function slugify(str) {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
-}
-
-// Body textarea convention: blank-line-separated paragraphs; a line
-// starting with "### " becomes a subheading. Kept deliberately simple —
-// no rich-text editor — mirroring how terrence-finchum-realty's blog
-// posts are just an array of {type, text} blocks.
-function bodyToText(body) {
-  return (body || [])
-    .map((block) => (block.type === "h3" ? `### ${block.text}` : block.text))
-    .join("\n\n");
-}
-function textToBody(text) {
-  return text
-    .split(/\n\s*\n/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .map((p) => (p.startsWith("### ") ? { type: "h3", text: p.slice(4) } : { type: "p", text: p }));
 }
 
 export default function PostsManager({ agentSiteId, agentId, posts, onChanged }) {
@@ -72,7 +57,10 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
       post_date: post.post_date,
       excerpt: post.excerpt || "",
       image_url: post.image_url || "",
-      bodyText: bodyToText(post.body),
+      // body_html is the new source of truth (RichTextEditor); falls
+      // back to converting the old body jsonb blocks for a post saved
+      // before this migration.
+      body_html: post.body_html || blocksToHtml(post.body),
       related_listing_id: post.related_listing_id || "",
       status: post.status,
     });
@@ -107,7 +95,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
       post_date: form.post_date,
       excerpt: form.excerpt,
       image_url: form.image_url || null,
-      body: textToBody(form.bodyText),
+      body_html: form.body_html,
       related_listing_id: form.related_listing_id || null,
       status: form.status,
     };
@@ -208,12 +196,11 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
           />
           <div>
             <label className={labelClass}>Body</label>
-            <textarea
-              value={form.bodyText}
-              onChange={update("bodyText")}
-              rows={10}
-              className={inputClass}
-              placeholder={"One paragraph per block, separated by a blank line.\nStart a line with \"### \" to make it a subheading."}
+            <RichTextEditor
+              value={form.body_html}
+              onChange={(html) => setForm((f) => ({ ...f, body_html: html }))}
+              placeholder="Write the post…"
+              minHeight="14rem"
             />
           </div>
           {myListings.length > 0 && (

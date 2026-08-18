@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { adaptAgentSite } from "../lib/adaptAgentSite";
+import { sanitizeHtml } from "../lib/sanitizeHtml";
+import { blocksToHtml } from "../lib/richTextFallback";
 import { buildAgentPostMeta, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta } from "../lib/pageMeta";
 import { trackView } from "../lib/trackView";
@@ -82,17 +84,12 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
               </div>
             )}
 
-            <div className="space-y-5 text-[15.5px] leading-relaxed text-[var(--as-text)]/80">
-              {(post.body || []).map((block, i) =>
-                block.type === "h3" ? (
-                  <h3 key={i} className="text-xl font-display font-semibold !mt-10 text-[var(--as-text)]">
-                    {block.text}
-                  </h3>
-                ) : (
-                  <p key={i}>{block.text}</p>
-                ),
-              )}
-            </div>
+            <div
+              className="rich-text space-y-5 text-[15.5px] leading-relaxed text-[var(--as-text)]/80"
+              dangerouslySetInnerHTML={{
+                __html: sanitizeHtml(post.body_html || blocksToHtml(post.body)),
+              }}
+            />
 
             <div className="mt-14 pt-6 border-t border-[var(--as-text)]/10 flex items-center justify-between">
               <p className="text-sm text-[var(--as-text)]/60">
