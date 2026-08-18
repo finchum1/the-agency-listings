@@ -3,7 +3,7 @@
 // api/meta-listing.js for the full rationale; this is the same idea for
 // /sites/:slug/blog/:postSlug.
 import { createClient } from "@supabase/supabase-js";
-import { buildAgentPostMeta, escapeHtml, SITE_ORIGIN } from "../src/lib/seo.js";
+import { buildAgentPostMeta, escapeHtml, absoluteUrl, SITE_ORIGIN } from "../src/lib/seo.js";
 import { buildBlogPostSchema, buildBreadcrumbSchema } from "../src/lib/structuredData.js";
 import brokerage from "../src/lib/brokerage.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
@@ -78,7 +78,7 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
       dateModified: post.updated_at,
       authorName: site.agent?.full_name,
       publisherName: brokerage.name,
-      publisherLogo: brokerage.logo,
+      publisherLogo: absoluteUrl(brokerage.logo),
     }),
     buildBreadcrumbSchema([
       { name: site.agent?.full_name || "Home", url: homeUrl },

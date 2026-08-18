@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { adaptAgentSite } from "../lib/adaptAgentSite";
 import { sanitizeHtml } from "../lib/sanitizeHtml";
 import { blocksToHtml } from "../lib/richTextFallback";
-import { buildAgentPostMeta, SITE_ORIGIN } from "../lib/seo";
+import { buildAgentPostMeta, absoluteUrl, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta, applyStructuredData } from "../lib/pageMeta";
 import { buildBlogPostSchema, buildBreadcrumbSchema } from "../lib/structuredData";
 import brokerage from "../lib/brokerage";
@@ -46,7 +46,7 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
         dateModified: post.updated_at,
         authorName: agent?.full_name,
         publisherName: brokerage.name,
-        publisherLogo: brokerage.logo,
+        publisherLogo: absoluteUrl(brokerage.logo),
       }),
       buildBreadcrumbSchema([
         { name: agent?.full_name || "Home", url: isAgentSiteAppHost() ? `${SITE_ORIGIN}/sites/${site.slug}` : `${window.location.origin}/` },
