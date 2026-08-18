@@ -4,7 +4,9 @@ import { adaptAgentSite } from "../lib/adaptAgentSite";
 import { sanitizeHtml } from "../lib/sanitizeHtml";
 import { blocksToHtml } from "../lib/richTextFallback";
 import { buildAgentPostMeta, SITE_ORIGIN } from "../lib/seo";
-import { applyPageMeta } from "../lib/pageMeta";
+import { applyPageMeta, applyStructuredData } from "../lib/pageMeta";
+import { buildBlogPostSchema, buildBreadcrumbSchema } from "../lib/structuredData";
+import brokerage from "../lib/brokerage";
 import { trackView } from "../lib/trackView";
 import { isAgentSiteAppHost } from "../lib/agentSiteLinks";
 import { AgentSiteProvider } from "../context/AgentSiteContext";
@@ -25,12 +27,33 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
   useEffect(() => {
     if (!post || !site) return;
     const meta = buildAgentPostMeta(post, site, agent);
+    const url = isAgentSiteAppHost()
+      ? `${SITE_ORIGIN}/sites/${site.slug}/blog/${post.slug}`
+      : window.location.href;
     applyPageMeta({
       ...meta,
       // See AgentSitePage.jsx's same url logic — canonical app-host URL
       // there, real current URL (via applyPageMeta's fallback) here.
-      url: isAgentSiteAppHost() ? `${SITE_ORIGIN}/sites/${site.slug}/blog/${post.slug}` : undefined,
+      url: isAgentSiteAppHost() ? url : undefined,
     });
+    applyStructuredData([
+      buildBlogPostSchema({
+        url,
+        headline: post.title,
+        description: meta.description,
+        image: meta.image,
+        datePublished: post.post_date,
+        dateModified: post.updated_at,
+        authorName: agent?.full_name,
+        publisherName: brokerage.name,
+        publisherLogo: brokerage.logo,
+      }),
+      buildBreadcrumbSchema([
+        { name: agent?.full_name || "Home", url: isAgentSiteAppHost() ? `${SITE_ORIGIN}/sites/${site.slug}` : `${window.location.origin}/` },
+        { name: "Blog", url: isAgentSiteAppHost() ? `${SITE_ORIGIN}/sites/${site.slug}/blog` : `${window.location.origin}/blog` },
+        { name: post.title, url },
+      ]),
+    ]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [post, site, agent]);
 
@@ -80,7 +103,7 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
 
             {post.image_url && (
               <div className="overflow-hidden bg-[var(--as-surface)] aspect-[16/9] mb-10">
-                <img src={post.image_url} alt="" className="h-full w-full object-cover" />
+                <img src={post.image_url} alt={post.title} className="h-full w-full object-cover" />
               </div>
             )}
 

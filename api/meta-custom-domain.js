@@ -14,6 +14,8 @@
 // changes for the main app; this function is additive.
 import { createClient } from "@supabase/supabase-js";
 import { buildListingMeta, buildAgentSiteMeta, escapeHtml } from "../src/lib/seo.js";
+import { buildListingSchema, buildAgentSchema } from "../src/lib/structuredData.js";
+import brokerage from "../src/lib/brokerage.js";
 import { bareHost, isAppHost } from "../src/lib/appHosts.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
 
@@ -77,6 +79,22 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
 <p><a href="${url}">View full listing →</a></p>
 `;
 
+    const structuredData = buildListingSchema({
+      url,
+      address1: listing.address_line1,
+      city: listing.city,
+      state: listing.state,
+      zip: listing.zip,
+      price: listing.price,
+      status: listing.status,
+      beds: listing.beds,
+      baths: listing.baths,
+      sqft: listing.sqft,
+      description: (listing.description || []).join(" ") || undefined,
+      images: (listing.listing_photos || []).map((p) => p.url),
+      datePosted: listing.created_at,
+    });
+
     res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
     res.status(200).send(
       renderMetaPage({
@@ -86,6 +104,7 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
         url,
         heading: escapeHtml(listing.address_line1),
         bodyHtml,
+        structuredData,
       }),
     );
     return;
@@ -108,6 +127,20 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
 <p><a href="${url}">Visit site →</a></p>
 `;
 
+    const structuredData = buildAgentSchema({
+      url,
+      name: site.agent?.full_name,
+      image: site.agent?.photo_url,
+      phone: site.agent?.phone,
+      email: site.agent?.email,
+      jobTitle: site.agent?.title,
+      region: site.region,
+      license: site.agent?.license,
+      brokerageName: brokerage.name,
+      brokerageAddress: brokerage.address,
+      sameAs: [site.instagram_url, site.facebook_url, site.linkedin_url].filter(Boolean),
+    });
+
     res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
     res.status(200).send(
       renderMetaPage({
@@ -117,6 +150,7 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
         url,
         heading: escapeHtml(heading),
         bodyHtml,
+        structuredData,
       }),
     );
     return;

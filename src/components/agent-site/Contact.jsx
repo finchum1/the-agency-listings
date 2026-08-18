@@ -2,8 +2,11 @@ import { useState } from "react";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 
 export default function Contact() {
-  const { site, siteId } = useAgentSiteContext();
+  const { site, siteId, isStandalonePage } = useAgentSiteContext();
   const { agent } = site;
+  // See Bio.jsx's comment — Home already has an H1 from Hero.jsx, but
+  // this section IS the page at standalone /contact.
+  const Heading = isStandalonePage ? "h1" : "h2";
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
   // "idle" | "sending" | "sent" | "fallback" | "error"
   const [status, setStatus] = useState("idle");
@@ -48,9 +51,9 @@ export default function Contact() {
           <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">
             Let&rsquo;s Connect
           </p>
-          <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-6 text-[var(--as-text)]">
+          <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-6 text-[var(--as-text)]">
             Get In Touch
-          </h2>
+          </Heading>
           <p className="text-[var(--as-text)]/70 leading-relaxed mb-8 max-w-md text-[15.5px]">
             Whether you&rsquo;re buying, selling, or just curious about the market, reach out anytime.
           </p>

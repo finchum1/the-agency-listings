@@ -2,8 +2,11 @@ import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import SiteLink from "./SiteLink";
 
 export default function BlogTeaser() {
-  const { site } = useAgentSiteContext();
+  const { site, isStandalonePage } = useAgentSiteContext();
   if (site.posts.length === 0) return null;
+  // See Bio.jsx's comment — Home already has an H1 from Hero.jsx, but
+  // this section IS the page at standalone /blog.
+  const Heading = isStandalonePage ? "h1" : "h2";
 
   return (
     <section id="blog" className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
@@ -11,9 +14,9 @@ export default function BlogTeaser() {
         <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">
           From the Blog
         </p>
-        <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-10 text-[var(--as-text)]">
+        <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-10 text-[var(--as-text)]">
           Market Insights
-        </h2>
+        </Heading>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {site.posts.map((post) => (
@@ -22,7 +25,7 @@ export default function BlogTeaser() {
                 {post.image_url && (
                   <img
                     src={post.image_url}
-                    alt=""
+                    alt={post.title}
                     className="h-full w-full object-cover transition group-hover:scale-105"
                   />
                 )}

@@ -91,6 +91,48 @@ export function buildAgentSiteMeta(site, agent) {
   return { title, description, image };
 }
 
+// Per-page defaults for an agent site's standalone subpages (About,
+// Listings, Areas, Blog, Contact — see App.jsx's /sites/:slug/* routes).
+// Without these, every subpage under one site shared buildAgentSiteMeta's
+// single description verbatim — a classic duplicate-meta-description
+// issue when Google (or anyone) compares pages within the same site.
+const AGENT_SITE_PAGE_LABELS = { about: "About", listings: "Listings", areas: "Areas", blog: "Blog", contact: "Contact" };
+const AGENT_SITE_PAGE_DESCRIPTIONS = {
+  about: (site, agent) =>
+    `Learn about ${agent?.full_name || "this agent"}${
+      site.region ? `, serving ${site.region}` : ""
+    } — background, experience, and client testimonials at ${brokerage.name}.`,
+  listings: (site, agent) =>
+    `Browse current listings from ${agent?.full_name || "this agent"} at ${brokerage.name}${
+      site.region ? ` in ${site.region}` : ""
+    }.`,
+  areas: (site, agent) =>
+    `Explore the neighborhoods and areas ${agent?.full_name || "this agent"} serves${
+      site.region ? ` around ${site.region}` : ""
+    }.`,
+  blog: (site, agent) =>
+    `Real estate insights, market updates, and local guides from ${agent?.full_name || "this agent"} at ${brokerage.name}.`,
+  contact: (site, agent) =>
+    `Get in touch with ${agent?.full_name || "this agent"} at ${brokerage.name} to buy, sell, or ask a question.`,
+};
+
+// site: a raw `agent_sites` row. agent: its `profiles` row (nullable).
+// page: one of AGENT_SITE_PAGE_LABELS's keys, or falsy for the site's own
+// Home page (in which case this is identical to buildAgentSiteMeta).
+export function buildAgentSitePageMeta(site, agent, page) {
+  const base = buildAgentSiteMeta(site, agent);
+  const label = AGENT_SITE_PAGE_LABELS[page];
+  if (!label) return base;
+
+  // An agent's own explicit seo_description is a deliberate override and
+  // still wins over our computed per-page default, same priority it
+  // already has inside buildAgentSiteMeta.
+  const description =
+    site.seo_description?.trim() || AGENT_SITE_PAGE_DESCRIPTIONS[page](site, agent) || base.description;
+
+  return { title: `${label} | ${base.title}`, description, image: base.image };
+}
+
 // post: a raw `agent_site_posts` row. site/agent: the parent site + its agent.
 export function buildAgentPostMeta(post, site, agent) {
   const title = `${post.title} | ${agent?.full_name || brokerage.name}`;

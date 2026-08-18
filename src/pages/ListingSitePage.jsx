@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { adaptListing } from "../lib/adaptListing";
 import { buildListingMeta, SITE_ORIGIN } from "../lib/seo";
-import { applyPageMeta } from "../lib/pageMeta";
+import { applyPageMeta, applyStructuredData } from "../lib/pageMeta";
+import { buildListingSchema } from "../lib/structuredData";
 import { trackView } from "../lib/trackView";
 import { ListingProvider } from "../context/ListingContext";
 
@@ -28,7 +29,25 @@ export default function ListingSitePage({ listing, agent, photos, openHouses, lo
     if (!listing) return;
     const heroPhoto = photos?.find((p) => p.is_hero)?.url || photos?.[0]?.url || "";
     const meta = buildListingMeta(listing, agent, heroPhoto);
-    applyPageMeta({ ...meta, url: `${SITE_ORIGIN}/listings/${listing.slug}` });
+    const url = `${SITE_ORIGIN}/listings/${listing.slug}`;
+    applyPageMeta({ ...meta, url });
+    applyStructuredData(
+      buildListingSchema({
+        url,
+        address1: listing.address_line1,
+        city: listing.city,
+        state: listing.state,
+        zip: listing.zip,
+        price: listing.price,
+        status: listing.status,
+        beds: listing.beds,
+        baths: listing.baths,
+        sqft: listing.sqft,
+        description: (listing.description || []).join(" ") || undefined,
+        images: (photos || []).map((p) => p.url),
+        datePosted: listing.created_at,
+      }),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listing, agent, photos]);
 

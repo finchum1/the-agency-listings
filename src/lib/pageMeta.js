@@ -40,3 +40,22 @@ export function applyPageMeta({ title, description, image, url }) {
   upsertMeta("name", "twitter:image", image);
   upsertLink("canonical", url || window.location.href);
 }
+
+// Injects one or more schema.org objects (lib/structuredData.js builders)
+// as a single <script type="application/ld+json"> in <head>, replacing
+// whatever this page set previously — same upsert idea as the meta tags
+// above, so navigating between pages in the SPA never leaves a stale
+// schema from the last page behind. A bare object is wrapped in an array;
+// Google's parser accepts either a single object or an array of them in
+// one script tag.
+export function applyStructuredData(schema) {
+  const id = "ld-json";
+  let el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement("script");
+    el.id = id;
+    el.type = "application/ld+json";
+    document.head.appendChild(el);
+  }
+  el.textContent = JSON.stringify(Array.isArray(schema) ? schema : [schema]);
+}

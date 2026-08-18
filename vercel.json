@@ -23,6 +23,17 @@
       "destination": "/api/meta-agent-site?slug=:slug"
     },
     {
+      "source": "/sites/:slug/:page(about|listings|areas|blog|contact)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Googlebot|bingbot|Applebot|Pinterest|redditbot|SkypeUriPreview|vkShare|W3C_Validator).*"
+        }
+      ],
+      "destination": "/api/meta-agent-site?slug=:slug&page=:page"
+    },
+    {
       "source": "/listings/:slug",
       "has": [
         {

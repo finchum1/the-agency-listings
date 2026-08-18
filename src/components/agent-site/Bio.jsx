@@ -2,8 +2,12 @@ import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { sanitizeHtml } from "../../lib/sanitizeHtml";
 
 export default function Bio() {
-  const { site } = useAgentSiteContext();
+  const { site, isStandalonePage } = useAgentSiteContext();
   if (!site.bioHtml && site.stats.length === 0) return null;
+  // On Home, Hero.jsx already supplies the page's one H1 — this section's
+  // heading stays H2 there. Standalone at /about (no Hero on that route),
+  // it needs to BE the page's H1, or the page would have none at all.
+  const Heading = isStandalonePage ? "h1" : "h2";
 
   return (
     <section id="bio" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
@@ -18,10 +22,10 @@ export default function Bio() {
           <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">
             About {site.agent.name.split(" ")[0]}
           </p>
-          <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-6 text-[var(--as-text)]">
+          <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-6 text-[var(--as-text)]">
             {site.brokerage.name}
             {site.region ? ` — ${site.region}` : ""}
-          </h2>
+          </Heading>
 
           <div
             className="rich-text space-y-4 text-[15.5px] leading-relaxed text-[var(--as-text)]/75 max-w-xl"

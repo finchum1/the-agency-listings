@@ -4,6 +4,8 @@
 // /sites/:slug/blog/:postSlug.
 import { createClient } from "@supabase/supabase-js";
 import { buildAgentPostMeta, escapeHtml, SITE_ORIGIN } from "../src/lib/seo.js";
+import { buildBlogPostSchema, buildBreadcrumbSchema } from "../src/lib/structuredData.js";
+import brokerage from "../src/lib/brokerage.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
 
 export default async function handler(req, res) {
@@ -65,6 +67,26 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
 <p><a href="${url}">Read full post →</a></p>
 `;
 
+  const homeUrl = `${SITE_ORIGIN}/sites/${slug}`;
+  const structuredData = [
+    buildBlogPostSchema({
+      url,
+      headline: post.title,
+      description: meta.description,
+      image: meta.image,
+      datePublished: post.post_date,
+      dateModified: post.updated_at,
+      authorName: site.agent?.full_name,
+      publisherName: brokerage.name,
+      publisherLogo: brokerage.logo,
+    }),
+    buildBreadcrumbSchema([
+      { name: site.agent?.full_name || "Home", url: homeUrl },
+      { name: "Blog", url: `${homeUrl}/blog` },
+      { name: post.title, url },
+    ]),
+  ];
+
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
   res.status(200).send(
     renderMetaPage({
@@ -74,6 +96,7 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
       url,
       heading: escapeHtml(post.title),
       bodyHtml,
+      structuredData,
     }),
   );
 }

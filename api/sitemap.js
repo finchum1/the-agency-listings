@@ -27,10 +27,22 @@ export default async function handler(req, res) {
       .eq("status", "published"),
   ]);
 
+  // Every agent site also has 5 standalone subpages (see App.jsx's
+  // /sites/:slug/* routes and api/meta-agent-site.js's ?page= handling) —
+  // all real, indexable, crawler-snapshotted pages, so they belong here
+  // too, not just each site's home URL.
+  const AGENT_SITE_SUBPAGES = ["about", "listings", "areas", "blog", "contact"];
+
   const urls = [
     { loc: `${SITE_ORIGIN}/` },
     ...(listings || []).map((l) => ({ loc: `${SITE_ORIGIN}/listings/${l.slug}`, lastmod: l.updated_at })),
-    ...(sites || []).map((s) => ({ loc: `${SITE_ORIGIN}/sites/${s.slug}`, lastmod: s.updated_at })),
+    ...(sites || []).flatMap((s) => [
+      { loc: `${SITE_ORIGIN}/sites/${s.slug}`, lastmod: s.updated_at },
+      ...AGENT_SITE_SUBPAGES.map((page) => ({
+        loc: `${SITE_ORIGIN}/sites/${s.slug}/${page}`,
+        lastmod: s.updated_at,
+      })),
+    ]),
     ...(posts || [])
       .filter((p) => p.agent_sites?.slug)
       .map((p) => ({

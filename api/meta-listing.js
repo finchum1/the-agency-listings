@@ -7,6 +7,7 @@
 // ever see index.html's one generic title/description for every listing.
 import { createClient } from "@supabase/supabase-js";
 import { buildListingMeta, escapeHtml, SITE_ORIGIN } from "../src/lib/seo.js";
+import { buildListingSchema } from "../src/lib/structuredData.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
 
 export default async function handler(req, res) {
@@ -71,6 +72,22 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
 <p><a href="${url}">View full listing →</a></p>
 `;
 
+  const structuredData = buildListingSchema({
+    url,
+    address1: listing.address_line1,
+    city: listing.city,
+    state: listing.state,
+    zip: listing.zip,
+    price: listing.price,
+    status: listing.status,
+    beds: listing.beds,
+    baths: listing.baths,
+    sqft: listing.sqft,
+    description: (listing.description || []).join(" ") || undefined,
+    images: (listing.listing_photos || []).map((p) => p.url),
+    datePosted: listing.created_at,
+  });
+
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
   res.status(200).send(
     renderMetaPage({
@@ -80,6 +97,7 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
       url,
       heading: escapeHtml(listing.address_line1),
       bodyHtml,
+      structuredData,
     }),
   );
 }
