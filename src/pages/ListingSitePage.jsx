@@ -4,6 +4,7 @@ import { adaptListing } from "../lib/adaptListing";
 import { buildListingMeta, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta, applyStructuredData } from "../lib/pageMeta";
 import { buildListingSchema } from "../lib/structuredData";
+import { isAppHost } from "../lib/appHosts";
 import { trackView } from "../lib/trackView";
 import { ListingProvider } from "../context/ListingContext";
 
@@ -29,7 +30,18 @@ export default function ListingSitePage({ listing, agent, photos, openHouses, lo
     if (!listing) return;
     const heroPhoto = photos?.find((p) => p.is_hero)?.url || photos?.[0]?.url || "";
     const meta = buildListingMeta(listing, agent, heroPhoto);
-    const url = `${SITE_ORIGIN}/listings/${listing.slug}`;
+    // Self-canonical wherever this is actually being viewed — the app
+    // host's own /listings/:slug URL there, or the listing's own custom
+    // domain root there (a listing site has never been more than one
+    // page — see CustomDomainSitePage.jsx). Previously this always
+    // pointed at the app-host URL even when viewed via a listing's own
+    // attached custom domain, which told search engines the custom
+    // domain's copy was a duplicate and suppressed IT from being
+    // indexed on its own — the same class of bug already fixed for
+    // agent sites (see AgentSitePage.jsx).
+    const url = isAppHost(window.location.hostname)
+      ? `${SITE_ORIGIN}/listings/${listing.slug}`
+      : `${window.location.origin}/`;
     applyPageMeta({ ...meta, url });
     applyStructuredData(
       buildListingSchema({
