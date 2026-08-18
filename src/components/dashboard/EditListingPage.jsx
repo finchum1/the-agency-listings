@@ -33,7 +33,7 @@ export default function EditListingPage() {
         <p className="text-sm text-[#1c1a17]/60 mb-4">
           Listing not found, or you don't have access to it.
         </p>
-        <Link to="/dashboard" className="text-sm text-[#ed2127] hover:underline">
+        <Link to="/dashboard/listings" className="text-sm text-[#ed2127] hover:underline">
           ← Back to listings
         </Link>
       </div>

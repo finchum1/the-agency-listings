@@ -40,7 +40,7 @@ export default function ListingsTable() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
         <div>
           <h1 className="text-2xl font-display font-semibold">Listings</h1>
           <p className="text-sm text-[#1c1a17]/60 mt-1">
@@ -87,7 +87,7 @@ export default function ListingsTable() {
           <p className="text-[#1c1a17]/60">No listings yet.</p>
         </div>
       ) : (
-        <div className="bg-white border border-black/5 rounded-2xl overflow-hidden">
+        <div className="bg-white border border-black/5 rounded-2xl overflow-hidden overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-black/5 text-left text-xs uppercase tracking-wider text-[#1c1a17]/40">

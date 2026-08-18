@@ -125,7 +125,8 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<ListingsTable />} />
+        <Route index element={<MySitePage />} />
+        <Route path="listings" element={<ListingsTable />} />
         <Route path="listings/new" element={<NewListingPage />} />
         <Route path="listings/:id/edit" element={<EditListingPage />} />
         <Route path="listings/:id/flyer" element={<FlyerPage />} />

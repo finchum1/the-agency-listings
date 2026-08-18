@@ -135,7 +135,7 @@ export default function BuyerNeedsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
         <div>
           <h1 className="text-2xl font-display font-semibold">Buyer Needs</h1>
           <p className="text-sm text-[#1c1a17]/60 mt-1">
