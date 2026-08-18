@@ -11,6 +11,8 @@ import NewListingPage from "./components/dashboard/NewListingPage";
 import EditListingPage from "./components/dashboard/EditListingPage";
 import FlyerPage from "./components/dashboard/FlyerPage";
 import AgentsPage from "./components/dashboard/AgentsPage";
+import UpcomingListingsPage from "./components/dashboard/UpcomingListingsPage";
+import BuyerNeedsPage from "./components/dashboard/BuyerNeedsPage";
 import MyProfilePage from "./components/dashboard/MyProfilePage";
 import MySitePage from "./components/dashboard/MySitePage";
 import SitesPage from "./components/dashboard/SitesPage";
@@ -129,6 +131,8 @@ export default function App() {
         <Route path="listings/:id/flyer" element={<FlyerPage />} />
         <Route path="profile" element={<MyProfilePage />} />
         <Route path="site" element={<MySitePage />} />
+        <Route path="upcoming-listings" element={<UpcomingListingsPage />} />
+        <Route path="buyer-needs" element={<BuyerNeedsPage />} />
         <Route
           path="agents"
           element={

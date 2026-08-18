@@ -10,6 +10,8 @@ import { useAuth } from "../../hooks/useAuth";
 // everywhere and stayed highlighted no matter which tab you were on.
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Listings", activeWhen: (p) => p === "/dashboard" || p.startsWith("/dashboard/listings/") },
+  { to: "/dashboard/upcoming-listings", label: "Upcoming", activeWhen: (p) => p === "/dashboard/upcoming-listings" },
+  { to: "/dashboard/buyer-needs", label: "Buyer Needs", activeWhen: (p) => p === "/dashboard/buyer-needs" },
   { to: "/dashboard/site", label: "My Site", activeWhen: (p) => p === "/dashboard/site" },
   { to: "/dashboard/sites", label: "Sites", activeWhen: (p) => p.startsWith("/dashboard/sites"), adminOnly: true },
   { to: "/dashboard/agents", label: "Agents", activeWhen: (p) => p === "/dashboard/agents", adminOnly: true },
