@@ -165,7 +165,7 @@ export default function BuyerNeedsSection() {
           <p className="text-sm text-[#1c1a17]/60 mt-1">
             {hasActiveFilters
               ? `Showing ${filtered.length} of ${buyerNeeds.length}`
-              : "What the office's current buyers are looking for — check here before you pass on a lead."}
+              : "What the office's current buyers are looking for."}
           </p>
         </div>
         {editingId === null && (
