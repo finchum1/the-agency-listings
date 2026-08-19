@@ -58,54 +58,60 @@ export default function UpcomingPage() {
               transition={{ duration: 0.9, ease: easeOut, delay: 0.15 }}
             >
               <BrowserFrame
-                src="/images/landing/upcoming-listings-table.jpg"
-                alt="Upcoming Listings dashboard module (sample data)"
+                src="/images/landing/upcoming-hero.jpg"
+                alt="Upcoming Listings and Buyer Needs dashboard modules (sample data)"
               />
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Upcoming Listings */}
+      {/* Upcoming Listings — full-width screenshot (not squeezed into a
+          half grid column like the two product deep-dives use): this is a
+          dense data table, not a photo, so it needs the extra display
+          width to stay legible. Same "intro, then a big centered shot"
+          pattern as PropertyWebsitesPage.jsx's real-listing showcase. */}
       <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
-        <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
-          <Reveal variant="fromLeft">
+        <div className="mx-auto max-w-6xl">
+          <Reveal className="max-w-2xl mb-12">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               A coming-soon property, tracked before it's ever public.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed">
               Beds, baths, an estimated price, notes on the seller's timeline — logged the moment
               you hear about it, visible to the whole office. No slug, no public page, no SEO to
               worry about — just a shared, living list.
             </p>
           </Reveal>
-          <Reveal variant="fromRight" delay={0.1}>
+          <Reveal delay={0.1} variant="rise">
             <BrowserFrame
               src="/images/landing/upcoming-listings-table.jpg"
               alt="Upcoming Listings dashboard module (sample data)"
+              className="max-w-5xl mx-auto"
             />
           </Reveal>
         </div>
       </section>
 
-      {/* Buyer Needs */}
+      {/* Buyer Needs — same full-width treatment. */}
       <section className="px-6 lg:px-10 py-24 lg:py-32">
-        <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
-          <Reveal variant="fromLeft" className="order-2 lg:order-1">
-            <BrowserFrame
-              src="/images/landing/buyer-needs-table.jpg"
-              alt="Buyer Needs dashboard module (sample data)"
-            />
-          </Reveal>
-          <Reveal variant="fromRight" delay={0.1} className="order-1 lg:order-2">
+        <div className="mx-auto max-w-6xl">
+          <Reveal className="max-w-2xl mb-12">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               What your buyers want, in one shared list.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed">
               Budget range, beds and baths, the areas they're considering — logged once, checked
               by anyone in the office. When a colleague's off-market lead matches, everyone
               already knows.
             </p>
+          </Reveal>
+          <Reveal delay={0.1} variant="rise">
+            <BrowserFrame
+              src="/images/landing/buyer-needs-table.jpg"
+              alt="Buyer Needs dashboard module (sample data)"
+              className="max-w-5xl mx-auto"
+            />
           </Reveal>
         </div>
       </section>
