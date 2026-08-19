@@ -37,7 +37,7 @@ function emptyForm(defaultAgentId) {
   };
 }
 
-export default function UpcomingListingsPage() {
+export default function UpcomingListingsSection() {
   const { user, isAdmin } = useAuth();
   const { upcomingListings, loading, error, refresh } = useUpcomingListings();
   const { agents } = useAgents();
@@ -169,9 +169,9 @@ export default function UpcomingListingsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-5">
         <div>
-          <h1 className="text-2xl font-display font-semibold">Upcoming Listings</h1>
+          <h2 className="text-xl font-display font-semibold">Upcoming Listings</h2>
           <p className="text-sm text-[#1c1a17]/60 mt-1">
             {hasActiveFilters
               ? `Showing ${filtered.length} of ${upcomingListings.length}`

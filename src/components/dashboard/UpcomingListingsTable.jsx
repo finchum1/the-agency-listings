@@ -1,11 +1,12 @@
 import { formatPrice } from "../../lib/format";
 import PillSelect from "./PillSelect";
 
-// Pulled out of UpcomingListingsPage.jsx so the exact same markup can be
+// Pulled out of UpcomingListingsSection.jsx so the exact same markup can be
 // fed either live Supabase rows (the real dashboard) or hardcoded sample
-// rows (marketing screenshots — see pages/marketing/ModulePreview.jsx) —
-// one source of truth for what this table looks like, not a hand-copied
-// mockup that can drift from the real thing.
+// rows (used once to capture the /upcoming marketing page's screenshots,
+// via a since-removed temporary preview route) — one source of truth for
+// what this table looks like, not a hand-copied mockup that can drift
+// from the real thing.
 export default function UpcomingListingsTable({ rows, statusLabels, statusColors, canEdit, onStatusChange, onEdit, onDelete }) {
   return (
     <div className="bg-white border border-black/5 rounded-2xl overflow-hidden overflow-x-auto">

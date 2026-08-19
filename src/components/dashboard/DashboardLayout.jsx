@@ -16,8 +16,7 @@ import AdminNavMenu from "./AdminNavMenu";
 const NAV_ITEMS = [
   { to: "/dashboard", label: "My Site", activeWhen: (p) => p === "/dashboard" },
   { to: "/dashboard/listings", label: "Listings", activeWhen: (p) => p === "/dashboard/listings" || p.startsWith("/dashboard/listings/") },
-  { to: "/dashboard/upcoming-listings", label: "Upcoming", activeWhen: (p) => p === "/dashboard/upcoming-listings" },
-  { to: "/dashboard/buyer-needs", label: "Buyer Needs", activeWhen: (p) => p === "/dashboard/buyer-needs" },
+  { to: "/dashboard/upcoming", label: "Upcoming", activeWhen: (p) => p === "/dashboard/upcoming" },
 ];
 
 // Sites/Agents are office settings, not something every agent reaches

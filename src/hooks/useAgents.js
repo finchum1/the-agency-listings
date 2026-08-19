@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 // Every agent/admin profile, for an admin's "which agent is this for"
-// picker (UpcomingListingsPage.jsx, BuyerNeedsPage.jsx) — profiles is
+// picker (UpcomingListingsSection.jsx, BuyerNeedsSection.jsx) — profiles is
 // fully public-read (see schema.sql), so this needs no special RLS.
 export function useAgents() {
   const [agents, setAgents] = useState([]);

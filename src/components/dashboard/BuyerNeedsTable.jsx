@@ -2,7 +2,7 @@ import { formatPrice } from "../../lib/format";
 import PillSelect from "./PillSelect";
 
 // See UpcomingListingsTable.jsx's same comment — pulled out of
-// BuyerNeedsPage.jsx so real dashboard rows and hardcoded marketing
+// BuyerNeedsSection.jsx so real dashboard rows and hardcoded marketing
 // sample rows render through the exact same markup.
 export default function BuyerNeedsTable({ rows, statusLabels, statusColors, canEdit, onStatusChange, onEdit, onDelete }) {
   return (

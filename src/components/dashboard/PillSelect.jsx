@@ -2,7 +2,7 @@
 // is hardwired to the `listings` table's own STATUS_LABELS/STATUS_COLORS,
 // so rather than bolt extra props onto a component two other files
 // already depend on, this takes `labels`/`colors` directly. Used by
-// UpcomingListingsPage.jsx and BuyerNeedsPage.jsx, each with their own
+// UpcomingListingsSection.jsx and BuyerNeedsSection.jsx, each with their own
 // status vocabulary.
 export default function PillSelect({ value, labels, colors, onChange, disabled }) {
   const color = colors[value] || "#8a8a8a";

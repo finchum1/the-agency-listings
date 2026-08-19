@@ -1,4 +1,4 @@
-// Shared filter bar for UpcomingListingsPage.jsx and BuyerNeedsPage.jsx —
+// Shared filter bar for UpcomingListingsSection.jsx and BuyerNeedsSection.jsx —
 // same dimensions on both (status, agent, price range, min beds/baths),
 // only the status vocabulary and the filtering *predicate* differ (a
 // buyer's price fields are their own budget range, matched by overlap;
