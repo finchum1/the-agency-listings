@@ -37,13 +37,13 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl grid lg:grid-cols-[0.85fr_1.15fr] gap-16 items-center">
           <motion.div initial="hidden" animate="show" variants={variants.rise}>
             <h1 className="text-4xl sm:text-5xl font-display font-semibold leading-[1.08] mb-6">
-              Every listing.
+              Everything the office runs on.
               <br />
               One dashboard.
             </h1>
             <p className="text-[17px] text-[#1c1a17]/70 leading-relaxed mb-8 max-w-md">
-              Create a property site by filling out a form. Update status the moment a deal
-              changes. Add an open house in seconds.
+              Property sites, agent sites, coming-soon listings, and what your buyers
+              want — all live the moment you save, all in the same place.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <Link
@@ -70,7 +70,10 @@ export default function LandingPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.9, ease: easeOut, delay: 0.15 }}
             >
-              <BrowserFrame src="/images/landing/dashboard-table.png" alt="The Agency Listings dashboard" />
+              <BrowserFrame
+                src="/images/landing/dashboard-overview.jpg"
+                alt="The Agency Listings dashboard — Listings, Agent Sites, Upcoming Listings, and Buyer Needs"
+              />
             </motion.div>
           </div>
         </div>
