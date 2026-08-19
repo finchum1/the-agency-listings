@@ -18,7 +18,7 @@ export default function MarketingNav() {
     <header className="sticky top-0 z-40 bg-[#faf9f7]/90 backdrop-blur border-b border-black/5">
       <div className="mx-auto max-w-7xl px-6 lg:px-10 h-20 flex items-center justify-between gap-6">
         <Link to="/" className="shrink-0">
-          <img src={brokerage.logo} alt={brokerage.name} className="h-9 w-auto" />
+          <img src={brokerage.logo} alt={brokerage.name} className="h-11 w-auto" />
         </Link>
 
         <nav className="hidden sm:flex items-center gap-1">

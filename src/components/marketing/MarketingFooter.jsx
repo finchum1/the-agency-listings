@@ -8,7 +8,7 @@ export default function MarketingFooter() {
   return (
     <footer className="bg-[#1c1a17] text-white/60 px-6 lg:px-10 py-10">
       <div className="mx-auto max-w-6xl flex flex-wrap items-center justify-between gap-6">
-        <img src={brokerage.logo} alt={brokerage.name} className="h-8 w-auto" />
+        <img src={brokerage.logo} alt={brokerage.name} className="h-10 w-auto" />
         <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
           <Link to="/agent-websites" className="hover:text-white transition-colors">
             Agent Websites
