@@ -85,7 +85,7 @@ export default function LandingPage() {
           {[
             ["Before", "a new repo and a deploy for every listing."],
             ["Now", "a form. Saved instantly, live immediately."],
-            ["Always", "one dashboard shows everything in play."],
+            ["Always", "one dashboard covers the whole office."],
           ].map(([word, copy], i) => (
             <Reveal key={word} delay={i * 0.1} variant="scaleIn">
               <p className="text-lg leading-snug">
