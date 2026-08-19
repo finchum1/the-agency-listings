@@ -94,10 +94,44 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Two products — peer highlights, each linking to its own deep-dive page */}
+      {/* Two products — peer highlights, each linking to its own deep-dive
+          page. Agent Websites leads (matches MarketingNav.jsx's own link
+          order) since that's the story this page opens with now. */}
       <section id="products" className="px-6 lg:px-10 py-24 lg:py-32">
         <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
           <Reveal variant="fromLeft">
+            <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
+              Every agent's own site, on the same trusted brand.
+            </h2>
+            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+              Your own bio, your own listings, your own blog — styled the way you want it, built
+              on The Agency's brand. This one is live right now, and it took minutes to set up.
+            </p>
+            <Link
+              to="/agent-websites"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
+            >
+              See how it works
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          </Reveal>
+          <Reveal variant="fromRight" delay={0.1}>
+            <BrowserFrame src="/images/landing/agent-site-home.jpg" alt="Terrence Finchum's agent website" />
+          </Reveal>
+        </div>
+      </section>
+
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
+        <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
+          <Reveal variant="fromLeft" className="order-2 lg:order-1">
+            <BrowserFrame
+              src="/images/landing/listing-home-fresh.jpg"
+              alt="1645 Saratoga Way public listing site"
+            />
+          </Reveal>
+          <Reveal variant="fromRight" delay={0.1} className="order-1 lg:order-2">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               A premium site for every listing — instantly.
             </h2>
@@ -116,38 +150,45 @@ export default function LandingPage() {
               </svg>
             </Link>
           </Reveal>
-          <Reveal variant="fromRight" delay={0.1}>
-            <BrowserFrame
-              src="/images/landing/listing-home-fresh.jpg"
-              alt="1645 Saratoga Way public listing site"
-            />
-          </Reveal>
         </div>
       </section>
 
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
-        <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
-          <Reveal variant="fromLeft" className="order-2 lg:order-1">
-            <BrowserFrame src="/images/landing/agent-site-home.jpg" alt="Terrence Finchum's agent website" />
-          </Reveal>
-          <Reveal variant="fromRight" delay={0.1} className="order-1 lg:order-2">
+      {/* Two more tools, same dashboard — lighter treatment than the two
+          products above (no browser-frame screenshot: neither has a public
+          page to show, both live inside the dashboard itself), styled off
+          AgentWebsitesPage.jsx's chip-grid pattern instead. */}
+      <section className="px-6 lg:px-10 py-24 lg:py-32">
+        <div className="mx-auto max-w-6xl">
+          <Reveal className="max-w-2xl mb-10">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
-              Every agent's own site, on the same trusted brand.
+              Built for the whole office, not just one listing.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
-              Your own bio, your own listings, your own blog — styled the way you want it, built
-              on The Agency's brand. This one is live right now, and it took minutes to set up.
+            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed">
+              Two more tools live in the same dashboard, used quietly every day.
             </p>
-            <Link
-              to="/agent-websites"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
-            >
-              See how it works
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
           </Reveal>
+
+          <div className="grid sm:grid-cols-2 gap-6">
+            <Reveal variant="scaleIn" className="bg-white rounded-2xl shadow-xl shadow-black/5 p-8">
+              <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">
+                Upcoming Listings
+              </p>
+              <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed">
+                Track a coming-soon property before it's ever public — beds, baths, an estimated
+                price, notes on the seller's timeline. The whole office sees it, not just the one
+                agent.
+              </p>
+            </Reveal>
+            <Reveal variant="scaleIn" delay={0.1} className="bg-white rounded-2xl shadow-xl shadow-black/5 p-8">
+              <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">
+                Buyer Needs
+              </p>
+              <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed">
+                List exactly what a buyer wants — budget, beds, baths, the areas they're
+                considering. When a colleague's off-market lead matches, everyone already knows.
+              </p>
+            </Reveal>
+          </div>
         </div>
       </section>
 
