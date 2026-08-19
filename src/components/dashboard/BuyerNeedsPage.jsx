@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useBuyerNeeds } from "../../hooks/useBuyerNeeds";
 import { useAgents } from "../../hooks/useAgents";
 import { supabase } from "../../lib/supabaseClient";
 import { formatPrice } from "../../lib/format";
 import PillSelect from "./PillSelect";
+import FilterBar from "./FilterBar";
 
 const STATUS_LABELS = { active: "Actively Looking", matched: "Matched", closed: "Closed" };
 const STATUS_COLORS = { active: "#1c7c4d", matched: "#b5860b", closed: "#5a5a5a" };
@@ -33,6 +34,30 @@ export default function BuyerNeedsPage() {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+
+  const emptyFilters = { status: "all", agentId: "", minPrice: "", maxPrice: "", minBeds: "", minBaths: "" };
+  const [filters, setFilters] = useState(emptyFilters);
+  const hasActiveFilters = Object.entries(filters).some(([key, value]) => value !== emptyFilters[key]);
+
+  // Price filters here mean something different than on
+  // UpcomingListingsPage: a buyer need already IS a price range
+  // (min_price/max_price), so "Min Price"/"Max Price" define a window
+  // and a row passes if its own range OVERLAPS that window at all — the
+  // real question an agent's asking is "does this buyer's budget reach
+  // this price point," not "does their exact min/max match it." Min
+  // Beds/Baths filter against the buyer's own min_beds/min_baths (their
+  // stated requirement) with ">= filter" — "buyers who need at least N."
+  const filtered = useMemo(() => {
+    return buyerNeeds.filter((row) => {
+      if (filters.status !== "all" && row.status !== filters.status) return false;
+      if (filters.agentId && row.agent_id !== filters.agentId) return false;
+      if (filters.minPrice !== "" && row.max_price != null && row.max_price < Number(filters.minPrice)) return false;
+      if (filters.maxPrice !== "" && row.min_price != null && row.min_price > Number(filters.maxPrice)) return false;
+      if (filters.minBeds !== "" && (row.min_beds == null || row.min_beds < Number(filters.minBeds))) return false;
+      if (filters.minBaths !== "" && (row.min_baths == null || row.min_baths < Number(filters.minBaths))) return false;
+      return true;
+    });
+  }, [buyerNeeds, filters]);
 
   const inputClass =
     "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
@@ -139,7 +164,9 @@ export default function BuyerNeedsPage() {
         <div>
           <h1 className="text-2xl font-display font-semibold">Buyer Needs</h1>
           <p className="text-sm text-[#1c1a17]/60 mt-1">
-            What the office's current buyers are looking for — check here before you pass on a lead.
+            {hasActiveFilters
+              ? `Showing ${filtered.length} of ${buyerNeeds.length}`
+              : "What the office's current buyers are looking for — check here before you pass on a lead."}
           </p>
         </div>
         {editingId === null && (
@@ -249,12 +276,38 @@ export default function BuyerNeedsPage() {
         </form>
       )}
 
+      {buyerNeeds.length > 0 && (
+        <FilterBar
+          statusLabels={STATUS_LABELS}
+          statusColors={STATUS_COLORS}
+          statusValue={filters.status}
+          onStatusChange={(status) => setFilters((f) => ({ ...f, status }))}
+          agents={agents}
+          agentValue={filters.agentId}
+          onAgentChange={(agentId) => setFilters((f) => ({ ...f, agentId }))}
+          minPrice={filters.minPrice}
+          maxPrice={filters.maxPrice}
+          onMinPriceChange={(minPrice) => setFilters((f) => ({ ...f, minPrice }))}
+          onMaxPriceChange={(maxPrice) => setFilters((f) => ({ ...f, maxPrice }))}
+          minBeds={filters.minBeds}
+          onMinBedsChange={(minBeds) => setFilters((f) => ({ ...f, minBeds }))}
+          minBaths={filters.minBaths}
+          onMinBathsChange={(minBaths) => setFilters((f) => ({ ...f, minBaths }))}
+          onClear={() => setFilters(emptyFilters)}
+          hasActiveFilters={hasActiveFilters}
+        />
+      )}
+
       {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
       {loading ? (
         <p className="text-sm text-[#1c1a17]/50">Loading…</p>
       ) : buyerNeeds.length === 0 ? (
         <div className="bg-white border border-black/5 rounded-2xl p-12 text-center">
           <p className="text-[#1c1a17]/60">No buyer needs yet.</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-white border border-black/5 rounded-2xl p-12 text-center">
+          <p className="text-[#1c1a17]/60">No buyer needs match those filters.</p>
         </div>
       ) : (
         <div className="bg-white border border-black/5 rounded-2xl overflow-hidden overflow-x-auto">
@@ -271,7 +324,7 @@ export default function BuyerNeedsPage() {
               </tr>
             </thead>
             <tbody>
-              {buyerNeeds.map((row) => (
+              {filtered.map((row) => (
                 <tr key={row.id} className="border-b border-black/5 last:border-0 hover:bg-black/[0.02] align-top">
                   <td className="px-5 py-4">
                     <p className="font-medium">{row.buyer_name}</p>

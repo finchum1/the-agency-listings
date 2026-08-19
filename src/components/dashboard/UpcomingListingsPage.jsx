@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useUpcomingListings } from "../../hooks/useUpcomingListings";
 import { useAgents } from "../../hooks/useAgents";
 import { supabase } from "../../lib/supabaseClient";
 import { formatPrice } from "../../lib/format";
 import PillSelect from "./PillSelect";
+import FilterBar from "./FilterBar";
 
 const STATUS_LABELS = { active: "Coming Soon", listed: "Now Listed", cancelled: "Cancelled" };
 const STATUS_COLORS = { active: "#b5860b", listed: "#1c7c4d", cancelled: "#9a3b3b" };
@@ -45,6 +46,26 @@ export default function UpcomingListingsPage() {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+
+  const emptyFilters = { status: "all", agentId: "", minPrice: "", maxPrice: "", minBeds: "", minBaths: "" };
+  const [filters, setFilters] = useState(emptyFilters);
+  const hasActiveFilters = Object.entries(filters).some(([key, value]) => value !== emptyFilters[key]);
+
+  // All client-side — the list is already fully loaded (office-wide,
+  // no pagination), so there's no query round-trip to save by filtering
+  // server-side instead. Min Beds/Baths use ">= filter" — "at least N",
+  // the same sense a public listing search uses.
+  const filtered = useMemo(() => {
+    return upcomingListings.filter((row) => {
+      if (filters.status !== "all" && row.status !== filters.status) return false;
+      if (filters.agentId && row.agent_id !== filters.agentId) return false;
+      if (filters.minPrice !== "" && (row.price_estimate == null || row.price_estimate < Number(filters.minPrice))) return false;
+      if (filters.maxPrice !== "" && (row.price_estimate == null || row.price_estimate > Number(filters.maxPrice))) return false;
+      if (filters.minBeds !== "" && (row.beds == null || row.beds < Number(filters.minBeds))) return false;
+      if (filters.minBaths !== "" && (row.baths == null || row.baths < Number(filters.minBaths))) return false;
+      return true;
+    });
+  }, [upcomingListings, filters]);
 
   const inputClass =
     "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
@@ -153,7 +174,9 @@ export default function UpcomingListingsPage() {
         <div>
           <h1 className="text-2xl font-display font-semibold">Upcoming Listings</h1>
           <p className="text-sm text-[#1c1a17]/60 mt-1">
-            Coming-soon properties the office knows about, before they're a real listing.
+            {hasActiveFilters
+              ? `Showing ${filtered.length} of ${upcomingListings.length}`
+              : "Coming-soon properties the office knows about, before they're a real listing."}
           </p>
         </div>
         {editingId === null && (
@@ -279,12 +302,38 @@ export default function UpcomingListingsPage() {
         </form>
       )}
 
+      {upcomingListings.length > 0 && (
+        <FilterBar
+          statusLabels={STATUS_LABELS}
+          statusColors={STATUS_COLORS}
+          statusValue={filters.status}
+          onStatusChange={(status) => setFilters((f) => ({ ...f, status }))}
+          agents={agents}
+          agentValue={filters.agentId}
+          onAgentChange={(agentId) => setFilters((f) => ({ ...f, agentId }))}
+          minPrice={filters.minPrice}
+          maxPrice={filters.maxPrice}
+          onMinPriceChange={(minPrice) => setFilters((f) => ({ ...f, minPrice }))}
+          onMaxPriceChange={(maxPrice) => setFilters((f) => ({ ...f, maxPrice }))}
+          minBeds={filters.minBeds}
+          onMinBedsChange={(minBeds) => setFilters((f) => ({ ...f, minBeds }))}
+          minBaths={filters.minBaths}
+          onMinBathsChange={(minBaths) => setFilters((f) => ({ ...f, minBaths }))}
+          onClear={() => setFilters(emptyFilters)}
+          hasActiveFilters={hasActiveFilters}
+        />
+      )}
+
       {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
       {loading ? (
         <p className="text-sm text-[#1c1a17]/50">Loading…</p>
       ) : upcomingListings.length === 0 ? (
         <div className="bg-white border border-black/5 rounded-2xl p-12 text-center">
           <p className="text-[#1c1a17]/60">No upcoming listings yet.</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-white border border-black/5 rounded-2xl p-12 text-center">
+          <p className="text-[#1c1a17]/60">No upcoming listings match those filters.</p>
         </div>
       ) : (
         <div className="bg-white border border-black/5 rounded-2xl overflow-hidden overflow-x-auto">
@@ -301,7 +350,7 @@ export default function UpcomingListingsPage() {
               </tr>
             </thead>
             <tbody>
-              {upcomingListings.map((row) => (
+              {filtered.map((row) => (
                 <tr key={row.id} className="border-b border-black/5 last:border-0 hover:bg-black/[0.02] align-top">
                   <td className="px-5 py-4">
                     <p className="font-medium">{row.address_line1 || row.city || "—"}</p>
