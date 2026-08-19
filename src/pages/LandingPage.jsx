@@ -79,19 +79,26 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Positioning strip */}
+      {/* Positioning strip — three capabilities, plain language, each
+          linking to its own deep-dive page. Replaced an earlier
+          "Before/Now/Always" version that leaned on "repo" and "deploy" —
+          jargon most visitors wouldn't recognize, and besides, this page
+          isn't about the old workflow anymore, it's about what the
+          dashboard does today. */}
       <section className="border-y border-black/5 bg-white">
         <div className="mx-auto max-w-6xl px-6 lg:px-10 py-12 grid sm:grid-cols-3 gap-8 text-center">
           {[
-            ["Before", "a new repo and a deploy for every listing."],
-            ["Now", "a form. Saved instantly, live immediately."],
-            ["Always", "one dashboard covers the whole office."],
-          ].map(([word, copy], i) => (
+            ["Agent Websites", "Every agent's own site — bio, listings, blog — on the same trusted brand.", "/agent-websites"],
+            ["Property Sites", "Every listing gets its own site automatically, live the moment you hit save.", "/property-websites"],
+            ["Upcoming", "Track a coming-soon listing, or what a buyer wants, before it's ever public.", "/upcoming"],
+          ].map(([word, copy, path], i) => (
             <Reveal key={word} delay={i * 0.1} variant="scaleIn">
-              <p className="text-lg leading-snug">
-                <span className="font-display italic text-[#ed2127]">{word}</span>{" "}
-                <span className="text-[#1c1a17]/80">{copy}</span>
-              </p>
+              <Link to={path} className="group block">
+                <p className="text-lg leading-snug">
+                  <span className="font-display italic text-[#ed2127] group-hover:underline">{word}</span>{" "}
+                  <span className="text-[#1c1a17]/80">{copy}</span>
+                </p>
+              </Link>
             </Reveal>
           ))}
         </div>
