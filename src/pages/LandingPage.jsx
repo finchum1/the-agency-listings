@@ -163,9 +163,18 @@ export default function LandingPage() {
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Built for the whole office, not just one listing.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed">
+            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6">
               Two more tools live in the same dashboard, used quietly every day.
             </p>
+            <Link
+              to="/upcoming"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
+            >
+              See how it works
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
           </Reveal>
 
           <div className="grid sm:grid-cols-2 gap-6">

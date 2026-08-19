@@ -4,6 +4,7 @@ import brokerage from "../../lib/brokerage";
 const LINKS = [
   { path: "/agent-websites", label: "Agent Websites" },
   { path: "/property-websites", label: "Property Sites" },
+  { path: "/upcoming", label: "Upcoming" },
 ];
 
 // Shared sticky header for every marketing page (home + the two product

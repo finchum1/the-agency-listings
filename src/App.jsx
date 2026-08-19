@@ -25,9 +25,7 @@ import NotFoundPage from "./pages/NotFoundPage";
 import LandingPage from "./pages/LandingPage";
 import AgentWebsitesPage from "./pages/AgentWebsitesPage";
 import PropertyWebsitesPage from "./pages/PropertyWebsitesPage";
-// TEMPORARY — see ModulePreview.jsx's own header comment. Remove this
-// import + its route below once the marketing screenshots are captured.
-import ModulePreview from "./pages/marketing/ModulePreview";
+import UpcomingPage from "./pages/UpcomingPage";
 
 import HomeSections from "./components/agent-site/HomeSections";
 import Bio from "./components/agent-site/Bio";
@@ -58,7 +56,7 @@ export default function App() {
       <Route path="/" element={<Root />} />
       <Route path="/agent-websites" element={<AgentWebsitesPage />} />
       <Route path="/property-websites" element={<PropertyWebsitesPage />} />
-      <Route path="/marketing-preview" element={<ModulePreview />} />{/* TEMPORARY */}
+      <Route path="/upcoming" element={<UpcomingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/accept-invite" element={<SetPasswordPage />} />
 

@@ -16,6 +16,9 @@ export default function MarketingFooter() {
           <Link to="/property-websites" className="hover:text-white transition-colors">
             Property Sites
           </Link>
+          <Link to="/upcoming" className="hover:text-white transition-colors">
+            Upcoming
+          </Link>
           <Link to="/login" className="hover:text-white transition-colors">
             Sign In
           </Link>
