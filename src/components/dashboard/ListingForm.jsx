@@ -3,6 +3,25 @@ import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 import { normalizeDomain } from "../../lib/normalizeDomain";
 import StatusSelect from "./StatusSelect";
+import VideoUploadField from "./VideoUploadField";
+
+// Structural site templates — distinct from THEMES below (which are
+// color/font variants *within* the classic template). Luxury has its
+// own fixed dark/editorial look (see index.css's [data-theme="luxury"])
+// and isn't customizable via Theme/Accent/Font/Logo, so those sections
+// are hidden once it's selected rather than shown but ignored.
+const SITE_TEMPLATES = [
+  {
+    value: "classic",
+    label: "Classic",
+    description: "The standard template — photo hero, customizable theme, font, and accent.",
+  },
+  {
+    value: "luxury",
+    label: "Luxury",
+    description: "A cinematic video hero that scrubs as you scroll. Fixed dark editorial look.",
+  },
+];
 
 function slugify(text) {
   return text
@@ -139,6 +158,7 @@ const emptyListing = {
   garage: "",
   property_type: "Single Family Home",
   hero_video_url: "",
+  site_template: "classic",
   custom_domain: "",
   seo_title: "",
   seo_description: "",
@@ -192,6 +212,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
         garage: listing.garage || "",
         property_type: listing.property_type || "Single Family Home",
         hero_video_url: listing.hero_video_url || "",
+        site_template: listing.site_template || "classic",
         custom_domain: listing.custom_domain || "",
         seo_title: listing.seo_title || "",
         seo_description: listing.seo_description || "",
@@ -372,7 +393,44 @@ export default function ListingForm({ mode, listing, onSaved }) {
 
       <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
         <div>
-          <h2 className="font-display text-lg font-semibold">Template</h2>
+          <h2 className="font-display text-lg font-semibold">Site Template</h2>
+          <p className="text-xs text-[#1c1a17]/50 mt-1">
+            The overall structure of the public site — Theme/Accent/Font/Logo below only apply
+            to Classic; Luxury has its own fixed look.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {SITE_TEMPLATES.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, site_template: t.value }))}
+              className={`text-left rounded-xl border p-3.5 transition-colors ${
+                form.site_template === t.value
+                  ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
+                  : "border-black/10 hover:border-black/20"
+              }`}
+            >
+              <p className="text-sm font-semibold">{t.label}</p>
+              <p className="text-xs text-[#1c1a17]/50 mt-0.5 leading-snug">{t.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {form.site_template === "luxury" ? (
+        <div className="bg-white border border-black/5 rounded-2xl p-6">
+          <h2 className="font-display text-lg font-semibold mb-1.5">Theme, Accent, Font, Logo</h2>
+          <p className="text-xs text-[#1c1a17]/50">
+            Not used by the Luxury template — it has its own fixed dark, editorial look. Switch
+            back to Classic above to customize these.
+          </p>
+        </div>
+      ) : (
+        <>
+      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+        <div>
+          <h2 className="font-display text-lg font-semibold">Theme</h2>
           <p className="text-xs text-[#1c1a17]/50 mt-1">
             Changes how this listing's public site looks — every template still uses The
             Agency's own brand red, only the background/text neutrals change.
@@ -487,6 +545,8 @@ export default function ListingForm({ mode, listing, onSaved }) {
           ))}
         </div>
       </div>
+        </>
+      )}
 
       <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-5">
         <h2 className="font-display text-lg font-semibold">Quick Facts</h2>
@@ -584,17 +644,36 @@ export default function ListingForm({ mode, listing, onSaved }) {
       </div>
 
       <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-3">
-        <h2 className="font-display text-lg font-semibold">Hero Video (optional)</h2>
+        <h2 className="font-display text-lg font-semibold">
+          Hero Video {form.site_template === "luxury" ? "" : "(optional)"}
+        </h2>
         <p className="text-xs text-[#1c1a17]/50">
-          Paste a link to an already-hosted, compressed video file (leave blank to use the hero
-          photo instead).
+          {form.site_template === "luxury"
+            ? "This is what the Luxury template's scroll effect plays through — leave it unset and the hero falls back to a static photo instead."
+            : "Leave unset to use the hero photo instead."}
         </p>
-        <input
-          value={form.hero_video_url}
-          onChange={update("hero_video_url")}
-          className={inputClass}
-          placeholder="/video/hero.mp4 or a full URL"
-        />
+        {mode === "edit" ? (
+          <VideoUploadField
+            bucket="listing-photos"
+            folder={listing.id}
+            value={form.hero_video_url}
+            onChange={(url) => setForm((f) => ({ ...f, hero_video_url: url || "" }))}
+            label="Video file"
+          />
+        ) : (
+          <p className="text-xs text-[#1c1a17]/40">
+            Save this listing first, then come back here to upload a video file.
+          </p>
+        )}
+        <div>
+          <label className={labelClass}>Or paste an already-hosted video URL</label>
+          <input
+            value={form.hero_video_url}
+            onChange={update("hero_video_url")}
+            className={inputClass}
+            placeholder="/video/hero.mp4 or a full URL"
+          />
+        </div>
       </div>
 
       <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">

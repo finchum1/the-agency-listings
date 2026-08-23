@@ -233,6 +233,21 @@
     --ls-text: #1a1a1a;
     --ls-accent: #ed2127;
   }
+
+  /* Luxury listing-site template only — hardcoded when listings.site_template
+     = 'luxury' (ListingSitePage.jsx), never offered in the regular theme
+     picker and never applied to Agent Sites, so this sets only --ls-*, no
+     --as-* pair like the six presets above. A fixed, non-customizable
+     dark/editorial look on purpose — see DESIGN.md. */
+  [data-theme="luxury"] {
+    --ls-bg: #0a0a0a;
+    --ls-bg-alt: #151515;
+    --ls-dark: #000000;
+    --ls-on-dark: #f2ede4;
+    --ls-surface: #1e1e1e;
+    --ls-text: #f2ede4;
+    --ls-accent: #f2454b;
+  }
 }
 
 /* Listing flyer printing (FlyerPage.jsx) — print ONLY #flyer-sheet, full

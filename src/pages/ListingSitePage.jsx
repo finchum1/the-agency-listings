@@ -10,6 +10,7 @@ import { ListingProvider } from "../context/ListingContext";
 
 import Navbar from "../components/listing-site/Navbar";
 import Hero from "../components/listing-site/Hero";
+import LuxuryHero from "../components/listing-site/LuxuryHero";
 import StatsBar from "../components/listing-site/StatsBar";
 import OpenHouseBanner from "../components/listing-site/OpenHouseBanner";
 import Description from "../components/listing-site/Description";
@@ -82,16 +83,24 @@ export default function ListingSitePage({ listing, agent, photos, openHouses, lo
     return <Navigate to="/404" replace />;
   }
 
+  // Luxury is a fixed, non-customizable look — its own theme + font
+  // pairing, hardcoded here rather than offered through the regular
+  // picker (see ListingForm.jsx and index.css's own comments on
+  // [data-theme="luxury"]). Every other section (StatsBar, Description,
+  // Gallery, etc.) is unchanged — same components, just re-skinned by
+  // the luxury CSS variables, same as any other theme.
+  const isLuxury = adapted.siteTemplate === "luxury";
+
   return (
     <ListingProvider value={{ listing: adapted, openHouses, listingId: listing.id }}>
       <div
         className="min-h-screen bg-[var(--ls-bg)] font-ls-sans"
-        data-theme={adapted.theme}
-        data-font={adapted.fontPairing}
-        style={adapted.accentColor ? { "--ls-accent": adapted.accentColor } : undefined}
+        data-theme={isLuxury ? "luxury" : adapted.theme}
+        data-font={isLuxury ? "bodoni-manrope" : adapted.fontPairing}
+        style={!isLuxury && adapted.accentColor ? { "--ls-accent": adapted.accentColor } : undefined}
       >
         <Navbar />
-        <Hero />
+        {isLuxury ? <LuxuryHero /> : <Hero />}
         <StatsBar />
         <OpenHouseBanner />
         <Description />

@@ -19,6 +19,7 @@ export function adaptListing({ listing, agent, photos }) {
       ...brokerage,
       logo: brokerage.logos[listing.logo_variant] || brokerage.logo,
     },
+    siteTemplate: listing.site_template || "classic",
     theme: listing.theme || "classic",
     fontPairing: listing.font_pairing || "playfair-jost",
     accentColor: listing.accent_color || "",
