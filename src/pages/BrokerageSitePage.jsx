@@ -43,7 +43,7 @@ export default function BrokerageSitePage({ path, pageTitle, children }) {
   }
 
   return (
-    <BrokerageSiteProvider value={adapted}>
+    <BrokerageSiteProvider value={{ site: adapted }}>
       <div className="min-h-screen bg-[var(--as-bg)] font-agent-sans" data-theme="dark" data-font="playfair-jost">
         <Navbar />
         {children}
