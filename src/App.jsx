@@ -25,6 +25,9 @@ import LandingPage from "./pages/LandingPage";
 import AgentWebsitesPage from "./pages/AgentWebsitesPage";
 import PropertyWebsitesPage from "./pages/PropertyWebsitesPage";
 import UpcomingPage from "./pages/UpcomingPage";
+import BrokerageSitePage from "./pages/BrokerageSitePage";
+import BrokeragePostPage from "./pages/BrokeragePostPage";
+import BrokerageSiteEditor from "./components/dashboard/BrokerageSiteEditor";
 
 import HomeSections from "./components/agent-site/HomeSections";
 import Bio from "./components/agent-site/Bio";
@@ -33,6 +36,12 @@ import FeaturedListings from "./components/agent-site/FeaturedListings";
 import ServiceAreas from "./components/agent-site/ServiceAreas";
 import BlogTeaser from "./components/agent-site/BlogTeaser";
 import Contact from "./components/agent-site/Contact";
+
+import BrokerageHero from "./components/brokerage-site/Hero";
+import BrokerageAbout from "./components/brokerage-site/About";
+import BrokerageAgentRoster from "./components/brokerage-site/AgentRoster";
+import BrokerageBlogList from "./components/brokerage-site/BlogList";
+import BrokerageContactCard from "./components/brokerage-site/ContactCard";
 
 function Root() {
   const { session, loading } = useAuth();
@@ -118,6 +127,40 @@ export default function App() {
       />
       <Route path="/sites/:slug/blog/:postSlug" element={<PublicAgentPostPage />} />
 
+      {/* Brokerage Site — the office's own public site (singleton, admin-
+          edited from /dashboard/brokerage-site), styled after
+          the-agency-oklahoma.vercel.app. Parallel in shape to the /sites/:slug
+          routes above, minus the :slug param since there's only one. */}
+      <Route
+        path="/brokerage"
+        element={
+          <BrokerageSitePage path="/brokerage">
+            <BrokerageHero />
+            <BrokerageAbout />
+            <BrokerageAgentRoster preview />
+            <BrokerageBlogList preview />
+            <BrokerageContactCard />
+          </BrokerageSitePage>
+        }
+      />
+      <Route
+        path="/brokerage/agents"
+        element={
+          <BrokerageSitePage path="/brokerage/agents" pageTitle="Agents">
+            <BrokerageAgentRoster isStandalonePage />
+          </BrokerageSitePage>
+        }
+      />
+      <Route
+        path="/brokerage/blog"
+        element={
+          <BrokerageSitePage path="/brokerage/blog" pageTitle="Blog">
+            <BrokerageBlogList isStandalonePage />
+          </BrokerageSitePage>
+        }
+      />
+      <Route path="/brokerage/blog/:postSlug" element={<BrokeragePostPage />} />
+
       <Route
         path="/dashboard"
         element={
@@ -159,6 +202,14 @@ export default function App() {
           element={
             <ProtectedRoute adminOnly>
               <EditAgentSitePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="brokerage-site"
+          element={
+            <ProtectedRoute adminOnly>
+              <BrokerageSiteEditor />
             </ProtectedRoute>
           }
         />

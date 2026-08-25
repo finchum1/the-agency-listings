@@ -133,6 +133,26 @@ export function buildAgentSitePageMeta(site, agent, page) {
   return { title: `${label} | ${base.title}`, description, image: base.image };
 }
 
+// site: a raw `brokerage_site` row.
+export function buildBrokerageSiteMeta(site) {
+  const title = site.seo_title?.trim() || `${brokerage.name} | Oklahoma`;
+  const description =
+    site.seo_description?.trim() ||
+    site.tagline?.trim() ||
+    firstBlockText(site.about_html) ||
+    `${brokerage.name}'s Oklahoma office — a boutique brokerage representing Oklahoma's most distinctive properties.`;
+  const image = absoluteUrl(site.og_image_url || site.hero_photo_url || brokerage.logo);
+  return { title, description, image };
+}
+
+// post: a raw `brokerage_posts` row. site: the brokerage_site row.
+export function buildBrokeragePostMeta(post, site) {
+  const title = `${post.title} | ${brokerage.name}`;
+  const description = post.excerpt?.trim() || firstBlockText(post.body_html) || "";
+  const image = absoluteUrl(post.image_url || site?.hero_photo_url || brokerage.logo);
+  return { title, description, image };
+}
+
 // post: a raw `agent_site_posts` row. site/agent: the parent site + its agent.
 export function buildAgentPostMeta(post, site, agent) {
   const title = `${post.title} | ${agent?.full_name || brokerage.name}`;

@@ -27,6 +27,7 @@ const NAV_ITEMS = [
 const ADMIN_ITEMS = [
   { to: "/dashboard/sites", label: "Sites" },
   { to: "/dashboard/agents", label: "Agents" },
+  { to: "/dashboard/brokerage-site", label: "Brokerage Site" },
 ];
 
 export default function DashboardLayout() {

@@ -47,7 +47,7 @@ export default function AdminNavMenu({ active, items }) {
         </svg>
       </button>
       {open && (
-        <div className="absolute right-0 mt-1 w-40 bg-white border border-black/10 rounded-xl shadow-lg overflow-hidden z-20">
+        <div className="absolute right-0 mt-1 w-48 bg-white border border-black/10 rounded-xl shadow-lg overflow-hidden z-20">
           {items.map((item) => (
             <Link
               key={item.to}
