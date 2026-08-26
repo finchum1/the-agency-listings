@@ -40,6 +40,7 @@ import Contact from "./components/agent-site/Contact";
 import BrokerageHomeSections from "./components/brokerage-site/HomeSections";
 import BrokerageAbout from "./components/brokerage-site/About";
 import BrokerageAgentRoster from "./components/brokerage-site/AgentRoster";
+import BrokerageAreasOfExpertise from "./components/brokerage-site/AreasOfExpertise";
 import BrokerageBlogList from "./components/brokerage-site/BlogList";
 import BrokerageContactCard from "./components/brokerage-site/ContactCard";
 
@@ -161,6 +162,14 @@ export default function App() {
         element={
           <BrokerageSitePage path="/brokerage/agents" pageTitle="Agents">
             <BrokerageAgentRoster isStandalonePage />
+          </BrokerageSitePage>
+        }
+      />
+      <Route
+        path="/brokerage/areas"
+        element={
+          <BrokerageSitePage path="/brokerage/areas" pageTitle="Areas of Expertise">
+            <BrokerageAreasOfExpertise isStandalonePage />
           </BrokerageSitePage>
         }
       />

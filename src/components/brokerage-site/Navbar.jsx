@@ -11,6 +11,7 @@ import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
 const PAGES = [
   { path: "/brokerage/about", label: "About", sectionKey: "about" },
   { path: "/brokerage/agents", label: "Agents", sectionKey: "agents" },
+  { path: "/brokerage/areas", label: "Areas", sectionKey: "areas" },
   { path: "/brokerage/blog", label: "Blog", sectionKey: "blog" },
   { path: "/brokerage/contact", label: "Contact" },
 ];

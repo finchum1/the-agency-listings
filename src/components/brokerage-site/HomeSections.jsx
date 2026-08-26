@@ -2,6 +2,7 @@ import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
 import Hero from "./Hero";
 import About from "./About";
 import AgentRoster from "./AgentRoster";
+import AreasOfExpertise from "./AreasOfExpertise";
 import BlogList from "./BlogList";
 import ContactCard from "./ContactCard";
 
@@ -10,10 +11,13 @@ import ContactCard from "./ContactCard";
 // dashboard's BrokerageSiteForm). Hero always leads and Contact always
 // closes, same as agent-site/HomeSections.jsx. Agents/Blog render in
 // their "preview" (capped, "see more" link) form here — the standalone
-// /brokerage/agents and /brokerage/blog pages show the full list.
+// /brokerage/agents and /brokerage/blog pages show the full list. Areas
+// has no preview cap, same as agent-site/ServiceAreas.jsx — it shows
+// every area both here and at /brokerage/areas.
 const SECTION_COMPONENTS = {
   about: About,
   agents: () => <AgentRoster preview />,
+  areas: AreasOfExpertise,
   blog: () => <BlogList preview />,
 };
 

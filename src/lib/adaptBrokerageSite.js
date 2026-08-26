@@ -1,18 +1,17 @@
 import brokerage from "./brokerage";
 
-// Shapes a Supabase brokerage_site row (+ agents + posts) into one
-// convenient object for the public brokerage-site components — same idea
-// as adaptAgentSite.js, just without anything keyed to a specific agent
-// (no slug/theme/font/accent picker — see BrokerageSitePage.jsx, which
-// hardcodes data-theme="dark" data-font="playfair-jost" instead).
-export function adaptBrokerageSite({ site, agents, posts }) {
+// Shapes a Supabase brokerage_site row (+ agents + posts + areas) into
+// one convenient object for the public brokerage-site components — same
+// idea as adaptAgentSite.js, just without anything keyed to a specific
+// agent (no slug/custom-domain).
+export function adaptBrokerageSite({ site, agents, posts, areas }) {
   return {
     brokerage,
     theme: site.theme || "dark",
     fontPairing: site.font_pairing || "playfair-jost",
     accentColor: site.accent_color || "",
     logoVariant: site.logo_variant || "white",
-    homeSections: site.home_sections?.length ? site.home_sections : ["about", "agents", "blog"],
+    homeSections: site.home_sections?.length ? site.home_sections : ["about", "agents", "blog", "areas"],
     tagline: site.tagline || "",
     heroPhoto: site.hero_photo_url || "",
     heroVideo: site.hero_video_url || null,
@@ -29,5 +28,6 @@ export function adaptBrokerageSite({ site, agents, posts }) {
     },
     agents: agents || [],
     posts: posts || [],
+    areas: areas || [],
   };
 }

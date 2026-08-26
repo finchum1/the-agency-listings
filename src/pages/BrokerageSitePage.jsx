@@ -15,8 +15,8 @@ import Footer from "../components/brokerage-site/Footer";
 // BrokerageSiteForm). `path` (the current route, e.g. "/brokerage/agents")
 // drives the canonical URL.
 export default function BrokerageSitePage({ path, pageTitle, children }) {
-  const { site, posts, agents, loading, notFound } = useBrokerageSite();
-  const adapted = site ? adaptBrokerageSite({ site, posts, agents }) : null;
+  const { site, posts, agents, areas, loading, notFound } = useBrokerageSite();
+  const adapted = site ? adaptBrokerageSite({ site, posts, agents, areas }) : null;
 
   useEffect(() => {
     if (!site) return;

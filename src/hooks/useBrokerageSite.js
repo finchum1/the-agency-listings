@@ -9,6 +9,7 @@ export function useBrokerageSite() {
   const [site, setSite] = useState(null);
   const [posts, setPosts] = useState([]);
   const [agents, setAgents] = useState([]);
+  const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -26,18 +27,20 @@ export function useBrokerageSite() {
       return;
     }
 
-    const [{ data: p }, { data: a }] = await Promise.all([
+    const [{ data: p }, { data: a }, { data: ar }] = await Promise.all([
       supabase
         .from("brokerage_posts")
         .select("*")
         .eq("status", "published")
         .order("post_date", { ascending: false }),
       supabase.from("brokerage_agents").select("*").order("sort_order"),
+      supabase.from("brokerage_areas").select("*").order("sort_order"),
     ]);
 
     setSite(siteRow);
     setPosts(p || []);
     setAgents(a || []);
+    setAreas(ar || []);
     setLoading(false);
   }, []);
 
@@ -52,10 +55,11 @@ export function useBrokerageSite() {
       .on("postgres_changes", { event: "*", schema: "public", table: "brokerage_site", filter: `id=eq.${site.id}` }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "brokerage_posts" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "brokerage_agents" }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "brokerage_areas" }, refresh)
       .subscribe();
     return () => supabase.removeChannel(channel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site?.id]);
 
-  return { site, posts, agents, loading, notFound, refresh };
+  return { site, posts, agents, areas, loading, notFound, refresh };
 }

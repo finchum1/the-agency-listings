@@ -9,6 +9,7 @@ export function useBrokerageSiteEditor() {
   const [site, setSite] = useState(null);
   const [posts, setPosts] = useState([]);
   const [agents, setAgents] = useState([]);
+  const [areas, setAreas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -44,12 +45,14 @@ export function useBrokerageSiteEditor() {
 
     setSite(siteRow);
 
-    const [{ data: p }, { data: a }] = await Promise.all([
+    const [{ data: p }, { data: a }, { data: ar }] = await Promise.all([
       supabase.from("brokerage_posts").select("*").order("post_date", { ascending: false }),
       supabase.from("brokerage_agents").select("*").order("sort_order"),
+      supabase.from("brokerage_areas").select("*").order("sort_order"),
     ]);
     setPosts(p || []);
     setAgents(a || []);
+    setAreas(ar || []);
     setLoading(false);
   }, []);
 
@@ -57,5 +60,5 @@ export function useBrokerageSiteEditor() {
     refresh();
   }, [refresh]);
 
-  return { site, posts, agents, loading, error, refresh };
+  return { site, posts, agents, areas, loading, error, refresh };
 }

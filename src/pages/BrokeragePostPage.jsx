@@ -14,7 +14,7 @@ import Footer from "../components/brokerage-site/Footer";
 export default function BrokeragePostPage() {
   const { postSlug } = useParams();
   const { site, post, loading, notFound } = useBrokeragePost({ postSlug });
-  const adapted = site ? adaptBrokerageSite({ site, posts: [], agents: [] }) : null;
+  const adapted = site ? adaptBrokerageSite({ site, posts: [], agents: [], areas: [] }) : null;
 
   useEffect(() => {
     if (!post || !site) return;

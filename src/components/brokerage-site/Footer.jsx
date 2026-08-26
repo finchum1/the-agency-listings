@@ -42,6 +42,7 @@ function SocialIcon({ href, children }) {
 const EXPLORE_LINKS = [
   { path: "/brokerage/about", label: "About", sectionKey: "about" },
   { path: "/brokerage/agents", label: "Our Agents", sectionKey: "agents" },
+  { path: "/brokerage/areas", label: "Areas of Expertise", sectionKey: "areas" },
   { path: "/brokerage/blog", label: "Blog", sectionKey: "blog" },
 ];
 
