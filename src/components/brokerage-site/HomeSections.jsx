@@ -9,15 +9,14 @@ import ContactCard from "./ContactCard";
 // Home page composition, driven by brokerage_site.home_sections — which
 // of the optional sections show, and in what order (set in the
 // dashboard's BrokerageSiteForm). Hero always leads and Contact always
-// closes, same as agent-site/HomeSections.jsx. Agents/Blog render in
-// their "preview" (capped, "see more" link) form here — the standalone
-// /brokerage/agents and /brokerage/blog pages show the full list. Areas
-// has no preview cap, same as agent-site/ServiceAreas.jsx — it shows
-// every area both here and at /brokerage/areas.
+// closes, same as agent-site/HomeSections.jsx. Agents/Areas/Blog render
+// in their "preview" (capped, "View All"/"see more" link) form here —
+// the standalone /brokerage/agents, /brokerage/areas, and /brokerage/blog
+// pages each show the full list.
 const SECTION_COMPONENTS = {
   about: About,
   agents: () => <AgentRoster preview />,
-  areas: AreasOfExpertise,
+  areas: () => <AreasOfExpertise preview />,
   blog: () => <BlogList preview />,
 };
 
