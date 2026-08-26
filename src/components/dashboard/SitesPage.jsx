@@ -27,7 +27,7 @@ export default function SitesPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-display font-semibold">Sites</h1>
+        <h1 className="text-2xl font-display font-semibold">Agent Sites</h1>
         <p className="text-sm text-[#1c1a17]/60 mt-1">
           Every agent's personal site — {agents.length} agent{agents.length === 1 ? "" : "s"}
         </p>

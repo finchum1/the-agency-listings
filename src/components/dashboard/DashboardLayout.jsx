@@ -24,9 +24,9 @@ const NAV_ITEMS = [
 // (AdminNavMenu.jsx) to save width in a horizontal header; a left-hand
 // sidebar has the vertical room to just list them, so that's gone now.
 const ADMIN_ITEMS = [
-  { to: "/dashboard/sites", label: "Sites" },
-  { to: "/dashboard/agents", label: "Agents" },
   { to: "/dashboard/brokerage-site", label: "Brokerage Site" },
+  { to: "/dashboard/sites", label: "Agent Sites" },
+  { to: "/dashboard/agents", label: "Agents" },
 ];
 
 // Left-hand sidebar nav (logo top, nav + admin section in the middle,
