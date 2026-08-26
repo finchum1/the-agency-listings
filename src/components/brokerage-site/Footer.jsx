@@ -37,16 +37,29 @@ function SocialIcon({ href, children }) {
   );
 }
 
+// Same sectionKey convention as Navbar.jsx's PAGES — a link whose
+// section is off in home_sections isn't advertised here either.
+const EXPLORE_LINKS = [
+  { path: "/brokerage/about", label: "About", sectionKey: "about" },
+  { path: "/brokerage/agents", label: "Our Agents", sectionKey: "agents" },
+  { path: "/brokerage/blog", label: "Blog", sectionKey: "blog" },
+];
+
 export default function Footer() {
   const { site } = useBrokerageSiteContext();
   const { brokerage } = site;
+  const visibleLinks = EXPLORE_LINKS.filter((link) => site.homeSections.includes(link.sectionKey));
 
   return (
     <footer className="bg-[var(--as-dark)] text-[var(--as-on-dark)]/65 px-6 lg:px-10 py-16">
       <div className="mx-auto max-w-6xl">
         <div className="grid sm:grid-cols-3 gap-12 text-sm items-start">
           <div>
-            <img src={brokerage.logos.white} alt={brokerage.name} className="h-10 sm:h-12 w-auto mb-6" />
+            <img
+              src={brokerage.logos[site.logoVariant] || brokerage.logo}
+              alt={brokerage.name}
+              className="h-10 sm:h-12 w-auto mb-6"
+            />
             <p className="text-[var(--as-on-dark)]/50">
               {brokerage.address.line1}, {brokerage.address.city}, {brokerage.address.state} {brokerage.address.zip}
             </p>
@@ -78,8 +91,14 @@ export default function Footer() {
           <div>
             <p className="text-xs font-semibold tracked-wide uppercase text-[var(--as-on-dark)]/50 mb-4">Explore</p>
             <div className="space-y-1.5">
-              <Link to="/brokerage/agents" className="block hover:text-[var(--as-on-dark)] transition-colors">Our Agents</Link>
-              <Link to="/brokerage/blog" className="block hover:text-[var(--as-on-dark)] transition-colors">Blog</Link>
+              {visibleLinks.map((link) => (
+                <Link key={link.path} to={link.path} className="block hover:text-[var(--as-on-dark)] transition-colors">
+                  {link.label}
+                </Link>
+              ))}
+              <Link to="/brokerage/contact" className="block hover:text-[var(--as-on-dark)] transition-colors">
+                Contact
+              </Link>
             </div>
           </div>
         </div>

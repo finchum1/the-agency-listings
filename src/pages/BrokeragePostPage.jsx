@@ -36,7 +36,12 @@ export default function BrokeragePostPage() {
 
   return (
     <BrokerageSiteProvider value={{ site: adapted }}>
-      <div className="min-h-screen bg-[var(--as-bg)] font-agent-sans" data-theme="dark" data-font="playfair-jost">
+      <div
+        className="min-h-screen bg-[var(--as-bg)] font-agent-sans"
+        data-theme={adapted.theme}
+        data-font={adapted.fontPairing}
+        style={adapted.accentColor ? { "--as-accent": adapted.accentColor } : undefined}
+      >
         <Navbar />
 
         <article className="pt-32 pb-24 px-6 lg:px-10">

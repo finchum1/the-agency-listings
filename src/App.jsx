@@ -37,7 +37,7 @@ import ServiceAreas from "./components/agent-site/ServiceAreas";
 import BlogTeaser from "./components/agent-site/BlogTeaser";
 import Contact from "./components/agent-site/Contact";
 
-import BrokerageHero from "./components/brokerage-site/Hero";
+import BrokerageHomeSections from "./components/brokerage-site/HomeSections";
 import BrokerageAbout from "./components/brokerage-site/About";
 import BrokerageAgentRoster from "./components/brokerage-site/AgentRoster";
 import BrokerageBlogList from "./components/brokerage-site/BlogList";
@@ -128,18 +128,31 @@ export default function App() {
       <Route path="/sites/:slug/blog/:postSlug" element={<PublicAgentPostPage />} />
 
       {/* Brokerage Site — the office's own public site (singleton, admin-
-          edited from /dashboard/brokerage-site), styled after
-          the-agency-oklahoma.vercel.app. Parallel in shape to the /sites/:slug
-          routes above, minus the :slug param since there's only one. */}
+          edited from /dashboard/brokerage-site), theme/font/accent/logo/
+          home-sections customizable the same way an agent site is (see
+          BrokerageSiteForm.jsx). Parallel in shape to the /sites/:slug
+          routes above, minus the :slug param since there's only one.
+
+          Home is the full overview — HomeSections.jsx composes it from
+          brokerage_site.home_sections (which optional sections, what
+          order; Hero/Contact are fixed) — and each optional section is
+          ALSO its own standalone page reachable from Navbar.jsx's nav
+          links (which always point at those dedicated pages, never
+          Home's anchors) — see Navbar.jsx's PAGES list, which must match
+          these paths. */}
       <Route
         path="/brokerage"
         element={
           <BrokerageSitePage path="/brokerage">
-            <BrokerageHero />
-            <BrokerageAbout />
-            <BrokerageAgentRoster preview />
-            <BrokerageBlogList preview />
-            <BrokerageContactCard />
+            <BrokerageHomeSections />
+          </BrokerageSitePage>
+        }
+      />
+      <Route
+        path="/brokerage/about"
+        element={
+          <BrokerageSitePage path="/brokerage/about" pageTitle="About">
+            <BrokerageAbout isStandalonePage />
           </BrokerageSitePage>
         }
       />
@@ -160,6 +173,14 @@ export default function App() {
         }
       />
       <Route path="/brokerage/blog/:postSlug" element={<BrokeragePostPage />} />
+      <Route
+        path="/brokerage/contact"
+        element={
+          <BrokerageSitePage path="/brokerage/contact" pageTitle="Contact">
+            <BrokerageContactCard isStandalonePage />
+          </BrokerageSitePage>
+        }
+      />
 
       <Route
         path="/dashboard"

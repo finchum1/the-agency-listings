@@ -1,17 +1,20 @@
 import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
 import { sanitizeHtml } from "../../lib/sanitizeHtml";
 
-export default function About() {
+export default function About({ isStandalonePage = false }) {
   const { site } = useBrokerageSiteContext();
   if (!site.aboutHtml && site.stats.length === 0) return null;
+  // See agent-site/Bio.jsx's same comment — Home already has an H1 from
+  // Hero.jsx, but this section IS the page at standalone /about.
+  const Heading = isStandalonePage ? "h1" : "h2";
 
   return (
     <section className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
       <div className="mx-auto max-w-4xl text-center">
         <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">About</p>
-        <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-6 text-[var(--as-text)]">
+        <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-6 text-[var(--as-text)]">
           {site.brokerage.name} — Oklahoma
-        </h2>
+        </Heading>
         <div
           className="rich-text space-y-4 text-[15.5px] leading-relaxed text-[var(--as-text)]/75 max-w-2xl mx-auto text-left"
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(site.aboutHtml) }}

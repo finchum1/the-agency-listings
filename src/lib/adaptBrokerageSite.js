@@ -8,6 +8,11 @@ import brokerage from "./brokerage";
 export function adaptBrokerageSite({ site, agents, posts }) {
   return {
     brokerage,
+    theme: site.theme || "dark",
+    fontPairing: site.font_pairing || "playfair-jost",
+    accentColor: site.accent_color || "",
+    logoVariant: site.logo_variant || "white",
+    homeSections: site.home_sections?.length ? site.home_sections : ["about", "agents", "blog"],
     tagline: site.tagline || "",
     heroPhoto: site.hero_photo_url || "",
     heroVideo: site.hero_video_url || null,

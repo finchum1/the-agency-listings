@@ -19,8 +19,9 @@ export default function BrokerageSiteEditor() {
       <div>
         <h1 className="text-2xl font-display font-semibold">Brokerage Site</h1>
         <p className="text-sm text-[#1c1a17]/60 mt-1">
-          The office's own public site at /brokerage — hero, about, blog, and the agent roster. Built
-          to match theagencyoklahoma.com's look.
+          The office's own public site at /brokerage — hero, about, blog, and the agent roster.
+          Customizable the same way an agent's own site is: template, accent color, font pairing,
+          logo, and which sections show on the home page.
         </p>
       </div>
 

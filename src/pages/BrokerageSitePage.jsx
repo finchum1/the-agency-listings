@@ -10,11 +10,10 @@ import Navbar from "../components/brokerage-site/Navbar";
 import Footer from "../components/brokerage-site/Footer";
 
 // Chrome (data loading, Navbar/Footer, meta) for every page of the
-// brokerage site — parallel to AgentSitePage.jsx, but with a fixed
-// look: data-theme="dark" data-font="playfair-jost" always, matching
-// the-agency-oklahoma.vercel.app (the design this module was built
-// against), not a per-site customization surface. `path` (the current
-// route, e.g. "/brokerage/agents") drives the canonical URL.
+// brokerage site — parallel to AgentSitePage.jsx, and now themed the
+// same way (theme/font_pairing/accent_color, set in the dashboard's
+// BrokerageSiteForm). `path` (the current route, e.g. "/brokerage/agents")
+// drives the canonical URL.
 export default function BrokerageSitePage({ path, pageTitle, children }) {
   const { site, posts, agents, loading, notFound } = useBrokerageSite();
   const adapted = site ? adaptBrokerageSite({ site, posts, agents }) : null;
@@ -44,7 +43,12 @@ export default function BrokerageSitePage({ path, pageTitle, children }) {
 
   return (
     <BrokerageSiteProvider value={{ site: adapted }}>
-      <div className="min-h-screen bg-[var(--as-bg)] font-agent-sans" data-theme="dark" data-font="playfair-jost">
+      <div
+        className="min-h-screen bg-[var(--as-bg)] font-agent-sans"
+        data-theme={adapted.theme}
+        data-font={adapted.fontPairing}
+        style={adapted.accentColor ? { "--as-accent": adapted.accentColor } : undefined}
+      >
         <Navbar />
         {children}
         <Footer />
