@@ -15,24 +15,41 @@ const SCROLL_HEIGHT_VH = 350;
 // template specifically.
 //
 // Technique: a tall wrapper (SCROLL_HEIGHT_VH) with a `position: sticky`
-// video pinned inside it. As the wrapper scrolls past the viewport, the
-// scroll progress through it (0 to 1) is mapped directly onto
-// video.currentTime. This is the same core technique behind most
-// "Apple-style" scroll-driven product reveals.
+// video pinned inside it. Scroll progress through the wrapper (0 to 1)
+// drives video.currentTime — the same core technique behind most
+// "Apple-style" scroll-driven product reveals, and the one
+// github.com/oso95/scroll-world's own scrub-engine.js is built around
+// (see its `raf()`/`loadClip()`). What's borrowed from there, adapted to
+// a single real hero video instead of a multi-scene generated "world":
 //
-// Two real limits worth knowing:
-// - video.currentTime seeking isn't frame-accurate in every browser —
-//   smoothness depends on the video being short and cut with frequent
-//   keyframes (see supabase/... no, see the ffmpeg command used to
-//   prepare the source file: -g 8, i.e. a keyframe at least every 8
-//   frames, specifically so scrubbing doesn't have to decode far from
-//   the last keyframe on every seek).
-// - On touch devices, fast/jerky native momentum scrolling fights
-//   precise seeking and tends to feel worse, not better — so touch
-//   devices get a plain autoplay/loop instead, same graceful fallback
-//   the classic template's own hero video already uses. prefers-
-//   reduced-motion gets the same fallback, for the same reason motion
-//   is skipped anywhere else in this app.
+// - The video loads as a Blob (fetch → URL.createObjectURL), not a plain
+//   `src`. A Blob is always instantly seekable end-to-end regardless of
+//   whether the host serves byte-range requests, and — the part that
+//   actually matters here — it removes any "seek ahead of what's been
+//   buffered over the network" stall, which is exactly what made fast/
+//   jerky touch scrolling feel bad before. Trade-off: the whole file
+//   downloads before scrubbing can start (no progressive playback) — a
+//   deliberate one, since this video is muted/never autoplaying, so
+//   there's nothing progressive playback would have bought us anyway.
+// - Scroll tracking and the actual seek are decoupled: the scroll
+//   listener only records a 0–1 `target`; a persistent rAF loop lerps
+//   toward it every frame (`cur += (target - cur) * 0.18`) and skips
+//   entirely while `video.seeking` is still true, so a fast flick can't
+//   queue up seeks faster than the decoder resolves them and freeze the
+//   picture. That guard is what makes scrubbing on touch viable at all —
+//   it no longer needs the plain autoplay/loop fallback touch devices
+//   used to get here.
+// - The seek epsilon is coarser on touch (20ms vs 8ms of video time) —
+//   fewer redundant decodes per scroll tick, same reasoning scroll-
+//   world's own isMobile() branch uses.
+// - iOS needs a user gesture before a muted video will reliably paint a
+//   seeked frame, so the first touch/pointer event "primes" it (a muted
+//   play → immediate pause) — otherwise the first scrub can show a blank
+//   frame.
+//
+// prefers-reduced-motion still gets the simple autoplay/loop fallback —
+// the video never loads as a Blob at all in that case, so there's no
+// scroll-driven motion or extra decode cost.
 export default function LuxuryHero() {
   const { listing } = useListingContext();
   const video = listing.heroVideo;
@@ -46,42 +63,91 @@ export default function LuxuryHero() {
     if (!v || !video) return;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const isTouch = window.matchMedia("(pointer: coarse)").matches;
-    if (reducedMotion || isTouch) {
+    if (reducedMotion) {
+      v.src = video;
       v.autoplay = true;
       v.loop = true;
       v.play().catch(() => {});
       return;
     }
 
-    let rafId = null;
+    const coarse = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+
+    let objectUrl = null;
+    let cancelled = false;
     let duration = 0;
+    let target = 0;
+    let cur = 0;
+    let rafId = null;
+    let userReady = false;
+
+    const primeVideo = () => {
+      if (!coarse || userReady) return;
+      userReady = true;
+      const p = v.play();
+      if (p?.then) p.then(() => v.pause()).catch(() => {});
+    };
+    window.addEventListener("pointerdown", primeVideo, { once: true, passive: true });
+    window.addEventListener("touchstart", primeVideo, { once: true, passive: true });
+
+    const readScroll = () => {
+      const wrapper = wrapperRef.current;
+      if (!wrapper || !duration) return;
+      const rect = wrapper.getBoundingClientRect();
+      const scrollable = rect.height - window.innerHeight;
+      target = scrollable > 0 ? Math.min(1, Math.max(0, -rect.top / scrollable)) : 0;
+    };
 
     const onLoadedMetadata = () => {
       duration = v.duration || 0;
       setScrubbing(true);
-      onScroll();
+      readScroll();
     };
 
-    const onScroll = () => {
-      if (rafId != null) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        const wrapper = wrapperRef.current;
-        if (!wrapper || !duration) return;
-        const rect = wrapper.getBoundingClientRect();
-        const scrollable = rect.height - window.innerHeight;
-        const progress = scrollable > 0 ? Math.min(1, Math.max(0, -rect.top / scrollable)) : 0;
-        v.currentTime = progress * duration;
-      });
+    // A persistent rAF loop, decoupled from the scroll event itself —
+    // same shape as scroll-world's own raf(). eps is real video seconds,
+    // not a fraction of duration.
+    const tick = () => {
+      rafId = requestAnimationFrame(tick);
+      if (!duration || v.seeking) return;
+      cur += (target - cur) * 0.18;
+      const eps = coarse ? 0.02 : 0.008;
+      const t = Math.min(0.999, Math.max(0, cur)) * duration;
+      if (Math.abs(v.currentTime - t) > eps) {
+        try {
+          v.currentTime = t;
+        } catch {
+          /* seek rejected mid-decode — next tick will retry */
+        }
+      }
     };
+
+    fetch(video)
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error("video fetch failed"))))
+      .then((blob) => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        v.src = objectUrl;
+      })
+      .catch(() => {
+        // CORS/network hiccup — fall back to the plain URL so the hero
+        // still shows something playable, just without the Blob's
+        // always-seekable guarantee.
+        if (!cancelled) v.src = video;
+      });
 
     v.addEventListener("loadedmetadata", onLoadedMetadata);
-    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("scroll", readScroll, { passive: true });
+    rafId = requestAnimationFrame(tick);
+
     return () => {
+      cancelled = true;
       v.removeEventListener("loadedmetadata", onLoadedMetadata);
-      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("scroll", readScroll);
+      window.removeEventListener("pointerdown", primeVideo);
+      window.removeEventListener("touchstart", primeVideo);
       if (rafId != null) cancelAnimationFrame(rafId);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [video]);
@@ -93,7 +159,6 @@ export default function LuxuryHero() {
           <video
             ref={videoRef}
             className="absolute inset-0 h-full w-full object-cover"
-            src={video}
             poster={poster}
             muted
             playsInline
