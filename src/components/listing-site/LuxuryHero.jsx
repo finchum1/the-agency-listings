@@ -244,16 +244,23 @@ export default function LuxuryHero() {
             preload="auto"
           />
         ) : sequencePhotos ? (
-          sequencePhotos.map((photo, i) => (
-            <img
-              key={photo.url}
-              ref={(el) => (sceneRefs.current[i] = el)}
-              src={photo.url}
-              alt={photo.alt || ""}
-              className="absolute inset-0 h-full w-full object-cover will-change-transform"
-              style={{ opacity: i === 0 ? 1 : 0, zIndex: i === 0 ? 20 : 10 }}
-            />
-          ))
+          // `isolate` gives this stack its own stacking context, so the
+          // scene images' own z-index juggling (which one's "on top"
+          // during the crossfade) stays contained here and can never
+          // leak out to paint over the gradient/text below, regardless
+          // of the actual numbers used.
+          <div className="absolute inset-0 isolate">
+            {sequencePhotos.map((photo, i) => (
+              <img
+                key={photo.url}
+                ref={(el) => (sceneRefs.current[i] = el)}
+                src={photo.url}
+                alt={photo.alt || ""}
+                className="absolute inset-0 h-full w-full object-cover will-change-transform"
+                style={{ opacity: i === 0 ? 1 : 0, zIndex: i === 0 ? 20 : 10 }}
+              />
+            ))}
+          </div>
         ) : (
           <img src={poster} alt="" className="absolute inset-0 h-full w-full object-cover" />
         )}
