@@ -8,19 +8,35 @@ import { formatPrice } from "../../lib/format";
 // pace without asking for an excessive amount of scrolling.
 const SCROLL_HEIGHT_VH = 350;
 
+// No-video fallback: how much scroll (in viewport heights) each curated
+// photo gets before crossfading into the next — see
+// HeroScrollPhotosManager.jsx. Independent of SCROLL_HEIGHT_VH so the
+// total scroll distance scales naturally with how many photos are
+// picked, rather than cramming more photos into a fixed budget.
+const PHOTO_SCROLL_VH = 130;
+const PHOTO_CROSSFADE_VH = 18;
+
 // Luxury template's hero: a tall pinned section where scrolling scrubs
-// the hero video's playback position instead of just playing it. Classic
-// Hero.jsx's video (see its own comment) autoplays/loops normally —
-// this is a deliberately different, more involved effect for the luxury
-// template specifically.
+// through the property instead of just showing a static image. Three
+// modes, in priority order:
+//   1. A real hero video (listing.heroVideo) — scroll scrubs
+//      video.currentTime. See the technique note further down.
+//   2. No video, but a curated photo sequence (listing.heroScrollPhotos,
+//      picked in HeroScrollPhotosManager.jsx) — scroll drives a Ken
+//      Burns zoom through each photo in turn, crossfading at the seams.
+//      Not every listing has a real walkthrough video, but every
+//      listing already has photos — this gives those listings a real
+//      scroll-driven hero too, just a shade less cinematic than video.
+//   3. Neither — a single static photo, no scroll effect (today's
+//      original fallback, unchanged).
 //
-// Technique: a tall wrapper (SCROLL_HEIGHT_VH) with a `position: sticky`
-// video pinned inside it. Scroll progress through the wrapper (0 to 1)
-// drives video.currentTime — the same core technique behind most
-// "Apple-style" scroll-driven product reveals, and the one
+// VIDEO MODE TECHNIQUE (mode 1)
+// A tall wrapper (SCROLL_HEIGHT_VH) with a `position: sticky` video
+// pinned inside it. Scroll progress through the wrapper (0 to 1) drives
+// video.currentTime — the same core technique behind most "Apple-style"
+// scroll-driven product reveals, and the one
 // github.com/oso95/scroll-world's own scrub-engine.js is built around
-// (see its `raf()`/`loadClip()`). What's borrowed from there, adapted to
-// a single real hero video instead of a multi-scene generated "world":
+// (see its `raf()`/`loadClip()`). What's borrowed from there:
 //
 // - The video loads as a Blob (fetch → URL.createObjectURL), not a plain
 //   `src`. A Blob is always instantly seekable end-to-end regardless of
@@ -36,28 +52,39 @@ const SCROLL_HEIGHT_VH = 350;
 //   toward it every frame (`cur += (target - cur) * 0.18`) and skips
 //   entirely while `video.seeking` is still true, so a fast flick can't
 //   queue up seeks faster than the decoder resolves them and freeze the
-//   picture. That guard is what makes scrubbing on touch viable at all —
-//   it no longer needs the plain autoplay/loop fallback touch devices
-//   used to get here.
+//   picture. That guard is what makes scrubbing on touch viable — it no
+//   longer needs a plain autoplay/loop fallback there.
 // - The seek epsilon is coarser on touch (20ms vs 8ms of video time) —
-//   fewer redundant decodes per scroll tick, same reasoning scroll-
-//   world's own isMobile() branch uses.
+//   fewer redundant decodes per scroll tick.
 // - iOS needs a user gesture before a muted video will reliably paint a
 //   seeked frame, so the first touch/pointer event "primes" it (a muted
-//   play → immediate pause) — otherwise the first scrub can show a blank
-//   frame.
+//   play → immediate pause).
 //
-// prefers-reduced-motion still gets the simple autoplay/loop fallback —
-// the video never loads as a Blob at all in that case, so there's no
-// scroll-driven motion or extra decode cost.
+// PHOTO-SEQUENCE MODE TECHNIQUE (mode 2)
+// Same segmented-scroll idea, simplified: each photo occupies its own
+// PHOTO_SCROLL_VH slice of the wrapper. Per photo: opacity crossfades in
+// over PHOTO_CROSSFADE_VH near its segment's edges (so consecutive
+// photos dissolve into each other, not cut), and a subtle scale (1.0 →
+// 1.12) drives a Ken Burns zoom across the segment's local progress.
+// Plain CSS transform/opacity, no decode contention to guard against, so
+// this stays a simple rAF-throttled scroll handler rather than the
+// video path's lerp-and-seek-coalescing dance.
+//
+// prefers-reduced-motion skips motion in both modes 1 and 2 — video
+// falls back to a plain autoplay/loop (no scroll-driven seeking, no
+// Blob load), and the photo sequence just shows its first photo
+// statically with no scroll-driven transform.
 export default function LuxuryHero() {
   const { listing } = useListingContext();
   const video = listing.heroVideo;
-  const poster = listing.images[0]?.url;
+  const sequencePhotos = !video && listing.heroScrollPhotos?.length > 1 ? listing.heroScrollPhotos : null;
+  const poster = sequencePhotos ? sequencePhotos[0].url : listing.images[0]?.url;
   const wrapperRef = useRef(null);
   const videoRef = useRef(null);
+  const sceneRefs = useRef([]);
   const [scrubbing, setScrubbing] = useState(false);
 
+  // ---- mode 1: video scrub ----
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !video) return;
@@ -152,8 +179,60 @@ export default function LuxuryHero() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [video]);
 
+  // ---- mode 2: photo-sequence scrub ----
+  useEffect(() => {
+    if (!sequencePhotos) return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) return; // first photo stays statically shown, no listeners needed
+
+    let rafId = null;
+
+    const read = () => {
+      rafId = null;
+      const wrapper = wrapperRef.current;
+      if (!wrapper) return;
+      const vh = window.innerHeight;
+      const y = -wrapper.getBoundingClientRect().top;
+      const segVh = (PHOTO_SCROLL_VH / 100) * vh;
+      const fade = (PHOTO_CROSSFADE_VH / 100) * vh;
+
+      sequencePhotos.forEach((_, i) => {
+        const el = sceneRefs.current[i];
+        if (!el) return;
+        const start = i * segVh;
+        const end = start + segVh;
+        const local = Math.min(1, Math.max(0, (y - start) / segVh));
+        let outside = 0;
+        if (y < start) outside = start - y;
+        else if (y > end) outside = y - end;
+        const op = Math.min(1, Math.max(0, 1 - outside / fade));
+        el.style.opacity = op;
+        el.style.zIndex = op > 0.5 ? "20" : "10";
+        el.style.transform = `scale(${(1 + local * 0.12).toFixed(3)})`;
+      });
+
+      setScrubbing(true);
+    };
+
+    const onScroll = () => {
+      if (rafId != null) return;
+      rafId = requestAnimationFrame(read);
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    read();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (rafId != null) cancelAnimationFrame(rafId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sequencePhotos]);
+
+  const wrapperHeightVh = video ? SCROLL_HEIGHT_VH : sequencePhotos ? sequencePhotos.length * PHOTO_SCROLL_VH : 100;
+
   return (
-    <div ref={wrapperRef} style={{ height: video ? `${SCROLL_HEIGHT_VH}vh` : "100vh" }} className="relative">
+    <div ref={wrapperRef} style={{ height: `${wrapperHeightVh}vh` }} className="relative">
       <section className="sticky top-0 h-screen w-full overflow-hidden">
         {video ? (
           <video
@@ -164,6 +243,17 @@ export default function LuxuryHero() {
             playsInline
             preload="auto"
           />
+        ) : sequencePhotos ? (
+          sequencePhotos.map((photo, i) => (
+            <img
+              key={photo.url}
+              ref={(el) => (sceneRefs.current[i] = el)}
+              src={photo.url}
+              alt={photo.alt || ""}
+              className="absolute inset-0 h-full w-full object-cover will-change-transform"
+              style={{ opacity: i === 0 ? 1 : 0, zIndex: i === 0 ? 20 : 10 }}
+            />
+          ))
         ) : (
           <img src={poster} alt="" className="absolute inset-0 h-full w-full object-cover" />
         )}
@@ -201,7 +291,7 @@ export default function LuxuryHero() {
 
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 text-[var(--ls-on-dark)]/70">
           <span className="text-[10px] tracking-wider-plus uppercase">
-            {video && scrubbing ? "Scroll to explore" : "Scroll"}
+            {(video || sequencePhotos) && scrubbing ? "Scroll to explore" : "Scroll"}
           </span>
           <span className="h-8 w-px bg-[var(--ls-on-dark)]/40" />
         </div>

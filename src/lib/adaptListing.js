@@ -44,6 +44,13 @@ export function adaptListing({ listing, agent, photos }) {
     description: listing.description || [],
     features: listing.features || [],
     images: (photos || []).map((p) => ({ url: p.url, alt: p.alt, caption: p.caption })),
+    // Curated, ordered subset for the Luxury template's no-video scroll
+    // sequence (see LuxuryHero.jsx / HeroScrollPhotosManager.jsx) —
+    // independent of `images`' own gallery order.
+    heroScrollPhotos: (photos || [])
+      .filter((p) => p.hero_scroll_order != null)
+      .sort((a, b) => a.hero_scroll_order - b.hero_scroll_order)
+      .map((p) => ({ url: p.url, alt: p.alt })),
     map: {
       query: `${listing.address_line1}, ${listing.city}, ${listing.state} ${listing.zip}`,
     },

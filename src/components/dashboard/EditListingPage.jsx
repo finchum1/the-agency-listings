@@ -5,6 +5,7 @@ import { useListing } from "../../hooks/useListing";
 import { useListingsAnalytics } from "../../hooks/useListingsAnalytics";
 import ListingForm from "./ListingForm";
 import PhotoManager from "./PhotoManager";
+import HeroScrollPhotosManager from "./HeroScrollPhotosManager";
 import OpenHouseManager from "./OpenHouseManager";
 import AnalyticsStats from "./AnalyticsStats";
 
@@ -65,6 +66,9 @@ export default function EditListingPage() {
 
       <ListingForm mode="edit" listing={listing} onSaved={refresh} />
       <PhotoManager listingId={listing.id} photos={photos} onChanged={refresh} />
+      {listing.site_template === "luxury" && (
+        <HeroScrollPhotosManager listingId={listing.id} photos={photos} onChanged={refresh} />
+      )}
       <OpenHouseManager listingId={listing.id} openHouses={openHouses} onChanged={refresh} />
     </div>
   );
