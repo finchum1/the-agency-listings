@@ -13,6 +13,7 @@ import { AgentSiteProvider } from "../context/AgentSiteContext";
 import Navbar from "../components/agent-site/Navbar";
 import Footer from "../components/agent-site/Footer";
 import SiteLink from "../components/agent-site/SiteLink";
+import ShareButtons from "../components/ShareButtons";
 
 // Shared rendering for a single blog post — used both at
 // /sites/:slug/blog/:postSlug (PublicAgentPostPage.jsx) and when a
@@ -23,13 +24,15 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
   const adapted = site
     ? adaptAgentSite({ site, agent, testimonials: [], areas: [], posts: [], listings: [] })
     : null;
+  // Same canonical-URL logic as the meta effect below (app-host vs. the
+  // site's own custom domain) — hoisted so ShareButtons can use it too.
+  const postUrl =
+    site && post ? (isAgentSiteAppHost() ? `${SITE_ORIGIN}/sites/${site.slug}/blog/${post.slug}` : window.location.href) : null;
 
   useEffect(() => {
     if (!post || !site) return;
     const meta = buildAgentPostMeta(post, site, agent);
-    const url = isAgentSiteAppHost()
-      ? `${SITE_ORIGIN}/sites/${site.slug}/blog/${post.slug}`
-      : window.location.href;
+    const url = postUrl;
     applyPageMeta({
       ...meta,
       // See AgentSitePage.jsx's same url logic — canonical app-host URL
@@ -93,13 +96,16 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
             <h1 className="text-3xl sm:text-4xl font-display font-semibold mb-3 text-[var(--as-text)]">
               {post.title}
             </h1>
-            <p className="text-sm text-[var(--as-text)]/50 mb-10">
-              {new Date(`${post.post_date}T00:00:00`).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-10">
+              <p className="text-sm text-[var(--as-text)]/50">
+                {new Date(`${post.post_date}T00:00:00`).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+              <ShareButtons url={postUrl} />
+            </div>
 
             {post.image_url && (
               <div className="overflow-hidden bg-[var(--as-surface)] aspect-[16/9] mb-10">

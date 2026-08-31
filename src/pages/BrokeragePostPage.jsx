@@ -8,6 +8,7 @@ import { applyPageMeta } from "../lib/pageMeta";
 import { BrokerageSiteProvider } from "../context/BrokerageSiteContext";
 import Navbar from "../components/brokerage-site/Navbar";
 import Footer from "../components/brokerage-site/Footer";
+import ShareButtons from "../components/ShareButtons";
 
 // Single blog post at /brokerage/blog/:postSlug — parallel to
 // AgentPostPage.jsx.
@@ -15,11 +16,12 @@ export default function BrokeragePostPage() {
   const { postSlug } = useParams();
   const { site, post, loading, notFound } = useBrokeragePost({ postSlug });
   const adapted = site ? adaptBrokerageSite({ site, posts: [], agents: [], areas: [] }) : null;
+  const postUrl = post ? `${SITE_ORIGIN}/brokerage/blog/${post.slug}` : null;
 
   useEffect(() => {
     if (!post || !site) return;
     const meta = buildBrokeragePostMeta(post, site);
-    applyPageMeta({ ...meta, url: `${SITE_ORIGIN}/brokerage/blog/${post.slug}` });
+    applyPageMeta({ ...meta, url: postUrl });
   }, [post, site]);
 
   if (loading) {
@@ -50,9 +52,12 @@ export default function BrokeragePostPage() {
               <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">{post.category}</p>
             )}
             <h1 className="text-3xl sm:text-4xl font-display font-semibold mb-3 text-[var(--as-text)]">{post.title}</h1>
-            <p className="text-sm text-[var(--as-text)]/50 mb-10">
-              {new Date(`${post.post_date}T00:00:00`).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-10">
+              <p className="text-sm text-[var(--as-text)]/50">
+                {new Date(`${post.post_date}T00:00:00`).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+              </p>
+              <ShareButtons url={postUrl} />
+            </div>
 
             {post.image_url && (
               <div className="overflow-hidden bg-[var(--as-surface)] aspect-[16/9] mb-10">
