@@ -9,7 +9,9 @@
 //   query: city, minPrice, maxPrice, minBeds, minBaths, status, pageNum, resultsPerPage,
 //          office ("true" scopes to The Agency's own inventory only, via
 //          Repliers' `brokerage` filter — see REPLIERS_BROKERAGE_NAME
-//          below; "false" or omitted searches the whole board)
+//          below, and sorts most-expensive-first via sortBy=listPriceDesc;
+//          "false" or omitted searches the whole board in Repliers' own
+//          default order)
 // GET /api/repliers?mlsNumber=...    -> single listing (see useRepliersListing.js)
 import { searchRepliersListings, getRepliersListing, normalizeRepliersListing } from "./_lib/repliers.js";
 
@@ -61,6 +63,10 @@ export default async function handler(req, res) {
       // pass through a client-supplied brokerage name, so this scoping
       // can't be tampered with from the browser.
       brokerage: office === "true" ? OFFICE_BROKERAGE_NAME : undefined,
+      // The Agency's own listings (Our Listings + the Home page preview)
+      // lead with the most expensive first, per request. The open Home
+      // Search page keeps Repliers' own default order.
+      sortBy: office === "true" ? "listPriceDesc" : undefined,
     });
 
     const listings = (data.listings || []).map(normalizeRepliersListing);
