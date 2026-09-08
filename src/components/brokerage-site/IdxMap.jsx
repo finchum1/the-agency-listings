@@ -40,9 +40,16 @@ function ListingPopup({ listing }) {
 // marker is a price-bubble divIcon (not a pin) — matches the reference
 // screenshot and sidesteps Leaflet's classic bundler-breaks-the-default-
 // pin-icon problem entirely, since no default icon image is used.
-function ClusterLayer({ listings, onFitBounds }) {
+function ClusterLayer({ listings }) {
   const map = useMap();
   const groupRef = useRef(null);
+
+  const fitToMarkers = () => {
+    const group = groupRef.current;
+    if (group && group.getLayers().length > 0) {
+      map.fitBounds(group.getBounds(), { padding: [40, 40], maxZoom: 14 });
+    }
+  };
 
   useEffect(() => {
     const group = L.markerClusterGroup({
@@ -62,6 +69,28 @@ function ClusterLayer({ listings, onFitBounds }) {
       map.removeLayer(group);
       groupRef.current = null;
     };
+  }, [map]);
+
+  // The map pane is `display:none` on narrow screens until the List/Map
+  // toggle switches to Map (see IdxListings.jsx) — Leaflet can't size or
+  // fit bounds correctly against a 0×0 container, and doesn't recover on
+  // its own once the container becomes visible. A ResizeObserver on the
+  // container catches exactly that transition (0 -> real size, or any
+  // later resize) and re-syncs Leaflet's internal size cache + refits to
+  // the current markers, whatever caused the resize.
+  useEffect(() => {
+    const container = map.getContainer();
+    let lastSize = 0;
+    const ro = new ResizeObserver(([entry]) => {
+      const size = entry.contentRect.width * entry.contentRect.height;
+      if (size === 0) return;
+      map.invalidateSize();
+      if (lastSize === 0) fitToMarkers(); // became visible — refit once
+      lastSize = size;
+    });
+    ro.observe(container);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map]);
 
   useEffect(() => {
@@ -84,11 +113,7 @@ function ClusterLayer({ listings, onFitBounds }) {
       group.addLayer(marker);
     }
 
-    if (located.length > 0) {
-      const bounds = L.latLngBounds(located.map((l) => [l.lat, l.lng]));
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
-    }
-    onFitBounds?.();
+    fitToMarkers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listings, map]);
 
