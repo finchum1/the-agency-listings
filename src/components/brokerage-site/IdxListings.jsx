@@ -195,21 +195,20 @@ export default function IdxListings({ isStandalonePage = false, preview = false,
                   />
                 ))}
               </div>
+            ) : view === "map" ? (
+              <div className="h-[600px] md:h-[720px] overflow-hidden rounded-2xl border border-[var(--as-text)]/10">
+                <IdxMap listings={listings} />
+              </div>
             ) : (
-              <div className="grid gap-8 md:grid-cols-2">
-                <div className={`grid grid-cols-1 sm:grid-cols-2 gap-8 content-start ${view === "map" ? "hidden md:grid" : ""}`}>
-                  {listings.map((listing) => (
-                    <IdxListingCard
-                      key={listing.id}
-                      listing={listing}
-                      favorited={favorites.has(listing.mlsNumber)}
-                      onToggleFavorite={toggleFavorite}
-                    />
-                  ))}
-                </div>
-                <div className={`h-[500px] md:h-[720px] md:sticky md:top-24 overflow-hidden rounded-2xl border border-[var(--as-text)]/10 ${view === "list" ? "hidden md:block" : ""}`}>
-                  <IdxMap listings={listings} />
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {listings.map((listing) => (
+                  <IdxListingCard
+                    key={listing.id}
+                    listing={listing}
+                    favorited={favorites.has(listing.mlsNumber)}
+                    onToggleFavorite={toggleFavorite}
+                  />
+                ))}
               </div>
             )}
 
