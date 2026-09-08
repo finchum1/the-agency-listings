@@ -43,6 +43,8 @@ import BrokerageAgentRoster from "./components/brokerage-site/AgentRoster";
 import BrokerageAreasOfExpertise from "./components/brokerage-site/AreasOfExpertise";
 import BrokerageBlogList from "./components/brokerage-site/BlogList";
 import BrokerageContactCard from "./components/brokerage-site/ContactCard";
+import IdxListings from "./components/brokerage-site/IdxListings";
+import IdxListingDetail from "./components/brokerage-site/IdxListingDetail";
 
 function Root() {
   const { session, loading } = useAuth();
@@ -182,6 +184,22 @@ export default function App() {
         }
       />
       <Route path="/brokerage/blog/:postSlug" element={<BrokeragePostPage />} />
+      <Route
+        path="/brokerage/listings"
+        element={
+          <BrokerageSitePage path="/brokerage/listings" pageTitle="Listings">
+            <IdxListings isStandalonePage />
+          </BrokerageSitePage>
+        }
+      />
+      <Route
+        path="/brokerage/listings/:mlsNumber"
+        element={
+          <BrokerageSitePage path="/brokerage/listings" pageTitle="Listings">
+            <IdxListingDetail />
+          </BrokerageSitePage>
+        }
+      />
       <Route
         path="/brokerage/contact"
         element={
