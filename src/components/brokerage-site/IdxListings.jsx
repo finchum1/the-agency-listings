@@ -49,6 +49,7 @@ export default function IdxListings({ isStandalonePage = false, preview = false,
   const [city, setCity] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [view, setView] = useState("list");
+  const [boundary, setBoundary] = useState(null); // drawn polygon, from IdxMap.jsx's Draw control
 
   const pinnedMlsNumbers = preview ? site.featuredListingMlsNumbers.slice(0, 3) : [];
   const usePinned = pinnedMlsNumbers.length > 0;
@@ -69,6 +70,7 @@ export default function IdxListings({ isStandalonePage = false, preview = false,
             city,
             office: officeOnly,
             sortBy,
+            map: boundary ? JSON.stringify(boundary) : "",
             resultsPerPage: 48,
           },
   );
@@ -197,7 +199,7 @@ export default function IdxListings({ isStandalonePage = false, preview = false,
               </div>
             ) : view === "map" ? (
               <div className="h-[600px] md:h-[720px] overflow-hidden rounded-2xl border border-[var(--as-text)]/10">
-                <IdxMap listings={listings} />
+                <IdxMap listings={listings} onBoundaryChange={setBoundary} boundaryActive={!!boundary} />
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">

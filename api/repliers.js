@@ -12,7 +12,9 @@
 //          Repliers' `brokerage` filter — see REPLIERS_BROKERAGE_NAME
 //          below, and defaults to sortBy=listPriceDesc unless overridden;
 //          "false" or omitted searches the whole board, defaulting to
-//          Repliers' own newest-first order)
+//          Repliers' own newest-first order), map (a drawn-boundary
+//          polygon filter — see isValidMapPolygon below and IdxMap.jsx's
+//          Draw control, which produces this shape)
 // GET /api/repliers?mlsNumber=...    -> single listing (see useRepliersListing.js)
 import { searchRepliersListings, getRepliersListing, normalizeRepliersListing } from "./_lib/repliers.js";
 
@@ -29,14 +31,55 @@ const SORT_OPTIONS = new Set(["createdOnDesc", "listPriceDesc", "listPriceAsc", 
 // (non-sandbox) MLS data, without needing a code change.
 const OFFICE_BROKERAGE_NAME = process.env.REPLIERS_BROKERAGE_NAME || "The Agency";
 
+// `map` is user-drawn geometry from the browser (IdxMap.jsx's Draw
+// control), so it's validated rather than forwarded blindly: must be an
+// array of polygons, each an array of [lng, lat] rings, each ring an
+// array of [lng, lat] number pairs (valid coordinate ranges), capped at
+// a size no hand-drawn shape would ever legitimately exceed.
+const MAX_POLYGON_POINTS = 500;
+function isValidMapPolygon(value) {
+  if (!Array.isArray(value) || value.length === 0) return false;
+  let pointCount = 0;
+  const isPoint = (p) =>
+    Array.isArray(p) &&
+    p.length === 2 &&
+    typeof p[0] === "number" &&
+    typeof p[1] === "number" &&
+    p[0] >= -180 &&
+    p[0] <= 180 &&
+    p[1] >= -90 &&
+    p[1] <= 90;
+  for (const polygon of value) {
+    if (!Array.isArray(polygon)) return false;
+    for (const ring of polygon) {
+      if (!Array.isArray(ring)) return false;
+      for (const point of ring) {
+        if (!isPoint(point)) return false;
+        if (++pointCount > MAX_POLYGON_POINTS) return false;
+      }
+    }
+  }
+  return true;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { mlsNumber, city, minPrice, maxPrice, minBeds, minBaths, status, pageNum, resultsPerPage, office, sortBy } =
+  const { mlsNumber, city, minPrice, maxPrice, minBeds, minBaths, status, pageNum, resultsPerPage, office, sortBy, map } =
     req.query;
+
+  let mapPolygon;
+  if (map) {
+    try {
+      const parsed = JSON.parse(map);
+      if (isValidMapPolygon(parsed)) mapPolygon = parsed;
+    } catch {
+      // malformed -- ignored below, same as any other invalid filter value
+    }
+  }
 
   if (mlsNumber) {
     try {
@@ -73,6 +116,7 @@ export default async function handler(req, res) {
       // open Home Search page defaults to Repliers' own (newest-first)
       // order. Either can be overridden by the sort dropdown.
       sortBy: SORT_OPTIONS.has(sortBy) ? sortBy : office === "true" ? "listPriceDesc" : undefined,
+      map: mapPolygon ? JSON.stringify(mapPolygon) : undefined,
     });
 
     const listings = (data.listings || []).map(normalizeRepliersListing);

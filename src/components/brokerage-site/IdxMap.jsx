@@ -1,11 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet.markercluster";
+import "leaflet-draw";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import "leaflet-draw/dist/leaflet.draw.css";
 import { formatPrice, formatCompactPrice } from "../../lib/format";
 
 const DEFAULT_CENTER = [35.4676, -97.5164]; // Oklahoma City — used only when no listing has coordinates
@@ -120,21 +122,107 @@ function ClusterLayer({ listings }) {
   return null;
 }
 
-export default function IdxMap({ listings }) {
+// Draw-a-boundary search — matches the reference screenshot's "Draw"
+// button. Uses leaflet-draw's polygon handler directly (triggered from
+// our own button, not its default toolbar UI, which doesn't match this
+// site's look). On completion, converts the drawn ring to the
+// [lng, lat] coordinate format Repliers' `map` polygon filter expects
+// (see api/repliers.js) and hands it up via onBoundaryChange.
+function DrawControl({ onBoundaryChange, boundaryActive }) {
+  const map = useMap();
+  const [drawing, setDrawing] = useState(false);
+  const drawnItemsRef = useRef(null);
+  const handlerRef = useRef(null);
+
+  useEffect(() => {
+    const drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+    drawnItemsRef.current = drawnItems;
+    handlerRef.current = new L.Draw.Polygon(map, {
+      shapeOptions: { color: "#a84e2b", weight: 3, fillOpacity: 0.08 },
+      showArea: false,
+    });
+
+    const onCreated = (e) => {
+      drawnItems.clearLayers();
+      drawnItems.addLayer(e.layer);
+      setDrawing(false);
+
+      const ring = e.layer.getLatLngs()[0].map(({ lat, lng }) => [lng, lat]);
+      ring.push(ring[0]); // GeoJSON rings must close (first point === last point)
+      onBoundaryChange([[ring]]);
+    };
+    const onStop = () => setDrawing(false);
+    map.on(L.Draw.Event.CREATED, onCreated);
+    map.on(L.Draw.Event.DRAWSTOP, onStop);
+    return () => {
+      map.off(L.Draw.Event.CREATED, onCreated);
+      map.off(L.Draw.Event.DRAWSTOP, onStop);
+      map.removeLayer(drawnItems);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map]);
+
+  // Clear the drawn shape from the map whenever the boundary filter is
+  // cleared some other way (e.g. IdxListings.jsx's own "Clear boundary"
+  // affordance, if the filter bar ever grows one) — keeps the drawn
+  // outline and the active filter from disagreeing.
+  useEffect(() => {
+    if (!boundaryActive) drawnItemsRef.current?.clearLayers();
+  }, [boundaryActive]);
+
+  const toggleDrawing = () => {
+    if (drawing) {
+      handlerRef.current?.disable();
+      setDrawing(false);
+    } else {
+      handlerRef.current?.enable();
+      setDrawing(true);
+    }
+  };
+
+  const clearBoundary = () => {
+    drawnItemsRef.current?.clearLayers();
+    onBoundaryChange(null);
+  };
+
+  return (
+    <div className="absolute top-3 left-3 z-[1000] flex gap-2">
+      <button
+        type="button"
+        onClick={toggleDrawing}
+        className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracked shadow ${
+          drawing ? "bg-[var(--as-accent)] text-white" : "bg-white text-[#1a1a1a] hover:bg-white/90"
+        }`}
+      >
+        {drawing ? "Click map to draw…" : "Draw"}
+      </button>
+      {boundaryActive && (
+        <button
+          type="button"
+          onClick={clearBoundary}
+          className="rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracked text-[#1a1a1a] shadow hover:bg-white/90"
+        >
+          Clear boundary
+        </button>
+      )}
+    </div>
+  );
+}
+
+export default function IdxMap({ listings, onBoundaryChange, boundaryActive }) {
   const hasLocated = listings.some((l) => l.lat && l.lng);
 
   return (
-    <MapContainer
-      center={DEFAULT_CENTER}
-      zoom={DEFAULT_ZOOM}
-      className="h-full w-full"
-      scrollWheelZoom
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      {hasLocated && <ClusterLayer listings={listings} />}
-    </MapContainer>
+    <div className="relative h-full w-full">
+      <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} className="h-full w-full" scrollWheelZoom>
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {hasLocated && <ClusterLayer listings={listings} />}
+        <DrawControl onBoundaryChange={onBoundaryChange} boundaryActive={boundaryActive} />
+      </MapContainer>
+    </div>
   );
 }
