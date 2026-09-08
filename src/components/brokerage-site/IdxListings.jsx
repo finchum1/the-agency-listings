@@ -198,8 +198,23 @@ export default function IdxListings({ isStandalonePage = false, preview = false,
                 ))}
               </div>
             ) : view === "map" ? (
-              <div className="h-[600px] md:h-[720px] overflow-hidden rounded-2xl border border-[var(--as-text)]/10">
-                <IdxMap listings={listings} onBoundaryChange={setBoundary} boundaryActive={!!boundary} />
+              // Side by side: results narrow to 2 columns (this pane is
+              // only half the page), map stays visible the whole time so
+              // a drawn boundary immediately updates the list beside it.
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 content-start order-2 md:order-1">
+                  {listings.map((listing) => (
+                    <IdxListingCard
+                      key={listing.id}
+                      listing={listing}
+                      favorited={favorites.has(listing.mlsNumber)}
+                      onToggleFavorite={toggleFavorite}
+                    />
+                  ))}
+                </div>
+                <div className="h-[500px] md:h-[720px] md:sticky md:top-24 overflow-hidden rounded-2xl border border-[var(--as-text)]/10 order-1 md:order-2">
+                  <IdxMap listings={listings} onBoundaryChange={setBoundary} boundaryActive={!!boundary} />
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
