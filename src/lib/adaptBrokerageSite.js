@@ -17,6 +17,7 @@ export function adaptBrokerageSite({ site, agents, posts, areas }) {
     heroPhoto: site.hero_photo_url || "",
     heroVideo: site.hero_video_url || null,
     aboutHtml: site.about_html || "",
+    aboutPhoto: site.about_photo_url || "",
     stats: site.stats || [],
     contact: {
       email: site.contact_email || "",

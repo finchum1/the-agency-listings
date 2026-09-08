@@ -136,6 +136,7 @@ export default function BrokerageSiteForm({ site, onSaved }) {
       hero_photo_url: s.hero_photo_url || "",
       hero_video_url: s.hero_video_url || "",
       about_html: s.about_html || "",
+      about_photo_url: s.about_photo_url || "",
       stats: s.stats?.length ? s.stats : [{ label: "", value: "" }],
       contact_email: s.contact_email || "",
       contact_phone: s.contact_phone || "",
@@ -207,6 +208,7 @@ export default function BrokerageSiteForm({ site, onSaved }) {
       hero_photo_url: form.hero_photo_url || null,
       hero_video_url: form.hero_video_url || null,
       about_html: form.about_html,
+      about_photo_url: form.about_photo_url || null,
       stats: form.stats.filter((s) => s.label.trim() || s.value.trim()),
       contact_email: form.contact_email,
       contact_phone: form.contact_phone,
@@ -450,6 +452,14 @@ export default function BrokerageSiteForm({ site, onSaved }) {
           minHeight="10rem"
         />
       </div>
+
+      <ImageUploadField
+        bucket="brokerage-site-photos"
+        folder={site.id}
+        value={form.about_photo_url}
+        onChange={(url) => set("about_photo_url", url || "")}
+        label="About photo (optional — shown beside the About paragraph when set)"
+      />
 
       <div>
         <label className={labelClass}>Stats (e.g. "Years Experience" → "50+")</label>
