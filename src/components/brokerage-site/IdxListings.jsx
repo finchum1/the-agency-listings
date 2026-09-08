@@ -15,13 +15,19 @@ const PRICE_OPTIONS = [
 
 const BEDS_OPTIONS = ["Any Beds", "3+", "4+", "5+"];
 
-// Live MLS search for the Brokerage Site. `preview` (used on Home, via
-// HomeSections.jsx) caps to 3 results, drops the filter bar, and adds a
-// "View All Listings" link — same convention as AgentRoster.jsx/
-// AreasOfExpertise.jsx/BlogList.jsx. The standalone /brokerage/listings
-// page (isStandalonePage) shows the full filterable search. First IDX
+// Live MLS search for the Brokerage Site — two distinct pages share this
+// component:
+//   - /brokerage/listings ("Our Listings", officeOnly=true, the default):
+//     scoped to The Agency's own inventory only (Repliers' `brokerage`
+//     filter, applied server-side — see api/repliers.js). This is what
+//     the Home page preview also shows.
+//   - /brokerage/search ("Home Search", officeOnly=false): the open MLS,
+//     every listing on the board, not just The Agency's own.
+// `preview` (used on Home, via HomeSections.jsx) caps to 3 results, drops
+// the filter bar, and adds a "View All Listings" link — same convention
+// as AgentRoster.jsx/AreasOfExpertise.jsx/BlogList.jsx. First IDX
 // integration built against Repliers (see IDX & Next.js Roadmap, Stage 1).
-export default function IdxListings({ isStandalonePage = false, preview = false }) {
+export default function IdxListings({ isStandalonePage = false, preview = false, officeOnly = true }) {
   const { site } = useBrokerageSiteContext();
   const [priceIdx, setPriceIdx] = useState(0);
   const [beds, setBeds] = useState("");
@@ -37,12 +43,13 @@ export default function IdxListings({ isStandalonePage = false, preview = false 
     usePinned
       ? null
       : preview
-        ? { resultsPerPage: 3 }
+        ? { resultsPerPage: 3, office: officeOnly }
         : {
             minPrice: price.min,
             maxPrice: price.max,
             minBeds: beds,
             city,
+            office: officeOnly,
           },
   );
   const pinned = useFeaturedRepliersListings(pinnedMlsNumbers);
@@ -63,10 +70,14 @@ export default function IdxListings({ isStandalonePage = false, preview = false 
     <section id="listings" className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
       <div className="mx-auto max-w-7xl">
         <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">
-          Current Listings
+          {officeOnly ? "The Agency's Listings" : "Home Search"}
         </p>
         <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-10 text-[var(--as-text)]">
-          {preview ? "Featured Homes For Sale" : "Search Homes For Sale"}
+          {preview
+            ? "Featured Homes For Sale"
+            : officeOnly
+              ? "Our Current Listings"
+              : "Search Every Home For Sale"}
         </Heading>
 
         {!preview && (

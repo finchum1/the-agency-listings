@@ -6,9 +6,20 @@
 // done on the admin side for the same reason).
 //
 // GET /api/repliers                 -> search (see useRepliersListings.js)
-//   query: city, minPrice, maxPrice, minBeds, minBaths, status, pageNum, resultsPerPage
+//   query: city, minPrice, maxPrice, minBeds, minBaths, status, pageNum, resultsPerPage,
+//          office ("true" scopes to The Agency's own inventory only, via
+//          Repliers' `brokerage` filter — see REPLIERS_BROKERAGE_NAME
+//          below; "false" or omitted searches the whole board)
 // GET /api/repliers?mlsNumber=...    -> single listing (see useRepliersListing.js)
 import { searchRepliersListings, getRepliersListing, normalizeRepliersListing } from "./_lib/repliers.js";
+
+// The exact name to filter by is whatever MLSOK (and each future board)
+// has on file for this brokerage's office record, which can differ from
+// the site's own display name (see src/lib/brokerage.js's "The Agency").
+// Defaulted here as a reasonable guess -- override via the
+// REPLIERS_BROKERAGE_NAME Vercel env var once confirmed against real
+// (non-sandbox) MLS data, without needing a code change.
+const OFFICE_BROKERAGE_NAME = process.env.REPLIERS_BROKERAGE_NAME || "The Agency";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -16,7 +27,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { mlsNumber, city, minPrice, maxPrice, minBeds, minBaths, status, pageNum, resultsPerPage } = req.query;
+  const { mlsNumber, city, minPrice, maxPrice, minBeds, minBaths, status, pageNum, resultsPerPage, office } =
+    req.query;
 
   if (mlsNumber) {
     try {
@@ -45,6 +57,10 @@ export default async function handler(req, res) {
       status: status || "A",
       pageNum: pageNum || 1,
       resultsPerPage: resultsPerPage || 24,
+      // Only ever set server-side, from a fixed config value -- never
+      // pass through a client-supplied brokerage name, so this scoping
+      // can't be tampered with from the browser.
+      brokerage: office === "true" ? OFFICE_BROKERAGE_NAME : undefined,
     });
 
     const listings = (data.listings || []).map(normalizeRepliersListing);

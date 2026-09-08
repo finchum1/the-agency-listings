@@ -9,7 +9,8 @@ import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
 // since it's never optional (always shown, both on Home and as its own
 // page) — same convention as agent sites.
 const PAGES = [
-  { path: "/brokerage/listings", label: "Listings" },
+  { path: "/brokerage/listings", label: "Our Listings" },
+  { path: "/brokerage/search", label: "Home Search" },
   { path: "/brokerage/about", label: "About", sectionKey: "about" },
   { path: "/brokerage/agents", label: "Agents", sectionKey: "agents" },
   { path: "/brokerage/areas", label: "Areas", sectionKey: "areas" },

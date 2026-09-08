@@ -187,8 +187,8 @@ export default function App() {
       <Route
         path="/brokerage/listings"
         element={
-          <BrokerageSitePage path="/brokerage/listings" pageTitle="Listings">
-            <IdxListings isStandalonePage />
+          <BrokerageSitePage path="/brokerage/listings" pageTitle="Our Listings">
+            <IdxListings isStandalonePage officeOnly />
           </BrokerageSitePage>
         }
       />
@@ -197,6 +197,14 @@ export default function App() {
         element={
           <BrokerageSitePage path="/brokerage/listings" pageTitle="Listings">
             <IdxListingDetail />
+          </BrokerageSitePage>
+        }
+      />
+      <Route
+        path="/brokerage/search"
+        element={
+          <BrokerageSitePage path="/brokerage/search" pageTitle="Home Search">
+            <IdxListings isStandalonePage officeOnly={false} />
           </BrokerageSitePage>
         }
       />
