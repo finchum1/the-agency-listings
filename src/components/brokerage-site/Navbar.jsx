@@ -12,9 +12,14 @@ const PAGES = [
   { path: "/brokerage/listings", label: "Our Listings" },
   { path: "/brokerage/search", label: "Home Search" },
   { path: "/brokerage/about", label: "About", sectionKey: "about" },
-  { path: "/brokerage/agents", label: "Agents", sectionKey: "agents" },
+  // No sectionKey (unlike the other pages below it) — the Agents page and
+  // its nav link stay put even though its home-page preview was removed
+  // (see About.jsx's "Meet The Team" button); only the Home preview is
+  // gated by home_sections, not the page's own reachability.
+  { path: "/brokerage/agents", label: "Agents" },
   { path: "/brokerage/areas", label: "Areas", sectionKey: "areas" },
   { path: "/brokerage/blog", label: "Blog", sectionKey: "blog" },
+  { path: "/brokerage/home-valuation", label: "Home Valuation" },
   { path: "/brokerage/contact", label: "Contact" },
 ];
 

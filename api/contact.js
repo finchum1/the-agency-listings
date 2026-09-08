@@ -1,19 +1,27 @@
-// Vercel serverless function — handles every listing's "Send Inquiry" form.
-//
-// Unlike the earlier per-listing static site, this app serves many
-// listings from one deployment, so the client sends a `listingId` and
-// this function looks up who to email SERVER-SIDE (via the listing's
-// agent_id -> profiles.email). It deliberately does NOT trust a
-// client-supplied email address — that would let this endpoint be used
-// as an open mail relay to arbitrary addresses.
+// Vercel serverless function — handles two forms:
+//   1. Every listing's "Send Inquiry" form (the original, `listingId`
+//      required) — looks up who to email SERVER-SIDE (via the listing's
+//      agent_id -> profiles.email). Deliberately does NOT trust a
+//      client-supplied email address — that would let this endpoint be
+//      used as an open mail relay to arbitrary addresses.
+//   2. The Brokerage Site's Home Valuation form (`type: "valuation"`,
+//      `address` required instead of listingId) — emails the brokerage's
+//      own contact_email, since there's no specific agent to route to
+//      (same reasoning as ContactCard.jsx's mailto/tel-only design, just
+//      this one specific form DOES need a real submission handler).
+//   Folded into one function, rather than a new api/home-valuation.js,
+//   to stay under Vercel's Hobby-plan 12-Serverless-Functions cap (see
+//   api/admin/agents.js's header for the earlier consolidation done for
+//   the same reason).
 //
 // Setup (Vercel dashboard > Project > Settings > Environment Variables):
 //   RESEND_API_KEY   — from resend.com (required)
 //   LEAD_FROM_EMAIL  — optional, e.g. "Listing Inquiries <onboarding@resend.dev>"
 //   SUPABASE_SERVICE_ROLE_KEY — already configured (see api/admin/add-agent.js);
 //     used here only to store a durable copy of the submission in `leads`
-//     (see supabase/analytics.sql), best-effort, so a Resend outage never
-//     loses the lead even if the email fails.
+//     (see supabase/analytics.sql, supabase/brokerage-valuation-leads.sql),
+//     best-effort, so a Resend outage never loses the lead even if the
+//     email fails.
 // (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are read too — same values
 // already set for the client build; Vercel functions can read them
 // regardless of the VITE_ prefix, which only affects client bundling.)
@@ -26,10 +34,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { name, email, phone, message, listingId } = req.body || {};
+  const { name, email, phone, message, listingId, type, address } = req.body || {};
+  const isValuation = type === "valuation";
 
-  if (!name || !email || !listingId) {
-    return res.status(400).json({ error: "Name, email, and listingId are required." });
+  if (!name || !email) {
+    return res.status(400).json({ error: "Name and email are required." });
+  }
+  if (!isValuation && !listingId) {
+    return res.status(400).json({ error: "listingId is required." });
+  }
+  if (isValuation && !address) {
+    return res.status(400).json({ error: "A property address is required." });
   }
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -39,28 +54,52 @@ export default async function handler(req, res) {
   }
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  const { data: listing, error: listingError } = await supabase
-    .from("listings")
-    .select("address_line1, agent_id, agent:profiles(email, full_name)")
-    .eq("id", listingId)
-    .maybeSingle();
+  let recipientEmail, leadTargetType, leadTargetId, leadAgentId, subject, bodyLines;
 
-  if (listingError || !listing || !listing.agent?.email) {
-    console.error("Contact form: listing/agent lookup failed:", listingError);
-    return res.status(404).json({ error: "Listing not found." });
+  if (isValuation) {
+    const { data: site, error: siteError } = await supabase
+      .from("brokerage_site")
+      .select("id, contact_email")
+      .maybeSingle();
+    if (siteError || !site?.contact_email) {
+      console.error("Valuation form: brokerage site lookup failed:", siteError);
+      return res.status(500).json({ error: "This form isn't fully set up yet — no brokerage contact email on file." });
+    }
+    recipientEmail = site.contact_email;
+    leadTargetType = "brokerage_valuation";
+    leadTargetId = site.id;
+    leadAgentId = null;
+    subject = `Home valuation request: ${address} — ${name}`;
+    bodyLines = [`Property address: ${address}`, "", `Name: ${name}`, `Email: ${email}`, `Phone: ${phone || "—"}`, "", message || "(no additional message)"];
+  } else {
+    const { data: listing, error: listingError } = await supabase
+      .from("listings")
+      .select("address_line1, agent_id, agent:profiles(email, full_name)")
+      .eq("id", listingId)
+      .maybeSingle();
+    if (listingError || !listing || !listing.agent?.email) {
+      console.error("Contact form: listing/agent lookup failed:", listingError);
+      return res.status(404).json({ error: "Listing not found." });
+    }
+    recipientEmail = listing.agent.email;
+    leadTargetType = "listing";
+    leadTargetId = listingId;
+    leadAgentId = listing.agent_id;
+    subject = `New inquiry: ${listing.address_line1} — ${name}`;
+    bodyLines = [`Name: ${name}`, `Email: ${email}`, `Phone: ${phone || "—"}`, "", message || "(no message)"];
   }
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (serviceKey) {
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
     const { error: leadError } = await supabaseAdmin.from("leads").insert({
-      target_type: "listing",
-      target_id: listingId,
-      agent_id: listing.agent_id,
+      target_type: leadTargetType,
+      target_id: leadTargetId,
+      agent_id: leadAgentId,
       name,
       email,
       phone: phone || "",
-      message: message || "",
+      message: isValuation ? `Property: ${address}${message ? `\n\n${message}` : ""}` : message || "",
     });
     if (leadError) console.error("Failed to store lead:", leadError);
   }
@@ -72,8 +111,7 @@ export default async function handler(req, res) {
     });
   }
 
-  const fromEmail =
-    process.env.LEAD_FROM_EMAIL || "Listing Inquiries <onboarding@resend.dev>";
+  const fromEmail = process.env.LEAD_FROM_EMAIL || "Listing Inquiries <onboarding@resend.dev>";
 
   try {
     const resendRes = await fetch("https://api.resend.com/emails", {
@@ -84,16 +122,10 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         from: fromEmail,
-        to: listing.agent.email,
+        to: recipientEmail,
         reply_to: email,
-        subject: `New inquiry: ${listing.address_line1} — ${name}`,
-        text: [
-          `Name: ${name}`,
-          `Email: ${email}`,
-          `Phone: ${phone || "—"}`,
-          "",
-          message || "(no message)",
-        ].join("\n"),
+        subject,
+        text: bodyLines.join("\n"),
       }),
     });
 

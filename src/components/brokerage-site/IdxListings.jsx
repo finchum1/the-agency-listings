@@ -48,7 +48,7 @@ export default function IdxListings({ isStandalonePage = false, preview = false,
   const [baths, setBaths] = useState("");
   const [city, setCity] = useState("");
   const [sortBy, setSortBy] = useState("");
-  const [view, setView] = useState("list");
+  const [view, setView] = useState("map"); // default per request — applies to both /brokerage/listings and /brokerage/search, which share this component
   const [boundary, setBoundary] = useState(null); // drawn polygon, from IdxMap.jsx's Draw control
 
   const pinnedMlsNumbers = preview ? site.featuredListingMlsNumbers.slice(0, 3) : [];

@@ -110,7 +110,10 @@ const HOME_SECTION_LABELS = {
   listings: "Listings",
 };
 const ALL_SECTION_KEYS = Object.keys(HOME_SECTION_LABELS);
-const DEFAULT_HOME_SECTIONS = ["about", "agents", "listings", "blog", "areas"];
+// "agents" deliberately left out — the roster preview no longer shows on
+// Home (see About.jsx's "Meet The Team" button instead), but the toggle
+// below still works if it's ever wanted back.
+const DEFAULT_HOME_SECTIONS = ["about", "listings", "blog", "areas"];
 
 // Site-level details for the brokerage site — parallel to SiteForm.jsx
 // (agent sites), minus slug/region/secondary-logo/custom-domain, which

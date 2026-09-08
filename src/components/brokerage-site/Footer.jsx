@@ -38,18 +38,21 @@ function SocialIcon({ href, children }) {
 }
 
 // Same sectionKey convention as Navbar.jsx's PAGES — a link whose
-// section is off in home_sections isn't advertised here either.
+// section is off in home_sections isn't advertised here either. Agents
+// has no sectionKey (unlike the rest) for the same reason as Navbar.jsx:
+// its Home preview was removed, but the page and its links stay put.
 const EXPLORE_LINKS = [
   { path: "/brokerage/about", label: "About", sectionKey: "about" },
-  { path: "/brokerage/agents", label: "Our Agents", sectionKey: "agents" },
+  { path: "/brokerage/agents", label: "Our Agents" },
   { path: "/brokerage/areas", label: "Areas of Expertise", sectionKey: "areas" },
   { path: "/brokerage/blog", label: "Blog", sectionKey: "blog" },
+  { path: "/brokerage/home-valuation", label: "Home Valuation" },
 ];
 
 export default function Footer() {
   const { site } = useBrokerageSiteContext();
   const { brokerage } = site;
-  const visibleLinks = EXPLORE_LINKS.filter((link) => site.homeSections.includes(link.sectionKey));
+  const visibleLinks = EXPLORE_LINKS.filter((link) => !link.sectionKey || site.homeSections.includes(link.sectionKey));
 
   return (
     <footer className="bg-[var(--as-dark)] text-[var(--as-on-dark)]/65 px-6 lg:px-10 py-16">

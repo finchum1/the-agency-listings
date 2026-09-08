@@ -45,6 +45,7 @@ import BrokerageBlogList from "./components/brokerage-site/BlogList";
 import BrokerageContactCard from "./components/brokerage-site/ContactCard";
 import IdxListings from "./components/brokerage-site/IdxListings";
 import IdxListingDetail from "./components/brokerage-site/IdxListingDetail";
+import HomeValuation from "./components/brokerage-site/HomeValuation";
 
 function Root() {
   const { session, loading } = useAuth();
@@ -205,6 +206,14 @@ export default function App() {
         element={
           <BrokerageSitePage path="/brokerage/search" pageTitle="Home Search">
             <IdxListings isStandalonePage officeOnly={false} />
+          </BrokerageSitePage>
+        }
+      />
+      <Route
+        path="/brokerage/home-valuation"
+        element={
+          <BrokerageSitePage path="/brokerage/home-valuation" pageTitle="Home Valuation">
+            <HomeValuation isStandalonePage />
           </BrokerageSitePage>
         }
       />

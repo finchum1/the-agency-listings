@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
 import { sanitizeHtml } from "../../lib/sanitizeHtml";
 
@@ -22,6 +23,20 @@ export default function About({ isStandalonePage = false }) {
       className="rich-text space-y-4 text-[15.5px] leading-relaxed text-[var(--as-text)]/75"
       dangerouslySetInnerHTML={{ __html: sanitizeHtml(site.aboutHtml) }}
     />
+  );
+
+  // Home embeds About but no longer previews the agent roster there (see
+  // HomeSections.jsx) — this is the replacement path to /brokerage/agents,
+  // the page itself is unchanged and still reachable from the nav too.
+  const meetTheTeam = !isStandalonePage && (
+    <div className="mt-10">
+      <Link
+        to="/brokerage/agents"
+        className="inline-block border border-[var(--as-text)]/20 px-8 py-3 text-xs font-medium tracked-wide uppercase text-[var(--as-text)] transition-colors hover:bg-[var(--as-text)] hover:text-[var(--as-bg)]"
+      >
+        Meet The Team
+      </Link>
+    </div>
   );
 
   const stats = site.stats.length > 0 && (
@@ -56,6 +71,7 @@ export default function About({ isStandalonePage = false }) {
             </div>
           </div>
           {stats && <div className="max-w-2xl mx-auto">{stats}</div>}
+          {meetTheTeam && <div className="text-center">{meetTheTeam}</div>}
         </div>
       </section>
     );
@@ -67,6 +83,7 @@ export default function About({ isStandalonePage = false }) {
         {eyebrowAndHeading}
         <div className="max-w-2xl mx-auto text-left">{bodyText}</div>
         {stats && <div className="max-w-2xl mx-auto">{stats}</div>}
+        {meetTheTeam}
       </div>
     </section>
   );
