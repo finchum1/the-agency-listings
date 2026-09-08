@@ -3,16 +3,24 @@ import { useEffect, useState } from "react";
 // Client-side fetch against api/repliers.js (the server-only Repliers
 // proxy — see api/_lib/repliers.js). `filters` is a plain object
 // of query params (city, minPrice, maxPrice, minBeds, minBaths, pageNum);
-// re-fetches whenever its serialized value changes.
+// re-fetches whenever its serialized value changes. Pass `null` to skip
+// the fetch entirely (e.g. IdxListings.jsx's preview mode when pinned
+// listings already cover it) rather than firing a request whose result
+// never gets used.
 export function useRepliersListings(filters) {
   const [listings, setListings] = useState([]);
   const [meta, setMeta] = useState({ count: 0, page: 1, numPages: 1 });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(filters !== null);
   const [error, setError] = useState("");
 
-  const key = JSON.stringify(filters || {});
+  const key = filters === null ? "skip" : JSON.stringify(filters);
 
   useEffect(() => {
+    if (filters === null) {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setLoading(true);
     setError("");

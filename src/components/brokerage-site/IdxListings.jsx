@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useRepliersListings } from "../../hooks/useRepliersListings";
+import { useFeaturedRepliersListings } from "../../hooks/useFeaturedRepliersListings";
+import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
 import { formatPrice, STATUS_LABELS } from "../../lib/format";
 
 const PRICE_OPTIONS = [
@@ -20,21 +22,35 @@ const BEDS_OPTIONS = ["Any Beds", "3+", "4+", "5+"];
 // page (isStandalonePage) shows the full filterable search. First IDX
 // integration built against Repliers (see IDX & Next.js Roadmap, Stage 1).
 export default function IdxListings({ isStandalonePage = false, preview = false }) {
+  const { site } = useBrokerageSiteContext();
   const [priceIdx, setPriceIdx] = useState(0);
   const [beds, setBeds] = useState("");
   const [city, setCity] = useState("");
 
+  const pinnedMlsNumbers = preview ? site.featuredListingMlsNumbers.slice(0, 3) : [];
+  const usePinned = pinnedMlsNumbers.length > 0;
+
   const price = PRICE_OPTIONS[priceIdx];
-  const { listings, meta, loading, error } = useRepliersListings(
-    preview
-      ? { resultsPerPage: 3 }
-      : {
-          minPrice: price.min,
-          maxPrice: price.max,
-          minBeds: beds,
-          city,
-        },
+  const search = useRepliersListings(
+    // null skips the fetch entirely once pinned listings already cover
+    // this preview — see useRepliersListings.js.
+    usePinned
+      ? null
+      : preview
+        ? { resultsPerPage: 3 }
+        : {
+            minPrice: price.min,
+            maxPrice: price.max,
+            minBeds: beds,
+            city,
+          },
   );
+  const pinned = useFeaturedRepliersListings(pinnedMlsNumbers);
+
+  const { listings, loading, error } = usePinned
+    ? { listings: pinned.listings, loading: pinned.loading, error: "" }
+    : { listings: search.listings, loading: search.loading, error: search.error };
+  const meta = usePinned ? { count: pinned.listings.length } : search.meta;
 
   // Preview (Home) hides the whole section rather than showing a broken
   // or empty-looking block — same convention as AgentRoster.jsx returning

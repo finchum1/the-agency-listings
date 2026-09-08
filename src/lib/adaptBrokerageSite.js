@@ -12,6 +12,7 @@ export function adaptBrokerageSite({ site, agents, posts, areas }) {
     accentColor: site.accent_color || "",
     logoVariant: site.logo_variant || "white",
     homeSections: site.home_sections?.length ? site.home_sections : ["about", "agents", "blog", "areas"],
+    featuredListingMlsNumbers: site.featured_listing_mls_numbers || [],
     tagline: site.tagline || "",
     heroPhoto: site.hero_photo_url || "",
     heroVideo: site.hero_video_url || null,

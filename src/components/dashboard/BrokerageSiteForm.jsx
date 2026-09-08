@@ -3,6 +3,7 @@ import { supabase } from "../../lib/supabaseClient";
 import ImageUploadField from "./ImageUploadField";
 import VideoUploadField from "./VideoUploadField";
 import RichTextEditor from "./RichTextEditor";
+import BrokerageFeaturedListingsPicker from "./BrokerageFeaturedListingsPicker";
 
 // Same template/font/accent/logo options as SiteForm.jsx (agent sites),
 // kept in sync with the check constraints in
@@ -130,6 +131,7 @@ export default function BrokerageSiteForm({ site, onSaved }) {
       accent_color: s.accent_color || "",
       logo_variant: s.logo_variant || "white",
       home_sections: s.home_sections?.length ? s.home_sections : DEFAULT_HOME_SECTIONS,
+      featured_listing_mls_numbers: s.featured_listing_mls_numbers || [],
       tagline: s.tagline || "",
       hero_photo_url: s.hero_photo_url || "",
       hero_video_url: s.hero_video_url || "",
@@ -200,6 +202,7 @@ export default function BrokerageSiteForm({ site, onSaved }) {
       accent_color: form.accent_color || null,
       logo_variant: form.logo_variant,
       home_sections: form.home_sections,
+      featured_listing_mls_numbers: form.featured_listing_mls_numbers,
       tagline: form.tagline,
       hero_photo_url: form.hero_photo_url || null,
       hero_video_url: form.hero_video_url || null,
@@ -416,6 +419,11 @@ export default function BrokerageSiteForm({ site, onSaved }) {
           ))}
         </div>
       </div>
+
+      <BrokerageFeaturedListingsPicker
+        value={form.featured_listing_mls_numbers}
+        onChange={(mlsNumbers) => set("featured_listing_mls_numbers", mlsNumbers)}
+      />
 
       <ImageUploadField
         bucket="brokerage-site-photos"
