@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
-// Client-side fetch against api/repliers-search.js (the server-only
-// Repliers proxy — see api/_lib/repliers.js). `filters` is a plain object
+// Client-side fetch against api/repliers.js (the server-only Repliers
+// proxy — see api/_lib/repliers.js). `filters` is a plain object
 // of query params (city, minPrice, maxPrice, minBeds, minBaths, pageNum);
 // re-fetches whenever its serialized value changes.
 export function useRepliersListings(filters) {
@@ -22,7 +22,7 @@ export function useRepliersListings(filters) {
       if (v !== undefined && v !== null && v !== "") params.set(k, v);
     }
 
-    fetch(`/api/repliers-search?${params.toString()}`)
+    fetch(`/api/repliers?${params.toString()}`)
       .then(async (res) => {
         const body = await res.json();
         if (!res.ok) throw new Error(body.error || "Failed to load listings.");

@@ -70,7 +70,7 @@ export default function AgentsPage() {
     setSuccess("");
     setSaving(true);
     try {
-      await authedFetch("/api/admin/add-agent", form);
+      await authedFetch("/api/admin/agents", { action: "add", ...form });
       setSuccess(
         form.sendInvite
           ? `Invited ${form.email} — they'll get an email to set their password.`
@@ -121,7 +121,7 @@ export default function AgentsPage() {
     setSuccess("");
     setDeletingId(agent.id);
     try {
-      await authedFetch("/api/admin/delete-agent", { agentId: agent.id });
+      await authedFetch("/api/admin/agents", { action: "delete", agentId: agent.id });
       setSuccess(`Deleted ${agent.full_name || agent.email}.`);
       refresh();
     } catch (err) {

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 
-// Client-side fetch against api/repliers-listing.js for one listing by
-// MLS number. Parallel to useRepliersListings.js.
+// Client-side fetch against api/repliers.js (mlsNumber param selects the
+// single-listing branch) for one listing by MLS number. Parallel to
+// useRepliersListings.js.
 export function useRepliersListing(mlsNumber) {
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +16,7 @@ export function useRepliersListing(mlsNumber) {
     setNotFound(false);
     setError("");
 
-    fetch(`/api/repliers-listing?mlsNumber=${encodeURIComponent(mlsNumber)}`)
+    fetch(`/api/repliers?mlsNumber=${encodeURIComponent(mlsNumber)}`)
       .then(async (res) => {
         if (res.status === 404) {
           if (!cancelled) setNotFound(true);
