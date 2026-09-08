@@ -7,6 +7,16 @@ export function formatPrice(value) {
   }).format(value);
 }
 
+// Short form for map price-bubble markers (IdxMap.jsx) — e.g. $2,750,000
+// -> "2.8M", $469,000 -> "469K". Not for anywhere a precise price matters.
+export function formatCompactPrice(value) {
+  if (value === null || value === undefined || value === "") return "";
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: value >= 1000000 ? 2 : 0,
+  }).format(value);
+}
+
 export function formatNumber(value) {
   if (value === null || value === undefined || value === "") return "—";
   return new Intl.NumberFormat("en-US").format(value);

@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useRepliersListings } from "../../hooks/useRepliersListings";
 import { useFeaturedRepliersListings } from "../../hooks/useFeaturedRepliersListings";
+import { useFavorites } from "../../hooks/useFavorites";
 import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
-import { formatPrice, STATUS_LABELS } from "../../lib/format";
+import IdxListingCard from "./IdxListingCard";
+import IdxMap from "./IdxMap";
 
 const PRICE_OPTIONS = [
   { label: "Any Price", min: "", max: "" },
@@ -14,6 +16,16 @@ const PRICE_OPTIONS = [
 ];
 
 const BEDS_OPTIONS = ["Any Beds", "3+", "4+", "5+"];
+const BATHS_OPTIONS = ["Any Baths", "2+", "3+", "4+"];
+const SORT_OPTIONS = [
+  { value: "createdOnDesc", label: "Newest" },
+  { value: "listPriceDesc", label: "Price: High to Low" },
+  { value: "listPriceAsc", label: "Price: Low to High" },
+  { value: "sqftDesc", label: "Largest" },
+];
+
+const pillClass =
+  "border border-[var(--as-text)]/10 bg-transparent px-4 py-3 text-sm text-[var(--as-text)]/80 outline-none rounded-full";
 
 // Live MLS search for the Brokerage Site — two distinct pages share this
 // component:
@@ -24,14 +36,19 @@ const BEDS_OPTIONS = ["Any Beds", "3+", "4+", "5+"];
 //   - /brokerage/search ("Home Search", officeOnly=false): the open MLS,
 //     every listing on the board, not just The Agency's own.
 // `preview` (used on Home, via HomeSections.jsx) caps to 3 results, drops
-// the filter bar, and adds a "View All Listings" link — same convention
-// as AgentRoster.jsx/AreasOfExpertise.jsx/BlogList.jsx. First IDX
-// integration built against Repliers (see IDX & Next.js Roadmap, Stage 1).
+// the filter bar/map, and adds a "View All Listings" link — same
+// convention as AgentRoster.jsx/AreasOfExpertise.jsx/BlogList.jsx. The
+// standalone pages get the full list+map split view, modeled on a
+// reference screenshot of an MLS Grid–powered search Terrence supplied.
 export default function IdxListings({ isStandalonePage = false, preview = false, officeOnly = true }) {
   const { site } = useBrokerageSiteContext();
+  const { favorites, toggleFavorite } = useFavorites();
   const [priceIdx, setPriceIdx] = useState(0);
   const [beds, setBeds] = useState("");
+  const [baths, setBaths] = useState("");
   const [city, setCity] = useState("");
+  const [sortBy, setSortBy] = useState("");
+  const [view, setView] = useState("list");
 
   const pinnedMlsNumbers = preview ? site.featuredListingMlsNumbers.slice(0, 3) : [];
   const usePinned = pinnedMlsNumbers.length > 0;
@@ -48,8 +65,11 @@ export default function IdxListings({ isStandalonePage = false, preview = false,
             minPrice: price.min,
             maxPrice: price.max,
             minBeds: beds,
+            minBaths: baths,
             city,
             office: officeOnly,
+            sortBy,
+            resultsPerPage: 48,
           },
   );
   const pinned = useFeaturedRepliersListings(pinnedMlsNumbers);
@@ -81,37 +101,73 @@ export default function IdxListings({ isStandalonePage = false, preview = false,
         </Heading>
 
         {!preview && (
-          <div className="mb-12 flex flex-wrap gap-3 border border-[var(--as-text)]/10 bg-[var(--as-bg)] p-4">
-            <input
-              type="text"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="City (e.g. Edmond)"
-              className="flex-1 min-w-[160px] border border-[var(--as-text)]/10 bg-transparent px-4 py-3 text-sm text-[var(--as-text)] placeholder:text-[var(--as-text)]/40 outline-none"
-            />
-            <select
-              value={priceIdx}
-              onChange={(e) => setPriceIdx(Number(e.target.value))}
-              className="flex-1 min-w-[160px] border border-[var(--as-text)]/10 bg-transparent px-4 py-3 text-sm text-[var(--as-text)]/80 outline-none"
-            >
-              {PRICE_OPTIONS.map((opt, i) => (
-                <option key={opt.label} value={i}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <select
-              value={beds}
-              onChange={(e) => setBeds(e.target.value)}
-              className="flex-1 min-w-[160px] border border-[var(--as-text)]/10 bg-transparent px-4 py-3 text-sm text-[var(--as-text)]/80 outline-none"
-            >
-              {BEDS_OPTIONS.map((label, i) => (
-                <option key={label} value={i === 0 ? "" : String(i + 2)}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <>
+            <div className="mb-6 flex flex-wrap gap-3 border border-[var(--as-text)]/10 bg-[var(--as-bg)] p-4 rounded-2xl">
+              <input
+                type="text"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="City, neighborhood, ZIP…"
+                className="flex-1 min-w-[180px] border border-[var(--as-text)]/10 bg-transparent px-4 py-3 text-sm text-[var(--as-text)] placeholder:text-[var(--as-text)]/40 outline-none rounded-full"
+              />
+              <select value={priceIdx} onChange={(e) => setPriceIdx(Number(e.target.value))} className={`flex-1 min-w-[140px] ${pillClass}`}>
+                {PRICE_OPTIONS.map((opt, i) => (
+                  <option key={opt.label} value={i}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <select value={beds} onChange={(e) => setBeds(e.target.value)} className={`flex-1 min-w-[120px] ${pillClass}`}>
+                {BEDS_OPTIONS.map((label, i) => (
+                  <option key={label} value={i === 0 ? "" : String(i + 2)}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <select value={baths} onChange={(e) => setBaths(e.target.value)} className={`flex-1 min-w-[120px] ${pillClass}`}>
+                {BATHS_OPTIONS.map((label, i) => (
+                  <option key={label} value={i === 0 ? "" : String(i + 1)}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
+              <p className="text-sm text-[var(--as-text)]/60">
+                {loading ? "Searching…" : `${meta.count} result${meta.count === 1 ? "" : "s"}`}
+              </p>
+              <div className="flex items-center gap-3">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="border border-[var(--as-text)]/10 bg-transparent px-3 py-2 text-xs uppercase tracked text-[var(--as-text)]/70 outline-none rounded-full"
+                >
+                  {SORT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      Sort: {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex rounded-full border border-[var(--as-text)]/10 overflow-hidden text-xs font-medium uppercase tracked">
+                  <button
+                    type="button"
+                    onClick={() => setView("list")}
+                    className={`px-4 py-2 transition-colors ${view === "list" ? "bg-[var(--as-dark)] text-[var(--as-on-dark)]" : "text-[var(--as-text)]/60"}`}
+                  >
+                    List
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setView("map")}
+                    className={`px-4 py-2 transition-colors ${view === "map" ? "bg-[var(--as-dark)] text-[var(--as-on-dark)]" : "text-[var(--as-text)]/60"}`}
+                  >
+                    Map
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
         )}
 
         {loading && <p className="text-sm text-[var(--as-text)]/50">Searching listings…</p>}
@@ -128,34 +184,36 @@ export default function IdxListings({ isStandalonePage = false, preview = false,
 
         {!loading && !error && listings.length > 0 && (
           <>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {listings.map((listing) => (
-                <a key={listing.id} href={`/brokerage/listings/${listing.mlsNumber}`} className="group block">
-                  <div className="relative overflow-hidden bg-[var(--as-surface)] aspect-[4/3]">
-                    {listing.hero_photo_url && (
-                      <img
-                        src={listing.hero_photo_url}
-                        alt={`${listing.address_line1}, ${listing.city}, ${listing.state}`}
-                        loading="lazy"
-                        className="h-full w-full object-cover transition group-hover:scale-105"
-                      />
-                    )}
-                    <span className="absolute top-4 left-4 bg-[var(--as-dark)] text-[var(--as-on-dark)] text-[10px] font-medium tracked-wide uppercase px-3 py-1.5">
-                      {STATUS_LABELS[listing.status] || listing.status || "For Sale"}
-                    </span>
-                  </div>
-                  <p className="mt-4 font-medium text-[var(--as-text)]">{listing.address_line1}</p>
-                  <p className="text-sm text-[var(--as-text)]/60">
-                    {listing.city}, {listing.state} {listing.zip}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--as-text)]/50">
-                    {listing.beds ?? "—"} bd | {listing.baths ?? "—"} ba | {listing.sqft?.toLocaleString() ?? "—"} sqft
-                  </p>
-                  <p className="mt-1 font-display text-lg text-[var(--as-accent)]">{formatPrice(listing.price)}</p>
-                </a>
-              ))}
-            </div>
             {preview ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {listings.map((listing) => (
+                  <IdxListingCard
+                    key={listing.id}
+                    listing={listing}
+                    favorited={favorites.has(listing.mlsNumber)}
+                    onToggleFavorite={toggleFavorite}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="grid gap-8 md:grid-cols-2">
+                <div className={`grid grid-cols-1 sm:grid-cols-2 gap-8 content-start ${view === "map" ? "hidden md:grid" : ""}`}>
+                  {listings.map((listing) => (
+                    <IdxListingCard
+                      key={listing.id}
+                      listing={listing}
+                      favorited={favorites.has(listing.mlsNumber)}
+                      onToggleFavorite={toggleFavorite}
+                    />
+                  ))}
+                </div>
+                <div className={`h-[500px] md:h-[720px] md:sticky md:top-24 overflow-hidden rounded-2xl border border-[var(--as-text)]/10 ${view === "list" ? "hidden md:block" : ""}`}>
+                  <IdxMap listings={listings} />
+                </div>
+              </div>
+            )}
+
+            {preview && (
               <div className="mt-14 flex justify-center">
                 <Link
                   to="/brokerage/listings"
@@ -164,10 +222,6 @@ export default function IdxListings({ isStandalonePage = false, preview = false,
                   View All Listings
                 </Link>
               </div>
-            ) : (
-              <p className="mt-10 text-xs text-[var(--as-text)]/40">
-                {meta.count} listing{meta.count === 1 ? "" : "s"} · data provided by MLS, updated live
-              </p>
             )}
           </>
         )}

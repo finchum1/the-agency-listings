@@ -91,6 +91,9 @@ export function normalizeRepliersListing(raw) {
     photoCount: raw.photoCount ?? raw.images?.length ?? 0,
     lat: raw.map?.latitude ? Number(raw.map.latitude) : null,
     lng: raw.map?.longitude ? Number(raw.map.longitude) : null,
+    // For the "Courtesy of ___" attribution IDX display rules typically
+    // require (see the reference screenshot this was built against).
+    officeName: raw.office?.brokerageName || "",
   };
 }
 

@@ -7,13 +7,19 @@
 //
 // GET /api/repliers                 -> search (see useRepliersListings.js)
 //   query: city, minPrice, maxPrice, minBeds, minBaths, status, pageNum, resultsPerPage,
+//          sortBy (see SORT_OPTIONS below — anything else is ignored),
 //          office ("true" scopes to The Agency's own inventory only, via
 //          Repliers' `brokerage` filter — see REPLIERS_BROKERAGE_NAME
-//          below, and sorts most-expensive-first via sortBy=listPriceDesc;
-//          "false" or omitted searches the whole board in Repliers' own
-//          default order)
+//          below, and defaults to sortBy=listPriceDesc unless overridden;
+//          "false" or omitted searches the whole board, defaulting to
+//          Repliers' own newest-first order)
 // GET /api/repliers?mlsNumber=...    -> single listing (see useRepliersListing.js)
 import { searchRepliersListings, getRepliersListing, normalizeRepliersListing } from "./_lib/repliers.js";
+
+// Allowlist, not a passthrough -- a client-supplied sortBy is user
+// input, so only ever forward one of Repliers' own documented values.
+// See IdxListings.jsx's sort dropdown for the matching labels.
+const SORT_OPTIONS = new Set(["createdOnDesc", "listPriceDesc", "listPriceAsc", "sqftDesc"]);
 
 // The exact name to filter by is whatever MLSOK (and each future board)
 // has on file for this brokerage's office record, which can differ from
@@ -29,7 +35,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { mlsNumber, city, minPrice, maxPrice, minBeds, minBaths, status, pageNum, resultsPerPage, office } =
+  const { mlsNumber, city, minPrice, maxPrice, minBeds, minBaths, status, pageNum, resultsPerPage, office, sortBy } =
     req.query;
 
   if (mlsNumber) {
@@ -63,10 +69,10 @@ export default async function handler(req, res) {
       // pass through a client-supplied brokerage name, so this scoping
       // can't be tampered with from the browser.
       brokerage: office === "true" ? OFFICE_BROKERAGE_NAME : undefined,
-      // The Agency's own listings (Our Listings + the Home page preview)
-      // lead with the most expensive first, per request. The open Home
-      // Search page keeps Repliers' own default order.
-      sortBy: office === "true" ? "listPriceDesc" : undefined,
+      // The Agency's own listings default to most-expensive-first; the
+      // open Home Search page defaults to Repliers' own (newest-first)
+      // order. Either can be overridden by the sort dropdown.
+      sortBy: SORT_OPTIONS.has(sortBy) ? sortBy : office === "true" ? "listPriceDesc" : undefined,
     });
 
     const listings = (data.listings || []).map(normalizeRepliersListing);

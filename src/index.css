@@ -325,3 +325,45 @@
 .rich-text h3:first-child {
   margin-top: 0;
 }
+
+/* Home Search's map (IdxMap.jsx) — price-bubble markers and cluster
+   badges, styled as plain divIcon HTML rather than Leaflet's default pin
+   image (which needs bundler-specific asset-path workarounds we don't
+   need here since nothing uses the default icon at all). Not themed via
+   --as-* tokens: the map sits on its own white/gray basemap regardless
+   of the brokerage site's theme, so a fixed brand-adjacent palette reads
+   better than an accent color that might clash with OSM's tile colors. */
+.idx-price-bubble {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  background: #1a1a1a;
+  color: #fff;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+.idx-cluster-bubble {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: #a84e2b;
+  color: #fff;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+}
