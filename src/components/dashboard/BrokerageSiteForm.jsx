@@ -101,9 +101,15 @@ const LOGO_VARIANTS = [
 
 // Hero and Contact are always shown, in fixed position (Hero first,
 // Contact last) — see HomeSections.jsx — so they're not in this list.
-const HOME_SECTION_LABELS = { about: "About", agents: "Agents", areas: "Areas of Expertise", blog: "Blog" };
+const HOME_SECTION_LABELS = {
+  about: "About",
+  agents: "Agents",
+  areas: "Areas of Expertise",
+  blog: "Blog",
+  listings: "Listings",
+};
 const ALL_SECTION_KEYS = Object.keys(HOME_SECTION_LABELS);
-const DEFAULT_HOME_SECTIONS = ["about", "agents", "blog", "areas"];
+const DEFAULT_HOME_SECTIONS = ["about", "agents", "listings", "blog", "areas"];
 
 // Site-level details for the brokerage site — parallel to SiteForm.jsx
 // (agent sites), minus slug/region/secondary-logo/custom-domain, which

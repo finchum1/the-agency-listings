@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useRepliersListings } from "../../hooks/useRepliersListings";
 import { formatPrice, STATUS_LABELS } from "../../lib/format";
 
@@ -12,23 +13,33 @@ const PRICE_OPTIONS = [
 
 const BEDS_OPTIONS = ["Any Beds", "3+", "4+", "5+"];
 
-// Live MLS search for the Brokerage Site's /brokerage/listings page —
-// first IDX integration built against Repliers (see IDX & Next.js
-// Roadmap, Stage 1). Same visual language as AgentRoster.jsx/
-// FeaturedListings.jsx (--as-* tokens), so it reads as part of the same
-// site rather than a bolted-on widget.
-export default function IdxListings({ isStandalonePage = false }) {
+// Live MLS search for the Brokerage Site. `preview` (used on Home, via
+// HomeSections.jsx) caps to 3 results, drops the filter bar, and adds a
+// "View All Listings" link — same convention as AgentRoster.jsx/
+// AreasOfExpertise.jsx/BlogList.jsx. The standalone /brokerage/listings
+// page (isStandalonePage) shows the full filterable search. First IDX
+// integration built against Repliers (see IDX & Next.js Roadmap, Stage 1).
+export default function IdxListings({ isStandalonePage = false, preview = false }) {
   const [priceIdx, setPriceIdx] = useState(0);
   const [beds, setBeds] = useState("");
   const [city, setCity] = useState("");
 
   const price = PRICE_OPTIONS[priceIdx];
-  const { listings, meta, loading, error } = useRepliersListings({
-    minPrice: price.min,
-    maxPrice: price.max,
-    minBeds: beds,
-    city,
-  });
+  const { listings, meta, loading, error } = useRepliersListings(
+    preview
+      ? { resultsPerPage: 3 }
+      : {
+          minPrice: price.min,
+          maxPrice: price.max,
+          minBeds: beds,
+          city,
+        },
+  );
+
+  // Preview (Home) hides the whole section rather than showing a broken
+  // or empty-looking block — same convention as AgentRoster.jsx returning
+  // null when there's nothing to show.
+  if (preview && !loading && (error || listings.length === 0)) return null;
 
   const Heading = isStandalonePage ? "h1" : "h2";
 
@@ -39,40 +50,42 @@ export default function IdxListings({ isStandalonePage = false }) {
           Current Listings
         </p>
         <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-10 text-[var(--as-text)]">
-          Search Homes For Sale
+          {preview ? "Featured Homes For Sale" : "Search Homes For Sale"}
         </Heading>
 
-        <div className="mb-12 flex flex-wrap gap-3 border border-[var(--as-text)]/10 bg-[var(--as-bg)] p-4">
-          <input
-            type="text"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            placeholder="City (e.g. Edmond)"
-            className="flex-1 min-w-[160px] border border-[var(--as-text)]/10 bg-transparent px-4 py-3 text-sm text-[var(--as-text)] placeholder:text-[var(--as-text)]/40 outline-none"
-          />
-          <select
-            value={priceIdx}
-            onChange={(e) => setPriceIdx(Number(e.target.value))}
-            className="flex-1 min-w-[160px] border border-[var(--as-text)]/10 bg-transparent px-4 py-3 text-sm text-[var(--as-text)]/80 outline-none"
-          >
-            {PRICE_OPTIONS.map((opt, i) => (
-              <option key={opt.label} value={i}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-          <select
-            value={beds}
-            onChange={(e) => setBeds(e.target.value)}
-            className="flex-1 min-w-[160px] border border-[var(--as-text)]/10 bg-transparent px-4 py-3 text-sm text-[var(--as-text)]/80 outline-none"
-          >
-            {BEDS_OPTIONS.map((label, i) => (
-              <option key={label} value={i === 0 ? "" : String(i + 2)}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!preview && (
+          <div className="mb-12 flex flex-wrap gap-3 border border-[var(--as-text)]/10 bg-[var(--as-bg)] p-4">
+            <input
+              type="text"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              placeholder="City (e.g. Edmond)"
+              className="flex-1 min-w-[160px] border border-[var(--as-text)]/10 bg-transparent px-4 py-3 text-sm text-[var(--as-text)] placeholder:text-[var(--as-text)]/40 outline-none"
+            />
+            <select
+              value={priceIdx}
+              onChange={(e) => setPriceIdx(Number(e.target.value))}
+              className="flex-1 min-w-[160px] border border-[var(--as-text)]/10 bg-transparent px-4 py-3 text-sm text-[var(--as-text)]/80 outline-none"
+            >
+              {PRICE_OPTIONS.map((opt, i) => (
+                <option key={opt.label} value={i}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={beds}
+              onChange={(e) => setBeds(e.target.value)}
+              className="flex-1 min-w-[160px] border border-[var(--as-text)]/10 bg-transparent px-4 py-3 text-sm text-[var(--as-text)]/80 outline-none"
+            >
+              {BEDS_OPTIONS.map((label, i) => (
+                <option key={label} value={i === 0 ? "" : String(i + 2)}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {loading && <p className="text-sm text-[var(--as-text)]/50">Searching listings…</p>}
 
@@ -82,7 +95,7 @@ export default function IdxListings({ isStandalonePage = false }) {
           </p>
         )}
 
-        {!loading && !error && listings.length === 0 && (
+        {!loading && !error && listings.length === 0 && !preview && (
           <p className="text-sm text-[var(--as-text)]/50">No listings match those filters right now.</p>
         )}
 
@@ -115,9 +128,20 @@ export default function IdxListings({ isStandalonePage = false }) {
                 </a>
               ))}
             </div>
-            <p className="mt-10 text-xs text-[var(--as-text)]/40">
-              {meta.count} listing{meta.count === 1 ? "" : "s"} · data provided by MLS, updated live
-            </p>
+            {preview ? (
+              <div className="mt-14 flex justify-center">
+                <Link
+                  to="/brokerage/listings"
+                  className="border border-[var(--as-text)]/20 px-8 py-3 text-xs font-medium tracked-wide uppercase text-[var(--as-text)] transition-colors hover:bg-[var(--as-text)] hover:text-[var(--as-bg)]"
+                >
+                  View All Listings
+                </Link>
+              </div>
+            ) : (
+              <p className="mt-10 text-xs text-[var(--as-text)]/40">
+                {meta.count} listing{meta.count === 1 ? "" : "s"} · data provided by MLS, updated live
+              </p>
+            )}
           </>
         )}
       </div>
