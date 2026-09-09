@@ -27,9 +27,16 @@ export default defineConfig({
         display: 'standalone',
         background_color: '#f7f4ee',
         theme_color: '#ed2127',
+        // "any maskable" — the source mark (favicon-512.png) runs nearly
+        // edge-to-edge, which is fine for a plain favicon but gets clipped
+        // by Android's adaptive-icon mask and other OS-level icon shapes.
+        // pwa-192/512.png are regenerated with the mark scaled to the
+        // standard 80% safe zone, padded back out with the exact brand
+        // red (#ed2127) so there's no seam — safe under any mask shape,
+        // and still looks correct unmasked.
         icons: [
-          { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/pwa-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+          { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
       // Precaches the built app shell (JS/CSS/HTML) only — no
