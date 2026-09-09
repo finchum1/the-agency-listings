@@ -25,14 +25,14 @@ export default function FilterBar({
   onClear,
   hasActiveFilters,
 }) {
-  const fieldLabelClass = "block text-[10px] font-semibold uppercase tracking-wide text-[#1c1a17]/40 mb-1";
+  const fieldLabelClass = "block text-[10px] font-semibold uppercase tracking-wide text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-1";
   const selectClass =
-    "rounded-lg border border-black/10 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
+    "rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
   const numberClass = `${selectClass} w-24`;
   const smallNumberClass = `${selectClass} w-16`;
 
   return (
-    <div className="bg-white border border-black/5 rounded-2xl p-4 mb-4 flex flex-wrap items-end gap-x-5 gap-y-3">
+    <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-4 mb-4 flex flex-wrap items-end gap-x-5 gap-y-3">
       <div>
         <label className={fieldLabelClass}>Status</label>
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -40,7 +40,7 @@ export default function FilterBar({
             type="button"
             onClick={() => onStatusChange("all")}
             className={`text-xs font-semibold rounded-full px-3 py-1.5 transition-colors ${
-              statusValue === "all" ? "bg-[#1c1a17] text-white" : "bg-black/5 text-[#1c1a17]/70 hover:bg-black/10"
+              statusValue === "all" ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/10 dark:hover:bg-white/15"
             }`}
           >
             All
@@ -55,7 +55,7 @@ export default function FilterBar({
                   ? { background: statusColors[value], color: "#fff" }
                   : { background: "rgba(0,0,0,0.05)" }
               }
-              className="text-xs font-semibold rounded-full px-3 py-1.5 transition-colors text-[#1c1a17]/70 hover:bg-black/10"
+              className="text-xs font-semibold rounded-full px-3 py-1.5 transition-colors text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/10 dark:hover:bg-white/15"
             >
               {label}
             </button>
@@ -120,7 +120,7 @@ export default function FilterBar({
       </div>
 
       {hasActiveFilters && (
-        <button type="button" onClick={onClear} className="text-xs font-medium text-[#ed2127] hover:underline pb-2">
+        <button type="button" onClick={onClear} className="text-xs font-medium text-[#ed2127] dark:text-[#f2454b] hover:underline pb-2">
           Clear filters
         </button>
       )}

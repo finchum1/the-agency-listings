@@ -9,10 +9,10 @@ import PillSelect from "./PillSelect";
 // from the real thing.
 export default function UpcomingListingsTable({ rows, statusLabels, statusColors, canEdit, onStatusChange, onEdit, onDelete }) {
   return (
-    <div className="bg-white border border-black/5 rounded-2xl overflow-hidden overflow-x-auto">
+    <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl overflow-hidden overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-black/5 text-left text-xs uppercase tracking-wider text-[#1c1a17]/40">
+          <tr className="border-b border-black/5 dark:border-white/10 text-left text-xs uppercase tracking-wider text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
             <th className="px-5 py-3 font-medium">Address / Area</th>
             <th className="px-5 py-3 font-medium">Beds / Baths / Sqft</th>
             <th className="px-5 py-3 font-medium">Est. Price</th>
@@ -24,34 +24,34 @@ export default function UpcomingListingsTable({ rows, statusLabels, statusColors
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.id} className="border-b border-black/5 last:border-0 hover:bg-black/[0.02] align-top">
+            <tr key={row.id} className="border-b border-black/5 dark:border-white/10 last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.04] align-top">
               <td className="px-5 py-4">
                 <p className="font-medium">{row.address_line1 || row.city || "—"}</p>
                 {(row.city || row.state) && (
-                  <p className="text-xs text-[#1c1a17]/50">
+                  <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
                     {[row.city, row.state, row.zip].filter(Boolean).join(", ")}
                   </p>
                 )}
                 {row.notes && (
-                  <p className="text-xs text-[#1c1a17]/50 mt-1 max-w-xs truncate" title={row.notes}>
+                  <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1 max-w-xs truncate" title={row.notes}>
                     {row.notes}
                   </p>
                 )}
               </td>
-              <td className="px-5 py-4 text-[#1c1a17]/70 whitespace-nowrap">
+              <td className="px-5 py-4 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 whitespace-nowrap">
                 {[row.beds != null ? `${row.beds} bd` : null, row.baths != null ? `${row.baths} ba` : null, row.sqft != null ? `${row.sqft.toLocaleString()} sqft` : null]
                   .filter(Boolean)
                   .join(" | ") || "—"}
               </td>
-              <td className="px-5 py-4 text-[#1c1a17]/70 whitespace-nowrap">
+              <td className="px-5 py-4 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 whitespace-nowrap">
                 {row.price_estimate != null ? formatPrice(row.price_estimate) : "—"}
               </td>
-              <td className="px-5 py-4 text-[#1c1a17]/70 whitespace-nowrap text-xs">
+              <td className="px-5 py-4 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 whitespace-nowrap text-xs">
                 {row.expected_list_date
                   ? new Date(`${row.expected_list_date}T00:00:00`).toLocaleDateString()
                   : "—"}
               </td>
-              <td className="px-5 py-4 text-[#1c1a17]/70 whitespace-nowrap">
+              <td className="px-5 py-4 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 whitespace-nowrap">
                 {row.agent?.full_name || "—"}
               </td>
               <td className="px-5 py-4">
@@ -66,10 +66,10 @@ export default function UpcomingListingsTable({ rows, statusLabels, statusColors
               <td className="px-5 py-4 text-right whitespace-nowrap">
                 {canEdit(row) && (
                   <div className="flex items-center justify-end gap-3">
-                    <button onClick={() => onEdit(row)} className="text-xs text-[#1c1a17]/60 hover:text-[#1c1a17]">
+                    <button onClick={() => onEdit(row)} className="text-xs text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
                       Edit
                     </button>
-                    <button onClick={() => onDelete(row)} className="text-xs text-[#1c1a17]/40 hover:text-red-600">
+                    <button onClick={() => onDelete(row)} className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400">
                       Delete
                     </button>
                   </div>

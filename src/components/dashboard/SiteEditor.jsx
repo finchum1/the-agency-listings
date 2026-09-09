@@ -21,15 +21,15 @@ export default function SiteEditor({ agentId, agentName, heading }) {
   const postIds = useMemo(() => posts.map((p) => p.id), [posts]);
   const analytics = useSiteAnalytics({ siteId: site?.id, postIds });
 
-  if (loading) return <p className="text-sm text-[#1c1a17]/50">Loading…</p>;
-  if (error) return <p className="text-sm text-red-600">{error}</p>;
+  if (loading) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
+  if (error) return <p className="text-sm text-red-600 dark:text-red-400">{error}</p>;
   if (!site) return null;
 
   return (
     <div className="max-w-3xl space-y-8">
       <div>
         <h1 className="text-2xl font-display font-semibold">{heading || "My Site"}</h1>
-        <p className="text-sm text-[#1c1a17]/60 mt-1">
+        <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
           Your bio, testimonials, areas of expertise, and blog posts. Your listings show
           automatically — no separate step needed.
         </p>

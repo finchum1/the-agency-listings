@@ -7,10 +7,10 @@ import StatusSelect from "./StatusSelect";
 // BuyerNeedsTable.jsx for the same pattern already established there).
 export default function ListingsDataTable({ rows, onStatusChange }) {
   return (
-    <div className="bg-white border border-black/5 rounded-2xl overflow-hidden overflow-x-auto">
+    <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl overflow-hidden overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-black/5 text-left text-xs uppercase tracking-wider text-[#1c1a17]/40">
+          <tr className="border-b border-black/5 dark:border-white/10 text-left text-xs uppercase tracking-wider text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
             <th className="px-5 py-3 font-medium">Address</th>
             <th className="px-5 py-3 font-medium">Agent</th>
             <th className="px-5 py-3 font-medium">Price</th>
@@ -21,21 +21,21 @@ export default function ListingsDataTable({ rows, onStatusChange }) {
         </thead>
         <tbody>
           {rows.map((listing) => (
-            <tr key={listing.id} className="border-b border-black/5 last:border-0 hover:bg-black/[0.02]">
+            <tr key={listing.id} className="border-b border-black/5 dark:border-white/10 last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.04]">
               <td className="px-5 py-4">
                 <Link to={`/dashboard/listings/${listing.id}/edit`} className="font-medium hover:underline">
                   {listing.address_line1}
                 </Link>
-                <p className="text-xs text-[#1c1a17]/50">
+                <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
                   {listing.city}, {listing.state} {listing.zip}
                 </p>
               </td>
-              <td className="px-5 py-4 text-[#1c1a17]/70">{listing.agent?.full_name || "—"}</td>
-              <td className="px-5 py-4 text-[#1c1a17]/70">{formatPrice(listing.price)}</td>
+              <td className="px-5 py-4 text-[#1c1a17]/70 dark:text-[#faf9f7]/70">{listing.agent?.full_name || "—"}</td>
+              <td className="px-5 py-4 text-[#1c1a17]/70 dark:text-[#faf9f7]/70">{formatPrice(listing.price)}</td>
               <td className="px-5 py-4">
                 <StatusSelect value={listing.status} onChange={(status) => onStatusChange(listing.id, status)} />
               </td>
-              <td className="px-5 py-4 text-[#1c1a17]/50 text-xs">
+              <td className="px-5 py-4 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 text-xs">
                 {new Date(listing.updated_at).toLocaleDateString()}
               </td>
               <td className="px-5 py-4 text-right">
@@ -45,12 +45,12 @@ export default function ListingsDataTable({ rows, onStatusChange }) {
                       href={`/listings/${listing.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-[#ed2127] hover:underline"
+                      className="text-xs text-[#ed2127] dark:text-[#f2454b] hover:underline"
                     >
                       View live
                     </a>
                   )}
-                  <Link to={`/dashboard/listings/${listing.id}/edit`} className="text-xs text-[#1c1a17]/60 hover:text-[#1c1a17]">
+                  <Link to={`/dashboard/listings/${listing.id}/edit`} className="text-xs text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
                     Edit
                   </Link>
                 </div>

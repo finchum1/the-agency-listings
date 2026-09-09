@@ -21,7 +21,7 @@ export default function UpcomingModule() {
     <div>
       <div className="mb-2">
         <h1 className="text-2xl font-display font-semibold">Upcoming</h1>
-        <p className="text-sm text-[#1c1a17]/60 mt-1">
+        <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
           Coming-soon listings and what buyers are looking for — all in one place.
         </p>
       </div>
@@ -33,7 +33,7 @@ export default function UpcomingModule() {
             type="button"
             onClick={() => setView(v.value)}
             className={`text-xs font-semibold rounded-full px-4 py-2 transition-colors ${
-              view === v.value ? "bg-[#1c1a17] text-white" : "bg-black/5 text-[#1c1a17]/70 hover:bg-black/10"
+              view === v.value ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/10 dark:hover:bg-white/15"
             }`}
           >
             {v.label}
@@ -43,7 +43,7 @@ export default function UpcomingModule() {
 
       {(view === "all" || view === "listings") && <UpcomingListingsSection />}
 
-      {view === "all" && <div className="border-t border-black/5 my-12" />}
+      {view === "all" && <div className="border-t border-black/5 dark:border-white/10 my-12" />}
 
       {(view === "all" || view === "buyers") && <BuyerNeedsSection />}
     </div>

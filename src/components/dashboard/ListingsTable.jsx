@@ -43,13 +43,13 @@ export default function ListingsTable() {
       <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
         <div>
           <h1 className="text-2xl font-display font-semibold">Listings</h1>
-          <p className="text-sm text-[#1c1a17]/60 mt-1">
+          <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
             {listings.length} listing{listings.length === 1 ? "" : "s"}
           </p>
         </div>
         <Link
           to="/dashboard/listings/new"
-          className="rounded-full bg-[#1c1a17] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 transition-colors"
+          className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors"
         >
           + New Listing
         </Link>
@@ -61,7 +61,7 @@ export default function ListingsTable() {
         <button
           onClick={() => setFilter("all")}
           className={`text-xs font-semibold rounded-full px-3 py-1.5 transition-colors ${
-            filter === "all" ? "bg-[#1c1a17] text-white" : "bg-black/5 text-[#1c1a17]/70 hover:bg-black/10"
+            filter === "all" ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/10 dark:hover:bg-white/15"
           }`}
         >
           All
@@ -71,7 +71,7 @@ export default function ListingsTable() {
             key={value}
             onClick={() => setFilter(value)}
             className={`text-xs font-semibold rounded-full px-3 py-1.5 transition-colors ${
-              filter === value ? "bg-[#1c1a17] text-white" : "bg-black/5 text-[#1c1a17]/70 hover:bg-black/10"
+              filter === value ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/10 dark:hover:bg-white/15"
             }`}
           >
             {label}
@@ -79,12 +79,12 @@ export default function ListingsTable() {
         ))}
       </div>
 
-      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>}
       {loading ? (
-        <p className="text-sm text-[#1c1a17]/50">Loading…</p>
+        <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>
       ) : filtered.length === 0 ? (
-        <div className="bg-white border border-black/5 rounded-2xl p-12 text-center">
-          <p className="text-[#1c1a17]/60">No listings yet.</p>
+        <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-12 text-center">
+          <p className="text-[#1c1a17]/60 dark:text-[#faf9f7]/60">No listings yet.</p>
         </div>
       ) : (
         <ListingsDataTable rows={filtered} onStatusChange={handleStatusChange} />

@@ -2,6 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Anti-flash: applies the `dark` class before first paint, matching
+         src/hooks/useTheme.js's own rule exactly (same storage key,
+         same "system" fallback) so the dashboard never flashes light
+         before React mounts and re-derives the same answer. Harmless on
+         every other host too — the public site templates never use
+         `dark:` utilities, so this class has no visible effect there. -->
+    <script>
+      (function () {
+        try {
+          var pref = localStorage.getItem("dash-theme") || "system";
+          var dark = pref === "dark" || (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("dark");
+        } catch (e) {}
+      })();
+    </script>
     <!-- The Agency's own red mark, white-on-brand-red — applies to every
          hostname this app serves (the dashboard, and every agent's/
          listing's own custom domain), since it's all one SPA/index.html. -->

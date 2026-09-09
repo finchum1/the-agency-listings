@@ -298,12 +298,12 @@ export default function ListingForm({ mode, listing, onSaved }) {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
-  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-5">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-semibold">Basics</h2>
           <StatusSelect value={form.status} onChange={(status) => setForm((f) => ({ ...f, status }))} />
@@ -323,7 +323,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
           <div>
             <label className={labelClass}>
               URL slug{" "}
-              <span className="text-[#1c1a17]/40 normal-case font-normal">
+              <span className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 normal-case font-normal">
                 (site will be /listings/{form.slug || "…"})
               </span>
             </label>
@@ -391,10 +391,10 @@ export default function ListingForm({ mode, listing, onSaved }) {
         )}
       </div>
 
-      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
         <div>
           <h2 className="font-display text-lg font-semibold">Site Template</h2>
-          <p className="text-xs text-[#1c1a17]/50 mt-1">
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">
             The overall structure of the public site — Theme/Accent/Font/Logo below only apply
             to Classic; Luxury has its own fixed look.
           </p>
@@ -407,31 +407,31 @@ export default function ListingForm({ mode, listing, onSaved }) {
               onClick={() => setForm((f) => ({ ...f, site_template: t.value }))}
               className={`text-left rounded-xl border p-3.5 transition-colors ${
                 form.site_template === t.value
-                  ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
-                  : "border-black/10 hover:border-black/20"
+                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                  : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
               <p className="text-sm font-semibold">{t.label}</p>
-              <p className="text-xs text-[#1c1a17]/50 mt-0.5 leading-snug">{t.description}</p>
+              <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{t.description}</p>
             </button>
           ))}
         </div>
       </div>
 
       {form.site_template === "luxury" ? (
-        <div className="bg-white border border-black/5 rounded-2xl p-6">
+        <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6">
           <h2 className="font-display text-lg font-semibold mb-1.5">Theme, Accent, Font, Logo</h2>
-          <p className="text-xs text-[#1c1a17]/50">
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
             Not used by the Luxury template — it has its own fixed dark, editorial look. Switch
             back to Classic above to customize these.
           </p>
         </div>
       ) : (
         <>
-      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
         <div>
           <h2 className="font-display text-lg font-semibold">Theme</h2>
-          <p className="text-xs text-[#1c1a17]/50 mt-1">
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">
             Changes how this listing's public site looks — every template still uses The
             Agency's own brand red, only the background/text neutrals change.
           </p>
@@ -444,26 +444,26 @@ export default function ListingForm({ mode, listing, onSaved }) {
               onClick={() => setForm((f) => ({ ...f, theme: t.value }))}
               className={`text-left rounded-xl border p-3.5 transition-colors ${
                 form.theme === t.value
-                  ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
-                  : "border-black/10 hover:border-black/20"
+                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                  : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
               <div className="flex gap-1.5 mb-2.5">
                 {t.swatches.map((c, i) => (
-                  <span key={i} className="h-5 w-5 rounded-full border border-black/10" style={{ background: c }} />
+                  <span key={i} className="h-5 w-5 rounded-full border border-black/10 dark:border-white/15" style={{ background: c }} />
                 ))}
               </div>
               <p className="text-sm font-semibold">{t.label}</p>
-              <p className="text-xs text-[#1c1a17]/50 mt-0.5 leading-snug">{t.description}</p>
+              <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{t.description}</p>
             </button>
           ))}
         </div>
       </div>
 
-      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
         <div>
           <h2 className="font-display text-lg font-semibold">Accent color</h2>
-          <p className="text-xs text-[#1c1a17]/50 mt-1">
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">
             Kept to The Agency's own brand colors — not a free color picker.
           </p>
         </div>
@@ -476,12 +476,12 @@ export default function ListingForm({ mode, listing, onSaved }) {
               title={opt.label}
               className={`flex items-center gap-1.5 rounded-full border pl-1.5 pr-3 py-1.5 text-xs font-medium transition-colors ${
                 form.accent_color === opt.value
-                  ? "border-[#1c1a17] text-[#1c1a17]"
-                  : "border-black/10 text-[#1c1a17]/60 hover:border-black/20"
+                  ? "border-[#1c1a17] dark:border-[#faf9f7] text-[#1c1a17] dark:text-[#faf9f7]"
+                  : "border-black/10 dark:border-white/15 text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
               <span
-                className="h-5 w-5 rounded-full border border-black/10"
+                className="h-5 w-5 rounded-full border border-black/10 dark:border-white/15"
                 style={{ background: opt.swatch || "repeating-conic-gradient(#e7e2d6 0% 25%, #fff 0% 50%) 0 / 8px 8px" }}
               />
               {opt.label}
@@ -490,7 +490,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
         </div>
       </div>
 
-      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
         <h2 className="font-display text-lg font-semibold">Font pairing</h2>
         <div className="grid sm:grid-cols-3 gap-3">
           {FONT_PAIRINGS.map((f) => (
@@ -500,12 +500,12 @@ export default function ListingForm({ mode, listing, onSaved }) {
               onClick={() => setForm((prev) => ({ ...prev, font_pairing: f.value }))}
               className={`text-left rounded-xl border p-3.5 transition-colors ${
                 form.font_pairing === f.value
-                  ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
-                  : "border-black/10 hover:border-black/20"
+                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                  : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
               {f.tag && (
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#ed2127] mb-1.5">{f.tag}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#ed2127] dark:text-[#f2454b] mb-1.5">{f.tag}</p>
               )}
               <p className="text-lg leading-none mb-2" style={{ fontFamily: f.display }}>
                 Aa
@@ -518,10 +518,10 @@ export default function ListingForm({ mode, listing, onSaved }) {
         </div>
       </div>
 
-      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
         <div>
           <h2 className="font-display text-lg font-semibold">Logo</h2>
-          <p className="text-xs text-[#1c1a17]/50 mt-1">
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">
             Same official mark, three colors — pick whichever reads best against your template.
           </p>
         </div>
@@ -533,8 +533,8 @@ export default function ListingForm({ mode, listing, onSaved }) {
               onClick={() => setForm((f) => ({ ...f, logo_variant: v.value }))}
               className={`rounded-xl border p-2.5 transition-colors ${
                 form.logo_variant === v.value
-                  ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
-                  : "border-black/10 hover:border-black/20"
+                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                  : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
               <div className="h-10 w-24 rounded-md flex items-center justify-center px-2" style={{ background: v.chipBg }}>
@@ -548,7 +548,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
         </>
       )}
 
-      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-5">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-5">
         <h2 className="font-display text-lg font-semibold">Quick Facts</h2>
         <div className="grid sm:grid-cols-3 gap-4">
           <div>
@@ -588,9 +588,9 @@ export default function ListingForm({ mode, listing, onSaved }) {
         </div>
       </div>
 
-      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-3">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-3">
         <h2 className="font-display text-lg font-semibold">Description</h2>
-        <p className="text-xs text-[#1c1a17]/50">
+        <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
           Separate paragraphs with a blank line — each becomes its own paragraph on the site.
         </p>
         <textarea
@@ -601,22 +601,22 @@ export default function ListingForm({ mode, listing, onSaved }) {
         />
       </div>
 
-      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-semibold">Features</h2>
           <button
             type="button"
             onClick={addFeatureGroup}
-            className="text-xs font-semibold text-[#ed2127] hover:underline"
+            className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline"
           >
             + Add category
           </button>
         </div>
         {features.length === 0 && (
-          <p className="text-sm text-[#1c1a17]/40">No feature categories yet.</p>
+          <p className="text-sm text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No feature categories yet.</p>
         )}
         {features.map((group, i) => (
-          <div key={i} className="border border-black/5 rounded-xl p-4 space-y-2">
+          <div key={i} className="border border-black/5 dark:border-white/10 rounded-xl p-4 space-y-2">
             <div className="flex items-center gap-3">
               <input
                 value={group.category}
@@ -627,7 +627,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
               <button
                 type="button"
                 onClick={() => removeFeatureGroup(i)}
-                className="text-xs text-red-600 hover:underline whitespace-nowrap"
+                className="text-xs text-red-600 dark:text-red-400 hover:underline whitespace-nowrap"
               >
                 Remove
               </button>
@@ -643,11 +643,11 @@ export default function ListingForm({ mode, listing, onSaved }) {
         ))}
       </div>
 
-      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-3">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-3">
         <h2 className="font-display text-lg font-semibold">
           Hero Video {form.site_template === "luxury" ? "" : "(optional)"}
         </h2>
-        <p className="text-xs text-[#1c1a17]/50">
+        <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
           {form.site_template === "luxury"
             ? "This is what the Luxury template's scroll effect plays through — leave it unset and the hero falls back to a static photo instead."
             : "Leave unset to use the hero photo instead."}
@@ -661,7 +661,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
             label="Video file"
           />
         ) : (
-          <p className="text-xs text-[#1c1a17]/40">
+          <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
             Save this listing first, then come back here to upload a video file.
           </p>
         )}
@@ -676,10 +676,10 @@ export default function ListingForm({ mode, listing, onSaved }) {
         </div>
       </div>
 
-      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
         <div>
           <h2 className="font-display text-lg font-semibold">SEO &amp; Sharing (optional)</h2>
-          <p className="text-xs text-[#1c1a17]/50 mt-1">
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">
             Controls the title/description search engines show and the preview card when this
             listing is shared in text messages, Slack, or social apps. Leave blank to use sensible
             defaults built from the address and description above.
@@ -715,9 +715,9 @@ export default function ListingForm({ mode, listing, onSaved }) {
         </div>
       </div>
 
-      <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-3">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-3">
         <h2 className="font-display text-lg font-semibold">Custom Domain (optional)</h2>
-        <p className="text-xs text-[#1c1a17]/50">
+        <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
           Once a domain is purchased and pointed at this project (ask your admin), enter it here
           and this listing will serve directly at that address — e.g. visiting{" "}
           <span className="font-medium">1645SaratogaWay.com</span> shows this listing at the root
@@ -731,12 +731,12 @@ export default function ListingForm({ mode, listing, onSaved }) {
         />
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       <button
         type="submit"
         disabled={saving}
-        className="rounded-full bg-[#1c1a17] text-white text-sm font-semibold px-8 py-3 hover:bg-[#1c1a17]/90 transition-colors disabled:opacity-60"
+        className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-8 py-3 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60"
       >
         {saving ? "Saving…" : mode === "create" ? "Create Listing" : "Save Changes"}
       </button>

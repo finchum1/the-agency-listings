@@ -7,7 +7,7 @@ export default function AnalyticsStats({ stats, viewsLabel = "Views", leadsLabel
     return (
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="bg-white border border-black/5 rounded-2xl p-5 h-[76px] animate-pulse" />
+          <div key={i} className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-5 h-[76px] animate-pulse" />
         ))}
       </div>
     );
@@ -23,9 +23,9 @@ export default function AnalyticsStats({ stats, viewsLabel = "Views", leadsLabel
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
       {cards.map((c) => (
-        <div key={c.label} className="bg-white border border-black/5 rounded-2xl p-5">
+        <div key={c.label} className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-5">
           <p className="text-2xl font-display font-semibold">{c.value.toLocaleString()}</p>
-          <p className="text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 mt-1">
+          <p className="text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">
             {c.label}
           </p>
         </div>

@@ -46,7 +46,7 @@ export default function DashboardLayout() {
 
   const navLinkClass = (isActive) =>
     `block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-      isActive ? "bg-[#1c1a17]/10 text-[#1c1a17]" : "text-[#1c1a17]/70 hover:bg-black/5"
+      isActive ? "bg-[#1c1a17]/10 dark:bg-[#faf9f7]/10 text-[#1c1a17] dark:text-[#faf9f7]" : "text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10"
     }`;
 
   const avatarSrc =
@@ -64,7 +64,7 @@ export default function DashboardLayout() {
       </div>
       {isAdmin && (
         <div className="mt-6">
-          <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-[#1c1a17]/40">Admin</p>
+          <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-[#1c1a17]/40 dark:text-[#faf9f7]/40">Admin</p>
           <div className="space-y-1">
             {ADMIN_ITEMS.map((item) => (
               <Link
@@ -87,17 +87,17 @@ export default function DashboardLayout() {
       <Link
         to="/dashboard/profile"
         onClick={onNavigate}
-        className="flex items-center gap-2.5 text-sm text-[#1c1a17]/70 hover:text-[#1c1a17] transition-colors min-w-0"
+        className="flex items-center gap-2.5 text-sm text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] transition-colors min-w-0"
       >
-        <img src={avatarSrc} alt="" className="h-8 w-8 rounded-full object-cover bg-black/5 shrink-0" />
+        <img src={avatarSrc} alt="" className="h-8 w-8 rounded-full object-cover bg-black/5 dark:bg-white/10 shrink-0" />
         <span className="min-w-0">
           <span className="block truncate">{profile?.full_name || profile?.email}</span>
-          {isAdmin && <span className="text-xs font-semibold text-[#ed2127]">ADMIN</span>}
+          {isAdmin && <span className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b]">ADMIN</span>}
         </span>
       </Link>
       <button
         onClick={() => supabase.auth.signOut()}
-        className="text-sm font-medium text-[#1c1a17]/60 hover:text-[#1c1a17] transition-colors"
+        className="text-sm font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] transition-colors"
       >
         Sign out
       </button>
@@ -105,26 +105,26 @@ export default function DashboardLayout() {
   );
 
   return (
-    <div className="min-h-screen bg-[#faf9f7] md:flex">
+    <div className="min-h-screen bg-[#faf9f7] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] scheme-light dark:scheme-dark md:flex">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col md:h-screen md:sticky md:top-0 border-r border-black/5 bg-white">
+      <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col md:h-screen md:sticky md:top-0 border-r border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a]">
         <div className="flex items-center gap-3 px-6 py-6 shrink-0">
           <img src={brokerage.logo} alt={brokerage.name} className="h-9 w-auto" />
-          <span className="h-6 w-px bg-black/10" aria-hidden="true" />
-          <span className="text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50">Oklahoma</span>
+          <span className="h-6 w-px bg-black/10 dark:bg-white/15" aria-hidden="true" />
+          <span className="text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Oklahoma</span>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-4">
           <NavList />
         </nav>
 
-        <div className="px-4 py-5 border-t border-black/5 shrink-0">
+        <div className="px-4 py-5 border-t border-black/5 dark:border-white/10 shrink-0">
           <ProfileBlock />
         </div>
       </aside>
 
       {/* Mobile top bar */}
-      <header className="md:hidden border-b border-black/5 bg-white">
+      <header className="md:hidden border-b border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a]">
         <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <img src={brokerage.logo} alt={brokerage.name} className="h-8 w-auto shrink-0" />
@@ -134,7 +134,7 @@ export default function DashboardLayout() {
             onClick={() => setMobileNavOpen((v) => !v)}
             aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileNavOpen}
-            className="p-2 -mr-1.5 text-[#1c1a17]/70 hover:text-[#1c1a17]"
+            className="p-2 -mr-1.5 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
           >
             {mobileNavOpen ? (
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -149,9 +149,9 @@ export default function DashboardLayout() {
         </div>
 
         {mobileNavOpen && (
-          <nav className="px-4 pb-4 border-t border-black/5 pt-3">
+          <nav className="px-4 pb-4 border-t border-black/5 dark:border-white/10 pt-3">
             <NavList onNavigate={() => setMobileNavOpen(false)} />
-            <div className="mt-5 pt-4 border-t border-black/5">
+            <div className="mt-5 pt-4 border-t border-black/5 dark:border-white/10">
               <ProfileBlock onNavigate={() => setMobileNavOpen(false)} />
             </div>
           </nav>

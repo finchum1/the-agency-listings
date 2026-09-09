@@ -67,8 +67,8 @@ export default function UpcomingListingsSection() {
   }, [upcomingListings, filters]);
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
-  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   const canEdit = (row) => isAdmin || row.agent_id === user?.id;
 
@@ -172,7 +172,7 @@ export default function UpcomingListingsSection() {
       <div className="flex items-center justify-between gap-3 flex-wrap mb-5">
         <div>
           <h2 className="text-xl font-display font-semibold">Upcoming Listings</h2>
-          <p className="text-sm text-[#1c1a17]/60 mt-1">
+          <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
             {hasActiveFilters
               ? `Showing ${filtered.length} of ${upcomingListings.length}`
               : "Coming-soon properties the office knows about, before they're a real listing."}
@@ -181,7 +181,7 @@ export default function UpcomingListingsSection() {
         {editingId === null && (
           <button
             onClick={startAdd}
-            className="rounded-full bg-[#1c1a17] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 transition-colors"
+            className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors"
           >
             + Add Upcoming Listing
           </button>
@@ -189,7 +189,7 @@ export default function UpcomingListingsSection() {
       </div>
 
       {editingId !== null && (
-        <form onSubmit={handleSubmit} className="bg-white border border-black/5 rounded-2xl p-6 space-y-4 mb-6">
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4 mb-6">
           <div className="grid sm:grid-cols-2 gap-4">
             {isAdmin && (
               <div>
@@ -285,16 +285,16 @@ export default function UpcomingListingsSection() {
             <textarea value={form.notes} onChange={update("notes")} rows={4} className={inputClass} placeholder="Anything worth remembering — seller timeline, condition, why it's not listed yet…" />
           </div>
 
-          {formError && <p className="text-sm text-red-600">{formError}</p>}
+          {formError && <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>}
           <div className="flex items-center gap-3">
             <button
               type="submit"
               disabled={saving}
-              className="rounded-full bg-[#1c1a17] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 transition-colors disabled:opacity-60"
+              className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60"
             >
               {saving ? "Saving…" : editingId === "new" ? "Add" : "Save Changes"}
             </button>
-            <button type="button" onClick={cancel} className="text-sm text-[#1c1a17]/50 hover:text-[#1c1a17]">
+            <button type="button" onClick={cancel} className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
               Cancel
             </button>
           </div>
@@ -323,16 +323,16 @@ export default function UpcomingListingsSection() {
         />
       )}
 
-      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>}
       {loading ? (
-        <p className="text-sm text-[#1c1a17]/50">Loading…</p>
+        <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>
       ) : upcomingListings.length === 0 ? (
-        <div className="bg-white border border-black/5 rounded-2xl p-12 text-center">
-          <p className="text-[#1c1a17]/60">No upcoming listings yet.</p>
+        <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-12 text-center">
+          <p className="text-[#1c1a17]/60 dark:text-[#faf9f7]/60">No upcoming listings yet.</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white border border-black/5 rounded-2xl p-12 text-center">
-          <p className="text-[#1c1a17]/60">No upcoming listings match those filters.</p>
+        <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-12 text-center">
+          <p className="text-[#1c1a17]/60 dark:text-[#faf9f7]/60">No upcoming listings match those filters.</p>
         </div>
       ) : (
         <UpcomingListingsTable

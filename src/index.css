@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Dashboard dark mode — a `dark` class on <html>, toggled by useTheme.js
+   (src/hooks/useTheme.js), gates every `dark:` utility below. Scoped to
+   the dashboard app only: the public agent-site/brokerage-site/listing
+   templates use their own [data-theme="..."] world system (see the
+   --as- and --ls- blocks further down) and never reference `dark:`
+   utilities, so toggling this class has no effect on those pages even
+   though it lives on the shared <html> element. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-display: "Playfair Display", "Georgia", serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;

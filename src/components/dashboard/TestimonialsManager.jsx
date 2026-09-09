@@ -14,7 +14,7 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
   const [error, setError] = useState("");
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -54,17 +54,17 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
   };
 
   return (
-    <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+    <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
       <h2 className="font-display text-lg font-semibold">Testimonials</h2>
 
       {testimonials.length === 0 ? (
-        <p className="text-sm text-[#1c1a17]/40">No testimonials yet.</p>
+        <p className="text-sm text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No testimonials yet.</p>
       ) : (
         <div className="space-y-3">
           {testimonials.map((t, i) => (
-            <div key={t.id} className="border border-black/10 rounded-xl p-4 flex items-start justify-between gap-4">
+            <div key={t.id} className="border border-black/10 dark:border-white/15 rounded-xl p-4 flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="text-sm text-[#1c1a17]/80 italic">
+                <div className="text-sm text-[#1c1a17]/80 dark:text-[#faf9f7]/80 italic">
                   “
                   <div
                     className="rich-text inline [&>*]:inline"
@@ -72,14 +72,14 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
                   />
                   ”
                 </div>
-                <p className="text-xs text-[#1c1a17]/50 mt-1">— {t.author}</p>
+                <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">— {t.author}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0 text-xs">
                 <button
                   type="button"
                   onClick={() => move(t, -1)}
                   disabled={i === 0}
-                  className="text-[#1c1a17]/40 hover:text-[#1c1a17] disabled:opacity-30"
+                  className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-30"
                 >
                   ↑
                 </button>
@@ -87,14 +87,14 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
                   type="button"
                   onClick={() => move(t, 1)}
                   disabled={i === testimonials.length - 1}
-                  className="text-[#1c1a17]/40 hover:text-[#1c1a17] disabled:opacity-30"
+                  className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-30"
                 >
                   ↓
                 </button>
                 <button
                   type="button"
                   onClick={() => remove(t)}
-                  className="text-[#1c1a17]/40 hover:text-red-600"
+                  className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400"
                 >
                   ✕
                 </button>
@@ -104,7 +104,7 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
         </div>
       )}
 
-      <form onSubmit={handleAdd} className="space-y-2 pt-2 border-t border-black/5">
+      <form onSubmit={handleAdd} className="space-y-2 pt-2 border-t border-black/5 dark:border-white/10">
         <RichTextEditor
           value={form.quote}
           onChange={(html) => setForm((f) => ({ ...f, quote: html }))}
@@ -121,12 +121,12 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
           <button
             type="submit"
             disabled={saving}
-            className="rounded-full bg-[#1c1a17] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 transition-colors disabled:opacity-60 whitespace-nowrap"
+            className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60 whitespace-nowrap"
           >
             + Add
           </button>
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
       </form>
     </div>
   );

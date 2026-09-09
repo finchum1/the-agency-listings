@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
+import { useTheme } from "../../hooks/useTheme";
 import ImageUploadField from "./ImageUploadField";
+
+const THEME_OPTIONS = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "System" },
+];
 
 // Self-service profile editing — the one gap left over from bootstrapping
 // the first admin directly in the Supabase dashboard (which skips the
@@ -10,6 +17,7 @@ import ImageUploadField from "./ImageUploadField";
 // server-side regardless of what this form sends.
 export default function MyProfilePage() {
   const { profile, user } = useAuth();
+  const [theme, setTheme] = useTheme();
   const [form, setForm] = useState({
     full_name: "",
     title: "",
@@ -52,19 +60,19 @@ export default function MyProfilePage() {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
-  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
-  if (!profile) return <p className="text-sm text-[#1c1a17]/50">Loading…</p>;
+  if (!profile) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
 
   return (
     <div className="max-w-xl">
       <h1 className="text-2xl font-display font-semibold mb-2">My Profile</h1>
-      <p className="text-sm text-[#1c1a17]/60 mb-6">
+      <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-6">
         This is what shows up as your contact info on every listing site you're assigned to.
       </p>
 
-      <form onSubmit={handleSubmit} className="bg-white border border-black/5 rounded-2xl p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-5">
         <ImageUploadField
           bucket="profile-photos"
           folder={user.id}
@@ -103,19 +111,42 @@ export default function MyProfilePage() {
           </div>
         </div>
 
-        <div className="text-sm text-[#1c1a17]/50">Email: {profile.email} (contact your admin to change this)</div>
+        <div className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Email: {profile.email} (contact your admin to change this)</div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        {saved && <p className="text-sm text-emerald-700">Saved.</p>}
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {saved && <p className="text-sm text-emerald-700 dark:text-emerald-400">Saved.</p>}
 
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-[#1c1a17] text-white text-sm font-semibold px-6 py-2.5 hover:bg-[#1c1a17]/90 transition-colors disabled:opacity-60"
+          className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60"
         >
           {saving ? "Saving…" : "Save Changes"}
         </button>
       </form>
+
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mt-6">
+        <h2 className="font-display text-lg font-semibold">Appearance</h2>
+        <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1 mb-4">
+          Switch the dashboard between light and dark, or follow your device's setting.
+        </p>
+        <div className="inline-flex items-center gap-1 rounded-full bg-black/5 dark:bg-white/10 p-1">
+          {THEME_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setTheme(opt.value)}
+              className={`text-xs font-semibold rounded-full px-4 py-2 transition-colors ${
+                theme === opt.value
+                  ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white"
+                  : "text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

@@ -252,26 +252,25 @@ export default function SiteForm({ site, onSaved }) {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
-  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white border border-black/5 rounded-2xl p-6 space-y-5">
+    <form onSubmit={handleSubmit} className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-5">
       <div className="flex items-center justify-between gap-4">
         <h2 className="font-display text-lg font-semibold">Site Details</h2>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs font-medium text-[#1c1a17]/50">
+          <span className="text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
             {form.status === "published" ? "Live" : "Draft — not visible publicly"}
           </span>
           <select
             value={form.status}
             onChange={update("status")}
-            className="text-xs font-semibold rounded-full px-3 py-1.5 border-0 outline-none cursor-pointer"
-            style={
+            className={`text-xs font-semibold rounded-full px-3 py-1.5 border-0 outline-none cursor-pointer ${
               form.status === "published"
-                ? { background: "#3fae5c1a", color: "#3fae5c" }
-                : { background: "#00000010", color: "#1c1a17aa" }
-            }
+                ? "bg-[#3fae5c]/10 text-[#3fae5c]"
+                : "bg-black/10 dark:bg-white/15 text-[#1c1a17]/70 dark:text-[#faf9f7]/70"
+            }`}
           >
             <option value="draft">Draft</option>
             <option value="published">Published</option>
@@ -284,7 +283,7 @@ export default function SiteForm({ site, onSaved }) {
           href={`/sites/${form.slug}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sm text-[#ed2127] hover:underline inline-block"
+          className="text-sm text-[#ed2127] dark:text-[#f2454b] hover:underline inline-block"
         >
           View live site →
         </a>
@@ -294,7 +293,7 @@ export default function SiteForm({ site, onSaved }) {
         <div>
           <label className={labelClass}>URL slug</label>
           <input required value={form.slug} onChange={update("slug")} className={inputClass} />
-          <p className="text-xs text-[#1c1a17]/40 mt-1">/sites/{form.slug || "…"}</p>
+          <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-1">/sites/{form.slug || "…"}</p>
         </div>
         <div>
           <label className={labelClass}>Region / metro area</label>
@@ -327,17 +326,17 @@ export default function SiteForm({ site, onSaved }) {
               onClick={() => set("theme", t.value)}
               className={`text-left rounded-xl border p-3.5 transition-colors ${
                 form.theme === t.value
-                  ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
-                  : "border-black/10 hover:border-black/20"
+                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                  : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
               <div className="flex gap-1.5 mb-2.5">
                 {t.swatches.map((c, i) => (
-                  <span key={i} className="h-5 w-5 rounded-full border border-black/10" style={{ background: c }} />
+                  <span key={i} className="h-5 w-5 rounded-full border border-black/10 dark:border-white/15" style={{ background: c }} />
                 ))}
               </div>
               <p className="text-sm font-semibold">{t.label}</p>
-              <p className="text-xs text-[#1c1a17]/50 mt-0.5 leading-snug">{t.description}</p>
+              <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{t.description}</p>
             </button>
           ))}
         </div>
@@ -345,7 +344,7 @@ export default function SiteForm({ site, onSaved }) {
 
       <div>
         <label className={labelClass}>Accent color</label>
-        <p className="text-xs text-[#1c1a17]/40 mb-2">
+        <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-2">
           Kept to The Agency's own brand colors — not a free color picker.
         </p>
         <div className="flex items-center gap-2 flex-wrap">
@@ -357,12 +356,12 @@ export default function SiteForm({ site, onSaved }) {
               title={opt.label}
               className={`flex items-center gap-1.5 rounded-full border pl-1.5 pr-3 py-1.5 text-xs font-medium transition-colors ${
                 form.accent_color === opt.value
-                  ? "border-[#1c1a17] text-[#1c1a17]"
-                  : "border-black/10 text-[#1c1a17]/60 hover:border-black/20"
+                  ? "border-[#1c1a17] dark:border-[#faf9f7] text-[#1c1a17] dark:text-[#faf9f7]"
+                  : "border-black/10 dark:border-white/15 text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
               <span
-                className="h-5 w-5 rounded-full border border-black/10"
+                className="h-5 w-5 rounded-full border border-black/10 dark:border-white/15"
                 style={{ background: opt.swatch || "repeating-conic-gradient(#e7e2d6 0% 25%, #fff 0% 50%) 0 / 8px 8px" }}
               />
               {opt.label}
@@ -381,12 +380,12 @@ export default function SiteForm({ site, onSaved }) {
               onClick={() => set("font_pairing", f.value)}
               className={`text-left rounded-xl border p-3.5 transition-colors ${
                 form.font_pairing === f.value
-                  ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
-                  : "border-black/10 hover:border-black/20"
+                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                  : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
               {f.tag && (
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#ed2127] mb-1.5">{f.tag}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#ed2127] dark:text-[#f2454b] mb-1.5">{f.tag}</p>
               )}
               <p className="text-lg leading-none mb-2" style={{ fontFamily: f.display }}>
                 Aa
@@ -401,7 +400,7 @@ export default function SiteForm({ site, onSaved }) {
 
       <div>
         <label className={labelClass}>Logo</label>
-        <p className="text-xs text-[#1c1a17]/40 mb-2">
+        <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-2">
           Same official mark, three colors — pick whichever reads best against your template.
         </p>
         <div className="flex items-center gap-3 flex-wrap">
@@ -412,8 +411,8 @@ export default function SiteForm({ site, onSaved }) {
               onClick={() => set("logo_variant", v.value)}
               className={`rounded-xl border p-2.5 transition-colors ${
                 form.logo_variant === v.value
-                  ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
-                  : "border-black/10 hover:border-black/20"
+                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                  : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
               <div className="h-10 w-24 rounded-md flex items-center justify-center px-2" style={{ background: v.chipBg }}>
@@ -427,25 +426,25 @@ export default function SiteForm({ site, onSaved }) {
 
       <div>
         <label className={labelClass}>Home page sections</label>
-        <p className="text-xs text-[#1c1a17]/40 mb-2">
+        <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-2">
           What shows on your home page, and in what order — Hero and Contact are always included.
           A page stays reachable on its own even if you turn it off here.
         </p>
         <div className="space-y-1.5">
           {form.home_sections.map((key, i) => (
-            <div key={key} className="flex items-center gap-2 bg-white border border-black/10 rounded-lg px-3 py-2">
+            <div key={key} className="flex items-center gap-2 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3 py-2">
               <input
                 type="checkbox"
                 checked
                 onChange={() => disableSection(key)}
-                className="accent-[#ed2127]"
+                className="accent-[#ed2127] dark:accent-[#f2454b]"
               />
               <span className="flex-1 text-sm">{HOME_SECTION_LABELS[key]}</span>
               <button
                 type="button"
                 onClick={() => moveSection(i, -1)}
                 disabled={i === 0}
-                className="text-[#1c1a17]/40 hover:text-[#1c1a17] disabled:opacity-20 disabled:hover:text-[#1c1a17]/40 px-1"
+                className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-20 disabled:hover:text-[#1c1a17]/40 dark:disabled:hover:text-[#faf9f7]/40 px-1"
                 title="Move earlier"
               >
                 ↑
@@ -454,7 +453,7 @@ export default function SiteForm({ site, onSaved }) {
                 type="button"
                 onClick={() => moveSection(i, 1)}
                 disabled={i === form.home_sections.length - 1}
-                className="text-[#1c1a17]/40 hover:text-[#1c1a17] disabled:opacity-20 disabled:hover:text-[#1c1a17]/40 px-1"
+                className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-20 disabled:hover:text-[#1c1a17]/40 dark:disabled:hover:text-[#faf9f7]/40 px-1"
                 title="Move later"
               >
                 ↓
@@ -464,11 +463,11 @@ export default function SiteForm({ site, onSaved }) {
           {ALL_SECTION_KEYS.filter((key) => !form.home_sections.includes(key)).map((key) => (
             <div
               key={key}
-              className="flex items-center gap-2 border border-dashed border-black/15 rounded-lg px-3 py-2"
+              className="flex items-center gap-2 border border-dashed border-black/15 dark:border-white/20 rounded-lg px-3 py-2"
             >
-              <input type="checkbox" checked={false} onChange={() => enableSection(key)} className="accent-[#ed2127]" />
-              <span className="flex-1 text-sm text-[#1c1a17]/50">{HOME_SECTION_LABELS[key]}</span>
-              <span className="text-xs text-[#1c1a17]/35">Hidden from home</span>
+              <input type="checkbox" checked={false} onChange={() => enableSection(key)} className="accent-[#ed2127] dark:accent-[#f2454b]" />
+              <span className="flex-1 text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{HOME_SECTION_LABELS[key]}</span>
+              <span className="text-xs text-[#1c1a17]/35 dark:text-[#faf9f7]/35">Hidden from home</span>
             </div>
           ))}
         </div>
@@ -530,7 +529,7 @@ export default function SiteForm({ site, onSaved }) {
               <button
                 type="button"
                 onClick={() => removeStat(i)}
-                className="text-[#1c1a17]/40 hover:text-red-600 px-2"
+                className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400 px-2"
                 aria-label="Remove stat"
               >
                 ✕
@@ -541,7 +540,7 @@ export default function SiteForm({ site, onSaved }) {
         <button
           type="button"
           onClick={addStat}
-          className="text-xs font-semibold text-[#ed2127] hover:underline mt-2"
+          className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline mt-2"
         >
           + Add stat
         </button>
@@ -562,10 +561,10 @@ export default function SiteForm({ site, onSaved }) {
         </div>
       </div>
 
-      <div className="bg-[#faf9f7] border border-black/5 rounded-2xl p-5 space-y-4">
+      <div className="bg-[#faf9f7] dark:bg-[#0d0d0d] border border-black/5 dark:border-white/10 rounded-2xl p-5 space-y-4">
         <div>
           <h3 className="font-display text-base font-semibold">SEO &amp; Sharing (optional)</h3>
-          <p className="text-xs text-[#1c1a17]/50 mt-1">
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">
             Controls the title/description search engines show and the preview card when your
             site is shared in text messages, Slack, or social apps. Leave blank to use sensible
             defaults built from your name and tagline/bio above.
@@ -599,9 +598,9 @@ export default function SiteForm({ site, onSaved }) {
         />
       </div>
 
-      <div className="bg-[#faf9f7] border border-black/5 rounded-2xl p-5 space-y-3">
+      <div className="bg-[#faf9f7] dark:bg-[#0d0d0d] border border-black/5 dark:border-white/10 rounded-2xl p-5 space-y-3">
         <h3 className="font-display text-base font-semibold">Custom Domain (optional)</h3>
-        <p className="text-xs text-[#1c1a17]/50">
+        <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
           Once a domain is purchased — or an existing one is pointed at this project (ask your
           admin either way) — enter it here and your site will serve directly at that address,
           e.g. visiting <span className="font-medium">TerrenceFinchumRealty.com</span> shows this
@@ -616,13 +615,13 @@ export default function SiteForm({ site, onSaved }) {
         />
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {saved && <p className="text-sm text-emerald-700">Saved.</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {saved && <p className="text-sm text-emerald-700 dark:text-emerald-400">Saved.</p>}
 
       <button
         type="submit"
         disabled={saving}
-        className="rounded-full bg-[#1c1a17] text-white text-sm font-semibold px-6 py-2.5 hover:bg-[#1c1a17]/90 transition-colors disabled:opacity-60"
+        className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60"
       >
         {saving ? "Saving…" : "Save Changes"}
       </button>

@@ -34,13 +34,13 @@ export default function ImageUploadField({ bucket, folder, value, onChange, labe
 
   return (
     <div>
-      <label className="block text-xs font-medium text-[#1c1a17]/60 mb-1.5">{label}</label>
+      <label className="block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5">{label}</label>
       <div className="flex items-center gap-4">
-        <div className="h-20 w-20 rounded-xl bg-black/5 overflow-hidden shrink-0">
+        <div className="h-20 w-20 rounded-xl bg-black/5 dark:bg-white/10 overflow-hidden shrink-0">
           {value && <img src={value} alt="" className="h-full w-full object-cover" />}
         </div>
         <div className="flex-1 min-w-0">
-          <label className="text-xs font-semibold text-[#ed2127] hover:underline cursor-pointer">
+          <label className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline cursor-pointer">
             {uploading ? "Uploading…" : value ? "Replace photo" : "Upload photo"}
             <input
               ref={fileInputRef}
@@ -55,12 +55,12 @@ export default function ImageUploadField({ bucket, folder, value, onChange, labe
             <button
               type="button"
               onClick={() => onChange(null)}
-              className="block text-xs text-[#1c1a17]/40 hover:text-[#1c1a17]/70 mt-1"
+              className="block text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17]/70 dark:hover:text-[#faf9f7]/70 mt-1"
             >
               Remove
             </button>
           )}
-          {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+          {error && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{error}</p>}
         </div>
       </div>
     </div>
