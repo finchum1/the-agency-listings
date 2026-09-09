@@ -23,7 +23,14 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- Explicit sizes here matters more than it looks: without it, some
+         iOS versions have been seen picking the plain sizes="512x512"
+         favicon above (favicon-512.png, edge-to-edge — fine as a browser
+         tab icon, never meant to be home-screen-masked) over this one for
+         "Add to Home Screen", clipping the mark. apple-touch-icon.png is
+         180x180 with a real safe-zone margin built in — this pins it as
+         the unambiguous, correctly-sized candidate. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="The Agency — property listing sites and agent dashboard" />
     <!-- PWA install/home-screen metadata for the dashboard host — see
