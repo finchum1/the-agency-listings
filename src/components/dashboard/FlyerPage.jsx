@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useListing } from "../../hooks/useListing";
@@ -62,6 +63,12 @@ export default function FlyerPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
+  // Set only right before printing (see handlePrint) -- an inlined
+  // data: URI version of the hero photo, so the printed output has zero
+  // network dependency left to race against. Normal on-screen viewing
+  // just uses heroPhoto.url directly; this stays null until the first
+  // print.
+  const [printHeroUrl, setPrintHeroUrl] = useState(null);
 
   // Text/features init — a one-time gate is fine here since it doesn't
   // depend on an async photos fetch settling.
@@ -95,6 +102,12 @@ export default function FlyerPage() {
   );
   const heroPhoto = orderedSelected[0] || photos.find((p) => p.is_hero) || photos[0];
   const galleryPhotos = orderedSelected.slice(1);
+
+  // Drop any inlined print copy from a previous hero photo the moment the
+  // hero changes, so a later print can't silently reuse a stale image.
+  useEffect(() => {
+    setPrintHeroUrl(null);
+  }, [heroPhoto?.url]);
 
   const includedFeatures = useMemo(
     () =>
@@ -176,21 +189,34 @@ export default function FlyerPage() {
   };
 
   // window.print() rasterizes whatever's already painted right now -- it
-  // doesn't wait for images. The small gallery thumbnails are usually
-  // already decoded from having been visible on the page already, but the
-  // large full-bleed hero photo is the single biggest image here and, if
-  // it hadn't finished loading yet, printed as blank space (found live:
-  // the hero was missing while every other photo printed fine). Force a
-  // decode of it first so the print snapshot always has it ready.
+  // doesn't wait for images. Confirmed live, across two prior attempts
+  // (waiting for decode(), then switching the hero photo from an <img>
+  // to a CSS background-image with print-color-adjust: exact) that the
+  // remaining failure is the print/PDF rasterizer not reliably waiting
+  // for a background-image's own network fetch to finish before it
+  // captures the page -- worked in on-screen preview, still blank/solid
+  // in the actual printed output, in both Chrome and Safari. Removing
+  // the network dependency entirely is the only fix that can't race:
+  // fetch the hero photo and inline it as a data: URI (bytes already in
+  // the page, nothing left to wait on) right before printing, flushed
+  // synchronously so the DOM has it painted before window.print() runs
+  // on the next line.
   const handlePrint = async () => {
     if (heroPhoto?.url) {
       try {
-        const img = new Image();
-        img.src = heroPhoto.url;
-        await img.decode();
+        const res = await fetch(heroPhoto.url);
+        const blob = await res.blob();
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        });
+        flushSync(() => setPrintHeroUrl(dataUrl));
       } catch {
-        // Decoding failed (bad URL, browser quirk, etc.) -- still let the
-        // user print rather than silently doing nothing.
+        // Couldn't inline it (network hiccup, a storage CORS quirk,
+        // etc.) -- still let the user print rather than silently doing
+        // nothing; they'll get the same remote-URL behavior as before.
       }
     }
     window.print();
@@ -344,7 +370,7 @@ export default function FlyerPage() {
               on a plain div is the standard, reliable workaround. */}
           <div
             className="absolute inset-0 bg-[#1c1a17] bg-cover bg-center"
-            style={heroPhoto ? { backgroundImage: `url(${heroPhoto.url})` } : undefined}
+            style={heroPhoto ? { backgroundImage: `url(${printHeroUrl || heroPhoto.url})` } : undefined}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
           <div className="absolute top-5 left-5 right-5">
