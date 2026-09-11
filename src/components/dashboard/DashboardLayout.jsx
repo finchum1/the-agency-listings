@@ -105,9 +105,18 @@ export default function DashboardLayout() {
   );
 
   return (
-    <div className="min-h-screen bg-[#faf9f7] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] scheme-light dark:scheme-dark md:flex">
-      {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col md:h-screen md:sticky md:top-0 border-r border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a]">
+    <div className="min-h-screen bg-[#faf9f7] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] scheme-light dark:scheme-dark md:flex print:block">
+      {/* Desktop sidebar — print:hidden matters beyond just "don't print
+          the sidebar": FlyerPage.jsx's #flyer-sheet print isolation
+          previously relied on `visibility: hidden` for everything else on
+          the page, which does NOT remove hidden content from layout flow
+          — the sidebar/header stayed exactly as tall as ever, just
+          invisible, which was silently inflating the printed page to 14
+          blank pages and corrupting where the absolutely-positioned hero
+          photo ended up. print:hidden actually removes this from layout
+          (display: none), so a printed page's height matches its real
+          visible content. */}
+      <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col md:h-screen md:sticky md:top-0 border-r border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] print:hidden">
         <div className="flex items-center gap-3 px-6 py-6 shrink-0">
           <img src={brokerage.logo} alt={brokerage.name} className="h-9 w-auto" />
           <span className="h-6 w-px bg-black/10 dark:bg-white/15" aria-hidden="true" />
@@ -124,7 +133,7 @@ export default function DashboardLayout() {
       </aside>
 
       {/* Mobile top bar */}
-      <header className="md:hidden border-b border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a]">
+      <header className="md:hidden border-b border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] print:hidden">
         <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <img src={brokerage.logo} alt={brokerage.name} className="h-8 w-auto shrink-0" />
@@ -159,7 +168,7 @@ export default function DashboardLayout() {
       </header>
 
       <main className="flex-1 min-w-0">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-10 print:p-0 print:max-w-none print:mx-0">
           <Outlet />
         </div>
       </main>
