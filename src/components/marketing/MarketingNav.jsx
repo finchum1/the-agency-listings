@@ -5,6 +5,7 @@ import brokerage from "../../lib/brokerage";
 const LINKS = [
   { path: "/agent-websites", label: "Agent Websites" },
   { path: "/property-websites", label: "Property Sites" },
+  { path: "/brokerage-website", label: "Brokerage Site" },
   { path: "/upcoming", label: "Upcoming" },
 ];
 

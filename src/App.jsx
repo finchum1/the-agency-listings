@@ -25,6 +25,7 @@ import LandingPage from "./pages/LandingPage";
 import AgentWebsitesPage from "./pages/AgentWebsitesPage";
 import PropertyWebsitesPage from "./pages/PropertyWebsitesPage";
 import UpcomingPage from "./pages/UpcomingPage";
+import BrokerageWebsitePage from "./pages/BrokerageWebsitePage";
 import BrokerageSitePage from "./pages/BrokerageSitePage";
 import BrokeragePostPage from "./pages/BrokeragePostPage";
 import BrokerageSiteEditor from "./components/dashboard/BrokerageSiteEditor";
@@ -68,6 +69,7 @@ export default function App() {
       <Route path="/" element={<Root />} />
       <Route path="/agent-websites" element={<AgentWebsitesPage />} />
       <Route path="/property-websites" element={<PropertyWebsitesPage />} />
+      <Route path="/brokerage-website" element={<BrokerageWebsitePage />} />
       <Route path="/upcoming" element={<UpcomingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/accept-invite" element={<SetPasswordPage />} />

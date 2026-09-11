@@ -146,8 +146,8 @@ export default function FlyerPage() {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
-  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   // Only the very first load shows this — NOT a refresh triggered by
   // Save (handleSave calls refresh() itself, and saving also fires the
@@ -155,12 +155,12 @@ export default function FlyerPage() {
   // again). Unmounting the whole flyer preview on every save was a real
   // bug: the hero photo (and everything else) would flash blank while
   // the refresh was in flight, easy to mistake for "didn't save."
-  if (loading && !listing) return <p className="text-sm text-[#1c1a17]/50">Loading…</p>;
+  if (loading && !listing) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
   if (notFound || !listing || noAccess) {
     return (
       <div>
-        <p className="text-sm text-[#1c1a17]/60 mb-4">Listing not found, or you don't have access to it.</p>
-        <Link to="/dashboard/listings" className="text-sm text-[#ed2127] hover:underline">
+        <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-4">Listing not found, or you don't have access to it.</p>
+        <Link to="/dashboard/listings" className="text-sm text-[#ed2127] dark:text-[#f2454b] hover:underline">
           ← Back to listings
         </Link>
       </div>
@@ -181,23 +181,23 @@ export default function FlyerPage() {
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-display font-semibold">Flyer</h1>
-            <p className="text-sm text-[#1c1a17]/60 mt-1">{listing.address_line1}</p>
+            <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">{listing.address_line1}</p>
           </div>
           <div className="flex items-center gap-4">
-            <Link to={`/dashboard/listings/${id}/edit`} className="text-sm text-[#1c1a17]/60 hover:text-[#1c1a17]">
+            <Link to={`/dashboard/listings/${id}/edit`} className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
               ← Back to listing
             </Link>
             <button
               type="button"
               onClick={() => window.print()}
-              className="rounded-full bg-[#1c1a17] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 transition-colors"
+              className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors"
             >
               Print / Save as PDF
             </button>
           </div>
         </div>
 
-        <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-5">
+        <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-5">
           <div>
             <label className={labelClass}>Flyer headline</label>
             <input
@@ -227,7 +227,7 @@ export default function FlyerPage() {
               Photos on the flyer ({selectedIds.length}/{MAX_FLYER_PHOTOS}) — first picked is the hero
             </label>
             {photos.length === 0 ? (
-              <p className="text-sm text-[#1c1a17]/40">Add photos to this listing first.</p>
+              <p className="text-sm text-[#1c1a17]/40 dark:text-[#faf9f7]/40">Add photos to this listing first.</p>
             ) : (
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                 {photos.map((photo) => {
@@ -238,7 +238,7 @@ export default function FlyerPage() {
                       type="button"
                       onClick={() => togglePhoto(photo.id)}
                       className={`relative rounded-lg overflow-hidden border-2 aspect-square ${
-                        idx !== -1 ? "border-[#ed2127]" : "border-transparent"
+                        idx !== -1 ? "border-[#ed2127] dark:border-[#f2454b]" : "border-transparent"
                       }`}
                     >
                       <img src={photo.url} alt="" className="w-full h-full object-cover" />
@@ -260,7 +260,7 @@ export default function FlyerPage() {
               <div className="space-y-3">
                 {listing.features.map((group) => (
                   <div key={group.category}>
-                    <p className="text-xs font-semibold text-[#1c1a17]/70 mb-1.5">{group.category}</p>
+                    <p className="text-xs font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 mb-1.5">{group.category}</p>
                     <div className="flex flex-wrap gap-x-4 gap-y-1.5">
                       {group.items.map((item) => {
                         const key = featureKey(group.category, item);
@@ -271,9 +271,9 @@ export default function FlyerPage() {
                               type="checkbox"
                               checked={included}
                               onChange={() => toggleFeature(key)}
-                              className="accent-[#ed2127]"
+                              className="accent-[#ed2127] dark:accent-[#f2454b]"
                             />
-                            <span className={included ? "text-[#1c1a17]" : "text-[#1c1a17]/35 line-through"}>
+                            <span className={included ? "text-[#1c1a17] dark:text-[#faf9f7]" : "text-[#1c1a17]/35 dark:text-[#faf9f7]/35 line-through"}>
                               {item}
                             </span>
                           </label>
@@ -291,12 +291,12 @@ export default function FlyerPage() {
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="rounded-full bg-[#1c1a17] text-white text-sm font-semibold px-6 py-2.5 hover:bg-[#1c1a17]/90 transition-colors disabled:opacity-60"
+              className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60"
             >
               {saving ? "Saving…" : "Save Flyer Content"}
             </button>
-            {saved && <p className="text-sm text-emerald-700">Saved.</p>}
-            {saveError && <p className="text-sm text-red-600">Couldn't save: {saveError}</p>}
+            {saved && <p className="text-sm text-emerald-700 dark:text-emerald-400">Saved.</p>}
+            {saveError && <p className="text-sm text-red-600 dark:text-red-400">Couldn't save: {saveError}</p>}
           </div>
         </div>
       </div>

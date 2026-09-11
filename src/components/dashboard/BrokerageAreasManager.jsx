@@ -24,8 +24,8 @@ export default function BrokerageAreasManager({ brokerageSiteId, areas, onChange
   const [error, setError] = useState("");
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
-  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   const startAdd = () => {
     setForm(emptyForm);
@@ -106,36 +106,36 @@ export default function BrokerageAreasManager({ brokerageSiteId, areas, onChange
   };
 
   return (
-    <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+    <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-semibold">Areas of Expertise</h2>
         {editingId === null && (
-          <button type="button" onClick={startAdd} className="text-xs font-semibold text-[#ed2127] hover:underline">
+          <button type="button" onClick={startAdd} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
             + Add area
           </button>
         )}
       </div>
 
-      {areas.length === 0 && editingId === null && <p className="text-sm text-[#1c1a17]/40">No areas yet.</p>}
+      {areas.length === 0 && editingId === null && <p className="text-sm text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No areas yet.</p>}
 
       {areas.length > 0 && (
         <div className="space-y-2">
           {areas.map((area, i) => (
-            <div key={area.id} className="border border-black/10 rounded-xl p-3 flex items-center justify-between gap-3">
+            <div key={area.id} className="border border-black/10 dark:border-white/15 rounded-xl p-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="h-10 w-10 rounded-lg bg-black/5 overflow-hidden shrink-0">
+                <div className="h-10 w-10 rounded-lg bg-black/5 dark:bg-white/10 overflow-hidden shrink-0">
                   {area.photo_url && <img src={area.photo_url} alt="" className="h-full w-full object-cover" />}
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{area.name}</p>
-                  <p className="text-xs text-[#1c1a17]/50 truncate">{area.blurb}</p>
+                  <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">{area.blurb}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0 text-xs">
-                <button onClick={() => move(area, -1)} disabled={i === 0} className="text-[#1c1a17]/40 hover:text-[#1c1a17] disabled:opacity-30">↑</button>
-                <button onClick={() => move(area, 1)} disabled={i === areas.length - 1} className="text-[#1c1a17]/40 hover:text-[#1c1a17] disabled:opacity-30">↓</button>
-                <button onClick={() => startEdit(area)} className="text-[#1c1a17]/60 hover:text-[#1c1a17]">Edit</button>
-                <button onClick={() => remove(area)} className="text-[#1c1a17]/40 hover:text-red-600">✕</button>
+                <button onClick={() => move(area, -1)} disabled={i === 0} className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-30">↑</button>
+                <button onClick={() => move(area, 1)} disabled={i === areas.length - 1} className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-30">↓</button>
+                <button onClick={() => startEdit(area)} className="text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">Edit</button>
+                <button onClick={() => remove(area)} className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400">✕</button>
               </div>
             </div>
           ))}
@@ -143,7 +143,7 @@ export default function BrokerageAreasManager({ brokerageSiteId, areas, onChange
       )}
 
       {editingId !== null && (
-        <form onSubmit={handleSubmit} className="space-y-3 pt-3 border-t border-black/5">
+        <form onSubmit={handleSubmit} className="space-y-3 pt-3 border-t border-black/5 dark:border-white/10">
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Name</label>
@@ -168,16 +168,16 @@ export default function BrokerageAreasManager({ brokerageSiteId, areas, onChange
             value={form.photo_url}
             onChange={(url) => setForm((f) => ({ ...f, photo_url: url || "" }))}
           />
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex items-center gap-3">
             <button
               type="submit"
               disabled={saving}
-              className="rounded-full bg-[#1c1a17] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 transition-colors disabled:opacity-60"
+              className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60"
             >
               {saving ? "Saving…" : editingId === "new" ? "Add Area" : "Save Changes"}
             </button>
-            <button type="button" onClick={cancel} className="text-sm text-[#1c1a17]/50 hover:text-[#1c1a17]">
+            <button type="button" onClick={cancel} className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
               Cancel
             </button>
           </div>

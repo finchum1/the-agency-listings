@@ -77,10 +77,10 @@ export default function HeroScrollPhotosManager({ listingId, photos, onChanged }
   };
 
   return (
-    <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+    <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
       <div>
         <h2 className="font-display text-lg font-semibold">Hero Scroll Photos</h2>
-        <p className="text-xs text-[#1c1a17]/40 mt-1">
+        <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-1">
           When this listing has no hero video, the hero scroll-scrubs through these photos instead
           — pick a handful in the order you want the story told (drag to reorder), rather than a
           single static photo.
@@ -99,20 +99,20 @@ export default function HeroScrollPhotosManager({ listingId, photos, onChanged }
               onDragEnd={handleDragEnd}
               className={`flex items-center gap-3 border rounded-xl p-2 cursor-grab active:cursor-grabbing transition-all ${
                 dragId === photo.id
-                  ? "opacity-40 border-black/10"
+                  ? "opacity-40 border-black/10 dark:border-white/15"
                   : overId === photo.id
-                    ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
-                    : "border-black/10"
+                    ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                    : "border-black/10 dark:border-white/15"
               }`}
             >
-              <span className="w-5 text-center text-xs font-semibold text-[#1c1a17]/40 shrink-0">{i + 1}</span>
+              <span className="w-5 text-center text-xs font-semibold text-[#1c1a17]/40 dark:text-[#faf9f7]/40 shrink-0">{i + 1}</span>
               <img src={photo.url} alt="" className="h-12 w-16 rounded-md object-cover shrink-0" draggable={false} />
-              <span className="flex-1 text-xs text-[#1c1a17]/50 truncate">{photo.alt || "Untitled photo"}</span>
+              <span className="flex-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">{photo.alt || "Untitled photo"}</span>
               <button
                 type="button"
                 onClick={() => remove(photo)}
                 disabled={busy}
-                className="text-xs text-[#1c1a17]/40 hover:text-red-600 shrink-0 px-1"
+                className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400 shrink-0 px-1"
                 title="Remove from sequence"
               >
                 ✕
@@ -122,11 +122,11 @@ export default function HeroScrollPhotosManager({ listingId, photos, onChanged }
         </div>
       )}
 
-      {included.length === 0 && <p className="text-sm text-[#1c1a17]/40">No photos picked yet.</p>}
+      {included.length === 0 && <p className="text-sm text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No photos picked yet.</p>}
 
       {available.length > 0 && (
         <div>
-          <p className="text-xs font-medium text-[#1c1a17]/60 mb-2">
+          <p className="text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-2">
             {included.length > 0 ? "Add more" : "Pick photos"}
           </p>
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
@@ -136,7 +136,7 @@ export default function HeroScrollPhotosManager({ listingId, photos, onChanged }
                 type="button"
                 onClick={() => add(photo)}
                 disabled={busy}
-                className="group relative rounded-lg overflow-hidden border border-black/10 hover:border-[#ed2127] transition-colors disabled:opacity-50"
+                className="group relative rounded-lg overflow-hidden border border-black/10 dark:border-white/15 hover:border-[#ed2127] dark:border-[#f2454b] transition-colors disabled:opacity-50"
               >
                 <img src={photo.url} alt="" className="w-full h-20 object-cover" />
                 <span className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center text-white text-xs font-semibold opacity-0 group-hover:opacity-100">

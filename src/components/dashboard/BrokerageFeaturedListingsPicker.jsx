@@ -69,8 +69,8 @@ export default function BrokerageFeaturedListingsPicker({ value, onChange }) {
 
   return (
     <div>
-      <label className="block text-xs font-medium text-[#1c1a17]/60 mb-1.5">Featured listings</label>
-      <p className="text-xs text-[#1c1a17]/40 mb-2">
+      <label className="block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5">Featured listings</label>
+      <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-2">
         Pin specific MLS listings to show on the home page. Leave empty to just show whatever comes back
         first from the live search.
       </p>
@@ -79,29 +79,29 @@ export default function BrokerageFeaturedListingsPicker({ value, onChange }) {
         {value.map((mlsNumber, i) => {
           const preview = previews[mlsNumber];
           return (
-            <div key={mlsNumber} className="flex items-center gap-2 bg-white border border-black/10 rounded-lg px-3 py-2">
+            <div key={mlsNumber} className="flex items-center gap-2 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3 py-2">
               <div className="flex-1 min-w-0 text-sm">
                 {preview?.listing ? (
                   <>
                     <span className="font-medium">{preview.listing.address_line1}</span>
-                    <span className="text-[#1c1a17]/50">
+                    <span className="text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
                       {" "}
                       — {preview.listing.city}, {preview.listing.state} · {formatPrice(preview.listing.price)}
                     </span>
                   </>
                 ) : preview?.error ? (
-                  <span className="text-[#c0392b]">
+                  <span className="text-[#c0392b] dark:text-[#f87171]">
                     MLS# {mlsNumber} — {preview.error}
                   </span>
                 ) : (
-                  <span className="text-[#1c1a17]/40">MLS# {mlsNumber} — checking…</span>
+                  <span className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40">MLS# {mlsNumber} — checking…</span>
                 )}
               </div>
               <button
                 type="button"
                 onClick={() => moveListing(i, -1)}
                 disabled={i === 0}
-                className="text-[#1c1a17]/40 hover:text-[#1c1a17] disabled:opacity-20 disabled:hover:text-[#1c1a17]/40 px-1"
+                className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-20 disabled:hover:text-[#1c1a17]/40 dark:disabled:hover:text-[#faf9f7]/40 px-1"
                 title="Move earlier"
               >
                 ↑
@@ -110,7 +110,7 @@ export default function BrokerageFeaturedListingsPicker({ value, onChange }) {
                 type="button"
                 onClick={() => moveListing(i, 1)}
                 disabled={i === value.length - 1}
-                className="text-[#1c1a17]/40 hover:text-[#1c1a17] disabled:opacity-20 disabled:hover:text-[#1c1a17]/40 px-1"
+                className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-20 disabled:hover:text-[#1c1a17]/40 dark:disabled:hover:text-[#faf9f7]/40 px-1"
                 title="Move later"
               >
                 ↓
@@ -118,7 +118,7 @@ export default function BrokerageFeaturedListingsPicker({ value, onChange }) {
               <button
                 type="button"
                 onClick={() => removeListing(mlsNumber)}
-                className="text-[#1c1a17]/40 hover:text-[#c0392b] px-1"
+                className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#c0392b] dark:hover:text-[#f87171] px-1"
                 title="Remove"
               >
                 ✕
@@ -140,18 +140,18 @@ export default function BrokerageFeaturedListingsPicker({ value, onChange }) {
             }
           }}
           placeholder="MLS number, e.g. ACT8714298"
-          className="flex-1 rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
+          className="flex-1 rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
         />
         <button
           type="button"
           onClick={addListing}
           disabled={adding || !mlsInput.trim()}
-          className="rounded-lg bg-[#0d0d0c] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-white hover:bg-[#ed2127] disabled:opacity-40"
+          className="rounded-lg bg-[#0d0d0c] dark:bg-[#f2454b] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-white hover:bg-[#ed2127] disabled:opacity-40"
         >
           {adding ? "Checking…" : "Add"}
         </button>
       </div>
-      {addError && <p className="mt-1.5 text-xs text-[#c0392b]">{addError}</p>}
+      {addError && <p className="mt-1.5 text-xs text-[#c0392b] dark:text-[#f87171]">{addError}</p>}
     </div>
   );
 }

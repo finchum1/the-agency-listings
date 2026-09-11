@@ -28,18 +28,18 @@ export default function SitesPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-display font-semibold">Agent Sites</h1>
-        <p className="text-sm text-[#1c1a17]/60 mt-1">
+        <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
           Every agent's personal site — {agents.length} agent{agents.length === 1 ? "" : "s"}
         </p>
       </div>
 
       {loading ? (
-        <p className="text-sm text-[#1c1a17]/50">Loading…</p>
+        <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>
       ) : (
-        <div className="bg-white border border-black/5 rounded-2xl overflow-hidden">
+        <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-black/5 text-left text-xs uppercase tracking-wider text-[#1c1a17]/40">
+              <tr className="border-b border-black/5 dark:border-white/10 text-left text-xs uppercase tracking-wider text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
                 <th className="px-5 py-3 font-medium">Agent</th>
                 <th className="px-5 py-3 font-medium">Status</th>
                 <th className="px-5 py-3 font-medium">Updated</th>
@@ -50,30 +50,29 @@ export default function SitesPage() {
               {agents.map((agent) => {
                 const site = siteFor(agent.id);
                 return (
-                  <tr key={agent.id} className="border-b border-black/5 last:border-0 hover:bg-black/[0.02]">
+                  <tr key={agent.id} className="border-b border-black/5 dark:border-white/10 last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.04]">
                     <td className="px-5 py-4">
                       <Link to={`/dashboard/sites/${agent.id}`} className="font-medium hover:underline">
                         {agent.full_name || "(no name yet)"}
                       </Link>
-                      <p className="text-xs text-[#1c1a17]/50">{agent.email}</p>
+                      <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{agent.email}</p>
                     </td>
                     <td className="px-5 py-4">
                       {site ? (
                         <span
-                          className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                          style={
+                          className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
                             site.status === "published"
-                              ? { background: "#3fae5c1a", color: "#3fae5c" }
-                              : { background: "#00000010", color: "#1c1a17aa" }
-                          }
+                              ? "bg-[#3fae5c]/10 text-[#3fae5c]"
+                              : "bg-black/10 dark:bg-white/15 text-[#1c1a17]/70 dark:text-[#faf9f7]/70"
+                          }`}
                         >
                           {site.status === "published" ? "Published" : "Draft"}
                         </span>
                       ) : (
-                        <span className="text-xs text-[#1c1a17]/40">No site yet</span>
+                        <span className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No site yet</span>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-[#1c1a17]/50 text-xs">
+                    <td className="px-5 py-4 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 text-xs">
                       {site ? new Date(site.updated_at).toLocaleDateString() : "—"}
                     </td>
                     <td className="px-5 py-4 text-right">
@@ -83,14 +82,14 @@ export default function SitesPage() {
                             href={`/sites/${site.slug}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs text-[#ed2127] hover:underline"
+                            className="text-xs text-[#ed2127] dark:text-[#f2454b] hover:underline"
                           >
                             View live
                           </a>
                         )}
                         <Link
                           to={`/dashboard/sites/${agent.id}`}
-                          className="text-xs text-[#1c1a17]/60 hover:text-[#1c1a17]"
+                          className="text-xs text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
                         >
                           {site ? "Edit" : "Create"}
                         </Link>

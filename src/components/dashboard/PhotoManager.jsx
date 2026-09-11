@@ -97,10 +97,10 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
   };
 
   return (
-    <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+    <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-semibold">Photos</h2>
-        <label className="text-xs font-semibold text-[#ed2127] hover:underline cursor-pointer">
+        <label className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline cursor-pointer">
           {uploading ? "Uploading…" : "+ Add photos"}
           <input
             ref={fileInputRef}
@@ -114,13 +114,13 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
         </label>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {photos.length === 0 ? (
-        <p className="text-sm text-[#1c1a17]/40">No photos yet.</p>
+        <p className="text-sm text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No photos yet.</p>
       ) : (
         <>
-          <p className="text-xs text-[#1c1a17]/40">Drag to reorder. First photo is the hero unless you star another.</p>
+          <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">Drag to reorder. First photo is the hero unless you star another.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {photos.map((photo) => (
               <div
@@ -132,10 +132,10 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
                 onDragEnd={handleDragEnd}
                 className={`relative group border rounded-lg overflow-hidden cursor-grab active:cursor-grabbing transition-all ${
                   dragId === photo.id
-                    ? "opacity-40 border-black/10"
+                    ? "opacity-40 border-black/10 dark:border-white/15"
                     : overId === photo.id
-                      ? "border-[#ed2127] ring-2 ring-[#ed2127]/30"
-                      : "border-black/10"
+                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      : "border-black/10 dark:border-white/15"
                 }`}
               >
                 <img
@@ -145,7 +145,7 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
                   draggable={false}
                 />
                 {photo.is_hero && (
-                  <span className="absolute top-1.5 left-1.5 bg-[#1c1a17] text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                  <span className="absolute top-1.5 left-1.5 bg-[#1c1a17] dark:bg-[#f2454b] text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
                     HERO
                   </span>
                 )}

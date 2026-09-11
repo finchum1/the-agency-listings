@@ -28,16 +28,22 @@ if (isAppHost(window.location.hostname)) {
         // normally only fires on a fresh navigation/page load — but an
         // installed PWA is usually just resumed from the background, not
         // reloaded, so it can sit on a stale build for a long time (an
-        // agent reported exactly this after a deploy). Poll explicitly:
-        // once whenever the app becomes visible again (covers the common
-        // "reopen from the home screen" case) and hourly as a fallback
-        // for an app left open continuously. registerType: "autoUpdate"
-        // (vite.config.js) means any update found here applies and
-        // reloads automatically, no prompt needed.
+        // agent reported exactly this after a deploy). Poll explicitly on
+        // every plausible "the app is back in front of someone" signal —
+        // iOS's standalone home-screen mode is known to be inconsistent
+        // about which of these actually fires on a given resume (and it
+        // suspends setInterval timers entirely once backgrounded, so the
+        // hourly poll below is a best-effort fallback for Android/desktop
+        // more than something iOS can rely on), so this deliberately
+        // layers three redundant triggers rather than trusting just one.
+        // registerType: "autoUpdate" (vite.config.js) means any update
+        // found here applies and reloads automatically, no prompt needed.
         const checkForUpdate = () => registration.update();
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible') checkForUpdate();
         });
+        window.addEventListener('focus', checkForUpdate);
+        window.addEventListener('pageshow', checkForUpdate);
         setInterval(checkForUpdate, 60 * 60 * 1000);
       },
     });

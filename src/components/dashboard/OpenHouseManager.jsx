@@ -37,32 +37,32 @@ export default function OpenHouseManager({ listingId, openHouses, onChanged }) {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
 
   return (
-    <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+    <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
       <h2 className="font-display text-lg font-semibold">Open Houses</h2>
 
       {openHouses.length === 0 ? (
-        <p className="text-sm text-[#1c1a17]/40">None scheduled.</p>
+        <p className="text-sm text-[#1c1a17]/40 dark:text-[#faf9f7]/40">None scheduled.</p>
       ) : (
         <ul className="space-y-2">
           {openHouses.map((oh) => (
             <li
               key={oh.id}
-              className="flex items-center justify-between border border-black/5 rounded-lg px-4 py-2.5 text-sm"
+              className="flex items-center justify-between border border-black/5 dark:border-white/10 rounded-lg px-4 py-2.5 text-sm"
             >
               <div>
                 <p className="font-medium">
                   {formatDateTime(oh.starts_at)}
                   {oh.ends_at ? ` – ${formatDateTime(oh.ends_at)}` : ""}
                 </p>
-                {oh.notes && <p className="text-xs text-[#1c1a17]/50">{oh.notes}</p>}
+                {oh.notes && <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{oh.notes}</p>}
               </div>
               <button
                 type="button"
                 onClick={() => remove(oh.id)}
-                className="text-xs text-red-600 hover:underline"
+                className="text-xs text-red-600 dark:text-red-400 hover:underline"
               >
                 Remove
               </button>
@@ -71,9 +71,9 @@ export default function OpenHouseManager({ listingId, openHouses, onChanged }) {
         </ul>
       )}
 
-      <form onSubmit={handleAdd} className="grid sm:grid-cols-3 gap-3 pt-2 border-t border-black/5">
+      <form onSubmit={handleAdd} className="grid sm:grid-cols-3 gap-3 pt-2 border-t border-black/5 dark:border-white/10">
         <div>
-          <label className="block text-xs font-medium text-[#1c1a17]/60 mb-1.5">Starts</label>
+          <label className="block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5">Starts</label>
           <input
             required
             type="datetime-local"
@@ -83,7 +83,7 @@ export default function OpenHouseManager({ listingId, openHouses, onChanged }) {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#1c1a17]/60 mb-1.5">Ends (optional)</label>
+          <label className="block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5">Ends (optional)</label>
           <input
             type="datetime-local"
             value={endsAt}
@@ -92,15 +92,15 @@ export default function OpenHouseManager({ listingId, openHouses, onChanged }) {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#1c1a17]/60 mb-1.5">Notes (optional)</label>
+          <label className="block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5">Notes (optional)</label>
           <input value={notes} onChange={(e) => setNotes(e.target.value)} className={inputClass} />
         </div>
         <div className="sm:col-span-3">
-          {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400 mb-2">{error}</p>}
           <button
             type="submit"
             disabled={saving}
-            className="rounded-full bg-black/5 text-[#1c1a17] text-sm font-semibold px-5 py-2 hover:bg-black/10 transition-colors disabled:opacity-60"
+            className="rounded-full bg-black/5 dark:bg-white/10 text-[#1c1a17] dark:text-[#faf9f7] text-sm font-semibold px-5 py-2 hover:bg-black/10 dark:hover:bg-white/15 transition-colors disabled:opacity-60"
           >
             {saving ? "Adding…" : "+ Add Open House"}
           </button>

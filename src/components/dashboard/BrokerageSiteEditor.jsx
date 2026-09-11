@@ -11,15 +11,15 @@ import BrokerageAreasManager from "./BrokerageAreasManager";
 export default function BrokerageSiteEditor() {
   const { site, posts, agents, areas, loading, error, refresh } = useBrokerageSiteEditor();
 
-  if (loading) return <p className="text-sm text-[#1c1a17]/50">Loading…</p>;
-  if (error) return <p className="text-sm text-red-600">{error}</p>;
+  if (loading) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
+  if (error) return <p className="text-sm text-red-600 dark:text-red-400">{error}</p>;
   if (!site) return null;
 
   return (
     <div className="max-w-3xl space-y-8">
       <div>
         <h1 className="text-2xl font-display font-semibold">Brokerage Site</h1>
-        <p className="text-sm text-[#1c1a17]/60 mt-1">
+        <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
           The office's own public site at /brokerage — hero, about, areas of expertise, blog, and
           the agent roster. Customizable the same way an agent's own site is: template, accent
           color, font pairing, logo, and which sections show on the home page.

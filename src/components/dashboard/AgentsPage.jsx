@@ -132,17 +132,17 @@ export default function AgentsPage() {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
-  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   return (
     <div className="grid lg:grid-cols-2 gap-8">
       <div>
         <h1 className="text-2xl font-display font-semibold mb-6">Agents</h1>
         {loading ? (
-          <p className="text-sm text-[#1c1a17]/50">Loading…</p>
+          <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>
         ) : (
-          <div className="bg-white border border-black/5 rounded-2xl divide-y divide-black/5">
+          <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl divide-y divide-black/5">
             {agents.map((a) => (
               <div key={a.id} className="px-5 py-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
@@ -152,24 +152,24 @@ export default function AgentsPage() {
                       "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4' fill='%23e5e0d8'/%3E%3Cpath d='M4 20c0-4 4-6 8-6s8 2 8 6' fill='%23e5e0d8'/%3E%3C/svg%3E"
                     }
                     alt=""
-                    className="h-9 w-9 rounded-full object-cover bg-black/5 shrink-0"
+                    className="h-9 w-9 rounded-full object-cover bg-black/5 dark:bg-white/10 shrink-0"
                   />
                   <div className="min-w-0">
                     <p className="font-medium text-sm truncate">{a.full_name || "(no name yet)"}</p>
-                    <p className="text-xs text-[#1c1a17]/50 truncate">{a.email}</p>
+                    <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">{a.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span
                     className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                      a.login_enabled ? "bg-emerald-50 text-emerald-700" : "bg-black/5 text-[#1c1a17]/50"
+                      a.login_enabled ? "bg-emerald-50 text-emerald-700 dark:text-emerald-400" : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/50 dark:text-[#faf9f7]/50"
                     }`}
                   >
                     {a.login_enabled ? "Can log in" : "No login"}
                   </span>
                   <span
                     className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                      a.role === "admin" ? "bg-[#ed2127]/15 text-[#ed2127]" : "bg-black/5 text-[#1c1a17]/60"
+                      a.role === "admin" ? "bg-[#ed2127]/15 text-[#ed2127] dark:text-[#f2454b]" : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/60 dark:text-[#faf9f7]/60"
                     }`}
                   >
                     {a.role === "admin" ? "Admin" : "Agent"}
@@ -179,7 +179,7 @@ export default function AgentsPage() {
                       type="button"
                       onClick={() => handleEnableLogin(a)}
                       disabled={enablingId === a.id}
-                      className="text-xs font-semibold text-[#ed2127] hover:underline disabled:opacity-50 whitespace-nowrap"
+                      className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline disabled:opacity-50 whitespace-nowrap"
                     >
                       {enablingId === a.id ? "Sending…" : "Enable Login"}
                     </button>
@@ -189,7 +189,7 @@ export default function AgentsPage() {
                       type="button"
                       onClick={() => handleDelete(a)}
                       disabled={deletingId === a.id}
-                      className="text-xs font-semibold text-red-600 hover:underline disabled:opacity-50 whitespace-nowrap"
+                      className="text-xs font-semibold text-red-600 dark:text-red-400 hover:underline disabled:opacity-50 whitespace-nowrap"
                     >
                       {deletingId === a.id ? "Deleting…" : "Delete"}
                     </button>
@@ -203,7 +203,7 @@ export default function AgentsPage() {
 
       <div>
         <h2 className="text-lg font-display font-semibold mb-4 mt-1">Add an Agent</h2>
-        <form onSubmit={handleAdd} className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+        <form onSubmit={handleAdd} className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Full name</label>
@@ -259,20 +259,20 @@ export default function AgentsPage() {
             />
             <span className="text-sm">
               <span className="font-medium">Let this agent log in</span>
-              <span className="block text-xs text-[#1c1a17]/50">
+              <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
                 Sends them an email to set a password. Leave unchecked to just create their profile
                 — you can enable login for them anytime later.
               </span>
             </span>
           </label>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          {success && <p className="text-sm text-emerald-700">{success}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {success && <p className="text-sm text-emerald-700 dark:text-emerald-400">{success}</p>}
 
           <button
             type="submit"
             disabled={saving}
-            className="rounded-full bg-[#1c1a17] text-white text-sm font-semibold px-6 py-2.5 hover:bg-[#1c1a17]/90 transition-colors disabled:opacity-60"
+            className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60"
           >
             {saving ? "Saving…" : form.sendInvite ? "Send Invite" : "Add Agent"}
           </button>

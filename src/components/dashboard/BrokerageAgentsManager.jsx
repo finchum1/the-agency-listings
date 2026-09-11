@@ -35,8 +35,8 @@ export default function BrokerageAgentsManager({ brokerageSiteId, agents, onChan
   const [error, setError] = useState("");
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
-  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 mb-1.5";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   const startAdd = () => {
     setForm(emptyForm);
@@ -130,34 +130,34 @@ export default function BrokerageAgentsManager({ brokerageSiteId, agents, onChan
   const sorted = [...agents].sort((a, b) => a.sort_order - b.sort_order);
 
   return (
-    <div className="bg-white border border-black/5 rounded-2xl p-6 space-y-4">
+    <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-semibold">Agent Roster</h2>
         {editingId === null && (
-          <button type="button" onClick={startAdd} className="text-xs font-semibold text-[#ed2127] hover:underline">
+          <button type="button" onClick={startAdd} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
             + Add agent
           </button>
         )}
       </div>
 
-      {sorted.length === 0 && editingId === null && <p className="text-sm text-[#1c1a17]/40">No agents yet.</p>}
+      {sorted.length === 0 && editingId === null && <p className="text-sm text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No agents yet.</p>}
 
       {sorted.length > 0 && (
         <div className="space-y-2">
           {sorted.map((agent, i) => (
-            <div key={agent.id} className="border border-black/10 rounded-xl p-3 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-black/5 overflow-hidden shrink-0">
+            <div key={agent.id} className="border border-black/10 dark:border-white/15 rounded-xl p-3 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden shrink-0">
                 {agent.photo_url && <img src={agent.photo_url} alt="" className="h-full w-full object-cover" />}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium truncate">{agent.name}</p>
-                <p className="text-xs text-[#1c1a17]/50 truncate">{agent.title}</p>
+                <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">{agent.title}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0 text-xs">
-                <button onClick={() => move(agent, -1)} disabled={i === 0} className="text-[#1c1a17]/40 hover:text-[#1c1a17] disabled:opacity-20 px-1" title="Move earlier">↑</button>
-                <button onClick={() => move(agent, 1)} disabled={i === sorted.length - 1} className="text-[#1c1a17]/40 hover:text-[#1c1a17] disabled:opacity-20 px-1" title="Move later">↓</button>
-                <button onClick={() => startEdit(agent)} className="text-[#1c1a17]/60 hover:text-[#1c1a17]">Edit</button>
-                <button onClick={() => remove(agent)} className="text-[#1c1a17]/40 hover:text-red-600">✕</button>
+                <button onClick={() => move(agent, -1)} disabled={i === 0} className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-20 px-1" title="Move earlier">↑</button>
+                <button onClick={() => move(agent, 1)} disabled={i === sorted.length - 1} className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-20 px-1" title="Move later">↓</button>
+                <button onClick={() => startEdit(agent)} className="text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">Edit</button>
+                <button onClick={() => remove(agent)} className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400">✕</button>
               </div>
             </div>
           ))}
@@ -165,7 +165,7 @@ export default function BrokerageAgentsManager({ brokerageSiteId, agents, onChan
       )}
 
       {editingId !== null && (
-        <form onSubmit={handleSubmit} className="space-y-3 pt-3 border-t border-black/5">
+        <form onSubmit={handleSubmit} className="space-y-3 pt-3 border-t border-black/5 dark:border-white/10">
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Name</label>
@@ -216,16 +216,16 @@ export default function BrokerageAgentsManager({ brokerageSiteId, agents, onChan
             <label className={labelClass}>Bio</label>
             <textarea value={form.bio} onChange={update("bio")} rows={4} className={inputClass} />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex items-center gap-3">
             <button
               type="submit"
               disabled={saving}
-              className="rounded-full bg-[#1c1a17] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 transition-colors disabled:opacity-60"
+              className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60"
             >
               {saving ? "Saving…" : editingId === "new" ? "Add Agent" : "Save Changes"}
             </button>
-            <button type="button" onClick={cancel} className="text-sm text-[#1c1a17]/50 hover:text-[#1c1a17]">
+            <button type="button" onClick={cancel} className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
               Cancel
             </button>
           </div>

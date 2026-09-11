@@ -26,15 +26,15 @@ export default function EditAgentSitePage() {
   if (notFound) {
     return (
       <div>
-        <p className="text-sm text-[#1c1a17]/60 mb-4">Agent not found.</p>
-        <Link to="/dashboard/sites" className="text-sm text-[#ed2127] hover:underline">
+        <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-4">Agent not found.</p>
+        <Link to="/dashboard/sites" className="text-sm text-[#ed2127] dark:text-[#f2454b] hover:underline">
           ← Back to sites
         </Link>
       </div>
     );
   }
 
-  if (!agent) return <p className="text-sm text-[#1c1a17]/50">Loading…</p>;
+  if (!agent) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
 
   return (
     <SiteEditor
