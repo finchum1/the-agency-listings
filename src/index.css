@@ -279,6 +279,23 @@
   .no-print {
     display: none !important;
   }
+  #flyer-sheet,
+  #flyer-sheet * {
+    /* THE actual fix for the missing hero photo, confirmed by pixel-
+       sampling a real print output: the photo/gradient weren't merely
+       failing to rasterize -- Chrome's print engine was deliberately
+       stripping them (its default "print economy" behavior, same thing
+       the "Background graphics" print-dialog checkbox controls) and, on
+       top of that, auto-darkening the headline's text-white to a solid
+       flat gray so it wouldn't become invisible white-on-white once its
+       backdrop vanished (measured rgb(171,171,171) glyph fill on a pure
+       white rgb(255,255,255) page -- a real substituted color, not an
+       anti-aliasing artifact). print-color-adjust: exact forces every
+       color/background in here to render exactly as authored regardless
+       of that heuristic or the checkbox's default state. */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   #flyer-sheet {
     width: 8.5in;
     min-height: 11in;
