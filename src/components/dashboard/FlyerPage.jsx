@@ -335,11 +335,17 @@ export default function FlyerPage() {
         style={{ width: "8.5in", minHeight: "11in" }}
       >
         <div className="relative h-[4.2in] w-full shrink-0">
-          {heroPhoto ? (
-            <img src={heroPhoto.url} alt="" className="absolute inset-0 h-full w-full object-cover" />
-          ) : (
-            <div className="absolute inset-0 bg-[#1c1a17]" />
-          )}
+          {/* A CSS background-image, not an <img> — found live: Chrome's
+              real print pipeline (window.print(), not just a screenshot
+              or Playwright's page.pdf(), which don't reproduce this)
+              reliably fails to rasterize an absolutely-positioned <img>
+              using object-fit, even though absolutely-positioned <div>s
+              (the badge/headline below) print fine. A background-image
+              on a plain div is the standard, reliable workaround. */}
+          <div
+            className="absolute inset-0 bg-[#1c1a17] bg-cover bg-center"
+            style={heroPhoto ? { backgroundImage: `url(${heroPhoto.url})` } : undefined}
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
           <div className="absolute top-5 left-5 right-5">
             <span className="inline-flex items-center rounded-full bg-white/95 px-3 py-1 text-[10px] font-semibold tracking-wider-plus uppercase text-[#1c1a17]">
