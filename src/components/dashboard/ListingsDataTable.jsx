@@ -39,13 +39,13 @@ export default function ListingsDataTable({ rows, onStatusChange }) {
                 {new Date(listing.updated_at).toLocaleDateString()}
               </td>
               <td className="px-5 py-4 text-right">
-                <div className="flex items-center justify-end gap-3">
+                <div className="flex items-center justify-end gap-2.5">
                   {listing.status !== "draft" && (
                     <a
                       href={`/listings/${listing.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-[#ed2127] dark:text-[#f2454b] hover:underline"
+                      className="rounded-full border border-[#ed2127] dark:border-[#f2454b] text-[#ed2127] dark:text-[#f2454b] text-[11px] font-semibold px-3 py-1 hover:bg-[#ed2127] dark:hover:bg-[#f2454b] hover:text-white dark:hover:text-white transition-colors"
                     >
                       View live
                     </a>

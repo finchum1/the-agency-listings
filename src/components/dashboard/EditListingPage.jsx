@@ -41,22 +41,23 @@ export default function EditListingPage() {
     );
   }
 
+  // A plain text link read as too subtle for "Flyer"/"View live site" --
+  // an outlined accent pill matches the weight of an actual action
+  // without competing with the page's primary ink-fill buttons.
+  const pillLinkClass =
+    "rounded-full border border-[#ed2127] dark:border-[#f2454b] text-[#ed2127] dark:text-[#f2454b] text-xs font-semibold px-4 py-2 hover:bg-[#ed2127] dark:hover:bg-[#f2454b] hover:text-white dark:hover:text-white transition-colors";
+
   return (
     <div className="max-w-3xl space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-semibold">{listing.address_line1}</h1>
-        <div className="flex items-center gap-4">
-          <Link to={`/dashboard/listings/${listing.id}/flyer`} className="text-sm text-[#ed2127] dark:text-[#f2454b] hover:underline">
-            Flyer →
+        <div className="flex items-center gap-3">
+          <Link to={`/dashboard/listings/${listing.id}/flyer`} className={pillLinkClass}>
+            Flyer
           </Link>
           {listing.status !== "draft" && (
-            <a
-              href={`/listings/${listing.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-[#ed2127] dark:text-[#f2454b] hover:underline"
-            >
-              View live site →
+            <a href={`/listings/${listing.slug}`} target="_blank" rel="noopener noreferrer" className={pillLinkClass}>
+              View live site
             </a>
           )}
         </div>

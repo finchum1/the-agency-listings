@@ -175,6 +175,27 @@ export default function FlyerPage() {
     year: listing.year_built || "—",
   };
 
+  // window.print() rasterizes whatever's already painted right now -- it
+  // doesn't wait for images. The small gallery thumbnails are usually
+  // already decoded from having been visible on the page already, but the
+  // large full-bleed hero photo is the single biggest image here and, if
+  // it hadn't finished loading yet, printed as blank space (found live:
+  // the hero was missing while every other photo printed fine). Force a
+  // decode of it first so the print snapshot always has it ready.
+  const handlePrint = async () => {
+    if (heroPhoto?.url) {
+      try {
+        const img = new Image();
+        img.src = heroPhoto.url;
+        await img.decode();
+      } catch {
+        // Decoding failed (bad URL, browser quirk, etc.) -- still let the
+        // user print rather than silently doing nothing.
+      }
+    }
+    window.print();
+  };
+
   return (
     <div>
       <div className="no-print max-w-3xl mb-10 space-y-6">
@@ -189,7 +210,7 @@ export default function FlyerPage() {
             </Link>
             <button
               type="button"
-              onClick={() => window.print()}
+              onClick={handlePrint}
               className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors"
             >
               Print / Save as PDF
@@ -320,11 +341,10 @@ export default function FlyerPage() {
             <div className="absolute inset-0 bg-[#1c1a17]" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-          <div className="absolute top-5 left-5 right-5 flex items-center justify-between">
+          <div className="absolute top-5 left-5 right-5">
             <span className="inline-flex items-center rounded-full bg-white/95 px-3 py-1 text-[10px] font-semibold tracking-wider-plus uppercase text-[#1c1a17]">
               {STATUS_LABELS[listing.status] || listing.status}
             </span>
-            <img src={brokerage.logo} alt={brokerage.name} className="h-7 w-auto" />
           </div>
           <div className="absolute bottom-5 left-5 right-5">
             <h1 className="text-white text-3xl font-display font-semibold leading-tight">{headline}</h1>
@@ -335,12 +355,18 @@ export default function FlyerPage() {
         </div>
 
         <div className="px-6 pt-5 flex-1">
-          <div className="flex items-center justify-between">
+          {/* Logo centered between price and MLS# — a 3-column grid keeps
+              it truly centered regardless of how wide either side is
+              (unlike justify-between with a middle item), and still
+              centers correctly when there's no MLS# to fill the right
+              column. */}
+          <div className="grid grid-cols-3 items-center">
             <span className="text-2xl font-display font-semibold text-[#1c1a17]">
               {formatPrice(listing.price)}
             </span>
+            <img src={brokerage.logo} alt={brokerage.name} className="h-6 w-auto mx-auto" />
             {listing.mls_number && (
-              <span className="text-[10px] tracking-wider-plus uppercase text-[#1c1a17]/40">
+              <span className="text-[10px] tracking-wider-plus uppercase text-[#1c1a17]/40 justify-self-end">
                 MLS# {listing.mls_number}
               </span>
             )}

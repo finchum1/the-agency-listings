@@ -260,8 +260,13 @@ export default function BrokerageSiteForm({ site, onSaved }) {
       </div>
 
       {form.status === "published" && (
-        <a href="/brokerage" target="_blank" rel="noopener noreferrer" className="text-sm text-[#ed2127] dark:text-[#f2454b] hover:underline inline-block">
-          View live site →
+        <a
+          href="/brokerage"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block rounded-full border border-[#ed2127] dark:border-[#f2454b] text-[#ed2127] dark:text-[#f2454b] text-xs font-semibold px-4 py-2 hover:bg-[#ed2127] dark:hover:bg-[#f2454b] hover:text-white dark:hover:text-white transition-colors"
+        >
+          View live site
         </a>
       )}
 

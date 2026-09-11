@@ -283,9 +283,9 @@ export default function SiteForm({ site, onSaved }) {
           href={`/sites/${form.slug}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sm text-[#ed2127] dark:text-[#f2454b] hover:underline inline-block"
+          className="inline-block rounded-full border border-[#ed2127] dark:border-[#f2454b] text-[#ed2127] dark:text-[#f2454b] text-xs font-semibold px-4 py-2 hover:bg-[#ed2127] dark:hover:bg-[#f2454b] hover:text-white dark:hover:text-white transition-colors"
         >
-          View live site →
+          View live site
         </a>
       )}
 
