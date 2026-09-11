@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
 import { isAppHost } from './lib/appHosts.js'
+import { setSwUpdateChecker } from './lib/swUpdate.js'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -33,18 +34,31 @@ if (isAppHost(window.location.hostname)) {
         // iOS's standalone home-screen mode is known to be inconsistent
         // about which of these actually fires on a given resume (and it
         // suspends setInterval timers entirely once backgrounded, so the
-        // hourly poll below is a best-effort fallback for Android/desktop
-        // more than something iOS can rely on), so this deliberately
-        // layers three redundant triggers rather than trusting just one.
+        // 5-minute poll below is a best-effort fallback for Android/
+        // desktop more than something iOS can rely on), so this
+        // deliberately layers several redundant triggers rather than
+        // trusting just one.
+        //
+        // A real gap found live: none of visibilitychange/focus/pageshow
+        // fire for client-side (React Router) navigation, so someone who
+        // opens the dashboard once and then just clicks around inside it
+        // — normal usage — could go a long time without a single check,
+        // even mid-session across several deploys (a fresh incognito tab
+        // always showed the latest build; a regular tab kept lagging
+        // behind). checkForUpdate is exposed via swUpdate.js so
+        // useSwUpdateOnNavigate.js (App.jsx) can call it on every route
+        // change too — that's the trigger that actually covers active use.
+        //
         // registerType: "autoUpdate" (vite.config.js) means any update
         // found here applies and reloads automatically, no prompt needed.
         const checkForUpdate = () => registration.update();
+        setSwUpdateChecker(checkForUpdate);
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible') checkForUpdate();
         });
         window.addEventListener('focus', checkForUpdate);
         window.addEventListener('pageshow', checkForUpdate);
-        setInterval(checkForUpdate, 60 * 60 * 1000);
+        setInterval(checkForUpdate, 5 * 60 * 1000);
       },
     });
   })

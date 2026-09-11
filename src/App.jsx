@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import { isAppHost } from "./lib/appHosts";
+import useSwUpdateOnNavigate from "./hooks/useSwUpdateOnNavigate";
 
 import LoginPage from "./components/auth/LoginPage";
 import SetPasswordPage from "./components/auth/SetPasswordPage";
@@ -56,6 +57,12 @@ function Root() {
 }
 
 export default function App() {
+  // Called unconditionally (before the early return below) per the
+  // Rules of Hooks — harmless on a custom domain too, since main.jsx
+  // never registers a service worker there in the first place, so the
+  // checker stays a no-op.
+  useSwUpdateOnNavigate();
+
   // A request arriving on a listing's or an agent site's own attached
   // custom domain (e.g. 1645SaratogaWay.com, TerrenceFinchumRealty.com)
   // should just show that listing/site at "/", regardless of path — skip

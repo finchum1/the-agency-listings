@@ -396,7 +396,7 @@ export default function FlyerPage() {
             <span className="text-2xl font-display font-semibold text-[#1c1a17]">
               {formatPrice(listing.price)}
             </span>
-            <img src={brokerage.logo} alt={brokerage.name} className="h-6 w-auto mx-auto" />
+            <img src={brokerage.logo} alt={brokerage.name} className="h-9 w-auto mx-auto" />
             {listing.mls_number && (
               <span className="text-[10px] tracking-wider-plus uppercase text-[#1c1a17]/40 justify-self-end">
                 MLS# {listing.mls_number}
