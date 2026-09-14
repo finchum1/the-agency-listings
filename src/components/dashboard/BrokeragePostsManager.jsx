@@ -22,6 +22,11 @@ function slugify(str) {
     .replace(/(^-|-$)/g, "");
 }
 
+// Posts arrive newest-first (useBrokerageSiteEditor orders by post_date
+// desc) — show the most recent handful and collapse the rest behind a
+// toggle rather than stacking every post ever written.
+const COLLAPSED_COUNT = 4;
+
 // Blog CRUD for the brokerage site — parallel to PostsManager.jsx (agent
 // sites), targeting brokerage_posts instead of agent_site_posts. No
 // agent_site_id/related_listing_id: these posts are brokerage-wide, not
@@ -31,6 +36,7 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showAll, setShowAll] = useState(false);
 
   const inputClass =
     "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -122,7 +128,7 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
 
       {posts.length > 0 && (
         <div className="space-y-2">
-          {posts.map((post) => (
+          {(showAll ? posts : posts.slice(0, COLLAPSED_COUNT)).map((post) => (
             <div key={post.id} className="border border-black/10 dark:border-white/15 rounded-xl p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{post.title}</p>
@@ -139,6 +145,15 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
               </div>
             </div>
           ))}
+          {posts.length > COLLAPSED_COUNT && (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="w-full text-center text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] pt-1"
+            >
+              {showAll ? "Show fewer posts" : `Show ${posts.length - COLLAPSED_COUNT} more post${posts.length - COLLAPSED_COUNT === 1 ? "" : "s"}`}
+            </button>
+          )}
         </div>
       )}
 

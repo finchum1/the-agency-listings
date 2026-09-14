@@ -24,12 +24,19 @@ function slugify(str) {
     .replace(/(^-|-$)/g, "");
 }
 
+// Posts arrive newest-first (useAgentSiteEditor orders by post_date desc).
+// An agent who's been blogging a while can rack up dozens of rows, which
+// used to just render as one long stacked list — show the most recent
+// handful and collapse the rest behind a toggle.
+const COLLAPSED_COUNT = 4;
+
 export default function PostsManager({ agentSiteId, agentId, posts, onChanged }) {
   const [editingId, setEditingId] = useState(null); // null closed, "new" adding
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [myListings, setMyListings] = useState([]);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (!agentId) return;
@@ -135,7 +142,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
 
       {posts.length > 0 && (
         <div className="space-y-2">
-          {posts.map((post) => (
+          {(showAll ? posts : posts.slice(0, COLLAPSED_COUNT)).map((post) => (
             <div key={post.id} className="border border-black/10 dark:border-white/15 rounded-xl p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{post.title}</p>
@@ -152,6 +159,15 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
               </div>
             </div>
           ))}
+          {posts.length > COLLAPSED_COUNT && (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="w-full text-center text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] pt-1"
+            >
+              {showAll ? "Show fewer posts" : `Show ${posts.length - COLLAPSED_COUNT} more post${posts.length - COLLAPSED_COUNT === 1 ? "" : "s"}`}
+            </button>
+          )}
         </div>
       )}
 
