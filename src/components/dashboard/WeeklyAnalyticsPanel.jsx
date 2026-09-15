@@ -46,38 +46,36 @@ export default function WeeklyAnalyticsPanel({ weekly, viewsLabel = "Views", lea
   );
 }
 
+// HTML/CSS bars rather than raw SVG rects — needed room for a per-bar
+// count label (above each bar, per feedback: the bare bars alone made you
+// hover/guess at the exact number) without fighting SVG text sizing.
 function WeekBarRow({ label, weeks, field, max }) {
-  const barWidth = 100 / weeks.length;
   return (
     <div>
       <p className="text-[11px] font-semibold tracking-wider-plus uppercase text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-1.5">
         {label} / week
       </p>
-      <svg viewBox="0 0 100 32" preserveAspectRatio="none" className="w-full h-10">
+      <div className="flex items-end gap-1 h-16">
         {weeks.map((w, i) => {
           const value = w[field];
-          const height = value === 0 ? 1 : Math.max(2, (value / max) * 30);
+          const heightPct = value === 0 ? 3 : Math.max(6, (value / max) * 100);
+          const isCurrent = i === weeks.length - 1;
           return (
-            <rect
-              key={i}
-              x={i * barWidth + barWidth * 0.15}
-              y={32 - height}
-              width={barWidth * 0.7}
-              height={height}
-              rx="0.6"
-              className={
-                i === weeks.length - 1
-                  ? "fill-[#ed2127] dark:fill-[#f2454b]"
-                  : "fill-[#1c1a17]/15 dark:fill-[#faf9f7]/20"
-              }
-            >
-              <title>
-                {weekLabel(w.start)}: {value.toLocaleString()}
-              </title>
-            </rect>
+            <div key={i} className="flex-1 h-full flex flex-col items-center justify-end min-w-0">
+              <span className="text-[9px] leading-tight tabular-nums text-[#1c1a17]/45 dark:text-[#faf9f7]/45 mb-0.5">
+                {value.toLocaleString()}
+              </span>
+              <div
+                title={`${weekLabel(w.start)}: ${value.toLocaleString()}`}
+                style={{ height: `${heightPct}%` }}
+                className={`w-full rounded-t-[2px] ${
+                  isCurrent ? "bg-[#ed2127] dark:bg-[#f2454b]" : "bg-[#1c1a17]/15 dark:bg-[#faf9f7]/20"
+                }`}
+              />
+            </div>
           );
         })}
-      </svg>
+      </div>
       <div className="flex justify-between mt-1 text-[10px] text-[#1c1a17]/35 dark:text-[#faf9f7]/35">
         <span>{weekLabel(weeks[0].start)}</span>
         <span>{weekLabel(weeks[weeks.length - 1].start)}</span>
