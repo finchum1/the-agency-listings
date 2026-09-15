@@ -5,7 +5,6 @@ import SiteForm from "./SiteForm";
 import TestimonialsManager from "./TestimonialsManager";
 import AreasManager from "./AreasManager";
 import PostsManager from "./PostsManager";
-import AnalyticsStats from "./AnalyticsStats";
 import PeriodAnalyticsPanel from "./PeriodAnalyticsPanel";
 
 // Shared editor for an agent's personal site — used both as "My Site"
@@ -45,8 +44,12 @@ export default function SiteEditor({ agentId, agentName, heading }) {
         </p>
       </div>
 
-      <AnalyticsStats stats={analytics} viewsLabel="Site Views" />
-      <PeriodAnalyticsPanel viewSources={periodViewSources} leadSources={periodLeadSources} viewsLabel="Site Views" />
+      <PeriodAnalyticsPanel
+        totals={analytics}
+        viewSources={periodViewSources}
+        leadSources={periodLeadSources}
+        viewsLabel="Site Views"
+      />
 
       <SiteForm site={site} onSaved={refresh} />
       <TestimonialsManager agentSiteId={site.id} testimonials={testimonials} onChanged={refresh} />

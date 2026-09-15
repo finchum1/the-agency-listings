@@ -7,7 +7,6 @@ import ListingForm from "./ListingForm";
 import PhotoManager from "./PhotoManager";
 import HeroScrollPhotosManager from "./HeroScrollPhotosManager";
 import OpenHouseManager from "./OpenHouseManager";
-import AnalyticsStats from "./AnalyticsStats";
 import PeriodAnalyticsPanel from "./PeriodAnalyticsPanel";
 
 export default function EditListingPage() {
@@ -70,8 +69,7 @@ export default function EditListingPage() {
         </div>
       </div>
 
-      <AnalyticsStats stats={analytics} />
-      <PeriodAnalyticsPanel viewSources={periodSources} leadSources={periodSources} />
+      <PeriodAnalyticsPanel totals={analytics} viewSources={periodSources} leadSources={periodSources} />
 
       <ListingForm mode="edit" listing={listing} onSaved={refresh} />
       <PhotoManager listingId={listing.id} photos={photos} onChanged={refresh} />

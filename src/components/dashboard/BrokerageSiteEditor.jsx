@@ -5,7 +5,6 @@ import BrokerageSiteForm from "./BrokerageSiteForm";
 import BrokeragePostsManager from "./BrokeragePostsManager";
 import BrokerageAgentsManager from "./BrokerageAgentsManager";
 import BrokerageAreasManager from "./BrokerageAreasManager";
-import AnalyticsStats from "./AnalyticsStats";
 import PeriodAnalyticsPanel from "./PeriodAnalyticsPanel";
 
 // Admin-only editor for the one brokerage site (/dashboard/brokerage-site
@@ -48,8 +47,12 @@ export default function BrokerageSiteEditor() {
         </p>
       </div>
 
-      <AnalyticsStats stats={analytics} viewsLabel="Site Views" />
-      <PeriodAnalyticsPanel viewSources={periodViewSources} leadSources={periodLeadSources} viewsLabel="Site Views" />
+      <PeriodAnalyticsPanel
+        totals={analytics}
+        viewSources={periodViewSources}
+        leadSources={periodLeadSources}
+        viewsLabel="Site Views"
+      />
 
       <BrokerageSiteForm site={site} onSaved={refresh} />
       <BrokerageAgentsManager brokerageSiteId={site.id} agents={agents} onChanged={refresh} />

@@ -2,15 +2,26 @@ import { useMemo, useState } from "react";
 import { usePeriodAnalytics } from "../../hooks/usePeriodAnalytics";
 import { dayLabel, shortDateLabel, monthLabel, weekRangeLabel } from "../../lib/periodBuckets";
 
-// Navigable "Analytics" companion to AnalyticsStats' all-time/30d
-// totals — Weekly (7 daily bars for one week) / Monthly (that month's
-// weekly bars) toggle, with back/forward paging and a "Today" shortcut
-// back to the current period. Forward is capped at the current period —
-// there's nothing to show beyond "now". Used on an individual listing's
-// edit page, the agent site editor, and the brokerage site editor —
-// deliberately NOT on the Listings module's portfolio-wide aggregate,
-// which stays a simple running total.
-export default function PeriodAnalyticsPanel({ viewSources, leadSources, viewsLabel = "Views", leadsLabel = "Leads" }) {
+// One combined Analytics section: the all-time/30d totals (`totals`,
+// same shape AnalyticsStats.jsx renders standalone for the Listings
+// module's portfolio-wide aggregate — kept as a separate component
+// there, since that page deliberately has no navigable chart) up top,
+// a divider, then the navigable Weekly (7 daily bars for one week) /
+// Monthly (that month's weekly bars) chart below — back/forward paging
+// and a "Today" shortcut back to the current period, forward capped
+// there since there's nothing to show beyond "now". Previously two
+// separate bordered cards stacked on top of each other; merged into one
+// per feedback, since they were really one feature (site/listing
+// activity) split into two pieces of chrome. Used on an individual
+// listing's edit page, the agent site editor, and the brokerage site
+// editor.
+export default function PeriodAnalyticsPanel({
+  totals,
+  viewSources,
+  leadSources,
+  viewsLabel = "Views",
+  leadsLabel = "Leads",
+}) {
   const [mode, setMode] = useState("week"); // "week" | "month"
   const [offset, setOffset] = useState(0); // periods back from current; 0 = now
 
@@ -29,15 +40,33 @@ export default function PeriodAnalyticsPanel({ viewSources, leadSources, viewsLa
     return mode === "month" ? monthLabel(first) : weekRangeLabel(first, lastEnd);
   }, [period.buckets, mode]);
 
-  if (period.loading) {
+  if (totals.loading || period.loading) {
     return (
-      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mb-6 h-[300px] animate-pulse" />
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mb-6 h-[380px] animate-pulse" />
     );
   }
 
+  const totalsCells = [
+    { label: viewsLabel, value: totals.views },
+    { label: `${viewsLabel} (30d)`, value: totals.views30d },
+    { label: leadsLabel, value: totals.leads },
+    { label: `${leadsLabel} (30d)`, value: totals.leads30d },
+  ];
+
   return (
     <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mb-6 space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {totalsCells.map((c) => (
+          <div key={c.label}>
+            <p className="text-2xl font-display font-semibold">{c.value.toLocaleString()}</p>
+            <p className="text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">
+              {c.label}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-black/5 dark:border-white/10 pt-4 flex items-center justify-between flex-wrap gap-3">
         <h3 className="font-display text-sm font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70">Analytics</h3>
         <div className="flex items-center gap-2">
           <button
