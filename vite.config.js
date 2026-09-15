@@ -39,13 +39,42 @@ export default defineConfig({
           { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
-      // Precaches the built app shell (JS/CSS/HTML) only — no
-      // runtimeCaching rules, so Supabase reads/writes and every
-      // /api/* call always hit the network live. A dashboard showing
-      // stale cached data (listings, leads, agent info) would be worse
-      // than no offline support at all.
+      // Precaches the built app shell (JS/CSS/svg/png/ico) — content-
+      // hashed filenames, so cache-first for these is always correct: a
+      // new build gets new hashes, never collides with a stale cached
+      // one. No runtimeCaching rules for /api/* or Supabase — reads/
+      // writes always hit the network live. A dashboard showing stale
+      // cached data (listings, leads, agent info) would be worse than no
+      // offline support at all.
+      //
+      // index.html is deliberately EXCLUDED from that precache and
+      // handled by its own NetworkFirst runtimeCaching rule below
+      // instead. Root-caused live: precached HTML is served cache-first
+      // by the SW's own fetch handler on every navigation, including a
+      // plain browser refresh — before any of the app's own JS (the
+      // update-on-navigation checker, autoUpdate's reload) ever gets a
+      // chance to run, since that JS IS what the stale HTML would load.
+      // A refresh could keep re-serving however many builds-old HTML the
+      // currently-active SW happened to precache, until something else
+      // (an unrelated navigation, a background poll) happened to catch
+      // the update first — which is exactly the "goes back a couple
+      // updates" behavior reported live. Network-first for the shell
+      // document itself closes that gap: a plain refresh now always
+      // tries the network first for the current build's real asset
+      // hashes, falling back to the last cached copy only if offline.
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        globPatterns: ['**/*.{js,css,svg,png,ico}'],
+        navigateFallback: '/index.html',
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-shell',
+              networkTimeoutSeconds: 3,
+            },
+          },
+        ],
       },
     }),
   ],
