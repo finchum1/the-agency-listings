@@ -2,13 +2,14 @@ import { useMemo, useState } from "react";
 import { usePeriodAnalytics } from "../../hooks/usePeriodAnalytics";
 import { dayLabel, shortDateLabel, monthLabel, weekRangeLabel } from "../../lib/periodBuckets";
 
-// Navigable trend companion to AnalyticsStats' all-time/30d totals —
-// Weekly (7 daily bars for one week) / Monthly (that month's weekly
-// bars) toggle, with back/forward paging. Forward is capped at the
-// current period — there's nothing to show beyond "now". Used on an
-// individual listing's edit page, the agent site editor, and the
-// brokerage site editor — deliberately NOT on the Listings module's
-// portfolio-wide aggregate, which stays a simple running total.
+// Navigable "Analytics" companion to AnalyticsStats' all-time/30d
+// totals — Weekly (7 daily bars for one week) / Monthly (that month's
+// weekly bars) toggle, with back/forward paging and a "Today" shortcut
+// back to the current period. Forward is capped at the current period —
+// there's nothing to show beyond "now". Used on an individual listing's
+// edit page, the agent site editor, and the brokerage site editor —
+// deliberately NOT on the Listings module's portfolio-wide aggregate,
+// which stays a simple running total.
 export default function PeriodAnalyticsPanel({ viewSources, leadSources, viewsLabel = "Views", leadsLabel = "Leads" }) {
   const [mode, setMode] = useState("week"); // "week" | "month"
   const [offset, setOffset] = useState(0); // periods back from current; 0 = now
@@ -37,22 +38,32 @@ export default function PeriodAnalyticsPanel({ viewSources, leadSources, viewsLa
   return (
     <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mb-6 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h3 className="font-display text-sm font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70">Trend</h3>
-        <div className="flex items-center rounded-full border border-black/10 dark:border-white/15 p-0.5 text-xs font-medium">
-          {["week", "month"].map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => switchMode(m)}
-              className={`px-3 py-1 rounded-full capitalize transition-colors ${
-                mode === m
-                  ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white"
-                  : "text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
-              }`}
-            >
-              {m}
-            </button>
-          ))}
+        <h3 className="font-display text-sm font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70">Analytics</h3>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setOffset(0)}
+            disabled={offset === 0}
+            className="text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-30 disabled:hover:text-[#1c1a17]/50 dark:disabled:hover:text-[#faf9f7]/50 disabled:cursor-not-allowed"
+          >
+            Today
+          </button>
+          <div className="flex items-center rounded-full border border-black/10 dark:border-white/15 p-0.5 text-xs font-medium">
+            {["week", "month"].map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => switchMode(m)}
+                className={`px-3 py-1 rounded-full capitalize transition-colors ${
+                  mode === m
+                    ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white"
+                    : "text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
