@@ -1,24 +1,14 @@
-import { useState } from "react";
 import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
 
 // Mirrors agent-site/ServiceAreas.jsx (same copy, same card layout) —
 // styled after theagencyoklahoma.com/neighborhoods, the reference for
 // this section. `preview` caps the grid to the top 3 with a "View All"
 // link below (used on Home, matching AgentRoster/BlogList's own preview
-// convention); the standalone /brokerage/areas page shows the top
-// FULL_LIST_COUNT with a "Show All"/"Show Fewer" toggle for the rest.
-const FULL_LIST_COUNT = 4;
-
+// convention); the standalone /brokerage/areas page shows every area.
 export default function AreasOfExpertise({ preview = false, isStandalonePage = false }) {
   const { site } = useBrokerageSiteContext();
-  const [showAll, setShowAll] = useState(false);
   if (site.areas.length === 0) return null;
-  const areas = preview
-    ? site.areas.slice(0, 3)
-    : showAll
-      ? site.areas
-      : site.areas.slice(0, FULL_LIST_COUNT);
-  const hasMore = !preview && site.areas.length > FULL_LIST_COUNT;
+  const areas = preview ? site.areas.slice(0, 3) : site.areas;
   const Heading = isStandalonePage ? "h1" : "h2";
 
   return (
@@ -53,18 +43,6 @@ export default function AreasOfExpertise({ preview = false, isStandalonePage = f
             >
               View All
             </a>
-          </div>
-        )}
-
-        {hasMore && (
-          <div className="mt-14 flex justify-center">
-            <button
-              type="button"
-              onClick={() => setShowAll((v) => !v)}
-              className="border border-[var(--as-text)]/20 px-8 py-3 text-xs font-medium tracked-wide uppercase text-[var(--as-text)] transition-colors hover:bg-[var(--as-text)] hover:text-[var(--as-bg)]"
-            >
-              {showAll ? "Show Fewer" : `Show All ${site.areas.length}`}
-            </button>
           </div>
         )}
       </div>

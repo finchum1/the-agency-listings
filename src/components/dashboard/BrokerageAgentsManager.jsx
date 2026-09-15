@@ -22,6 +22,11 @@ function slugify(str) {
     .replace(/(^-|-$)/g, "");
 }
 
+// Roster arrives in sort_order — a full office roster used to just
+// render as one long stacked list here; show the top 4 and collapse the
+// rest behind a toggle, same pattern as PostsManager.jsx's blog list.
+const COLLAPSED_COUNT = 4;
+
 // Roster CRUD for the brokerage site's "Agents" page — a standalone list
 // (brokerage_agents), not the dashboard's own Agents admin page
 // (profiles/AgentsPage.jsx): most people on this roster don't have, and
@@ -33,6 +38,7 @@ export default function BrokerageAgentsManager({ brokerageSiteId, agents, onChan
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showAll, setShowAll] = useState(false);
 
   const inputClass =
     "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -144,7 +150,7 @@ export default function BrokerageAgentsManager({ brokerageSiteId, agents, onChan
 
       {sorted.length > 0 && (
         <div className="space-y-2">
-          {sorted.map((agent, i) => (
+          {(showAll ? sorted : sorted.slice(0, COLLAPSED_COUNT)).map((agent, i) => (
             <div key={agent.id} className="border border-black/10 dark:border-white/15 rounded-xl p-3 flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden shrink-0">
                 {agent.photo_url && <img src={agent.photo_url} alt="" className="h-full w-full object-cover" />}
@@ -161,6 +167,15 @@ export default function BrokerageAgentsManager({ brokerageSiteId, agents, onChan
               </div>
             </div>
           ))}
+          {sorted.length > COLLAPSED_COUNT && (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="w-full text-center text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] pt-1"
+            >
+              {showAll ? "Show fewer agents" : `Show ${sorted.length - COLLAPSED_COUNT} more agent${sorted.length - COLLAPSED_COUNT === 1 ? "" : "s"}`}
+            </button>
+          )}
         </div>
       )}
 

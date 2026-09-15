@@ -5,6 +5,12 @@ import RichTextEditor from "./RichTextEditor";
 
 const emptyForm = { slug: "", name: "", blurb: "", description: "", photo_url: "" };
 
+// Areas arrive in sort_order (see useAgentSiteEditor.js) — an agent with
+// a long list used to just render as one long stacked list here; show
+// the top 4 and collapse the rest behind a toggle, same pattern as
+// PostsManager.jsx's own blog list.
+const COLLAPSED_COUNT = 4;
+
 function slugify(str) {
   return str
     .toLowerCase()
@@ -18,6 +24,7 @@ export default function AreasManager({ agentSiteId, areas, onChanged }) {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showAll, setShowAll] = useState(false);
 
   const inputClass =
     "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -129,7 +136,7 @@ export default function AreasManager({ agentSiteId, areas, onChanged }) {
 
       {areas.length > 0 && (
         <div className="space-y-2">
-          {areas.map((area, i) => (
+          {(showAll ? areas : areas.slice(0, COLLAPSED_COUNT)).map((area, i) => (
             <div
               key={area.id}
               className="border border-black/10 dark:border-white/15 rounded-xl p-3 flex items-center justify-between gap-3"
@@ -153,6 +160,15 @@ export default function AreasManager({ agentSiteId, areas, onChanged }) {
               </div>
             </div>
           ))}
+          {areas.length > COLLAPSED_COUNT && (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="w-full text-center text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] pt-1"
+            >
+              {showAll ? "Show fewer areas" : `Show ${areas.length - COLLAPSED_COUNT} more area${areas.length - COLLAPSED_COUNT === 1 ? "" : "s"}`}
+            </button>
+          )}
         </div>
       )}
 

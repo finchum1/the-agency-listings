@@ -1,22 +1,12 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
 
 // `preview` caps the list to a teaser row (used on Home); the standalone
-// /brokerage/blog page shows the top FULL_LIST_COUNT with a
-// "Show All"/"Show Fewer" toggle for the rest.
-const FULL_LIST_COUNT = 4;
-
+// /brokerage/blog page shows every published post.
 export default function BlogList({ preview = false, isStandalonePage = false }) {
   const { site } = useBrokerageSiteContext();
-  const [showAll, setShowAll] = useState(false);
   if (site.posts.length === 0) return null;
-  const posts = preview
-    ? site.posts.slice(0, 3)
-    : showAll
-      ? site.posts
-      : site.posts.slice(0, FULL_LIST_COUNT);
-  const hasMore = !preview && site.posts.length > FULL_LIST_COUNT;
+  const posts = preview ? site.posts.slice(0, 3) : site.posts;
   const Heading = isStandalonePage ? "h1" : "h2";
 
   return (
@@ -53,18 +43,6 @@ export default function BlogList({ preview = false, isStandalonePage = false }) 
             >
               Read The Blog
             </Link>
-          </div>
-        )}
-
-        {hasMore && (
-          <div className="mt-14 flex justify-center">
-            <button
-              type="button"
-              onClick={() => setShowAll((v) => !v)}
-              className="border border-[var(--as-text)]/20 px-8 py-3 text-xs font-medium tracked-wide uppercase text-[var(--as-text)] transition-colors hover:bg-[var(--as-text)] hover:text-[var(--as-bg)]"
-            >
-              {showAll ? "Show Fewer" : `Show All ${site.posts.length}`}
-            </button>
           </div>
         )}
       </div>

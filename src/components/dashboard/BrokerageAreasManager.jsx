@@ -13,6 +13,11 @@ function slugify(str) {
     .replace(/(^-|-$)/g, "");
 }
 
+// Areas arrive in sort_order — a long office-wide list used to just
+// render as one long stacked list here; show the top 4 and collapse the
+// rest behind a toggle, same pattern as PostsManager.jsx's blog list.
+const COLLAPSED_COUNT = 4;
+
 // "Areas of Expertise" CRUD for the brokerage site — mirrors
 // AreasManager.jsx (agent sites) exactly, targeting brokerage_areas
 // instead of agent_site_areas (no agent_site_id: this is the one
@@ -22,6 +27,7 @@ export default function BrokerageAreasManager({ brokerageSiteId, areas, onChange
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showAll, setShowAll] = useState(false);
 
   const inputClass =
     "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -120,7 +126,7 @@ export default function BrokerageAreasManager({ brokerageSiteId, areas, onChange
 
       {areas.length > 0 && (
         <div className="space-y-2">
-          {areas.map((area, i) => (
+          {(showAll ? areas : areas.slice(0, COLLAPSED_COUNT)).map((area, i) => (
             <div key={area.id} className="border border-black/10 dark:border-white/15 rounded-xl p-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="h-10 w-10 rounded-lg bg-black/5 dark:bg-white/10 overflow-hidden shrink-0">
@@ -139,6 +145,15 @@ export default function BrokerageAreasManager({ brokerageSiteId, areas, onChange
               </div>
             </div>
           ))}
+          {areas.length > COLLAPSED_COUNT && (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="w-full text-center text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] pt-1"
+            >
+              {showAll ? "Show fewer areas" : `Show ${areas.length - COLLAPSED_COUNT} more area${areas.length - COLLAPSED_COUNT === 1 ? "" : "s"}`}
+            </button>
+          )}
         </div>
       )}
 

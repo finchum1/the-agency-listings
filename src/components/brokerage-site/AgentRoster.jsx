@@ -1,11 +1,4 @@
-import { useState } from "react";
 import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
-
-// The standalone /brokerage/agents page used to dump every agent into
-// one long grid — now caps the initial view to this many, with a
-// "Show All"/"Show Fewer" toggle for the rest (separate from `preview`,
-// which caps Home's own teaser and links out to this page instead).
-const FULL_LIST_COUNT = 4;
 
 function initials(name) {
   return name
@@ -23,14 +16,8 @@ function initials(name) {
 // use on Home; the standalone /brokerage/agents page shows everyone.
 export default function AgentRoster({ preview = false, isStandalonePage = false }) {
   const { site } = useBrokerageSiteContext();
-  const [showAll, setShowAll] = useState(false);
-  if (site.agents.length === 0) return null;
-  const agents = preview
-    ? site.agents.slice(0, 6)
-    : showAll
-      ? site.agents
-      : site.agents.slice(0, FULL_LIST_COUNT);
-  const hasMore = !preview && site.agents.length > FULL_LIST_COUNT;
+  const agents = preview ? site.agents.slice(0, 6) : site.agents;
+  if (agents.length === 0) return null;
   const Heading = isStandalonePage ? "h1" : "h2";
 
   return (
@@ -96,18 +83,6 @@ export default function AgentRoster({ preview = false, isStandalonePage = false 
             >
               Meet The Full Team
             </a>
-          </div>
-        )}
-
-        {hasMore && (
-          <div className="mt-14 flex justify-center">
-            <button
-              type="button"
-              onClick={() => setShowAll((v) => !v)}
-              className="border border-[var(--as-text)]/20 px-8 py-3 text-xs font-medium tracked-wide uppercase text-[var(--as-text)] transition-colors hover:bg-[var(--as-text)] hover:text-[var(--as-bg)]"
-            >
-              {showAll ? "Show Fewer" : `Show All ${site.agents.length}`}
-            </button>
           </div>
         )}
       </div>
