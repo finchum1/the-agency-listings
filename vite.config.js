@@ -63,6 +63,27 @@ export default defineConfig({
       // tries the network first for the current build's real asset
       // hashes, falling back to the last cached copy only if offline.
       workbox: {
+        // vite-plugin-pwa normally auto-sets these two whenever
+        // registerType: 'autoUpdate' is used — but only when
+        // injectRegister is left at its own default ('auto'/null); it
+        // skips that wiring entirely once injectRegister: false is set
+        // (required above, for the custom-domain reason), silently
+        // leaving skipWaiting/clientsClaim both off despite autoUpdate
+        // being requested. That gap is the actual root cause of every
+        // "still on an old build" report this session: without them, a
+        // newly-installed service worker sits in the browser's normal
+        // "waiting" state indefinitely (confirmed live in DevTools'
+        // Application > Service Workers panel — a #1135 sitting
+        // "waiting to activate" well after a #1130 was already active),
+        // since nothing was ever telling it to skip that wait. Setting
+        // both explicitly here restores the behavior autoUpdate is
+        // actually supposed to have: a newly-installed worker activates
+        // immediately and takes control of open tabs, which in turn
+        // fires the "activated" event our registerSW() call (main.jsx)
+        // is already listening for, triggering its own automatic
+        // reload — closing the loop with zero manual DevTools steps.
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,svg,png,ico}'],
         navigateFallback: '/index.html',
         runtimeCaching: [
