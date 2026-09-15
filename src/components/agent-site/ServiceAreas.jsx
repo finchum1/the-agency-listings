@@ -1,8 +1,18 @@
+import { useState } from "react";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
+
+// Used identically on Home and the standalone /areas page (no preview
+// split like the brokerage site's AreasOfExpertise.jsx has) — used to
+// dump every area into one grid everywhere; now caps to the top
+// FULL_LIST_COUNT with a "Show All"/"Show Fewer" toggle for the rest.
+const FULL_LIST_COUNT = 4;
 
 export default function ServiceAreas() {
   const { site, isStandalonePage } = useAgentSiteContext();
+  const [showAll, setShowAll] = useState(false);
   if (site.areas.length === 0) return null;
+  const areas = showAll ? site.areas : site.areas.slice(0, FULL_LIST_COUNT);
+  const hasMore = site.areas.length > FULL_LIST_COUNT;
   // See Bio.jsx's comment — Home already has an H1 from Hero.jsx, but
   // this section IS the page at standalone /areas.
   const Heading = isStandalonePage ? "h1" : "h2";
@@ -18,7 +28,7 @@ export default function ServiceAreas() {
         </Heading>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {site.areas.map((area) => (
+          {areas.map((area) => (
             <div key={area.id} className="relative overflow-hidden bg-[var(--as-surface)] aspect-[4/3]">
               {area.photo_url && (
                 <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover" />
@@ -30,6 +40,18 @@ export default function ServiceAreas() {
             </div>
           ))}
         </div>
+
+        {hasMore && (
+          <div className="mt-14 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="border border-[var(--as-text)]/20 px-8 py-3 text-xs font-medium tracked-wide uppercase text-[var(--as-text)] transition-colors hover:bg-[var(--as-text)] hover:text-[var(--as-bg)]"
+            >
+              {showAll ? "Show Fewer" : `Show All ${site.areas.length}`}
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
