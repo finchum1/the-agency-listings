@@ -1,13 +1,12 @@
 import { useMemo } from "react";
 import { useBrokerageSiteEditor } from "../../hooks/useBrokerageSiteEditor";
 import { useBrokerageSiteAnalytics } from "../../hooks/useBrokerageSiteAnalytics";
-import { useWeeklyAnalytics } from "../../hooks/useWeeklyAnalytics";
 import BrokerageSiteForm from "./BrokerageSiteForm";
 import BrokeragePostsManager from "./BrokeragePostsManager";
 import BrokerageAgentsManager from "./BrokerageAgentsManager";
 import BrokerageAreasManager from "./BrokerageAreasManager";
 import AnalyticsStats from "./AnalyticsStats";
-import WeeklyAnalyticsPanel from "./WeeklyAnalyticsPanel";
+import PeriodAnalyticsPanel from "./PeriodAnalyticsPanel";
 
 // Admin-only editor for the one brokerage site (/dashboard/brokerage-site
 // — see ProtectedRoute adminOnly in App.jsx). Parallel to SiteEditor.jsx,
@@ -18,7 +17,7 @@ export default function BrokerageSiteEditor() {
   const postIds = useMemo(() => posts.map((p) => p.id), [posts]);
   const analytics = useBrokerageSiteAnalytics({ siteId: site?.id, postIds });
 
-  const weeklyViewSources = useMemo(
+  const periodViewSources = useMemo(
     () => [
       { targetType: "brokerage_site", targetIds: site ? [site.id] : [] },
       { targetType: "brokerage_post", targetIds: postIds },
@@ -29,11 +28,10 @@ export default function BrokerageSiteEditor() {
   // the brokerage site today (the main Contact page is mailto/tel-only —
   // see ContactCard.jsx) — stored as target_type "brokerage_valuation"
   // (see api/contact.js, supabase/brokerage-valuation-leads.sql).
-  const weeklyLeadSources = useMemo(
+  const periodLeadSources = useMemo(
     () => [{ targetType: "brokerage_valuation", targetIds: site ? [site.id] : [] }],
     [site],
   );
-  const weekly = useWeeklyAnalytics({ viewSources: weeklyViewSources, leadSources: weeklyLeadSources });
 
   if (loading) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
   if (error) return <p className="text-sm text-red-600 dark:text-red-400">{error}</p>;
@@ -51,7 +49,7 @@ export default function BrokerageSiteEditor() {
       </div>
 
       <AnalyticsStats stats={analytics} viewsLabel="Site Views" />
-      <WeeklyAnalyticsPanel weekly={weekly} viewsLabel="Site Views" />
+      <PeriodAnalyticsPanel viewSources={periodViewSources} leadSources={periodLeadSources} viewsLabel="Site Views" />
 
       <BrokerageSiteForm site={site} onSaved={refresh} />
       <BrokerageAgentsManager brokerageSiteId={site.id} agents={agents} onChanged={refresh} />

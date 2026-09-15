@@ -1,13 +1,12 @@
 import { useMemo } from "react";
 import { useAgentSiteEditor } from "../../hooks/useAgentSiteEditor";
 import { useSiteAnalytics } from "../../hooks/useSiteAnalytics";
-import { useWeeklyAnalytics } from "../../hooks/useWeeklyAnalytics";
 import SiteForm from "./SiteForm";
 import TestimonialsManager from "./TestimonialsManager";
 import AreasManager from "./AreasManager";
 import PostsManager from "./PostsManager";
 import AnalyticsStats from "./AnalyticsStats";
-import WeeklyAnalyticsPanel from "./WeeklyAnalyticsPanel";
+import PeriodAnalyticsPanel from "./PeriodAnalyticsPanel";
 
 // Shared editor for an agent's personal site — used both as "My Site"
 // (agentId = the logged-in user, everyone has access) and, for admins, to
@@ -23,15 +22,14 @@ export default function SiteEditor({ agentId, agentName, heading }) {
   const postIds = useMemo(() => posts.map((p) => p.id), [posts]);
   const analytics = useSiteAnalytics({ siteId: site?.id, postIds });
 
-  const weeklyViewSources = useMemo(
+  const periodViewSources = useMemo(
     () => [
       { targetType: "agent_site", targetIds: site ? [site.id] : [] },
       { targetType: "agent_post", targetIds: postIds },
     ],
     [site, postIds],
   );
-  const weeklyLeadSources = useMemo(() => [{ targetType: "agent_site", targetIds: site ? [site.id] : [] }], [site]);
-  const weekly = useWeeklyAnalytics({ viewSources: weeklyViewSources, leadSources: weeklyLeadSources });
+  const periodLeadSources = useMemo(() => [{ targetType: "agent_site", targetIds: site ? [site.id] : [] }], [site]);
 
   if (loading) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
   if (error) return <p className="text-sm text-red-600 dark:text-red-400">{error}</p>;
@@ -48,7 +46,7 @@ export default function SiteEditor({ agentId, agentName, heading }) {
       </div>
 
       <AnalyticsStats stats={analytics} viewsLabel="Site Views" />
-      <WeeklyAnalyticsPanel weekly={weekly} viewsLabel="Site Views" />
+      <PeriodAnalyticsPanel viewSources={periodViewSources} leadSources={periodLeadSources} viewsLabel="Site Views" />
 
       <SiteForm site={site} onSaved={refresh} />
       <TestimonialsManager agentSiteId={site.id} testimonials={testimonials} onChanged={refresh} />
