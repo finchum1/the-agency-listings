@@ -5,6 +5,7 @@ import { adaptBrokerageSite } from "../lib/adaptBrokerageSite";
 import { sanitizeHtml } from "../lib/sanitizeHtml";
 import { buildBrokeragePostMeta, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta } from "../lib/pageMeta";
+import { trackView } from "../lib/trackView";
 import { BrokerageSiteProvider } from "../context/BrokerageSiteContext";
 import Navbar from "../components/brokerage-site/Navbar";
 import Footer from "../components/brokerage-site/Footer";
@@ -23,6 +24,10 @@ export default function BrokeragePostPage() {
     const meta = buildBrokeragePostMeta(post, site);
     applyPageMeta({ ...meta, url: postUrl });
   }, [post, site]);
+
+  useEffect(() => {
+    if (post?.id) trackView("brokerage_post", post.id);
+  }, [post?.id]);
 
   if (loading) {
     return (

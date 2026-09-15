@@ -4,6 +4,7 @@ import { useBrokerageSite } from "../hooks/useBrokerageSite";
 import { adaptBrokerageSite } from "../lib/adaptBrokerageSite";
 import { buildBrokerageSiteMeta, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta } from "../lib/pageMeta";
+import { trackView } from "../lib/trackView";
 import { BrokerageSiteProvider } from "../context/BrokerageSiteContext";
 
 import Navbar from "../components/brokerage-site/Navbar";
@@ -28,6 +29,10 @@ export default function BrokerageSitePage({ path, pageTitle, children }) {
       url: `${SITE_ORIGIN}${path}`,
     });
   }, [site, pageTitle, path]);
+
+  useEffect(() => {
+    if (site?.id) trackView("brokerage_site", site.id);
+  }, [site?.id]);
 
   if (loading) {
     return (

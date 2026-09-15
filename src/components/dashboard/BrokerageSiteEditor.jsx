@@ -1,15 +1,39 @@
+import { useMemo } from "react";
 import { useBrokerageSiteEditor } from "../../hooks/useBrokerageSiteEditor";
+import { useBrokerageSiteAnalytics } from "../../hooks/useBrokerageSiteAnalytics";
+import { useWeeklyAnalytics } from "../../hooks/useWeeklyAnalytics";
 import BrokerageSiteForm from "./BrokerageSiteForm";
 import BrokeragePostsManager from "./BrokeragePostsManager";
 import BrokerageAgentsManager from "./BrokerageAgentsManager";
 import BrokerageAreasManager from "./BrokerageAreasManager";
+import AnalyticsStats from "./AnalyticsStats";
+import WeeklyAnalyticsPanel from "./WeeklyAnalyticsPanel";
 
 // Admin-only editor for the one brokerage site (/dashboard/brokerage-site
 // — see ProtectedRoute adminOnly in App.jsx). Parallel to SiteEditor.jsx,
-// minus testimonials (agent-specific) and analytics (no per-post view
-// tracking wired up for brokerage posts yet).
+// minus testimonials (agent-specific).
 export default function BrokerageSiteEditor() {
   const { site, posts, agents, areas, loading, error, refresh } = useBrokerageSiteEditor();
+
+  const postIds = useMemo(() => posts.map((p) => p.id), [posts]);
+  const analytics = useBrokerageSiteAnalytics({ siteId: site?.id, postIds });
+
+  const weeklyViewSources = useMemo(
+    () => [
+      { targetType: "brokerage_site", targetIds: site ? [site.id] : [] },
+      { targetType: "brokerage_post", targetIds: postIds },
+    ],
+    [site, postIds],
+  );
+  // Leads: the Home Valuation form is the only lead-generating form on
+  // the brokerage site today (the main Contact page is mailto/tel-only —
+  // see ContactCard.jsx) — stored as target_type "brokerage_valuation"
+  // (see api/contact.js, supabase/brokerage-valuation-leads.sql).
+  const weeklyLeadSources = useMemo(
+    () => [{ targetType: "brokerage_valuation", targetIds: site ? [site.id] : [] }],
+    [site],
+  );
+  const weekly = useWeeklyAnalytics({ viewSources: weeklyViewSources, leadSources: weeklyLeadSources });
 
   if (loading) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
   if (error) return <p className="text-sm text-red-600 dark:text-red-400">{error}</p>;
@@ -25,6 +49,9 @@ export default function BrokerageSiteEditor() {
           color, font pairing, logo, and which sections show on the home page.
         </p>
       </div>
+
+      <AnalyticsStats stats={analytics} viewsLabel="Site Views" />
+      <WeeklyAnalyticsPanel weekly={weekly} viewsLabel="Site Views" />
 
       <BrokerageSiteForm site={site} onSaved={refresh} />
       <BrokerageAgentsManager brokerageSiteId={site.id} agents={agents} onChanged={refresh} />

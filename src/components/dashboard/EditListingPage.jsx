@@ -3,11 +3,13 @@ import { useParams, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useListing } from "../../hooks/useListing";
 import { useListingsAnalytics } from "../../hooks/useListingsAnalytics";
+import { useWeeklyAnalytics } from "../../hooks/useWeeklyAnalytics";
 import ListingForm from "./ListingForm";
 import PhotoManager from "./PhotoManager";
 import HeroScrollPhotosManager from "./HeroScrollPhotosManager";
 import OpenHouseManager from "./OpenHouseManager";
 import AnalyticsStats from "./AnalyticsStats";
+import WeeklyAnalyticsPanel from "./WeeklyAnalyticsPanel";
 
 export default function EditListingPage() {
   const { id } = useParams();
@@ -18,6 +20,13 @@ export default function EditListingPage() {
   // just scoped to this one listing (a single-id array is a valid input).
   const listingIds = useMemo(() => (listing ? [listing.id] : []), [listing]);
   const analytics = useListingsAnalytics(listingIds);
+
+  // Trend view for this one listing specifically — deliberately scoped
+  // the same way as the totals above (this listing's id only), not
+  // aggregated across the whole portfolio; that aggregate view belongs on
+  // the Listings module, not here.
+  const weeklySources = useMemo(() => [{ targetType: "listing", targetIds: listingIds }], [listingIds]);
+  const weekly = useWeeklyAnalytics({ viewSources: weeklySources, leadSources: weeklySources });
 
   // RLS lets anyone read a *published* listing by id (same policy that
   // powers the public /listings/:slug page — see useListings.js), so a
@@ -64,6 +73,7 @@ export default function EditListingPage() {
       </div>
 
       <AnalyticsStats stats={analytics} />
+      <WeeklyAnalyticsPanel weekly={weekly} />
 
       <ListingForm mode="edit" listing={listing} onSaved={refresh} />
       <PhotoManager listingId={listing.id} photos={photos} onChanged={refresh} />

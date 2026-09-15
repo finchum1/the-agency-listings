@@ -9,7 +9,7 @@
 // SUPABASE_SERVICE_ROLE_KEY (already configured — see api/admin/add-agent.js).
 import { createClient } from "@supabase/supabase-js";
 
-const VALID_TYPES = new Set(["listing", "agent_site", "agent_post"]);
+const VALID_TYPES = new Set(["listing", "agent_site", "agent_post", "brokerage_site", "brokerage_post"]);
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function handler(req, res) {
