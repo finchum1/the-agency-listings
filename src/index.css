@@ -196,30 +196,33 @@
     --ls-text: #0d0d0d;
     --ls-accent: #ed2127;
   }
-  /* Third-color story: white, true black, and The Agency Red — but here
-     red is structural, not just the accent every template already has.
-     --as-dark is a deep oxblood/maroon (not plain black, and deliberately
-     NOT the same bright red as --as-accent — a CTA in --as-accent sits
-     directly on top of --as-dark in Hero.jsx/Footer.jsx, so the two must
-     stay visually distinct or the button disappears into its own
-     background) — hero overlay, footer, and testimonials read as bold
-     red-black blocks instead of neutral ink. */
+  /* Inverted from every other template on purpose: red is one of the big
+     structural pieces here (--as-dark, the hero overlay/footer/
+     testimonials block) instead of the small sprinkled accent — the
+     literal brand red (#ed2127), not a darkened substitute. White and
+     black carry everything else, including the role --as-accent plays
+     elsewhere (CTA fills, price, links, eyebrow labels): --as-accent is
+     BLACK here, not red, specifically so a CTA button rendered in
+     --as-accent still shows up against the --as-dark red it sits on top
+     of in Hero.jsx (same red-on-red collision the earlier oxblood
+     version was working around, solved properly this time by moving the
+     accent role to black instead of dimming the red). */
   [data-theme="red"] {
     --as-bg: #ffffff;
     --as-bg-alt: #f5f5f5;
-    --as-dark: #4a0e12;
+    --as-dark: #ed2127;
     --as-on-dark: #ffffff;
     --as-surface: #ececec;
     --as-text: #0d0d0d;
-    --as-accent: #ed2127;
+    --as-accent: #0d0d0d;
 
     --ls-bg: #ffffff;
     --ls-bg-alt: #f5f5f5;
-    --ls-dark: #4a0e12;
+    --ls-dark: #ed2127;
     --ls-on-dark: #ffffff;
     --ls-surface: #ececec;
     --ls-text: #0d0d0d;
-    --ls-accent: #ed2127;
+    --ls-accent: #0d0d0d;
   }
 
   /* Luxury listing-site template only — hardcoded when listings.site_template

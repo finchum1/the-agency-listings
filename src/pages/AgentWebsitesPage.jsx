@@ -31,7 +31,7 @@ const THEMES = [
   { label: "Classic", swatches: ["#f7f4ee", "#14130f", "#ed2127"] },
   { label: "Dark", swatches: ["#14130f", "#26241d", "#f2454b"] },
   { label: "Sand", swatches: ["#ddd0ba", "#0d0d0d", "#ed2127"] },
-  { label: "Red", swatches: ["#ffffff", "#4a0e12", "#ed2127"] },
+  { label: "Red", swatches: ["#ffffff", "#ed2127", "#0d0d0d"] },
 ];
 
 // The six real font pairings (src/index.css [data-font] blocks) — live

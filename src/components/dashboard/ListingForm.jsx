@@ -59,8 +59,8 @@ const THEMES = [
   {
     value: "red",
     label: "Red",
-    description: "White & black neutrals with a bold red hero, footer, and testimonials.",
-    swatches: ["#ffffff", "#4a0e12", "#ed2127"],
+    description: "The Agency's actual red for the hero & footer — white & black everywhere else.",
+    swatches: ["#ffffff", "#ed2127", "#0d0d0d"],
   },
 ];
 
