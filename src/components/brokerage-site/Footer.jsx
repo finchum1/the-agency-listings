@@ -129,19 +129,9 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 pt-6 border-t border-[var(--as-on-dark)]/10 flex flex-col sm:flex-row sm:items-center gap-5">
-          <div className="flex items-center gap-3 shrink-0">
-            {/* White chip on both — the official REALTOR® and Equal
-                Housing Opportunity marks (downloaded straight from
-                nar.realtor and hud.gov) are fixed black-on-white assets,
-                not currentColor, so they need their own light background
-                to stay legible against --as-dark, whatever that theme's
-                dark color actually is. */}
-            <div className="bg-white rounded px-2 py-1.5 inline-flex items-center">
-              <img src="/images/realtor-logo.png" alt="REALTOR®" className="h-9 w-auto" />
-            </div>
-            <div className="bg-white rounded px-2 py-1.5 inline-flex items-center">
-              <img src="/images/equal-housing-logo.png" alt="Equal Housing Opportunity" className="h-9 w-auto" />
-            </div>
+          <div className="flex items-center gap-4 shrink-0">
+            <img src="/images/realtor-logo.png" alt="REALTOR®" className="h-10 w-auto" />
+            <img src="/images/equal-housing-logo.png" alt="Equal Housing Opportunity" className="h-10 w-auto" />
           </div>
           <p className="text-xs text-[var(--as-on-dark)]/35">{brokerage.franchiseDisclaimer}</p>
         </div>
