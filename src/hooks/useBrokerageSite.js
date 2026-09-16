@@ -5,7 +5,14 @@ import { supabase } from "../lib/supabaseClient";
 // row, its published posts, and its full agent roster. RLS handles
 // visibility (a draft site, or its posts/agents, are invisible to
 // anyone but an admin). Parallel to useAgentSite.js.
-export function useBrokerageSite() {
+//
+// customDomain (optional): when set, only resolves if the singleton row's
+// own custom_domain matches — used by CustomDomainSitePage.jsx to decide
+// whether the current hostname is actually allowed to see the brokerage
+// site at all, the same gate agent_sites/listings already apply. Omitted
+// entirely for the normal /brokerage/* app-host routes, which always
+// mean "the one brokerage site" regardless of domain.
+export function useBrokerageSite({ customDomain } = {}) {
   const [site, setSite] = useState(null);
   const [posts, setPosts] = useState([]);
   const [agents, setAgents] = useState([]);
@@ -17,7 +24,9 @@ export function useBrokerageSite() {
     setLoading(true);
     setNotFound(false);
 
-    const { data: siteRow, error } = await supabase.from("brokerage_site").select("*").maybeSingle();
+    let query = supabase.from("brokerage_site").select("*");
+    if (customDomain) query = query.ilike("custom_domain", customDomain);
+    const { data: siteRow, error } = await query.maybeSingle();
     if (error) console.error("Failed to load brokerage site:", error);
 
     if (!siteRow) {
@@ -42,7 +51,7 @@ export function useBrokerageSite() {
     setAgents(a || []);
     setAreas(ar || []);
     setLoading(false);
-  }, []);
+  }, [customDomain]);
 
   useEffect(() => {
     refresh();

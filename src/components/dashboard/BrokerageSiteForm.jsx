@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { normalizeDomain } from "../../lib/normalizeDomain";
 import ImageUploadField from "./ImageUploadField";
 import VideoUploadField from "./VideoUploadField";
 import RichTextEditor from "./RichTextEditor";
@@ -151,6 +152,7 @@ export default function BrokerageSiteForm({ site, onSaved }) {
       seo_title: s.seo_title || "",
       seo_description: s.seo_description || "",
       og_image_url: s.og_image_url || "",
+      custom_domain: s.custom_domain || "",
     };
   }
 
@@ -237,11 +239,16 @@ export default function BrokerageSiteForm({ site, onSaved }) {
       seo_title: form.seo_title || null,
       seo_description: form.seo_description || null,
       og_image_url: form.og_image_url || null,
+      custom_domain: normalizeDomain(form.custom_domain),
     };
     const { error } = await supabase.from("brokerage_site").update(payload).eq("id", site.id);
     setSaving(false);
     if (error) {
-      setError(error.message);
+      setError(
+        error.code === "23505"
+          ? "That custom domain is already attached to another site."
+          : error.message,
+      );
       return;
     }
     setSaved(true);
@@ -564,6 +571,21 @@ export default function BrokerageSiteForm({ site, onSaved }) {
             value={form.og_image_url}
             onChange={(url) => set("og_image_url", url || "")}
             label="Share image (optional — defaults to the hero photo)"
+          />
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Custom Domain" description="Serve the brokerage site at your own domain instead of /brokerage.">
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+            Once a domain is purchased — or an existing one is pointed at this project — enter it
+            here and the brokerage site will serve directly at that address, e.g. visiting{" "}
+            <span className="font-medium">TheAgencyOklahoma.com</span> shows this site at the root
+            URL instead of <span className="font-medium">/brokerage</span>.
+          </p>
+          <input
+            value={form.custom_domain}
+            onChange={update("custom_domain")}
+            className={inputClass}
+            placeholder="TheAgencyOklahoma.com"
           />
         </CollapsibleSection>
       </div>

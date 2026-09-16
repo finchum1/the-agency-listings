@@ -14,9 +14,12 @@ import Footer from "../components/brokerage-site/Footer";
 // brokerage site — parallel to AgentSitePage.jsx, and now themed the
 // same way (theme/font_pairing/accent_color, set in the dashboard's
 // BrokerageSiteForm). `path` (the current route, e.g. "/brokerage/agents")
-// drives the canonical URL.
-export default function BrokerageSitePage({ path, pageTitle, children }) {
-  const { site, posts, agents, areas, loading, notFound } = useBrokerageSite();
+// drives the canonical URL. `customDomain` (optional) is passed straight
+// through to useBrokerageSite — set only by CustomDomainSitePage.jsx's
+// brokerage-site routes, which need the hostname gate; the normal
+// /brokerage/* app-host routes omit it entirely.
+export default function BrokerageSitePage({ path, pageTitle, customDomain, children }) {
+  const { site, posts, agents, areas, loading, notFound } = useBrokerageSite({ customDomain });
   const adapted = site ? adaptBrokerageSite({ site, posts, agents, areas }) : null;
 
   useEffect(() => {

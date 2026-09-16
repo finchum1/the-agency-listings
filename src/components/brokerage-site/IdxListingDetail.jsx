@@ -6,8 +6,16 @@ import { formatPrice, STATUS_LABELS } from "../../lib/format";
 // Single-listing page for a live MLS result, matching ContactCard.jsx's
 // convention of mailto/tel only — there's no per-agent inbox to route an
 // IDX lead to at the brokerage level, so no submission form here either.
-export default function IdxListingDetail() {
-  const { mlsNumber } = useParams();
+//
+// mlsNumber prop (optional): falls back to reading it from the route's
+// own :mlsNumber param (the normal /brokerage/listings/:mlsNumber path).
+// CustomDomainSitePage.jsx's shared /listings/:param route passes it
+// explicitly instead, since that route's param can't be named
+// "mlsNumber" AND "slug" at once (the agent-site listing-detail branch
+// sharing the same path reads its own :slug param via useParams()).
+export default function IdxListingDetail({ mlsNumber: mlsNumberProp } = {}) {
+  const params = useParams();
+  const mlsNumber = mlsNumberProp || params.mlsNumber;
   const { site } = useBrokerageSiteContext();
   const { listing, loading, notFound, error } = useRepliersListing(mlsNumber);
 
