@@ -29,15 +29,21 @@ export default function Hero() {
           Matches listing-site/Hero.jsx's already-established convention. */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/20" />
 
+      {/* Also hardcoded white rather than --as-on-dark: that token means
+          "text on --as-dark" (a solid band like the footer/nav), which
+          for most templates happens to be light anyway -- but the Linen
+          template flips --as-on-dark to dark ink, and this text always
+          sits on the black photo overlay above, not on --as-dark itself,
+          so it needs to stay white regardless of theme. */}
       <div className="relative z-10 flex h-full flex-col justify-end px-6 lg:px-10 pb-24 max-w-7xl mx-auto">
         {site.region && (
-          <p className="text-[var(--as-on-dark)]/75 text-xs tracked-wide uppercase mb-4">{site.region}</p>
+          <p className="text-white/75 text-xs tracked-wide uppercase mb-4">{site.region}</p>
         )}
-        <h1 className="text-[var(--as-on-dark)] text-4xl sm:text-5xl lg:text-6xl font-display font-semibold leading-tight max-w-3xl">
+        <h1 className="text-white text-4xl sm:text-5xl lg:text-6xl font-display font-semibold leading-tight max-w-3xl">
           {site.agent.name}
         </h1>
         {site.tagline && (
-          <p className="text-[var(--as-on-dark)]/85 text-lg sm:text-xl mt-4 tracked max-w-xl">{site.tagline}</p>
+          <p className="text-white/85 text-lg sm:text-xl mt-4 tracked max-w-xl">{site.tagline}</p>
         )}
 
         <div className="mt-9">

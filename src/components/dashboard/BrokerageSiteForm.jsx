@@ -34,6 +34,12 @@ const THEMES = [
     description: "The Agency's actual red for the hero, footer & testimonials — white & black everywhere else.",
     swatches: ["#ffffff", "#ed2127", "#0d0d0d"],
   },
+  {
+    value: "linen",
+    label: "Linen",
+    description: "All-white and soft cream throughout, even the header & footer — The Agency's red as the only pop of color.",
+    swatches: ["#ffffff", "#f0ece4", "#ed2127"],
+  },
 ];
 
 const FONT_PAIRINGS = [

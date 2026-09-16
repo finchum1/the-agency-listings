@@ -23,10 +23,13 @@ export default function ServiceAreas() {
               {area.photo_url && (
                 <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover" />
               )}
-              {/* Neutral black, not --as-dark — see Hero.jsx's same fix. */}
+              {/* Neutral black overlay + hardcoded white text, not --as-dark/
+                  --as-on-dark — see Hero.jsx's same fix (this text sits on
+                  the black overlay, not on --as-dark itself, so it needs
+                  to stay white even in the Linen template). */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 to-transparent flex flex-col items-center justify-end p-6 text-center">
-                <p className="text-[var(--as-on-dark)] font-display text-xl font-semibold">{area.name}</p>
-                {area.blurb && <p className="text-[var(--as-on-dark)]/75 text-sm mt-1 max-w-xs">{area.blurb}</p>}
+                <p className="text-white font-display text-xl font-semibold">{area.name}</p>
+                {area.blurb && <p className="text-white/75 text-sm mt-1 max-w-xs">{area.blurb}</p>}
               </div>
             </div>
           ))}

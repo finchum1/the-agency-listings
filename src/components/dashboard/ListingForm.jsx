@@ -62,6 +62,12 @@ const THEMES = [
     description: "The Agency's actual red for the hero & footer — white & black everywhere else.",
     swatches: ["#ffffff", "#ed2127", "#0d0d0d"],
   },
+  {
+    value: "linen",
+    label: "Linen",
+    description: "All-white and soft cream throughout, even the header & footer — The Agency's red as the only pop of color.",
+    swatches: ["#ffffff", "#f0ece4", "#ed2127"],
+  },
 ];
 
 // Same six pairings as SiteForm.jsx's FONT_PAIRINGS, read via --ls-* in

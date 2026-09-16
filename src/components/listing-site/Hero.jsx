@@ -27,25 +27,33 @@ export default function Hero() {
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/40" />
 
+      {/* Hardcoded white, not --ls-on-dark: that token means "text on
+          --ls-dark" (a solid band), which for most templates happens to
+          be light anyway -- but the Linen template flips --ls-on-dark to
+          dark ink, and this text always sits on the black photo overlay
+          above, not on --ls-dark itself, so it needs to stay white
+          regardless of theme. The status pill below keeps --ls-bg-alt/
+          --ls-text since it's a solid-fill badge, self-consistent in
+          every theme. */}
       <div className="relative z-10 flex h-full flex-col justify-end px-6 lg:px-10 pb-20 max-w-7xl mx-auto">
         <div className="flex items-center gap-3 mb-5">
           <span className="inline-flex items-center rounded-full bg-[var(--ls-bg-alt)]/95 px-4 py-1.5 text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-text)]">
             {listing.status}
           </span>
-          <span className="text-[var(--ls-on-dark)]/80 text-xs tracking-wider-plus uppercase">
+          <span className="text-white/80 text-xs tracking-wider-plus uppercase">
             {listing.mlsNumber}
           </span>
         </div>
 
-        <h1 className="text-[var(--ls-on-dark)] text-4xl sm:text-5xl lg:text-6xl font-semibold leading-tight max-w-3xl">
+        <h1 className="text-white text-4xl sm:text-5xl lg:text-6xl font-semibold leading-tight max-w-3xl">
           {listing.address.line1}
         </h1>
-        <p className="text-[var(--ls-on-dark)]/85 text-lg sm:text-xl mt-3 tracking-wide">
+        <p className="text-white/85 text-lg sm:text-xl mt-3 tracking-wide">
           {listing.address.city}, {listing.address.state} {listing.address.zip}
         </p>
 
         <div className="mt-8 flex flex-wrap items-end gap-8">
-          <span className="text-[var(--ls-on-dark)] text-3xl sm:text-4xl font-display font-semibold">
+          <span className="text-white text-3xl sm:text-4xl font-display font-semibold">
             {formatPrice(listing.price)}
           </span>
           <a
@@ -59,7 +67,7 @@ export default function Hero() {
 
       <a
         href="#facts"
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 text-[var(--ls-on-dark)]/70 hover:text-[var(--ls-on-dark)] transition-colors animate-bounce"
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 text-white/70 hover:text-white transition-colors animate-bounce"
         aria-label="Scroll down"
       >
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">

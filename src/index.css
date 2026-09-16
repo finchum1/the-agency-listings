@@ -224,6 +224,30 @@
     --ls-text: #0d0d0d;
     --ls-accent: #0d0d0d;
   }
+  /* The airy one: --as-dark flips light here instead of staying the usual
+     near-black/saturated "dark band" color, so the hero overlay's fixed
+     black gradient (Hero.jsx) is still the only thing doing any real
+     darkening — nav, footer, testimonials, badges etc. all read as soft
+     linen instead. --as-on-dark flips to dark ink to match. Red stays the
+     only accent, same three-neutrals-plus-red rule every template but Red
+     itself follows. */
+  [data-theme="linen"] {
+    --as-bg: #ffffff;
+    --as-bg-alt: #f7f5f1;
+    --as-dark: #f0ece4;
+    --as-on-dark: #17140f;
+    --as-surface: #ece7dd;
+    --as-text: #17140f;
+    --as-accent: #ed2127;
+
+    --ls-bg: #ffffff;
+    --ls-bg-alt: #f7f5f1;
+    --ls-dark: #f0ece4;
+    --ls-on-dark: #17140f;
+    --ls-surface: #ece7dd;
+    --ls-text: #17140f;
+    --ls-accent: #ed2127;
+  }
 
   /* Luxury listing-site template only — hardcoded when listings.site_template
      = 'luxury' (ListingSitePage.jsx), never offered in the regular theme
