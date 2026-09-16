@@ -134,6 +134,8 @@ export default function BrokerageSiteForm({ site, onSaved }) {
       instagram_url: s.instagram_url || "",
       facebook_url: s.facebook_url || "",
       linkedin_url: s.linkedin_url || "",
+      tiktok_url: s.tiktok_url || "",
+      youtube_url: s.youtube_url || "",
       seo_title: s.seo_title || "",
       seo_description: s.seo_description || "",
       og_image_url: s.og_image_url || "",
@@ -206,6 +208,8 @@ export default function BrokerageSiteForm({ site, onSaved }) {
       instagram_url: form.instagram_url,
       facebook_url: form.facebook_url,
       linkedin_url: form.linkedin_url,
+      tiktok_url: form.tiktok_url,
+      youtube_url: form.youtube_url,
       seo_title: form.seo_title || null,
       seo_description: form.seo_description || null,
       og_image_url: form.og_image_url || null,
@@ -497,6 +501,14 @@ export default function BrokerageSiteForm({ site, onSaved }) {
         <div>
           <label className={labelClass}>LinkedIn URL</label>
           <input value={form.linkedin_url} onChange={update("linkedin_url")} className={inputClass} />
+        </div>
+        <div>
+          <label className={labelClass}>TikTok URL</label>
+          <input value={form.tiktok_url} onChange={update("tiktok_url")} className={inputClass} />
+        </div>
+        <div>
+          <label className={labelClass}>YouTube URL</label>
+          <input value={form.youtube_url} onChange={update("youtube_url")} className={inputClass} />
         </div>
       </div>
 

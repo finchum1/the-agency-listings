@@ -28,19 +28,21 @@ function LinkedInIcon() {
     </svg>
   );
 }
-// Standard "house" pictogram for the Equal Housing Opportunity mark —
-// same design already used in listing-site/Footer.jsx, kept in sync so
-// the platform shows one consistent version of it. currentColor, so it
-// already adapts to --as-on-dark without needing a white background chip
-// the way the REALTOR® logo (a fixed-color external asset) does below.
-function EqualHousingIcon() {
+function TikTokIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-      <path d="M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+      <path d="M16.6 5.82c-.9-.9-1.4-2.13-1.4-3.42h-3.1v13.13c0 1.5-1.22 2.72-2.72 2.72s-2.72-1.22-2.72-2.72 1.22-2.72 2.72-2.72c.28 0 .55.04.8.12V9.87c-.26-.03-.53-.05-.8-.05C6.3 9.82 4 12.12 4 15.2s2.3 5.38 5.38 5.38 5.38-2.3 5.38-5.38V9.02a7.14 7.14 0 0 0 4.24 1.38V7.3c-.94 0-1.83-.3-2.4-.88Z" />
     </svg>
   );
 }
-
+function YouTubeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="16" height="16">
+      <rect x="2.5" y="6" width="19" height="12" rx="3.5" />
+      <path d="M10.5 9.5l5 2.5-5 2.5z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
 function SocialIcon({ href, children }) {
   if (!href) return null;
   return (
@@ -96,11 +98,17 @@ export default function Footer() {
                 </a>
               )}
             </div>
-            {(site.social.instagram || site.social.facebook || site.social.linkedin) && (
+            {(site.social.instagram ||
+              site.social.facebook ||
+              site.social.linkedin ||
+              site.social.tiktok ||
+              site.social.youtube) && (
               <div className="flex items-center gap-3 mt-5">
                 <SocialIcon href={site.social.instagram}><InstagramIcon /></SocialIcon>
                 <SocialIcon href={site.social.facebook}><FacebookIcon /></SocialIcon>
                 <SocialIcon href={site.social.linkedin}><LinkedInIcon /></SocialIcon>
+                <SocialIcon href={site.social.tiktok}><TikTokIcon /></SocialIcon>
+                <SocialIcon href={site.social.youtube}><YouTubeIcon /></SocialIcon>
               </div>
             )}
           </div>
@@ -121,17 +129,18 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 pt-6 border-t border-[var(--as-on-dark)]/10 flex flex-col sm:flex-row sm:items-center gap-5">
-          <div className="flex items-center gap-4 shrink-0">
-            {/* White chip — the REALTOR® mark is a fixed-color asset
-                (blue/black/white), not currentColor, so it needs its own
-                light background to stay legible against --as-dark,
-                whatever that theme's dark color actually is. */}
+          <div className="flex items-center gap-3 shrink-0">
+            {/* White chip on both — the official REALTOR® and Equal
+                Housing Opportunity marks (downloaded straight from
+                nar.realtor and hud.gov) are fixed black-on-white assets,
+                not currentColor, so they need their own light background
+                to stay legible against --as-dark, whatever that theme's
+                dark color actually is. */}
             <div className="bg-white rounded px-2 py-1.5 inline-flex items-center">
-              <img src="/images/realtor-logo.svg" alt="REALTOR®" className="h-6 w-auto" />
+              <img src="/images/realtor-logo.png" alt="REALTOR®" className="h-9 w-auto" />
             </div>
-            <div className="flex items-center gap-1.5 text-[var(--as-on-dark)]/60">
-              <EqualHousingIcon />
-              <span className="text-[11px] tracked-wide uppercase">Equal Housing Opportunity</span>
+            <div className="bg-white rounded px-2 py-1.5 inline-flex items-center">
+              <img src="/images/equal-housing-logo.png" alt="Equal Housing Opportunity" className="h-9 w-auto" />
             </div>
           </div>
           <p className="text-xs text-[var(--as-on-dark)]/35">{brokerage.franchiseDisclaimer}</p>
