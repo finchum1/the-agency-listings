@@ -7,7 +7,7 @@ import { contactMailto } from "../lib/marketingContact";
 
 /*
 THESIS: Every agent gets their own site on the same trusted brand — the
-  deep-dive proves range (three templates, six font pairings) without ever
+  deep-dive proves range (four templates, six font pairings) without ever
   leaving The Agency's actual brand colors.
 OWN-WORLD: Inherits the landing page's world exactly — same palette,
   type, browser-frame proof device, Reveal motion language.
@@ -23,7 +23,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with
   the finish review, the verdict, and DESIGN.md.
 */
 
-// The three real templates and their actual production accent/neutral
+// The four real templates and their actual production accent/neutral
 // tokens (src/index.css) — not mockup colors. Accent is always the
 // brand red (or its brighter dark-background variant); templates only
 // ever vary neutrals. See DESIGN.md "Brand compliance."
@@ -31,6 +31,7 @@ const THEMES = [
   { label: "Classic", swatches: ["#f7f4ee", "#14130f", "#ed2127"] },
   { label: "Dark", swatches: ["#14130f", "#26241d", "#f2454b"] },
   { label: "Sand", swatches: ["#ddd0ba", "#0d0d0d", "#ed2127"] },
+  { label: "Red", swatches: ["#ffffff", "#4a0e12", "#ed2127"] },
 ];
 
 // The six real font pairings (src/index.css [data-font] blocks) — live
@@ -142,7 +143,7 @@ export default function AgentWebsitesPage() {
               Make it yours — without ever going off-brand.
             </h2>
             <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed">
-              Three templates, six font pairings, and an accent color locked to The Agency's own
+              Four templates, six font pairings, and an accent color locked to The Agency's own
               red — every combination still reads as unmistakably The Agency, automatically.
             </p>
           </Reveal>

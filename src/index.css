@@ -126,7 +126,7 @@
      a near-black page — never an arbitrary hue. Every template only
      varies neutrals (background/surface/text), matching corporate.
 
-     Each block below ALSO carries a --ls-* set — the same three template
+     Each block below ALSO carries a --ls-* set — the same four template
      names, reused for Listing Sites (agent_sites.theme's counterpart is
      listings.theme; see EditListingPage.jsx's ListingForm.jsx). Kept in
      the same [data-theme] selectors rather than a parallel set of rules
@@ -193,6 +193,31 @@
     --ls-dark: #0d0d0d;
     --ls-on-dark: #f0e9df;
     --ls-surface: #c7b89a;
+    --ls-text: #0d0d0d;
+    --ls-accent: #ed2127;
+  }
+  /* Third-color story: white, true black, and The Agency Red — but here
+     red is structural, not just the accent every template already has.
+     --as-dark is a deep oxblood/maroon (not plain black, and deliberately
+     NOT the same bright red as --as-accent — a CTA in --as-accent sits
+     directly on top of --as-dark in Hero.jsx/Footer.jsx, so the two must
+     stay visually distinct or the button disappears into its own
+     background) — hero overlay, footer, and testimonials read as bold
+     red-black blocks instead of neutral ink. */
+  [data-theme="red"] {
+    --as-bg: #ffffff;
+    --as-bg-alt: #f5f5f5;
+    --as-dark: #4a0e12;
+    --as-on-dark: #ffffff;
+    --as-surface: #ececec;
+    --as-text: #0d0d0d;
+    --as-accent: #ed2127;
+
+    --ls-bg: #ffffff;
+    --ls-bg-alt: #f5f5f5;
+    --ls-dark: #4a0e12;
+    --ls-on-dark: #ffffff;
+    --ls-surface: #ececec;
     --ls-text: #0d0d0d;
     --ls-accent: #ed2127;
   }

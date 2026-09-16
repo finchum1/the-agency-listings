@@ -32,7 +32,7 @@ function slugify(text) {
 }
 
 // Kept in sync with the --ls-* CSS custom properties in src/index.css and
-// the check constraint in supabase/listing-themes.sql. Same three template
+// the check constraint in supabase/listing-themes.sql. Same four template
 // names as agent_sites.theme (see SiteForm.jsx's THEMES). Listing Sites'
 // "one accent" used to be a gold-brown that was never actually part of
 // The Agency's brand — corrected to the same corporate red every swatch
@@ -55,6 +55,12 @@ const THEMES = [
     label: "Sand",
     description: "Taupe ground, true black ink, and The Agency's red.",
     swatches: ["#ddd0ba", "#0d0d0d", "#ed2127"],
+  },
+  {
+    value: "red",
+    label: "Red",
+    description: "White & black neutrals with a bold red hero, footer, and testimonials.",
+    swatches: ["#ffffff", "#4a0e12", "#ed2127"],
   },
 ];
 

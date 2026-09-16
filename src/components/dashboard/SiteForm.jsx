@@ -30,6 +30,12 @@ const THEMES = [
     description: "Taupe ground, true black ink, and The Agency's red.",
     swatches: ["#ddd0ba", "#0d0d0d", "#ed2127"],
   },
+  {
+    value: "red",
+    label: "Red",
+    description: "White & black neutrals with a bold red hero, footer, and testimonials.",
+    swatches: ["#ffffff", "#4a0e12", "#ed2127"],
+  },
 ];
 
 // The first entry (kept under its original "playfair-jost" value so
