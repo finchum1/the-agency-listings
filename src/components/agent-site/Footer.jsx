@@ -59,6 +59,12 @@ function YouTubeIcon() {
   );
 }
 
+// Hardcoded literal Agency Red, not --as-accent -- the Red template
+// repurposes --as-accent as black (see index.css), but these badges
+// should stay the actual brand red on every template, that one included.
+// The white ring exists for that same Red template: its footer is this
+// exact red too, so without it the badges would blend straight into the
+// background instead of reading as their own button.
 function SocialIcon({ href, children }) {
   if (!href) return null;
   return (
@@ -66,7 +72,7 @@ function SocialIcon({ href, children }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="h-9 w-9 rounded-full border border-[var(--as-on-dark)]/30 flex items-center justify-center text-[var(--as-on-dark)]/70 transition-colors hover:text-[var(--as-on-dark)] hover:border-[var(--as-on-dark)]/60"
+      className="h-9 w-9 rounded-full bg-[#ed2127] ring-1 ring-white/30 flex items-center justify-center text-white transition-opacity hover:opacity-85"
     >
       {children}
     </a>
