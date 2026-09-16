@@ -126,7 +126,7 @@
      a near-black page — never an arbitrary hue. Every template only
      varies neutrals (background/surface/text), matching corporate.
 
-     Each block below ALSO carries a --ls-* set — the same six template
+     Each block below ALSO carries a --ls-* set — the same four template
      names, reused for Listing Sites (agent_sites.theme's counterpart is
      listings.theme; see EditListingPage.jsx's ListingForm.jsx). Kept in
      the same [data-theme] selectors rather than a parallel set of rules
@@ -188,58 +188,29 @@
     --ls-text: #faf9f7;
     --ls-accent: #f2454b;
   }
-  /* Warmer, earthier variant of Classic — taupe/sand ground instead of cream. */
+  /* Three-color story: taupe, true black, and The Agency Red — a bolder,
+     more deliberate palette than the original warm-brown "sand" cast (the
+     earlier --as-dark: #211a12/--as-text: #2a2118 read as brown, not
+     black, the same complaint that drove the dashboard's own dark-mode
+     palette to neutral near-black over warm ink — see useTheme.js). Kept
+     the alternating bg/bg-alt convention every other template uses
+     (a plain white second section reads as a neutral canvas here, not a
+     4th named color) rather than making literally every surface taupe. */
   [data-theme="sand"] {
-    --as-bg: #f0e9df;
+    --as-bg: #ddd0ba;
     --as-bg-alt: #ffffff;
-    --as-dark: #211a12;
-    --as-on-dark: #f5efe4;
-    --as-surface: #e0d3bd;
-    --as-text: #2a2118;
+    --as-dark: #0d0d0d;
+    --as-on-dark: #f0e9df;
+    --as-surface: #c7b89a;
+    --as-text: #0d0d0d;
     --as-accent: #ed2127;
 
-    --ls-bg: #f0e9df;
+    --ls-bg: #ddd0ba;
     --ls-bg-alt: #ffffff;
-    --ls-dark: #211a12;
-    --ls-on-dark: #f5efe4;
-    --ls-surface: #e0d3bd;
-    --ls-text: #2a2118;
-    --ls-accent: #ed2127;
-  }
-  /* A second, COOL dark variant — navy-black instead of Dark's warm ink. */
-  [data-theme="midnight"] {
-    --as-bg: #0d1420;
-    --as-bg-alt: #16202f;
-    --as-dark: #070b12;
-    --as-on-dark: #f1f5f9;
-    --as-surface: #1f2937;
-    --as-text: #f1f5f9;
-    --as-accent: #f2454b;
-
-    --ls-bg: #0d1420;
-    --ls-bg-alt: #16202f;
-    --ls-dark: #070b12;
-    --ls-on-dark: #f1f5f9;
-    --ls-surface: #1f2937;
-    --ls-text: #f1f5f9;
-    --ls-accent: #f2454b;
-  }
-  /* Ultra-minimal, neutral near-white — cooler and quieter than Light. */
-  [data-theme="ivory"] {
-    --as-bg: #fefefe;
-    --as-bg-alt: #f7f7f5;
-    --as-dark: #1a1a1a;
-    --as-on-dark: #fafafa;
-    --as-surface: #ececea;
-    --as-text: #1a1a1a;
-    --as-accent: #ed2127;
-
-    --ls-bg: #fefefe;
-    --ls-bg-alt: #f7f7f5;
-    --ls-dark: #1a1a1a;
-    --ls-on-dark: #fafafa;
-    --ls-surface: #ececea;
-    --ls-text: #1a1a1a;
+    --ls-dark: #0d0d0d;
+    --ls-on-dark: #f0e9df;
+    --ls-surface: #c7b89a;
+    --ls-text: #0d0d0d;
     --ls-accent: #ed2127;
   }
 

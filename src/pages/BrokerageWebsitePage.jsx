@@ -186,7 +186,7 @@ export default function BrokerageWebsitePage() {
               ["Draw-a-boundary search", "No other tool on this platform does this — a buyer draws the exact area they care about."],
               ["Featured listings, curated", "Admins can pin specific listings to the home page, verified live against the MLS on add."],
               ["Agent roster, blog, areas of expertise", "The same customizable sections every agent site offers, for the whole office."],
-              ["Six templates, on-brand always", "Same template/font/accent system as every agent and listing site — never off-brand."],
+              ["Four templates, on-brand always", "Same template/font/accent system as every agent and listing site — never off-brand."],
               ["One dashboard, one login", "Managed from the exact same dashboard as agent sites and listings — nothing extra to learn."],
             ].map(([title, copy], i) => (
               <Reveal key={title} delay={(i % 3) * 0.08} variant="scaleIn">
