@@ -26,6 +26,14 @@ const brokerage = {
   },
   disclaimer:
     "This office is independently owned and operated. Equal Housing Opportunity.",
+  // The specific franchise-disclosure line, distinct from the generic
+  // `disclaimer` above — used only in the Brokerage Site's own footer
+  // (see brokerage-site/Footer.jsx) per request, not the shared line
+  // agent sites/listing sites/flyers already show. Kept verbatim
+  // (including the all-caps) rather than normalized to sentence case,
+  // since franchise disclosure language is often required conspicuous.
+  franchiseDisclaimer:
+    "THIS OFFICE IS AN INDEPENDENTLY OWNED AND OPERATED FRANCHISEE OF THE AGENCY REAL ESTATE FRANCHISING, LLC.",
 };
 
 export default brokerage;
