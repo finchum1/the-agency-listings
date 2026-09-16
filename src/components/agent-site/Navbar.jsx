@@ -57,7 +57,7 @@ export default function Navbar() {
           {site.secondaryLogo && (
             <>
               <span className="h-8 w-px bg-[var(--as-on-dark)]/25 shrink-0" aria-hidden="true" />
-              <img src={site.secondaryLogo} alt="" className="h-8 sm:h-10 w-auto" />
+              <img src={site.secondaryLogo} alt="" className="agent-secondary-logo h-8 sm:h-10 w-auto" />
             </>
           )}
           <span className="hidden sm:block ml-2 text-sm font-display tracked-wide whitespace-nowrap text-[var(--as-on-dark)]">

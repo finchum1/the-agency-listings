@@ -88,7 +88,7 @@ export default function Footer() {
           <div>
             <img src={brokerage.logo} alt={brokerage.name} className="h-10 sm:h-12 w-auto mb-6" />
             <div className="flex items-center gap-3 mb-2">
-              {site.secondaryLogo && <img src={site.secondaryLogo} alt="" className="h-8 w-auto" />}
+              {site.secondaryLogo && <img src={site.secondaryLogo} alt="" className="agent-secondary-logo h-8 w-auto" />}
               <p className="font-display text-2xl tracked-wide text-[var(--as-on-dark)]">{agent.name}</p>
             </div>
             {agent.license && <p className="text-[var(--as-on-dark)]/50">{agent.license}</p>}

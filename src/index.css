@@ -248,6 +248,17 @@
     --ls-text: #17140f;
     --ls-accent: #ed2127;
   }
+  /* An agent's uploaded secondary logo (Navbar.jsx/Footer.jsx's
+     .agent-secondary-logo) is a fixed flat-white PNG, uploaded once and
+     not theme-aware like the brokerage mark's red/white/black variant
+     picker -- it'd go invisible against Linen's light header/footer.
+     invert(1) flips a solid white-on-transparent PNG to solid black
+     without touching the alpha channel, so this only works because the
+     uploaded mark is genuinely monochrome; a multi-color logo would need
+     an actual dark variant uploaded instead. */
+  [data-theme="linen"] .agent-secondary-logo {
+    filter: invert(1);
+  }
 
   /* Luxury listing-site template only — hardcoded when listings.site_template
      = 'luxury' (ListingSitePage.jsx), never offered in the regular theme
