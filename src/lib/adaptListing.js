@@ -14,10 +14,14 @@ export function adaptListing({ listing, agent, photos }) {
     },
     // logo_variant picks among brokerage.logos (red/white/black) — falls
     // back to the default red mark for older listings saved before this
-    // existed, or an unrecognized value. Mirrors adaptAgentSite.js.
+    // existed, or an unrecognized value. Mirrors adaptAgentSite.js. The
+    // Red template forces white regardless of that pick: its header/
+    // footer background is the literal Agency Red (--ls-dark), so a red-
+    // or black-variant mark would have much weaker contrast against its
+    // own matching/near-matching background.
     brokerage: {
       ...brokerage,
-      logo: brokerage.logos[listing.logo_variant] || brokerage.logo,
+      logo: listing.theme === "red" ? brokerage.logos.white : brokerage.logos[listing.logo_variant] || brokerage.logo,
     },
     siteTemplate: listing.site_template || "classic",
     theme: listing.theme || "classic",

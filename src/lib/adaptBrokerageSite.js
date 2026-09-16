@@ -10,7 +10,12 @@ export function adaptBrokerageSite({ site, agents, posts, areas }) {
     theme: site.theme || "dark",
     fontPairing: site.font_pairing || "playfair-jost",
     accentColor: site.accent_color || "",
-    logoVariant: site.logo_variant || "white",
+    // The Red template forces white regardless of the picker: its
+    // header/footer background is the literal Agency Red (--as-dark),
+    // so a red- or black-variant mark would have much weaker contrast
+    // against its own matching/near-matching background. Mirrors
+    // adaptAgentSite.js/adaptListing.js.
+    logoVariant: site.theme === "red" ? "white" : site.logo_variant || "white",
     homeSections: site.home_sections?.length ? site.home_sections : ["about", "agents", "blog", "areas"],
     featuredListingMlsNumbers: site.featured_listing_mls_numbers || [],
     tagline: site.tagline || "",

@@ -12,10 +12,14 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     },
     // logo_variant picks among brokerage.logos (red/white/black) — falls
     // back to the default red mark for older sites saved before this
-    // existed, or an unrecognized value.
+    // existed, or an unrecognized value. The Red template forces white
+    // regardless of that pick: its header/footer background is the
+    // literal Agency Red (--as-dark), so a red- or black-variant mark
+    // would have much weaker contrast against its own matching/
+    // near-matching background.
     brokerage: {
       ...brokerage,
-      logo: brokerage.logos[site.logo_variant] || brokerage.logo,
+      logo: site.theme === "red" ? brokerage.logos.white : brokerage.logos[site.logo_variant] || brokerage.logo,
     },
     logoVariant: site.logo_variant || "red",
     slug: site.slug,
