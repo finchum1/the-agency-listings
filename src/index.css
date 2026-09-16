@@ -126,7 +126,7 @@
      a near-black page — never an arbitrary hue. Every template only
      varies neutrals (background/surface/text), matching corporate.
 
-     Each block below ALSO carries a --ls-* set — the same four template
+     Each block below ALSO carries a --ls-* set — the same three template
      names, reused for Listing Sites (agent_sites.theme's counterpart is
      listings.theme; see EditListingPage.jsx's ListingForm.jsx). Kept in
      the same [data-theme] selectors rather than a parallel set of rules
@@ -151,23 +151,6 @@
     --ls-dark: #1c1a17;
     --ls-on-dark: #faf9f7;
     --ls-surface: #e7e2d6;
-    --ls-text: #1c1a17;
-    --ls-accent: #ed2127;
-  }
-  [data-theme="light"] {
-    --as-bg: #ffffff;
-    --as-bg-alt: #f7f4ee;
-    --as-dark: #14130f;
-    --as-on-dark: #f7f4ee;
-    --as-surface: #efece4;
-    --as-text: #14130f;
-    --as-accent: #ed2127;
-
-    --ls-bg: #ffffff;
-    --ls-bg-alt: #faf9f7;
-    --ls-dark: #1c1a17;
-    --ls-on-dark: #faf9f7;
-    --ls-surface: #f2f0ea;
     --ls-text: #1c1a17;
     --ls-accent: #ed2127;
   }

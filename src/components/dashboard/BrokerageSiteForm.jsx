@@ -17,12 +17,6 @@ const THEMES = [
     swatches: ["#f7f4ee", "#14130f", "#ed2127"],
   },
   {
-    value: "light",
-    label: "Light",
-    description: "Mostly white and bright throughout, same layout.",
-    swatches: ["#ffffff", "#14130f", "#ed2127"],
-  },
-  {
     value: "dark",
     label: "Dark",
     description: "Ink backgrounds throughout with cream text.",
