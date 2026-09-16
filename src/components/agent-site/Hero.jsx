@@ -21,7 +21,13 @@ export default function Hero() {
       ) : (
         <div className="absolute inset-0 bg-[var(--as-dark)]" />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-[var(--as-dark)]/90 via-[var(--as-dark)]/35 to-[var(--as-dark)]/20" />
+      {/* Neutral black, not the themed --as-dark -- a photo overlay
+          tinted with a saturated brand color (e.g. the Red template's
+          literal Agency Red) reads as an odd colored glow rather than
+          the plain darkening every other template already gets away
+          with since its own --as-dark happens to be near-black anyway.
+          Matches listing-site/Hero.jsx's already-established convention. */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/20" />
 
       <div className="relative z-10 flex h-full flex-col justify-end px-6 lg:px-10 pb-24 max-w-7xl mx-auto">
         {site.region && (

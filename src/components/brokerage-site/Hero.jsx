@@ -12,7 +12,11 @@ export default function Hero() {
       ) : (
         <div className="absolute inset-0 bg-[var(--as-dark)]" />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-[var(--as-dark)]/90 via-[var(--as-dark)]/35 to-[var(--as-dark)]/20" />
+      {/* Neutral black, not the themed --as-dark — see agent-site/Hero.jsx's
+          same comment: a photo overlay tinted with a saturated brand
+          color (the Red template's literal Agency Red) reads as an odd
+          colored glow rather than a plain darkening. */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/20" />
 
       <div className="relative z-10 flex h-full flex-col justify-end px-6 lg:px-10 pb-24 max-w-7xl mx-auto">
         <p className="text-[var(--as-on-dark)]/75 text-xs tracked-wide uppercase mb-4">Oklahoma</p>

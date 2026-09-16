@@ -27,7 +27,8 @@ export default function AreasOfExpertise({ preview = false, isStandalonePage = f
               {area.photo_url && (
                 <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[var(--as-dark)]/85 to-transparent flex flex-col items-center justify-end p-6 text-center">
+              {/* Neutral black, not --as-dark — see agent-site/Hero.jsx's same fix. */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 to-transparent flex flex-col items-center justify-end p-6 text-center">
                 <p className="text-[var(--as-on-dark)] font-display text-xl font-semibold">{area.name}</p>
                 {area.blurb && <p className="text-[var(--as-on-dark)]/75 text-sm mt-1 max-w-xs">{area.blurb}</p>}
               </div>
