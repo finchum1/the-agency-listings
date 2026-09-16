@@ -4,6 +4,8 @@ import { normalizeDomain } from "../../lib/normalizeDomain";
 import ImageUploadField from "./ImageUploadField";
 import RichTextEditor from "./RichTextEditor";
 import { paragraphsToHtml } from "../../lib/richTextFallback";
+import CollapsibleSection from "./CollapsibleSection";
+import FormSaveBar from "./FormSaveBar";
 
 // Kept in sync with the CSS custom properties in src/index.css
 // ([data-theme="…"] / [data-font="…"]) and the check constraints in
@@ -126,8 +128,12 @@ export default function SiteForm({ site, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
-  useEffect(() => setForm(toForm(site)), [site]);
+  useEffect(() => {
+    setForm(toForm(site));
+    setDirty(false);
+  }, [site]);
 
   function toForm(s) {
     return {
@@ -162,16 +168,19 @@ export default function SiteForm({ site, onSaved }) {
 
   const update = (field) => (e) => {
     setSaved(false);
+    setDirty(true);
     setForm((f) => ({ ...f, [field]: e.target.value }));
   };
 
   const set = (field, value) => {
     setSaved(false);
+    setDirty(true);
     setForm((f) => ({ ...f, [field]: value }));
   };
 
   const updateStat = (i, field, value) => {
     setSaved(false);
+    setDirty(true);
     setForm((f) => {
       const stats = [...f.stats];
       stats[i] = { ...stats[i], [field]: value };
@@ -179,24 +188,31 @@ export default function SiteForm({ site, onSaved }) {
     });
   };
 
-  const addStat = () =>
+  const addStat = () => {
+    setDirty(true);
     setForm((f) => ({ ...f, stats: [...f.stats, { label: "", value: "" }] }));
+  };
 
-  const removeStat = (i) =>
+  const removeStat = (i) => {
+    setDirty(true);
     setForm((f) => ({ ...f, stats: f.stats.filter((_, idx) => idx !== i) }));
+  };
 
   const enableSection = (key) => {
     setSaved(false);
+    setDirty(true);
     setForm((f) => ({ ...f, home_sections: [...f.home_sections, key] }));
   };
 
   const disableSection = (key) => {
     setSaved(false);
+    setDirty(true);
     setForm((f) => ({ ...f, home_sections: f.home_sections.filter((k) => k !== key) }));
   };
 
   const moveSection = (i, direction) => {
     setSaved(false);
+    setDirty(true);
     setForm((f) => {
       const j = i + direction;
       if (j < 0 || j >= f.home_sections.length) return f;
@@ -246,6 +262,7 @@ export default function SiteForm({ site, onSaved }) {
       return;
     }
     setSaved(true);
+    setDirty(false);
     onSaved?.();
   };
 
@@ -287,342 +304,350 @@ export default function SiteForm({ site, onSaved }) {
         </a>
       )}
 
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label className={labelClass}>URL slug</label>
-          <input required value={form.slug} onChange={update("slug")} className={inputClass} />
-          <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-1">/sites/{form.slug || "…"}</p>
-        </div>
-        <div>
-          <label className={labelClass}>Region / metro area</label>
-          <input
-            value={form.region}
-            onChange={update("region")}
-            className={inputClass}
-            placeholder="Oklahoma City Metro"
+      <div className="space-y-3">
+        <CollapsibleSection title="Basic Info" description="Slug, region, and tagline." defaultOpen>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>URL slug</label>
+              <input required value={form.slug} onChange={update("slug")} className={inputClass} />
+              <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-1">/sites/{form.slug || "…"}</p>
+            </div>
+            <div>
+              <label className={labelClass}>Region / metro area</label>
+              <input
+                value={form.region}
+                onChange={update("region")}
+                className={inputClass}
+                placeholder="Oklahoma City Metro"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Tagline</label>
+            <input
+              value={form.tagline}
+              onChange={update("tagline")}
+              className={inputClass}
+              placeholder="Trusted guidance. Exceptional results."
+            />
+          </div>
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Template & Design" description="Theme, accent color, font pairing, and logo.">
+          <div>
+            <label className={labelClass}>Template</label>
+            <div className="grid sm:grid-cols-3 gap-3">
+              {THEMES.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => set("theme", t.value)}
+                  className={`text-left rounded-xl border p-3.5 transition-colors ${
+                    form.theme === t.value
+                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
+                  }`}
+                >
+                  <div className="flex gap-1.5 mb-2.5">
+                    {t.swatches.map((c, i) => (
+                      <span key={i} className="h-5 w-5 rounded-full border border-black/10 dark:border-white/15" style={{ background: c }} />
+                    ))}
+                  </div>
+                  <p className="text-sm font-semibold">{t.label}</p>
+                  <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{t.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Accent color</label>
+            <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-2">
+              Kept to The Agency's own brand colors — not a free color picker.
+            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              {ACCENT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => set("accent_color", opt.value)}
+                  title={opt.label}
+                  className={`flex items-center gap-1.5 rounded-full border pl-1.5 pr-3 py-1.5 text-xs font-medium transition-colors ${
+                    form.accent_color === opt.value
+                      ? "border-[#1c1a17] dark:border-[#faf9f7] text-[#1c1a17] dark:text-[#faf9f7]"
+                      : "border-black/10 dark:border-white/15 text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:border-black/20 dark:hover:border-white/25"
+                  }`}
+                >
+                  <span
+                    className="h-5 w-5 rounded-full border border-black/10 dark:border-white/15"
+                    style={{ background: opt.swatch || "repeating-conic-gradient(#e7e2d6 0% 25%, #fff 0% 50%) 0 / 8px 8px" }}
+                  />
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Font pairing</label>
+            <div className="grid sm:grid-cols-3 gap-3">
+              {FONT_PAIRINGS.map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => set("font_pairing", f.value)}
+                  className={`text-left rounded-xl border p-3.5 transition-colors ${
+                    form.font_pairing === f.value
+                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
+                  }`}
+                >
+                  {f.tag && (
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[#ed2127] dark:text-[#f2454b] mb-1.5">{f.tag}</p>
+                  )}
+                  <p className="text-lg leading-none mb-2" style={{ fontFamily: f.display }}>
+                    Aa
+                  </p>
+                  <p className="text-xs font-semibold" style={{ fontFamily: f.body }}>
+                    {f.label}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Logo</label>
+            <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-2">
+              Same official mark, three colors — pick whichever reads best against your template.
+            </p>
+            <div className="flex items-center gap-3 flex-wrap">
+              {LOGO_VARIANTS.map((v) => (
+                <button
+                  key={v.value}
+                  type="button"
+                  onClick={() => set("logo_variant", v.value)}
+                  className={`rounded-xl border p-2.5 transition-colors ${
+                    form.logo_variant === v.value
+                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
+                  }`}
+                >
+                  <div className="h-10 w-24 rounded-md flex items-center justify-center px-2" style={{ background: v.chipBg }}>
+                    <img src={v.src} alt={`${v.label} logo`} className="max-h-6 w-auto" />
+                  </div>
+                  <p className="text-xs font-medium text-center mt-1.5">{v.label}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Home Page Sections" description="What shows on your home page, and in what order.">
+          <div>
+            <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-2">
+              Hero and Contact are always included. A page stays reachable on its own even if you
+              turn it off here.
+            </p>
+            <div className="space-y-1.5">
+              {form.home_sections.map((key, i) => (
+                <div key={key} className="flex items-center gap-2 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked
+                    onChange={() => disableSection(key)}
+                    className="accent-[#ed2127] dark:accent-[#f2454b]"
+                  />
+                  <span className="flex-1 text-sm">{HOME_SECTION_LABELS[key]}</span>
+                  <button
+                    type="button"
+                    onClick={() => moveSection(i, -1)}
+                    disabled={i === 0}
+                    className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-20 disabled:hover:text-[#1c1a17]/40 dark:disabled:hover:text-[#faf9f7]/40 px-1"
+                    title="Move earlier"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveSection(i, 1)}
+                    disabled={i === form.home_sections.length - 1}
+                    className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-20 disabled:hover:text-[#1c1a17]/40 dark:disabled:hover:text-[#faf9f7]/40 px-1"
+                    title="Move later"
+                  >
+                    ↓
+                  </button>
+                </div>
+              ))}
+              {ALL_SECTION_KEYS.filter((key) => !form.home_sections.includes(key)).map((key) => (
+                <div
+                  key={key}
+                  className="flex items-center gap-2 border border-dashed border-black/15 dark:border-white/20 rounded-lg px-3 py-2"
+                >
+                  <input type="checkbox" checked={false} onChange={() => enableSection(key)} className="accent-[#ed2127] dark:accent-[#f2454b]" />
+                  <span className="flex-1 text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{HOME_SECTION_LABELS[key]}</span>
+                  <span className="text-xs text-[#1c1a17]/35 dark:text-[#faf9f7]/35">Hidden from home</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Photos, Video & Bio" description="Secondary logo, hero media, your bio, and stats.">
+          <ImageUploadField
+            bucket="agent-site-photos"
+            folder={site.id}
+            value={form.secondary_logo_url}
+            onChange={(url) => set("secondary_logo_url", url || "")}
+            label="Secondary logo (optional — shown next to The Agency logo in your header and footer)"
           />
-        </div>
-      </div>
 
-      <div>
-        <label className={labelClass}>Tagline</label>
-        <input
-          value={form.tagline}
-          onChange={update("tagline")}
-          className={inputClass}
-          placeholder="Trusted guidance. Exceptional results."
-        />
-      </div>
+          <ImageUploadField
+            bucket="agent-site-photos"
+            folder={site.id}
+            value={form.hero_photo_url}
+            onChange={(url) => set("hero_photo_url", url || "")}
+            label="Hero photo"
+          />
 
-      <div>
-        <label className={labelClass}>Template</label>
-        <div className="grid sm:grid-cols-3 gap-3">
-          {THEMES.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => set("theme", t.value)}
-              className={`text-left rounded-xl border p-3.5 transition-colors ${
-                form.theme === t.value
-                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
-                  : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
-              }`}
-            >
-              <div className="flex gap-1.5 mb-2.5">
-                {t.swatches.map((c, i) => (
-                  <span key={i} className="h-5 w-5 rounded-full border border-black/10 dark:border-white/15" style={{ background: c }} />
-                ))}
-              </div>
-              <p className="text-sm font-semibold">{t.label}</p>
-              <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{t.description}</p>
-            </button>
-          ))}
-        </div>
-      </div>
+          <div>
+            <label className={labelClass}>Hero video URL (optional)</label>
+            <input
+              value={form.hero_video_url}
+              onChange={update("hero_video_url")}
+              className={inputClass}
+              placeholder="https://… (already-hosted video file; used instead of the hero photo when set)"
+            />
+          </div>
 
-      <div>
-        <label className={labelClass}>Accent color</label>
-        <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-2">
-          Kept to The Agency's own brand colors — not a free color picker.
-        </p>
-        <div className="flex items-center gap-2 flex-wrap">
-          {ACCENT_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => set("accent_color", opt.value)}
-              title={opt.label}
-              className={`flex items-center gap-1.5 rounded-full border pl-1.5 pr-3 py-1.5 text-xs font-medium transition-colors ${
-                form.accent_color === opt.value
-                  ? "border-[#1c1a17] dark:border-[#faf9f7] text-[#1c1a17] dark:text-[#faf9f7]"
-                  : "border-black/10 dark:border-white/15 text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:border-black/20 dark:hover:border-white/25"
-              }`}
-            >
-              <span
-                className="h-5 w-5 rounded-full border border-black/10 dark:border-white/15"
-                style={{ background: opt.swatch || "repeating-conic-gradient(#e7e2d6 0% 25%, #fff 0% 50%) 0 / 8px 8px" }}
-              />
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      </div>
+          <div>
+            <label className={labelClass}>Bio</label>
+            <RichTextEditor
+              value={form.bio_html}
+              onChange={(html) => set("bio_html", html)}
+              placeholder="Tell your story…"
+              minHeight="10rem"
+            />
+          </div>
 
-      <div>
-        <label className={labelClass}>Font pairing</label>
-        <div className="grid sm:grid-cols-3 gap-3">
-          {FONT_PAIRINGS.map((f) => (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => set("font_pairing", f.value)}
-              className={`text-left rounded-xl border p-3.5 transition-colors ${
-                form.font_pairing === f.value
-                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
-                  : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
-              }`}
-            >
-              {f.tag && (
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#ed2127] dark:text-[#f2454b] mb-1.5">{f.tag}</p>
-              )}
-              <p className="text-lg leading-none mb-2" style={{ fontFamily: f.display }}>
-                Aa
-              </p>
-              <p className="text-xs font-semibold" style={{ fontFamily: f.body }}>
-                {f.label}
-              </p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <label className={labelClass}>Logo</label>
-        <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-2">
-          Same official mark, three colors — pick whichever reads best against your template.
-        </p>
-        <div className="flex items-center gap-3 flex-wrap">
-          {LOGO_VARIANTS.map((v) => (
-            <button
-              key={v.value}
-              type="button"
-              onClick={() => set("logo_variant", v.value)}
-              className={`rounded-xl border p-2.5 transition-colors ${
-                form.logo_variant === v.value
-                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
-                  : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
-              }`}
-            >
-              <div className="h-10 w-24 rounded-md flex items-center justify-center px-2" style={{ background: v.chipBg }}>
-                <img src={v.src} alt={`${v.label} logo`} className="max-h-6 w-auto" />
-              </div>
-              <p className="text-xs font-medium text-center mt-1.5">{v.label}</p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <label className={labelClass}>Home page sections</label>
-        <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-2">
-          What shows on your home page, and in what order — Hero and Contact are always included.
-          A page stays reachable on its own even if you turn it off here.
-        </p>
-        <div className="space-y-1.5">
-          {form.home_sections.map((key, i) => (
-            <div key={key} className="flex items-center gap-2 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3 py-2">
-              <input
-                type="checkbox"
-                checked
-                onChange={() => disableSection(key)}
-                className="accent-[#ed2127] dark:accent-[#f2454b]"
-              />
-              <span className="flex-1 text-sm">{HOME_SECTION_LABELS[key]}</span>
-              <button
-                type="button"
-                onClick={() => moveSection(i, -1)}
-                disabled={i === 0}
-                className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-20 disabled:hover:text-[#1c1a17]/40 dark:disabled:hover:text-[#faf9f7]/40 px-1"
-                title="Move earlier"
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                onClick={() => moveSection(i, 1)}
-                disabled={i === form.home_sections.length - 1}
-                className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-20 disabled:hover:text-[#1c1a17]/40 dark:disabled:hover:text-[#faf9f7]/40 px-1"
-                title="Move later"
-              >
-                ↓
-              </button>
+          <div>
+            <label className={labelClass}>Stats (e.g. "Years Experience" → "10+")</label>
+            <div className="space-y-2">
+              {form.stats.map((stat, i) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    value={stat.value}
+                    onChange={(e) => updateStat(i, "value", e.target.value)}
+                    className={inputClass}
+                    placeholder="10+"
+                  />
+                  <input
+                    value={stat.label}
+                    onChange={(e) => updateStat(i, "label", e.target.value)}
+                    className={inputClass}
+                    placeholder="Years Experience"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeStat(i)}
+                    className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400 px-2"
+                    aria-label="Remove stat"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
-          {ALL_SECTION_KEYS.filter((key) => !form.home_sections.includes(key)).map((key) => (
-            <div
-              key={key}
-              className="flex items-center gap-2 border border-dashed border-black/15 dark:border-white/20 rounded-lg px-3 py-2"
+            <button
+              type="button"
+              onClick={addStat}
+              className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline mt-2"
             >
-              <input type="checkbox" checked={false} onChange={() => enableSection(key)} className="accent-[#ed2127] dark:accent-[#f2454b]" />
-              <span className="flex-1 text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{HOME_SECTION_LABELS[key]}</span>
-              <span className="text-xs text-[#1c1a17]/35 dark:text-[#faf9f7]/35">Hidden from home</span>
+              + Add stat
+            </button>
+          </div>
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Social Media" description="Instagram, Facebook, LinkedIn, TikTok, and YouTube.">
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div>
+              <label className={labelClass}>Instagram URL</label>
+              <input value={form.instagram_url} onChange={update("instagram_url")} className={inputClass} />
             </div>
-          ))}
-        </div>
-      </div>
-
-      <ImageUploadField
-        bucket="agent-site-photos"
-        folder={site.id}
-        value={form.secondary_logo_url}
-        onChange={(url) => set("secondary_logo_url", url || "")}
-        label="Secondary logo (optional — shown next to The Agency logo in your header and footer)"
-      />
-
-      <ImageUploadField
-        bucket="agent-site-photos"
-        folder={site.id}
-        value={form.hero_photo_url}
-        onChange={(url) => set("hero_photo_url", url || "")}
-        label="Hero photo"
-      />
-
-      <div>
-        <label className={labelClass}>Hero video URL (optional)</label>
-        <input
-          value={form.hero_video_url}
-          onChange={update("hero_video_url")}
-          className={inputClass}
-          placeholder="https://… (already-hosted video file; used instead of the hero photo when set)"
-        />
-      </div>
-
-      <div>
-        <label className={labelClass}>Bio</label>
-        <RichTextEditor
-          value={form.bio_html}
-          onChange={(html) => set("bio_html", html)}
-          placeholder="Tell your story…"
-          minHeight="10rem"
-        />
-      </div>
-
-      <div>
-        <label className={labelClass}>Stats (e.g. "Years Experience" → "10+")</label>
-        <div className="space-y-2">
-          {form.stats.map((stat, i) => (
-            <div key={i} className="flex gap-2">
-              <input
-                value={stat.value}
-                onChange={(e) => updateStat(i, "value", e.target.value)}
-                className={inputClass}
-                placeholder="10+"
-              />
-              <input
-                value={stat.label}
-                onChange={(e) => updateStat(i, "label", e.target.value)}
-                className={inputClass}
-                placeholder="Years Experience"
-              />
-              <button
-                type="button"
-                onClick={() => removeStat(i)}
-                className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400 px-2"
-                aria-label="Remove stat"
-              >
-                ✕
-              </button>
+            <div>
+              <label className={labelClass}>Facebook URL</label>
+              <input value={form.facebook_url} onChange={update("facebook_url")} className={inputClass} />
             </div>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={addStat}
-          className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline mt-2"
+            <div>
+              <label className={labelClass}>LinkedIn URL</label>
+              <input value={form.linkedin_url} onChange={update("linkedin_url")} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>TikTok URL</label>
+              <input value={form.tiktok_url} onChange={update("tiktok_url")} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>YouTube URL</label>
+              <input value={form.youtube_url} onChange={update("youtube_url")} className={inputClass} />
+            </div>
+          </div>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          title="SEO & Sharing"
+          description="Controls the title/description search engines show and the preview card when your site is shared."
         >
-          + Add stat
-        </button>
-      </div>
-
-      <div className="grid sm:grid-cols-3 gap-4">
-        <div>
-          <label className={labelClass}>Instagram URL</label>
-          <input value={form.instagram_url} onChange={update("instagram_url")} className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass}>Facebook URL</label>
-          <input value={form.facebook_url} onChange={update("facebook_url")} className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass}>LinkedIn URL</label>
-          <input value={form.linkedin_url} onChange={update("linkedin_url")} className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass}>TikTok URL</label>
-          <input value={form.tiktok_url} onChange={update("tiktok_url")} className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass}>YouTube URL</label>
-          <input value={form.youtube_url} onChange={update("youtube_url")} className={inputClass} />
-        </div>
-      </div>
-
-      <div className="bg-[#faf9f7] dark:bg-[#0d0d0d] border border-black/5 dark:border-white/10 rounded-2xl p-5 space-y-4">
-        <div>
-          <h3 className="font-display text-base font-semibold">SEO &amp; Sharing (optional)</h3>
-          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">
-            Controls the title/description search engines show and the preview card when your
-            site is shared in text messages, Slack, or social apps. Leave blank to use sensible
-            defaults built from your name and tagline/bio above.
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+            Leave blank to use sensible defaults built from your name and tagline/bio above.
           </p>
-        </div>
-        <div>
-          <label className={labelClass}>SEO title</label>
-          <input
-            value={form.seo_title}
-            onChange={update("seo_title")}
-            className={inputClass}
-            placeholder="Defaults to your name + The Agency."
+          <div>
+            <label className={labelClass}>SEO title</label>
+            <input
+              value={form.seo_title}
+              onChange={update("seo_title")}
+              className={inputClass}
+              placeholder="Defaults to your name + The Agency."
+            />
+          </div>
+          <div>
+            <label className={labelClass}>SEO / share description</label>
+            <textarea
+              rows={2}
+              value={form.seo_description}
+              onChange={update("seo_description")}
+              className={inputClass}
+              placeholder="Defaults to your tagline, or the first line of your bio."
+            />
+          </div>
+          <ImageUploadField
+            bucket="agent-site-photos"
+            folder={site.id}
+            value={form.og_image_url}
+            onChange={(url) => set("og_image_url", url || "")}
+            label="Share image (optional — defaults to your hero photo)"
           />
-        </div>
-        <div>
-          <label className={labelClass}>SEO / share description</label>
-          <textarea
-            rows={2}
-            value={form.seo_description}
-            onChange={update("seo_description")}
-            className={inputClass}
-            placeholder="Defaults to your tagline, or the first line of your bio."
-          />
-        </div>
-        <ImageUploadField
-          bucket="agent-site-photos"
-          folder={site.id}
-          value={form.og_image_url}
-          onChange={(url) => set("og_image_url", url || "")}
-          label="Share image (optional — defaults to your hero photo)"
-        />
-      </div>
+        </CollapsibleSection>
 
-      <div className="bg-[#faf9f7] dark:bg-[#0d0d0d] border border-black/5 dark:border-white/10 rounded-2xl p-5 space-y-3">
-        <h3 className="font-display text-base font-semibold">Custom Domain (optional)</h3>
-        <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
-          Once a domain is purchased — or an existing one is pointed at this project (ask your
-          admin either way) — enter it here and your site will serve directly at that address,
-          e.g. visiting <span className="font-medium">TerrenceFinchumRealty.com</span> shows this
-          site at the root URL instead of{" "}
-          <span className="font-medium">/sites/{form.slug || "…"}</span>.
-        </p>
-        <input
-          value={form.custom_domain}
-          onChange={update("custom_domain")}
-          className={inputClass}
-          placeholder="TerrenceFinchumRealty.com"
-        />
+        <CollapsibleSection title="Custom Domain" description="Serve your site at your own domain instead of /sites/…">
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+            Once a domain is purchased — or an existing one is pointed at this project (ask your
+            admin either way) — enter it here and your site will serve directly at that address,
+            e.g. visiting <span className="font-medium">TerrenceFinchumRealty.com</span> shows this
+            site at the root URL instead of{" "}
+            <span className="font-medium">/sites/{form.slug || "…"}</span>.
+          </p>
+          <input
+            value={form.custom_domain}
+            onChange={update("custom_domain")}
+            className={inputClass}
+            placeholder="TerrenceFinchumRealty.com"
+          />
+        </CollapsibleSection>
       </div>
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-      {saved && <p className="text-sm text-emerald-700 dark:text-emerald-400">Saved.</p>}
+      {saved && !dirty && <p className="text-sm text-emerald-700 dark:text-emerald-400">Saved.</p>}
 
       <button
         type="submit"
@@ -631,6 +656,8 @@ export default function SiteForm({ site, onSaved }) {
       >
         {saving ? "Saving…" : "Save Changes"}
       </button>
+
+      <FormSaveBar dirty={dirty} saving={saving} saved={saved} error={error} />
     </form>
   );
 }
