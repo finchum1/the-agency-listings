@@ -61,7 +61,7 @@ export default function BrokeragePostPage() {
               <p className="text-sm text-[var(--as-text)]/50">
                 {new Date(`${post.post_date}T00:00:00`).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
               </p>
-              <ShareButtons url={postUrl} />
+              <ShareButtons url={postUrl} title={post.title} />
             </div>
 
             {post.image_url && (

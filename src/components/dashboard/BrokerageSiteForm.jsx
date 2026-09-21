@@ -149,6 +149,7 @@ export default function BrokerageSiteForm({ site, onSaved }) {
       linkedin_url: s.linkedin_url || "",
       tiktok_url: s.tiktok_url || "",
       youtube_url: s.youtube_url || "",
+      x_url: s.x_url || "",
       seo_title: s.seo_title || "",
       seo_description: s.seo_description || "",
       og_image_url: s.og_image_url || "",
@@ -236,6 +237,7 @@ export default function BrokerageSiteForm({ site, onSaved }) {
       linkedin_url: form.linkedin_url,
       tiktok_url: form.tiktok_url,
       youtube_url: form.youtube_url,
+      x_url: form.x_url,
       seo_title: form.seo_title || null,
       seo_description: form.seo_description || null,
       og_image_url: form.og_image_url || null,
@@ -546,6 +548,10 @@ export default function BrokerageSiteForm({ site, onSaved }) {
             <div>
               <label className={labelClass}>YouTube URL</label>
               <input value={form.youtube_url} onChange={update("youtube_url")} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>X URL</label>
+              <input value={form.x_url} onChange={update("x_url")} className={inputClass} />
             </div>
           </div>
         </CollapsibleSection>

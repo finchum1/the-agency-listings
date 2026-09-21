@@ -1,4 +1,4 @@
-import { facebookShareUrl, linkedinShareUrl } from "../lib/shareLinks";
+import { facebookShareUrl, linkedinShareUrl, xShareUrl } from "../lib/shareLinks";
 
 // Same icon paths as agent-site/Footer.jsx and brokerage-site/Footer.jsx
 // use for their own social links — kept visually consistent.
@@ -20,6 +20,13 @@ function LinkedInIcon() {
     </svg>
   );
 }
+function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
 
 // Opens the share dialog in a small popup instead of a full new tab —
 // standard share-button UX. Falls back gracefully to a real new-tab
@@ -29,14 +36,17 @@ const openPopup = (href) => (e) => {
   if (win) e.preventDefault();
 };
 
-// "Share" row for a blog post — Facebook + LinkedIn, no API keys or
-// login required. Shared between agent-site and brokerage-site post
+// "Share" row for a blog post — Facebook, LinkedIn, and X, no API keys
+// or login required. Shared between agent-site and brokerage-site post
 // pages, both of which use the same --as-* theme tokens. `url` must be
-// the post's own absolute, canonical URL.
-export default function ShareButtons({ url, className = "" }) {
+// the post's own absolute, canonical URL. `title` is optional — passed
+// through as X's pre-filled tweet text; Facebook/LinkedIn don't take one
+// since they scrape the URL's own Open Graph tags instead.
+export default function ShareButtons({ url, title, className = "" }) {
   if (!url) return null;
   const fb = facebookShareUrl(url);
   const li = linkedinShareUrl(url);
+  const x = xShareUrl(url, title);
 
   return (
     <div className={`flex items-center gap-3 ${className}`}>
@@ -60,6 +70,16 @@ export default function ShareButtons({ url, className = "" }) {
         className="h-8 w-8 rounded-full border border-[var(--as-text)]/15 flex items-center justify-center text-[var(--as-text)]/60 transition-colors hover:text-[var(--as-accent)] hover:border-[var(--as-accent)]/40"
       >
         <LinkedInIcon />
+      </a>
+      <a
+        href={x}
+        onClick={openPopup(x)}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Share on X"
+        className="h-8 w-8 rounded-full border border-[var(--as-text)]/15 flex items-center justify-center text-[var(--as-text)]/60 transition-colors hover:text-[var(--as-accent)] hover:border-[var(--as-accent)]/40"
+      >
+        <XIcon />
       </a>
     </div>
   );

@@ -34,6 +34,7 @@ export function adaptBrokerageSite({ site, agents, posts, areas }) {
       linkedin: site.linkedin_url || "",
       tiktok: site.tiktok_url || "",
       youtube: site.youtube_url || "",
+      x: site.x_url || "",
     },
     agents: agents || [],
     posts: posts || [],

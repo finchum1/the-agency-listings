@@ -48,6 +48,7 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
       linkedin: site.linkedin_url || "",
       tiktok: site.tiktok_url || "",
       youtube: site.youtube_url || "",
+      x: site.x_url || "",
     },
     agent: {
       name: agent?.full_name || "",

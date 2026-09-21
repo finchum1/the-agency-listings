@@ -104,7 +104,7 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
                   day: "numeric",
                 })}
               </p>
-              <ShareButtons url={postUrl} />
+              <ShareButtons url={postUrl} title={post.title} />
             </div>
 
             {post.image_url && (
