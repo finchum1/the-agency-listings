@@ -3,10 +3,12 @@ import { bareHost } from "../lib/appHosts";
 import { useListing } from "../hooks/useListing";
 import { useAgentSite } from "../hooks/useAgentSite";
 import { useAgentPost } from "../hooks/useAgentPost";
+import { useAgentArea } from "../hooks/useAgentArea";
 import { useBrokerageSite } from "../hooks/useBrokerageSite";
 import ListingSitePage from "./ListingSitePage";
 import AgentSitePage from "./AgentSitePage";
 import AgentPostPage from "./AgentPostPage";
+import AgentAreaPage from "./AgentAreaPage";
 import BrokerageSitePage from "./BrokerageSitePage";
 import BrokeragePostPage from "./BrokeragePostPage";
 import NotFoundPage from "./NotFoundPage";
@@ -129,6 +131,19 @@ function SharedCustomDomainListingDetailPage() {
   );
 }
 
+// /areas/:areaSlug — agent-only (no brokerage fallback like the other
+// shared paths): the brokerage site has no per-area detail page today,
+// only its own /areas list, so a domain that turns out to be the
+// brokerage's just 404s here rather than reaching for content that
+// doesn't exist.
+function CustomDomainAgentAreaPage() {
+  const { areaSlug } = useParams();
+  const hostname = bareHost(window.location.hostname);
+  const result = useAgentArea({ siteCustomDomain: hostname, areaSlug });
+  if (result.notFound) return <NotFoundPage />;
+  return <AgentAreaPage {...result} />;
+}
+
 // Rendered whenever the request's hostname isn't a recognized app host
 // (see lib/appHosts.js) — i.e. a visitor arrived via a listing's, an
 // agent site's, or the brokerage site's own attached custom domain
@@ -196,6 +211,7 @@ export default function CustomDomainSitePage() {
           />
         }
       />
+      <Route path="/areas/:areaSlug" element={<CustomDomainAgentAreaPage />} />
       <Route
         path="/blog"
         element={

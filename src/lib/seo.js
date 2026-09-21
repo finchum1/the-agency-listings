@@ -164,3 +164,15 @@ export function buildAgentPostMeta(post, site, agent) {
   const image = absoluteUrl(post.image_url || site?.hero_photo_url || agent?.photo_url || brokerage.logo);
   return { title, description, image };
 }
+
+export function buildAgentAreaMeta(area, site, agent) {
+  const title = `${area.name} | ${agent?.full_name || brokerage.name}`;
+  const description =
+    area.blurb?.trim() ||
+    firstBlockText(area.description) ||
+    `Explore ${area.name}${site?.region ? ` near ${site.region}` : ""} with ${
+      agent?.full_name || "this agent"
+    } at ${brokerage.name}.`;
+  const image = absoluteUrl(area.photo_url || site?.hero_photo_url || agent?.photo_url || brokerage.logo);
+  return { title, description, image };
+}

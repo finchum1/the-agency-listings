@@ -21,6 +21,7 @@ import PublicListingPage from "./pages/PublicListingPage";
 import CustomDomainSitePage from "./pages/CustomDomainSitePage";
 import PublicAgentSitePage from "./pages/PublicAgentSitePage";
 import PublicAgentPostPage from "./pages/PublicAgentPostPage";
+import PublicAgentAreaPage from "./pages/PublicAgentAreaPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import LandingPage from "./pages/LandingPage";
 import AgentWebsitesPage from "./pages/AgentWebsitesPage";
@@ -140,6 +141,7 @@ export default function App() {
           </PublicAgentSitePage>
         }
       />
+      <Route path="/sites/:slug/areas/:areaSlug" element={<PublicAgentAreaPage />} />
       <Route
         path="/sites/:slug/blog"
         element={

@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Link } from "react-router-dom";
 import { useRepliersListings } from "../../hooks/useRepliersListings";
 import { useFeaturedRepliersListings } from "../../hooks/useFeaturedRepliersListings";
 import { useFavorites } from "../../hooks/useFavorites";
-import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
+import { BrokerageSiteContext } from "../../context/BrokerageSiteContext";
 import IdxListingCard from "./IdxListingCard";
 import IdxMap from "./IdxMap";
 
@@ -35,23 +35,46 @@ const pillClass =
 //     the Home page preview also shows.
 //   - /brokerage/search ("Home Search", officeOnly=false): the open MLS,
 //     every listing on the board, not just The Agency's own.
-// `preview` (used on Home, via HomeSections.jsx) caps to 3 results, drops
-// the filter bar/map, and adds a "View All Listings" link — same
-// convention as AgentRoster.jsx/AreasOfExpertise.jsx/BlogList.jsx. The
-// standalone pages get the full list+map split view, modeled on a
-// reference screenshot of an MLS Grid–powered search Terrence supplied.
-export default function IdxListings({ isStandalonePage = false, preview = false, officeOnly = true }) {
-  const { site } = useBrokerageSiteContext();
+// `preview` (used on Home, via HomeSections.jsx) caps to `previewCount`
+// results, drops the filter bar/map, and adds a "View All Listings" link
+// (pass viewAllHref={null} to suppress it) — same convention as
+// AgentRoster.jsx/AreasOfExpertise.jsx/BlogList.jsx. The standalone pages
+// get the full list+map split view, modeled on a reference screenshot of
+// an MLS Grid–powered search Terrence supplied.
+//
+// initialCity/eyebrowOverride/titleOverride/sectionId exist for
+// AgentAreaPage.jsx, which embeds this twice on one page (a curated
+// preview of The Agency's own listings, plus the full open-market
+// search) both pre-scoped to one area's city — every other call site
+// leaves these at their defaults and behaves exactly as before.
+//
+// Reads BrokerageSiteContext directly (optionally) rather than the
+// throwing useBrokerageSiteContext() hook, since AgentAreaPage.jsx
+// renders this outside any BrokerageSiteProvider — pinned listings are a
+// brokerage-only home-page feature anyway, so simply having none there
+// is correct, not a bug.
+export default function IdxListings({
+  isStandalonePage = false,
+  preview = false,
+  officeOnly = true,
+  initialCity = "",
+  previewCount = 3,
+  viewAllHref = "/brokerage/listings",
+  eyebrowOverride,
+  titleOverride,
+  sectionId = "listings",
+}) {
+  const brokerageSite = useContext(BrokerageSiteContext);
   const { favorites, toggleFavorite } = useFavorites();
   const [priceIdx, setPriceIdx] = useState(0);
   const [beds, setBeds] = useState("");
   const [baths, setBaths] = useState("");
-  const [city, setCity] = useState("");
+  const [city, setCity] = useState(initialCity);
   const [sortBy, setSortBy] = useState("");
   const [view, setView] = useState("map"); // default per request — applies to both /brokerage/listings and /brokerage/search, which share this component
   const [boundary, setBoundary] = useState(null); // drawn polygon, from IdxMap.jsx's Draw control
 
-  const pinnedMlsNumbers = preview ? site.featuredListingMlsNumbers.slice(0, 3) : [];
+  const pinnedMlsNumbers = preview ? (brokerageSite?.site.featuredListingMlsNumbers || []).slice(0, 3) : [];
   const usePinned = pinnedMlsNumbers.length > 0;
 
   const price = PRICE_OPTIONS[priceIdx];
@@ -61,7 +84,7 @@ export default function IdxListings({ isStandalonePage = false, preview = false,
     usePinned
       ? null
       : preview
-        ? { resultsPerPage: 3, office: officeOnly }
+        ? { resultsPerPage: previewCount, office: officeOnly, city: initialCity }
         : {
             minPrice: price.min,
             maxPrice: price.max,
@@ -89,17 +112,18 @@ export default function IdxListings({ isStandalonePage = false, preview = false,
   const Heading = isStandalonePage ? "h1" : "h2";
 
   return (
-    <section id="listings" className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
+    <section id={sectionId} className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
       <div className="mx-auto max-w-7xl">
         <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">
-          {officeOnly ? "The Agency's Listings" : "Home Search"}
+          {eyebrowOverride || (officeOnly ? "The Agency's Listings" : "Home Search")}
         </p>
         <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-10 text-[var(--as-text)]">
-          {preview
-            ? "Featured Homes For Sale"
-            : officeOnly
-              ? "Our Current Listings"
-              : "Search Every Home For Sale"}
+          {titleOverride ||
+            (preview
+              ? "Featured Homes For Sale"
+              : officeOnly
+                ? "Our Current Listings"
+                : "Search Every Home For Sale")}
         </Heading>
 
         {!preview && (
@@ -229,10 +253,10 @@ export default function IdxListings({ isStandalonePage = false, preview = false,
               </div>
             )}
 
-            {preview && (
+            {preview && viewAllHref && (
               <div className="mt-14 flex justify-center">
                 <Link
-                  to="/brokerage/listings"
+                  to={viewAllHref}
                   className="border border-[var(--as-text)]/20 px-8 py-3 text-xs font-medium tracked-wide uppercase text-[var(--as-text)] transition-colors hover:bg-[var(--as-text)] hover:text-[var(--as-bg)]"
                 >
                   View All Listings

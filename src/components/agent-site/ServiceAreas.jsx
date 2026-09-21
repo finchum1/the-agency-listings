@@ -1,4 +1,5 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
+import SiteLink from "./SiteLink";
 
 export default function ServiceAreas() {
   const { site, isStandalonePage } = useAgentSiteContext();
@@ -19,9 +20,18 @@ export default function ServiceAreas() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {site.areas.map((area) => (
-            <div key={area.id} className="relative overflow-hidden bg-[var(--as-surface)] aspect-[4/3]">
+            <SiteLink
+              key={area.id}
+              slug={site.slug}
+              path={`/areas/${area.slug}`}
+              className="group relative block overflow-hidden bg-[var(--as-surface)] aspect-[4/3]"
+            >
               {area.photo_url && (
-                <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover" />
+                <img
+                  src={area.photo_url}
+                  alt={area.name}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
               )}
               {/* Neutral black overlay + hardcoded white text, not --as-dark/
                   --as-on-dark — see Hero.jsx's same fix (this text sits on
@@ -31,7 +41,7 @@ export default function ServiceAreas() {
                 <p className="text-white font-display text-xl font-semibold">{area.name}</p>
                 {area.blurb && <p className="text-white/75 text-sm mt-1 max-w-xs">{area.blurb}</p>}
               </div>
-            </div>
+            </SiteLink>
           ))}
         </div>
       </div>
