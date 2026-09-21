@@ -3,7 +3,7 @@ import { supabase } from "../../lib/supabaseClient";
 import ImageUploadField from "./ImageUploadField";
 import RichTextEditor from "./RichTextEditor";
 
-const emptyForm = { slug: "", name: "", blurb: "", description: "", photo_url: "", stats: [] };
+const emptyForm = { slug: "", name: "", blurb: "", description: "", photo_url: "" };
 
 function slugify(str) {
   return str
@@ -45,7 +45,6 @@ export default function BrokerageAreasManager({ brokerageSiteId, areas, onChange
       blurb: area.blurb || "",
       description: area.description || "",
       photo_url: area.photo_url || "",
-      stats: area.stats?.length ? area.stats : [],
     });
     setEditingId(area.id);
   };
@@ -67,15 +66,6 @@ export default function BrokerageAreasManager({ brokerageSiteId, areas, onChange
 
   const setField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
-  const updateStat = (i, field, value) =>
-    setForm((f) => {
-      const stats = [...f.stats];
-      stats[i] = { ...stats[i], [field]: value };
-      return { ...f, stats };
-    });
-  const addStat = () => setForm((f) => ({ ...f, stats: [...f.stats, { label: "", value: "" }] }));
-  const removeStat = (i) => setForm((f) => ({ ...f, stats: f.stats.filter((_, idx) => idx !== i) }));
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name.trim() || !form.slug.trim()) return;
@@ -88,7 +78,6 @@ export default function BrokerageAreasManager({ brokerageSiteId, areas, onChange
       blurb: form.blurb,
       description: form.description,
       photo_url: form.photo_url || null,
-      stats: form.stats.filter((s) => s.label.trim() || s.value.trim()),
     };
 
     const { error } =
@@ -194,44 +183,6 @@ export default function BrokerageAreasManager({ brokerageSiteId, areas, onChange
             value={form.photo_url}
             onChange={(url) => setForm((f) => ({ ...f, photo_url: url || "" }))}
           />
-          <div>
-            <label className={labelClass}>
-              City stats (e.g. "Population" → "45,000", "Median Home Price" → "$350k")
-            </label>
-            <div className="space-y-2">
-              {form.stats.map((stat, i) => (
-                <div key={i} className="flex gap-2">
-                  <input
-                    value={stat.value}
-                    onChange={(e) => updateStat(i, "value", e.target.value)}
-                    className={inputClass}
-                    placeholder="45,000"
-                  />
-                  <input
-                    value={stat.label}
-                    onChange={(e) => updateStat(i, "label", e.target.value)}
-                    className={inputClass}
-                    placeholder="Population"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeStat(i)}
-                    className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400 px-2"
-                    aria-label="Remove stat"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={addStat}
-              className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline mt-2"
-            >
-              + Add stat
-            </button>
-          </div>
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex items-center gap-3">
             <button
