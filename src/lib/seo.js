@@ -176,3 +176,13 @@ export function buildAgentAreaMeta(area, site, agent) {
   const image = absoluteUrl(area.photo_url || site?.hero_photo_url || agent?.photo_url || brokerage.logo);
   return { title, description, image };
 }
+
+export function buildBrokerageAreaMeta(area, site) {
+  const title = `${area.name} | ${brokerage.name}`;
+  const description =
+    area.blurb?.trim() ||
+    firstBlockText(area.description) ||
+    `Explore ${area.name} with ${brokerage.name}.`;
+  const image = absoluteUrl(area.photo_url || site?.hero_photo_url || brokerage.logo);
+  return { title, description, image };
+}

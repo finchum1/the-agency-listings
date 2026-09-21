@@ -30,6 +30,7 @@ import UpcomingPage from "./pages/UpcomingPage";
 import BrokerageWebsitePage from "./pages/BrokerageWebsitePage";
 import BrokerageSitePage from "./pages/BrokerageSitePage";
 import BrokeragePostPage from "./pages/BrokeragePostPage";
+import BrokerageAreaPage from "./pages/BrokerageAreaPage";
 import BrokerageSiteEditor from "./components/dashboard/BrokerageSiteEditor";
 
 import HomeSections from "./components/agent-site/HomeSections";
@@ -205,6 +206,7 @@ export default function App() {
           </BrokerageSitePage>
         }
       />
+      <Route path="/brokerage/areas/:areaSlug" element={<BrokerageAreaPage />} />
       <Route
         path="/brokerage/blog"
         element={

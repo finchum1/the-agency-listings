@@ -1,49 +1,44 @@
 import { useEffect } from "react";
-import { Navigate } from "react-router-dom";
-import { adaptAgentSite } from "../lib/adaptAgentSite";
+import { Link, Navigate, useParams } from "react-router-dom";
+import { useBrokerageArea } from "../hooks/useBrokerageArea";
+import { adaptBrokerageSite } from "../lib/adaptBrokerageSite";
 import { sanitizeHtml } from "../lib/sanitizeHtml";
-import { buildAgentAreaMeta, SITE_ORIGIN } from "../lib/seo";
+import { buildBrokerageAreaMeta, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta } from "../lib/pageMeta";
 import { trackView } from "../lib/trackView";
-import { isAgentSiteAppHost } from "../lib/agentSiteLinks";
-import { AgentSiteProvider } from "../context/AgentSiteContext";
-import Navbar from "../components/agent-site/Navbar";
-import Footer from "../components/agent-site/Footer";
-import SiteLink from "../components/agent-site/SiteLink";
+import { BrokerageSiteProvider } from "../context/BrokerageSiteContext";
+import Navbar from "../components/brokerage-site/Navbar";
+import Footer from "../components/brokerage-site/Footer";
 import IdxListings from "../components/brokerage-site/IdxListings";
 
-// Shared rendering for one agent's area-of-expertise page — used both at
-// /sites/:slug/areas/:areaSlug (PublicAgentAreaPage.jsx) and when a
-// request arrives on the parent site's own attached custom domain.
-// Takes the raw shape returned by useAgentArea(). Parallel to
-// AgentPostPage.jsx, with two IdxListings sections added below the
-// overview: a curated preview of The Agency's own listings in this area,
-// and a full open-market search pre-scoped to it — both reuse the
-// brokerage site's own MLS search component (see IdxListings.jsx's own
-// comment on why that's safe outside a BrokerageSiteProvider).
-export default function AgentAreaPage({ site, agent, area, loading, notFound }) {
-  const adapted = site
-    ? adaptAgentSite({ site, agent, testimonials: [], areas: [], posts: [], listings: [] })
-    : null;
+// One brokerage area-of-expertise page, at /brokerage/areas/:areaSlug —
+// parallel to BrokeragePostPage.jsx (self-contained: reads :areaSlug
+// itself, no props needed) and to AgentAreaPage.jsx's own layout (photo
+// header, overview + stats, curated Agency-listings preview, full MLS
+// search) — the brokerage version needs no agent-vs-brokerage fallback
+// logic since IdxListings already reads BrokerageSiteContext natively
+// here (this page supplies a real BrokerageSiteProvider, unlike the
+// agent-site page).
+export default function BrokerageAreaPage() {
+  const { areaSlug } = useParams();
+  const { site, area, loading, notFound } = useBrokerageArea({ areaSlug });
+  const adapted = site ? adaptBrokerageSite({ site, posts: [], agents: [], areas: [] }) : null;
 
   useEffect(() => {
     if (!area || !site) return;
-    const meta = buildAgentAreaMeta(area, site, agent);
-    applyPageMeta({
-      ...meta,
-      url: isAgentSiteAppHost() ? `${SITE_ORIGIN}/sites/${site.slug}/areas/${area.slug}` : undefined,
-    });
+    const meta = buildBrokerageAreaMeta(area, site);
+    applyPageMeta({ ...meta, url: `${SITE_ORIGIN}/brokerage/areas/${area.slug}` });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [area, site, agent]);
+  }, [area, site]);
 
   useEffect(() => {
-    if (site?.id) trackView("agent_site", site.id);
+    if (site?.id) trackView("brokerage_site", site.id);
   }, [site?.id]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f7f4ee] font-agent-sans">
-        <p className="text-[#14130f]/40 text-sm">Loading…</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#14130f] font-agent-sans">
+        <p className="text-white/40 text-sm">Loading…</p>
       </div>
     );
   }
@@ -53,7 +48,7 @@ export default function AgentAreaPage({ site, agent, area, loading, notFound }) 
   }
 
   return (
-    <AgentSiteProvider value={{ site: adapted, siteId: site.id }}>
+    <BrokerageSiteProvider value={{ site: adapted }}>
       <div
         className="min-h-screen bg-[var(--as-bg)] font-agent-sans"
         data-theme={adapted.theme}
@@ -73,13 +68,12 @@ export default function AgentAreaPage({ site, agent, area, loading, notFound }) 
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/10" />
           <div className="relative z-10 flex h-full flex-col justify-end px-6 lg:px-10 pb-10 max-w-5xl mx-auto w-full">
-            <SiteLink
-              slug={site.slug}
-              path="/areas"
+            <Link
+              to="/brokerage/areas"
               className="text-xs font-medium tracked-wide uppercase text-white/70 hover:text-white transition-colors mb-4 w-fit"
             >
               ← Areas
-            </SiteLink>
+            </Link>
             <h1 className="text-4xl sm:text-5xl font-display font-semibold text-white">{area.name}</h1>
           </div>
         </section>
@@ -129,6 +123,6 @@ export default function AgentAreaPage({ site, agent, area, loading, notFound }) 
 
         <Footer />
       </div>
-    </AgentSiteProvider>
+    </BrokerageSiteProvider>
   );
 }

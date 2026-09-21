@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
 
 // Mirrors agent-site/ServiceAreas.jsx (same copy, same card layout) —
@@ -23,9 +24,17 @@ export default function AreasOfExpertise({ preview = false, isStandalonePage = f
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {areas.map((area) => (
-            <div key={area.id} className="relative overflow-hidden bg-[var(--as-surface)] aspect-[4/3]">
+            <Link
+              key={area.id}
+              to={`/brokerage/areas/${area.slug}`}
+              className="group relative block overflow-hidden bg-[var(--as-surface)] aspect-[4/3]"
+            >
               {area.photo_url && (
-                <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover" />
+                <img
+                  src={area.photo_url}
+                  alt={area.name}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
               )}
               {/* Neutral black overlay + hardcoded white text, not --as-dark/
                   --as-on-dark — see agent-site/Hero.jsx's same fix. */}
@@ -33,7 +42,7 @@ export default function AreasOfExpertise({ preview = false, isStandalonePage = f
                 <p className="text-white font-display text-xl font-semibold">{area.name}</p>
                 {area.blurb && <p className="text-white/75 text-sm mt-1 max-w-xs">{area.blurb}</p>}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 

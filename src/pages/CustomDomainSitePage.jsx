@@ -11,6 +11,7 @@ import AgentPostPage from "./AgentPostPage";
 import AgentAreaPage from "./AgentAreaPage";
 import BrokerageSitePage from "./BrokerageSitePage";
 import BrokeragePostPage from "./BrokeragePostPage";
+import BrokerageAreaPage from "./BrokerageAreaPage";
 import NotFoundPage from "./NotFoundPage";
 import HomeSections from "../components/agent-site/HomeSections";
 import Bio from "../components/agent-site/Bio";
@@ -131,17 +132,23 @@ function SharedCustomDomainListingDetailPage() {
   );
 }
 
-// /areas/:areaSlug — agent-only (no brokerage fallback like the other
-// shared paths): the brokerage site has no per-area detail page today,
-// only its own /areas list, so a domain that turns out to be the
-// brokerage's just 404s here rather than reaching for content that
-// doesn't exist.
-function CustomDomainAgentAreaPage() {
+// /areas/:areaSlug — same agent-first-then-brokerage fallback as
+// SharedCustomDomainPostPage, built on useAgentArea/BrokerageAreaPage
+// instead of the post equivalents. BrokerageAreaPage reads :areaSlug
+// itself (see its own comment), so no props are needed once we know
+// this hostname is the brokerage's.
+function CustomDomainAreaPage() {
   const { areaSlug } = useParams();
   const hostname = bareHost(window.location.hostname);
-  const result = useAgentArea({ siteCustomDomain: hostname, areaSlug });
-  if (result.notFound) return <NotFoundPage />;
-  return <AgentAreaPage {...result} />;
+  const agentAreaResult = useAgentArea({ siteCustomDomain: hostname, areaSlug });
+  const brokerageSiteResult = useBrokerageSite({ customDomain: hostname });
+
+  if (agentAreaResult.loading || (agentAreaResult.notFound && brokerageSiteResult.loading)) {
+    return null;
+  }
+  if (agentAreaResult.area) return <AgentAreaPage {...agentAreaResult} />;
+  if (brokerageSiteResult.site) return <BrokerageAreaPage />;
+  return <NotFoundPage />;
 }
 
 // Rendered whenever the request's hostname isn't a recognized app host
@@ -211,7 +218,7 @@ export default function CustomDomainSitePage() {
           />
         }
       />
-      <Route path="/areas/:areaSlug" element={<CustomDomainAgentAreaPage />} />
+      <Route path="/areas/:areaSlug" element={<CustomDomainAreaPage />} />
       <Route
         path="/blog"
         element={
