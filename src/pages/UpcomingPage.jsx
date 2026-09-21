@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import MarketingNav from "../components/marketing/MarketingNav";
 import MarketingFooter from "../components/marketing/MarketingFooter";
@@ -41,14 +40,6 @@ export default function UpcomingPage() {
               Track a coming-soon listing and see what your buyers actually want — both live in
               the same dashboard, visible to the whole office.
             </p>
-            <div className="flex flex-wrap items-center gap-4">
-              <Link
-                to="/login"
-                className="text-sm font-semibold px-7 py-3.5 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 transition-colors"
-              >
-                Sign In
-              </Link>
-            </div>
           </motion.div>
 
           <div className="relative">
@@ -142,24 +133,6 @@ export default function UpcomingPage() {
             ))}
           </div>
         </div>
-      </section>
-
-      {/* Closing CTA */}
-      <section className="px-6 lg:px-10 py-28 lg:py-36">
-        <Reveal className="mx-auto max-w-2xl text-center" variant="scaleIn">
-          <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
-            Already in your dashboard.
-          </h2>
-          <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-8">
-            Sign in and you'll find both tabs waiting — Upcoming and Buyer Needs.
-          </p>
-          <Link
-            to="/login"
-            className="inline-block text-sm font-semibold px-8 py-4 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 transition-colors"
-          >
-            Sign In
-          </Link>
-        </Reveal>
       </section>
 
       <MarketingFooter />

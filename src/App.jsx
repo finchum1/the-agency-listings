@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
-import { isAppHost } from "./lib/appHosts";
+import { isAppHost, isMarketingHost } from "./lib/appHosts";
 import useSwUpdateOnNavigate from "./hooks/useSwUpdateOnNavigate";
 
 import LoginPage from "./components/auth/LoginPage";
@@ -62,6 +62,24 @@ export default function App() {
   // never registers a service worker there in the first place, so the
   // checker stays a no-op.
   useSwUpdateOnNavigate();
+
+  // A request arriving on a marketing-only host (see appHosts.js) gets
+  // just the standalone product-marketing pages — no login/dashboard,
+  // no per-site custom-domain resolution. Checked first since these
+  // hostnames aren't in KNOWN_APP_HOSTS and would otherwise fall through
+  // to the custom-domain branch below.
+  if (isMarketingHost(window.location.hostname)) {
+    return (
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/agent-websites" element={<AgentWebsitesPage />} />
+        <Route path="/property-websites" element={<PropertyWebsitesPage />} />
+        <Route path="/brokerage-website" element={<BrokerageWebsitePage />} />
+        <Route path="/upcoming" element={<UpcomingPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    );
+  }
 
   // A request arriving on a listing's or an agent site's own attached
   // custom domain (e.g. 1645SaratogaWay.com, TerrenceFinchumRealty.com)

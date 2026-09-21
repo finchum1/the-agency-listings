@@ -46,15 +46,9 @@ export default function LandingPage() {
               want — all live the moment you save, all in the same place.
             </p>
             <div className="flex flex-wrap items-center gap-4">
-              <Link
-                to="/login"
-                className="text-sm font-semibold px-7 py-3.5 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 transition-colors"
-              >
-                Sign In to Get Started
-              </Link>
               <a
                 href="#products"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1c1a17]/70 hover:text-[#1c1a17] transition-colors"
+                className="text-sm font-semibold px-7 py-3.5 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 transition-colors inline-flex items-center gap-1.5"
               >
                 See how it works
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -276,24 +270,6 @@ export default function LandingPage() {
             </Reveal>
           </div>
         </div>
-      </section>
-
-      {/* Closing CTA */}
-      <section className="px-6 lg:px-10 py-28 lg:py-36">
-        <Reveal className="mx-auto max-w-2xl text-center" variant="scaleIn">
-          <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
-            Your next listing is a form away.
-          </h2>
-          <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-8">
-            Sign in with the account your admin set up for you.
-          </p>
-          <Link
-            to="/login"
-            className="inline-block text-sm font-semibold px-8 py-4 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 transition-colors"
-          >
-            Sign In
-          </Link>
-        </Reveal>
       </section>
 
       <MarketingFooter />

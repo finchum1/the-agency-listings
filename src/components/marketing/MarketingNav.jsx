@@ -19,10 +19,13 @@ const LINKS = [
 // fallback) — a visitor on a phone had no way to reach Agent Websites/
 // Property Sites/Upcoming at all. Now it collapses into a hamburger that
 // opens a stacked panel, same mechanism DashboardLayout.jsx already uses
-// for its own mobile nav. "Sign In" stays visible in the header at every
-// size, unlike the dashboard's profile/sign-out — it's the single most
-// important thing a marketing visitor can do, worth never hiding behind
-// a menu tap.
+// for its own mobile nav.
+//
+// No Sign In link here on purpose — this is a pure product-marketing
+// page now (also served standalone at theagency.latchpointstudios.com,
+// a Latchpoint Studios marketing subdomain with no dashboard access at
+// all), not a login funnel. /login itself is untouched and still reachable
+// by direct URL on the main app host.
 export default function MarketingNav() {
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -57,13 +60,6 @@ export default function MarketingNav() {
           </nav>
 
           <div className="flex items-center gap-2 shrink-0">
-            <Link
-              to="/login"
-              className="text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-full border border-[#1c1a17] text-[#1c1a17] hover:bg-[#1c1a17] hover:text-white transition-colors"
-            >
-              Sign In
-            </Link>
-
             <button
               type="button"
               onClick={() => setMobileNavOpen((v) => !v)}

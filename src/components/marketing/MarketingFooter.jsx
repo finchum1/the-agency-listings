@@ -19,9 +19,6 @@ export default function MarketingFooter() {
           <Link to="/upcoming" className="hover:text-white transition-colors">
             Upcoming
           </Link>
-          <Link to="/login" className="hover:text-white transition-colors">
-            Sign In
-          </Link>
         </nav>
         <p className="text-xs">
           {brokerage.address.line1}, {brokerage.address.city}, {brokerage.address.state}{" "}

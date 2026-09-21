@@ -32,3 +32,21 @@ export function isAppHost(hostname) {
   if (bare.endsWith(".vercel.app")) return true;
   return false;
 }
+
+// Marketing-only hosts: serve just the standalone product-marketing pages
+// (LandingPage + its /agent-websites, /property-websites,
+// /brokerage-website, /upcoming deep-dives) — no login/dashboard access,
+// no per-site custom-domain resolution. Checked before isAppHost in
+// App.jsx, since these hostnames aren't in KNOWN_APP_HOSTS and would
+// otherwise fall through to CustomDomainSitePage.
+//
+// theagency.latchpointstudios.com is a marketing subdomain for Latchpoint
+// Studios (Terrence's own dev business) pitching this dashboard as a
+// product. Sign-in stays on the main app host for now (see App.jsx and
+// components/marketing/*) — the plan is for it to eventually move under
+// The Agency's own brokerage domain instead, once that's set up.
+const MARKETING_HOSTS = ["theagency.latchpointstudios.com"];
+
+export function isMarketingHost(hostname) {
+  return MARKETING_HOSTS.includes(bareHost(hostname));
+}
