@@ -30,7 +30,7 @@ export function useBrokeragePost({ postSlug }) {
         .from("brokerage_posts")
         .select("*")
         .eq("slug", postSlug)
-        .eq("status", "published")
+        .or(`status.eq.published,and(status.eq.scheduled,scheduled_at.lte.${new Date().toISOString()})`)
         .maybeSingle();
 
       if (!active) return;

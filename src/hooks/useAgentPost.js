@@ -37,7 +37,7 @@ export function useAgentPost({ siteSlug, siteCustomDomain, postSlug }) {
         .select("*")
         .eq("agent_site_id", siteRow.id)
         .eq("slug", postSlug)
-        .eq("status", "published")
+        .or(`status.eq.published,and(status.eq.scheduled,scheduled_at.lte.${new Date().toISOString()})`)
         .maybeSingle();
 
       if (!active) return;

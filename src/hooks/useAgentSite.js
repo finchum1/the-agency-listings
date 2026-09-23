@@ -51,7 +51,7 @@ export function useAgentSite({ slug, customDomain } = {}) {
         .from("agent_site_posts")
         .select("*")
         .eq("agent_site_id", siteRow.id)
-        .eq("status", "published")
+        .or(`status.eq.published,and(status.eq.scheduled,scheduled_at.lte.${new Date().toISOString()})`)
         .order("post_date", { ascending: false }),
       supabase
         .from("listings")

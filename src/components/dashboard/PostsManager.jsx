@@ -14,6 +14,7 @@ const emptyForm = {
   body_html: "",
   related_listing_id: "",
   status: "draft",
+  scheduled_at: "",
 };
 
 function slugify(str) {
@@ -22,6 +23,20 @@ function slugify(str) {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
+}
+
+// datetime-local inputs want "YYYY-MM-DDTHH:mm" in the browser's own local
+// time — new Date(isoString) already converts to local for us, so this
+// just pads it into that exact shape.
+function toDatetimeLocalValue(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatScheduled(iso) {
+  return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
 // Posts arrive newest-first (useAgentSiteEditor orders by post_date desc).
@@ -70,6 +85,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
       body_html: post.body_html || blocksToHtml(post.body),
       related_listing_id: post.related_listing_id || "",
       status: post.status,
+      scheduled_at: toDatetimeLocalValue(post.scheduled_at),
     });
     setEditingId(post.id);
   };
@@ -105,6 +121,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
       body_html: form.body_html,
       related_listing_id: form.related_listing_id || null,
       status: form.status,
+      scheduled_at: form.status === "scheduled" && form.scheduled_at ? new Date(form.scheduled_at).toISOString() : null,
     };
 
     const { error } =
@@ -163,10 +180,26 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
               <label className={labelClass}>Status</label>
               <select value={form.status} onChange={update("status")} className={inputClass}>
                 <option value="draft">Draft</option>
+                <option value="scheduled">Scheduled</option>
                 <option value="published">Published</option>
               </select>
             </div>
           </div>
+          {form.status === "scheduled" && (
+            <div>
+              <label className={labelClass}>Publish at</label>
+              <input
+                type="datetime-local"
+                required
+                value={form.scheduled_at}
+                onChange={update("scheduled_at")}
+                className={inputClass}
+              />
+              <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-1">
+                Goes live on the site automatically at this date and time.
+              </p>
+            </div>
+          )}
           <div>
             <label className={labelClass}>Excerpt</label>
             <textarea value={form.excerpt} onChange={update("excerpt")} rows={2} className={inputClass} />
@@ -219,14 +252,29 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
 
       {posts.length > 0 && (
         <div className="space-y-2">
-          {(showAll ? posts : posts.slice(0, COLLAPSED_COUNT)).map((post) => (
+          {(showAll ? posts : posts.slice(0, COLLAPSED_COUNT)).map((post) => {
+            const isDue = post.status === "scheduled" && post.scheduled_at && new Date(post.scheduled_at) <= new Date();
+            const isLive = post.status === "published" || isDue;
+            return (
             <div key={post.id} className="border border-black/10 dark:border-white/15 rounded-xl p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{post.title}</p>
                 <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
                   {post.category} · {post.post_date} ·{" "}
-                  <span className={post.status === "published" ? "text-emerald-700 dark:text-emerald-400" : ""}>
-                    {post.status === "published" ? "Published" : "Draft"}
+                  <span
+                    className={
+                      isLive
+                        ? "text-emerald-700 dark:text-emerald-400"
+                        : post.status === "scheduled"
+                          ? "text-amber-700 dark:text-amber-400"
+                          : ""
+                    }
+                  >
+                    {isLive
+                      ? "Published"
+                      : post.status === "scheduled"
+                        ? `Scheduled · ${formatScheduled(post.scheduled_at)}`
+                        : "Draft"}
                   </span>
                 </p>
               </div>
@@ -235,7 +283,8 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
                 <button onClick={() => remove(post)} className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400">✕</button>
               </div>
             </div>
-          ))}
+            );
+          })}
           {posts.length > COLLAPSED_COUNT && (
             <button
               type="button"

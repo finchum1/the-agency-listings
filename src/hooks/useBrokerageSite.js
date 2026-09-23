@@ -40,7 +40,7 @@ export function useBrokerageSite({ customDomain } = {}) {
       supabase
         .from("brokerage_posts")
         .select("*")
-        .eq("status", "published")
+        .or(`status.eq.published,and(status.eq.scheduled,scheduled_at.lte.${new Date().toISOString()})`)
         .order("post_date", { ascending: false }),
       supabase.from("brokerage_agents").select("*").order("sort_order"),
       supabase.from("brokerage_areas").select("*").order("sort_order"),
