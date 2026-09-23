@@ -124,41 +124,8 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
         )}
       </div>
 
-      {posts.length === 0 && editingId === null && <p className="text-sm text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No posts yet.</p>}
-
-      {posts.length > 0 && (
-        <div className="space-y-2">
-          {(showAll ? posts : posts.slice(0, COLLAPSED_COUNT)).map((post) => (
-            <div key={post.id} className="border border-black/10 dark:border-white/15 rounded-xl p-3 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{post.title}</p>
-                <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
-                  {post.category} · {post.post_date} ·{" "}
-                  <span className={post.status === "published" ? "text-emerald-700 dark:text-emerald-400" : ""}>
-                    {post.status === "published" ? "Published" : "Draft"}
-                  </span>
-                </p>
-              </div>
-              <div className="flex items-center gap-3 shrink-0 text-xs">
-                <button onClick={() => startEdit(post)} className="text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">Edit</button>
-                <button onClick={() => remove(post)} className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400">✕</button>
-              </div>
-            </div>
-          ))}
-          {posts.length > COLLAPSED_COUNT && (
-            <button
-              type="button"
-              onClick={() => setShowAll((v) => !v)}
-              className="w-full text-center text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] pt-1"
-            >
-              {showAll ? "Show fewer posts" : `Show ${posts.length - COLLAPSED_COUNT} more post${posts.length - COLLAPSED_COUNT === 1 ? "" : "s"}`}
-            </button>
-          )}
-        </div>
-      )}
-
       {editingId !== null && (
-        <form onSubmit={handleSubmit} className="space-y-3 pt-3 border-t border-black/5 dark:border-white/10">
+        <form onSubmit={handleSubmit} className="space-y-3 pb-3 border-b border-black/5 dark:border-white/10">
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Title</label>
@@ -219,6 +186,39 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
             </button>
           </div>
         </form>
+      )}
+
+      {posts.length === 0 && editingId === null && <p className="text-sm text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No posts yet.</p>}
+
+      {posts.length > 0 && (
+        <div className="space-y-2">
+          {(showAll ? posts : posts.slice(0, COLLAPSED_COUNT)).map((post) => (
+            <div key={post.id} className="border border-black/10 dark:border-white/15 rounded-xl p-3 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{post.title}</p>
+                <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+                  {post.category} · {post.post_date} ·{" "}
+                  <span className={post.status === "published" ? "text-emerald-700 dark:text-emerald-400" : ""}>
+                    {post.status === "published" ? "Published" : "Draft"}
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center gap-3 shrink-0 text-xs">
+                <button onClick={() => startEdit(post)} className="text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">Edit</button>
+                <button onClick={() => remove(post)} className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400">✕</button>
+              </div>
+            </div>
+          ))}
+          {posts.length > COLLAPSED_COUNT && (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="w-full text-center text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] pt-1"
+            >
+              {showAll ? "Show fewer posts" : `Show ${posts.length - COLLAPSED_COUNT} more post${posts.length - COLLAPSED_COUNT === 1 ? "" : "s"}`}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
