@@ -31,9 +31,21 @@ function XIcon() {
 // Opens the share dialog in a small popup instead of a full new tab —
 // standard share-button UX. Falls back gracefully to a real new-tab
 // navigation (the plain href) if a popup blocker eats window.open.
+//
+// Deliberately NOT passing "noopener"/"noreferrer" as window.open features
+// here (only on the <a>'s own rel, for the fallback-navigation case) —
+// per spec, window.open() always returns null when noopener is one of its
+// features, popup or not. That made `if (win)` never true, so
+// preventDefault() never ran and the anchor's own target="_blank" click
+// went through too — the actual cause of the duplicate "small popup +
+// full tab, same share page" behavior. window.opener is severed by hand
+// instead, once we have a real reference to check.
 const openPopup = (href) => (e) => {
-  const win = window.open(href, "share", "width=600,height=520,noopener,noreferrer");
-  if (win) e.preventDefault();
+  const win = window.open(href, "share", "width=600,height=520");
+  if (win) {
+    win.opener = null;
+    e.preventDefault();
+  }
 };
 
 // "Share" row for a blog post — Facebook, LinkedIn, and X, no API keys
