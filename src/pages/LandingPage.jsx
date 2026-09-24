@@ -39,7 +39,7 @@ export default function LandingPage() {
             <h1 className="text-5xl sm:text-6xl font-display font-semibold leading-[1.08] mb-6">
               Everything the office runs on.
               <br />
-              One dashboard.
+              <span className="italic text-[#ed2127]">One dashboard.</span>
             </h1>
             <p className="text-[17px] text-[#1c1a17]/70 leading-relaxed mb-8 max-w-md">
               Property sites, agent sites, coming-soon listings, and what your buyers
