@@ -72,7 +72,7 @@ export default function MarketingNav() {
           }`}
         >
           <Link to="/" className="shrink-0 pl-1">
-            <img src={brokerage.logo} alt={brokerage.name} className="h-9 w-auto" />
+            <img src={brokerage.logo} alt={brokerage.name} className="h-12 w-auto" />
           </Link>
 
           <div className="ml-auto flex items-center gap-2">

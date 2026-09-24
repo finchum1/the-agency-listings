@@ -36,7 +36,7 @@ export default function LandingPage() {
       <section className="relative px-6 lg:px-10 pt-16 pb-16 lg:pt-24 lg:pb-36">
         <div className="mx-auto max-w-7xl grid lg:grid-cols-[0.85fr_1.15fr] gap-16 items-center">
           <motion.div initial="hidden" animate="show" variants={variants.rise}>
-            <h1 className="text-4xl sm:text-5xl font-display font-semibold leading-[1.08] mb-6">
+            <h1 className="text-5xl sm:text-6xl font-display font-semibold leading-[1.08] mb-6">
               Everything the office runs on.
               <br />
               One dashboard.

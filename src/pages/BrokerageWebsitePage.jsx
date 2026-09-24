@@ -33,7 +33,7 @@ export default function BrokerageWebsitePage() {
       <section className="relative px-6 lg:px-10 pt-16 pb-16 lg:pt-24 lg:pb-32">
         <div className="mx-auto max-w-7xl grid lg:grid-cols-[0.85fr_1.15fr] gap-16 items-center">
           <motion.div initial="hidden" animate="show" variants={variants.rise}>
-            <h1 className="text-4xl sm:text-5xl font-display font-semibold leading-[1.08] mb-6">
+            <h1 className="text-5xl sm:text-6xl font-display font-semibold leading-[1.08] mb-6">
               One office site. The whole market, searchable.
             </h1>
             <p className="text-[17px] text-[#1c1a17]/70 leading-relaxed mb-8 max-w-md">
