@@ -48,7 +48,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center gap-4">
               <a
                 href="#products"
-                className="text-sm font-semibold px-7 py-3.5 rounded-full bg-[#ed2127] text-white hover:bg-[#ed2127]/90 transition-colors inline-flex items-center gap-1.5"
+                className="text-sm font-semibold px-7 py-3.5 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 transition-colors inline-flex items-center gap-1.5"
               >
                 See how it works
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
