@@ -2,29 +2,40 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import brokerage from "../../lib/brokerage";
 
+// Order matches the home page's own product sections (LandingPage.jsx) —
+// Brokerage Site leads, then Agent Websites, then Property Sites,
+// Upcoming last. Keep both in sync if this order ever changes again.
 const LINKS = [
+  { path: "/brokerage-website", label: "Brokerage Site" },
   { path: "/agent-websites", label: "Agent Websites" },
   { path: "/property-websites", label: "Property Sites" },
-  { path: "/brokerage-website", label: "Brokerage Site" },
   { path: "/upcoming", label: "Upcoming" },
 ];
 
 // Floating pill header for every marketing page (home + the three product
-// deep-dives). Previously a flush, full-width sticky bar — with no Sign In
-// link to anchor the right side (this is a pure product-marketing page,
-// see below), a detached "floating card" reads as more deliberate than a
-// bar with dead space on one end. The outer wrapper is what actually
-// sticks (top-0, with its own pt-4 for the gap), so the pill sits the
-// same 16px below the viewport top both at rest and while scrolled — the
-// pill itself never touches an edge.
+// deep-dives). Clear/transparent at the very top of the page — just the
+// logo and links sitting directly on the hero, no bar — and crossfades
+// into the solid floating pill (background, border, shadow) once the
+// page scrolls, via a scroll-position listener. The outer wrapper is
+// what actually sticks (top-0, with its own pt-4 for the gap), so once
+// scrolled the pill sits the same 16px below the viewport top and never
+// touches an edge.
+//
+// Nav links sit at the far right of the pill (ml-auto) rather than
+// centered — with no Sign In/CTA on the right to balance against, a
+// centered link row read as adrift; anchored right, the logo anchors
+// left and the links read as a single deliberate cluster.
 //
 // Agency-branded: active link is a solid Agency-red pill (not the
-// dashboard's neutral ink pill), and the whole bar's shadow carries a
-// faint warm red tint alongside the usual neutral drop shadow.
+// dashboard's neutral ink pill), and the solid (scrolled) pill's shadow
+// carries a faint warm red tint alongside the usual neutral drop shadow.
 //
 // Below `sm` the link row collapses into a hamburger that opens a second
 // floating panel directly beneath the pill, same mechanism
-// DashboardLayout.jsx uses for its own mobile nav.
+// DashboardLayout.jsx uses for its own mobile nav. That panel always
+// keeps its own solid background regardless of scroll state — an
+// open menu needs to stay legible over whatever hero content is behind
+// it even before the user has scrolled.
 //
 // No Sign In link here on purpose — this is a pure product-marketing
 // page now (also served standalone at theagency.latchpointstudios.com,
@@ -37,39 +48,51 @@ const FLOAT_SHADOW =
 export default function MarketingNav() {
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     setMobileNavOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div className="sticky top-0 z-40 pt-4 px-4 sm:px-6">
       <header className="mx-auto max-w-5xl">
         <div
-          className={`h-16 flex items-center justify-between gap-4 rounded-full border border-black/5 bg-[#faf9f7]/95 backdrop-blur-md px-3 sm:px-4 ${FLOAT_SHADOW}`}
+          className={`h-16 flex items-center gap-4 rounded-full px-3 sm:px-4 transition-all duration-300 ${
+            scrolled
+              ? `border border-black/5 bg-[#faf9f7]/95 backdrop-blur-md ${FLOAT_SHADOW}`
+              : "border border-transparent bg-transparent"
+          }`}
         >
           <Link to="/" className="shrink-0 pl-1">
             <img src={brokerage.logo} alt={brokerage.name} className="h-9 w-auto" />
           </Link>
 
-          <nav className="hidden sm:flex items-center gap-1">
-            {LINKS.map((link) => {
-              const active = location.pathname === link.path;
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`text-sm font-medium px-4 py-2 rounded-full transition-colors ${
-                    active ? "bg-[#ed2127] text-white shadow-sm" : "text-[#1c1a17]/70 hover:bg-[#ed2127]/10 hover:text-[#ed2127]"
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
+          <div className="ml-auto flex items-center gap-2">
+            <nav className="hidden sm:flex items-center gap-1">
+              {LINKS.map((link) => {
+                const active = location.pathname === link.path;
+                return (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={`text-sm font-medium px-4 py-2 rounded-full transition-colors ${
+                      active ? "bg-[#ed2127] text-white shadow-sm" : "text-[#1c1a17]/70 hover:bg-[#ed2127]/10 hover:text-[#ed2127]"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </nav>
 
-          <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => setMobileNavOpen((v) => !v)}

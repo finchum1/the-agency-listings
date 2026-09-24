@@ -82,9 +82,9 @@ export default function LandingPage() {
       <section className="border-y border-black/5 bg-white">
         <div className="mx-auto max-w-6xl px-6 lg:px-10 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
           {[
+            ["Brokerage Site", "The office's own front door — full MLS search, draw-a-boundary, and more.", "/brokerage-website"],
             ["Agent Websites", "Every agent's own site — bio, listings, blog — on the same trusted brand.", "/agent-websites"],
             ["Property Sites", "Every listing gets its own site automatically, live the moment you hit save.", "/property-websites"],
-            ["Brokerage Site", "The office's own front door — full MLS search, draw-a-boundary, and more.", "/brokerage-website"],
             ["Upcoming", "Track a coming-soon listing, or what a buyer wants, before it's ever public.", "/upcoming"],
           ].map(([word, copy, path], i) => (
             <Reveal key={word} delay={i * 0.1} variant="scaleIn">
@@ -99,70 +99,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Two products — peer highlights, each linking to its own deep-dive
-          page. Agent Websites leads (matches MarketingNav.jsx's own link
-          order) since that's the story this page opens with now. */}
+      {/* Three products — peer highlights, each linking to its own
+          deep-dive page, ordered to match MarketingNav.jsx's own link
+          order: Brokerage Site, Agent Websites, Property Sites. Alternates
+          image-left/image-right (and the bg-white band) by position for
+          rhythm down the page — keep that alternation if this order ever
+          changes again, not just the content. Home Search is the headline
+          capability for the Brokerage Site section (draw-a-boundary map
+          search), so it leads the screenshot even though Our Listings and
+          Home Valuation are part of the same deep-dive. */}
       <section id="products" className="px-6 lg:px-10 py-24 lg:py-32">
-        <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
-          <Reveal variant="fromLeft">
-            <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
-              Every agent's own site, on the same trusted brand.
-            </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
-              Your own bio, your own listings, your own blog — styled the way you want it, built
-              on The Agency's brand. This one is live right now, and it took minutes to set up.
-            </p>
-            <Link
-              to="/agent-websites"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
-            >
-              See how it works
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-          </Reveal>
-          <Reveal variant="fromRight" delay={0.1}>
-            <BrowserFrame src="/images/landing/agent-site-home.jpg" alt="Terrence Finchum's agent website" />
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
-        <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
-          <Reveal variant="fromLeft" className="order-2 lg:order-1">
-            <BrowserFrame
-              src="/images/landing/listing-home-fresh.jpg"
-              alt="1645 Saratoga Way public listing site"
-            />
-          </Reveal>
-          <Reveal variant="fromRight" delay={0.1} className="order-1 lg:order-2">
-            <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
-              A premium site for every listing — instantly.
-            </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
-              Fill out a form and a full property site goes live: gallery, hero video, open
-              houses, a contact form that reaches you directly. Update status the moment a deal
-              changes — no redeploy, ever.
-            </p>
-            <Link
-              to="/property-websites"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
-            >
-              See how it works
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Third product — same peer treatment as Agent/Property Websites
-          above. Home Search is the headline capability (draw-a-boundary
-          map search), so it leads the screenshot even though Our Listings
-          and Home Valuation are part of the same deep-dive. */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32">
         <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
           <Reveal variant="fromLeft">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
@@ -186,6 +132,62 @@ export default function LandingPage() {
             <BrowserFrame
               src="/images/landing/brokerage-home-search.jpg"
               alt="Home Search — full MLS map and list search on the brokerage site"
+            />
+          </Reveal>
+        </div>
+      </section>
+
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
+        <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
+          <Reveal variant="fromLeft" className="order-2 lg:order-1">
+            <BrowserFrame src="/images/landing/agent-site-home.jpg" alt="Terrence Finchum's agent website" />
+          </Reveal>
+          <Reveal variant="fromRight" delay={0.1} className="order-1 lg:order-2">
+            <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
+              Every agent's own site, on the same trusted brand.
+            </h2>
+            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+              Your own bio, your own listings, your own blog — styled the way you want it, built
+              on The Agency's brand. This one is live right now, and it took minutes to set up.
+            </p>
+            <Link
+              to="/agent-websites"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
+            >
+              See how it works
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          </Reveal>
+        </div>
+      </section>
+
+      <section className="px-6 lg:px-10 py-24 lg:py-32">
+        <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
+          <Reveal variant="fromLeft">
+            <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
+              A premium site for every listing — instantly.
+            </h2>
+            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+              Fill out a form and a full property site goes live: gallery, hero video, open
+              houses, a contact form that reaches you directly. Update status the moment a deal
+              changes — no redeploy, ever.
+            </p>
+            <Link
+              to="/property-websites"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
+            >
+              See how it works
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          </Reveal>
+          <Reveal variant="fromRight" delay={0.1}>
+            <BrowserFrame
+              src="/images/landing/listing-home-fresh.jpg"
+              alt="1645 Saratoga Way public listing site"
             />
           </Reveal>
         </div>
