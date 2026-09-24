@@ -45,10 +45,10 @@ export default function MarketingFooter() {
             href="https://latchpointstudios.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-xs text-white/45 hover:text-white transition-colors"
+            className="latchpoint-credit inline-flex items-center gap-2 text-xs text-white/45 hover:text-white transition-colors"
           >
             <span>Designed by</span>
-            <LatchpointLogomark className="h-4 w-4" />
+            <LatchpointLogomark className="latchpoint-mark h-4 w-4" />
             <span className="font-semibold tracking-tight">Latchpoint Studios</span>
           </a>
         </div>

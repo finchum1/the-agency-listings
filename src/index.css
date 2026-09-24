@@ -413,3 +413,43 @@
 .leaflet-popup-content-wrapper {
   border-radius: 8px;
 }
+
+/* Marketing footer's "Designed by Latchpoint Studios" credit
+   (MarketingFooter.jsx) — a deliberately alive, always-glowing signature
+   since it's Latchpoint's own credit line, distinct from the rest of
+   this page's restrained corporate look. The mark pulses its accent
+   color (#e8623f) continuously; the whole badge has a slow float; hover
+   intensifies both. Respects prefers-reduced-motion. */
+@keyframes latchpoint-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(232, 98, 63, 0.35));
+  }
+  50% {
+    filter: drop-shadow(0 0 7px rgba(232, 98, 63, 0.85)) drop-shadow(0 0 14px rgba(232, 98, 63, 0.35));
+  }
+}
+@keyframes latchpoint-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+.latchpoint-credit {
+  animation: latchpoint-float 3s ease-in-out infinite;
+}
+.latchpoint-credit .latchpoint-mark {
+  animation: latchpoint-glow 2.6s ease-in-out infinite;
+  transition: transform 0.3s ease;
+}
+.latchpoint-credit:hover .latchpoint-mark {
+  transform: rotate(-8deg) scale(1.15);
+  animation-duration: 1s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .latchpoint-credit,
+  .latchpoint-credit .latchpoint-mark {
+    animation: none;
+  }
+}
