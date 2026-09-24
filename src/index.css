@@ -417,15 +417,16 @@
 /* Marketing footer's "Designed by Latchpoint Studios" credit
    (MarketingFooter.jsx) — a deliberately alive, always-glowing signature
    since it's Latchpoint's own credit line, distinct from the rest of
-   this page's restrained corporate look. The mark pulses its accent
-   color (#e8623f) continuously; the whole badge has a slow float; hover
-   intensifies both. Respects prefers-reduced-motion. */
-@keyframes latchpoint-glow {
-  0%, 100% {
-    filter: drop-shadow(0 0 2px rgba(232, 98, 63, 0.35));
+   this page's restrained corporate look. A light band sweeps left to
+   right across the whole badge (icon + text) on a constant loop, on top
+   of a slow float; hover speeds the sweep up and gives the mark a
+   flourish. Respects prefers-reduced-motion. */
+@keyframes latchpoint-sweep {
+  0% {
+    transform: translateX(-120%) skewX(-20deg);
   }
-  50% {
-    filter: drop-shadow(0 0 7px rgba(232, 98, 63, 0.85)) drop-shadow(0 0 14px rgba(232, 98, 63, 0.35));
+  100% {
+    transform: translateX(220%) skewX(-20deg);
   }
 }
 @keyframes latchpoint-float {
@@ -437,19 +438,47 @@
   }
 }
 .latchpoint-credit {
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+  padding: 3px 6px;
+  margin: -3px -6px;
   animation: latchpoint-float 3s ease-in-out infinite;
 }
+/* The traveling highlight itself — a skewed gradient bar, narrower than
+   the badge so it reads as a passing glint rather than a full wipe. */
+.latchpoint-credit::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  width: 45%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(232, 98, 63, 0.7) 45%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(232, 98, 63, 0.7) 55%,
+    transparent
+  );
+  filter: blur(1px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: latchpoint-sweep 2.8s linear infinite;
+}
 .latchpoint-credit .latchpoint-mark {
-  animation: latchpoint-glow 2.6s ease-in-out infinite;
+  filter: drop-shadow(0 0 3px rgba(232, 98, 63, 0.45));
   transition: transform 0.3s ease;
+  position: relative;
+}
+.latchpoint-credit:hover::before {
+  animation-duration: 1.1s;
 }
 .latchpoint-credit:hover .latchpoint-mark {
   transform: rotate(-8deg) scale(1.15);
-  animation-duration: 1s;
 }
 @media (prefers-reduced-motion: reduce) {
   .latchpoint-credit,
-  .latchpoint-credit .latchpoint-mark {
+  .latchpoint-credit::before {
     animation: none;
   }
 }
