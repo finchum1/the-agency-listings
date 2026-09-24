@@ -9,23 +9,31 @@ const LINKS = [
   { path: "/upcoming", label: "Upcoming" },
 ];
 
-// Shared sticky header for every marketing page (home + the three product
-// deep-dives) — see DESIGN.md Navigation: active link gets a translucent
-// ink/10 pill, inactive is ink/70 with a subtle hover tint. Same pattern
-// the dashboard nav uses, just applied to marketing routes instead of
-// dashboard tabs.
+// Floating pill header for every marketing page (home + the three product
+// deep-dives). Previously a flush, full-width sticky bar — with no Sign In
+// link to anchor the right side (this is a pure product-marketing page,
+// see below), a detached "floating card" reads as more deliberate than a
+// bar with dead space on one end. The outer wrapper is what actually
+// sticks (top-0, with its own pt-4 for the gap), so the pill sits the
+// same 16px below the viewport top both at rest and while scrolled — the
+// pill itself never touches an edge.
 //
-// Below `sm` the link row used to just disappear (hidden sm:flex, no
-// fallback) — a visitor on a phone had no way to reach Agent Websites/
-// Property Sites/Upcoming at all. Now it collapses into a hamburger that
-// opens a stacked panel, same mechanism DashboardLayout.jsx already uses
-// for its own mobile nav.
+// Agency-branded: active link is a solid Agency-red pill (not the
+// dashboard's neutral ink pill), and the whole bar's shadow carries a
+// faint warm red tint alongside the usual neutral drop shadow.
+//
+// Below `sm` the link row collapses into a hamburger that opens a second
+// floating panel directly beneath the pill, same mechanism
+// DashboardLayout.jsx uses for its own mobile nav.
 //
 // No Sign In link here on purpose — this is a pure product-marketing
 // page now (also served standalone at theagency.latchpointstudios.com,
 // a Latchpoint Studios marketing subdomain with no dashboard access at
 // all), not a login funnel. /login itself is untouched and still reachable
 // by direct URL on the main app host.
+const FLOAT_SHADOW =
+  "shadow-[0_18px_40px_-18px_rgba(237,33,39,0.35),0_10px_26px_-12px_rgba(28,26,23,0.28)]";
+
 export default function MarketingNav() {
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -35,11 +43,13 @@ export default function MarketingNav() {
   }, [location.pathname]);
 
   return (
-    <header className="sticky top-0 z-40 bg-[#faf9f7]/90 backdrop-blur border-b border-black/5">
-      <div className="mx-auto max-w-7xl px-6 lg:px-10">
-        <div className="h-20 flex items-center justify-between gap-6">
-          <Link to="/" className="shrink-0">
-            <img src={brokerage.logo} alt={brokerage.name} className="h-11 w-auto" />
+    <div className="sticky top-0 z-40 pt-4 px-4 sm:px-6">
+      <header className="mx-auto max-w-5xl">
+        <div
+          className={`h-16 flex items-center justify-between gap-4 rounded-full border border-black/5 bg-[#faf9f7]/95 backdrop-blur-md px-3 sm:px-4 ${FLOAT_SHADOW}`}
+        >
+          <Link to="/" className="shrink-0 pl-1">
+            <img src={brokerage.logo} alt={brokerage.name} className="h-9 w-auto" />
           </Link>
 
           <nav className="hidden sm:flex items-center gap-1">
@@ -50,7 +60,7 @@ export default function MarketingNav() {
                   key={link.path}
                   to={link.path}
                   className={`text-sm font-medium px-4 py-2 rounded-full transition-colors ${
-                    active ? "bg-[#1c1a17]/10 text-[#1c1a17]" : "text-[#1c1a17]/70 hover:bg-black/5"
+                    active ? "bg-[#ed2127] text-white shadow-sm" : "text-[#1c1a17]/70 hover:bg-[#ed2127]/10 hover:text-[#ed2127]"
                   }`}
                 >
                   {link.label}
@@ -65,7 +75,7 @@ export default function MarketingNav() {
               onClick={() => setMobileNavOpen((v) => !v)}
               aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileNavOpen}
-              className="sm:hidden -mr-1.5 p-2 text-[#1c1a17]/70 hover:text-[#1c1a17]"
+              className="sm:hidden -mr-1 p-2 rounded-full text-[#1c1a17]/70 hover:bg-black/5 hover:text-[#1c1a17]"
             >
               {mobileNavOpen ? (
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -81,15 +91,17 @@ export default function MarketingNav() {
         </div>
 
         {mobileNavOpen && (
-          <nav className="sm:hidden pb-4 flex flex-col gap-1">
+          <nav
+            className={`sm:hidden mt-2 rounded-2xl border border-black/5 bg-[#faf9f7]/98 backdrop-blur-md p-2 flex flex-col gap-1 ${FLOAT_SHADOW}`}
+          >
             {LINKS.map((link) => {
               const active = location.pathname === link.path;
               return (
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`rounded-lg px-3 py-2.5 text-sm font-medium ${
-                    active ? "bg-[#1c1a17]/10 text-[#1c1a17]" : "text-[#1c1a17]/70"
+                  className={`rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
+                    active ? "bg-[#ed2127] text-white" : "text-[#1c1a17]/70 hover:bg-[#ed2127]/10 hover:text-[#ed2127]"
                   }`}
                 >
                   {link.label}
@@ -98,7 +110,7 @@ export default function MarketingNav() {
             })}
           </nav>
         )}
-      </div>
-    </header>
+      </header>
+    </div>
   );
 }
