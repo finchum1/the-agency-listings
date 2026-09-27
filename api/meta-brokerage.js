@@ -1,10 +1,14 @@
 // Vercel serverless function — server-rendered "snapshot" of the
-// brokerage site's homepage AND its standalone subpages (About/Agents/
-// Areas/Blog/Listings/Search/Home Valuation/Contact — see api/meta-
-// agent-site.js for the full rationale, this is the same idea for
-// /brokerage and /brokerage/:page instead of /sites/:slug).
-// `req.query.page` is one of BROKERAGE_PAGE_LABELS's keys, or absent for
-// Home (see vercel.json's rewrites for /brokerage and /brokerage/:page).
+// brokerage site's homepage, its standalone subpages (About/Agents/
+// Areas/Blog/Listings/Search/Home Valuation/Contact), AND a single blog
+// post (/brokerage/blog/:postSlug). Merged into one function (branching
+// on req.query.post) rather than two separate files — the Vercel Hobby
+// plan caps a deployment at 12 serverless functions total, and this
+// project was already sitting exactly at that cap before this file
+// existed, so every new route here has to come out of an existing slot
+// (see the equivalent merge in meta-custom-domain.js). See api/meta-
+// agent-site.js/meta-agent-post.js for the un-merged equivalent pattern
+// this still follows internally.
 //
 // Until this file, the brokerage site had NO crawler-facing snapshot at
 // all (unlike agent sites and listings) — a bot or social-link unfurler
@@ -12,8 +16,15 @@
 // generic index.html title/description, and a shared link showed a
 // blank preview card instead of the post's own title/image.
 import { createClient } from "@supabase/supabase-js";
-import { buildBrokerageSitePageMeta, escapeHtml, publishedOrDueFilter, SITE_ORIGIN } from "../src/lib/seo.js";
-import { buildAgentSchema, buildBreadcrumbSchema } from "../src/lib/structuredData.js";
+import {
+  buildBrokerageSitePageMeta,
+  buildBrokeragePostMeta,
+  escapeHtml,
+  absoluteUrl,
+  publishedOrDueFilter,
+  SITE_ORIGIN,
+} from "../src/lib/seo.js";
+import { buildAgentSchema, buildBlogPostSchema, buildBreadcrumbSchema } from "../src/lib/structuredData.js";
 import brokerage from "../src/lib/brokerage.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
 
@@ -29,7 +40,6 @@ const PAGE_LABELS = {
 };
 
 export default async function handler(req, res) {
-  const page = PAGE_LABELS[req.query.page] ? req.query.page : undefined;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -41,8 +51,14 @@ export default async function handler(req, res) {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   const { data: site } = await supabase.from("brokerage_site").select("*").maybeSingle();
-
   const homeUrl = `${SITE_ORIGIN}/brokerage`;
+
+  if (req.query.post) {
+    await handlePost(req, res, supabase, site, homeUrl);
+    return;
+  }
+
+  const page = PAGE_LABELS[req.query.page] ? req.query.page : undefined;
   const url = page ? `${homeUrl}/${page}` : homeUrl;
 
   if (!site) {
@@ -106,9 +122,9 @@ export default async function handler(req, res) {
       .join("");
     extraHtml = extraHtml ? `<ul>${extraHtml}</ul>` : "";
   } else if (page === "contact") {
-    extraHtml = [
-      brokerage.address ? `<p>${escapeHtml(`${brokerage.address.line1}, ${brokerage.address.city}, ${brokerage.address.state} ${brokerage.address.zip}`)}</p>` : "",
-    ].join("");
+    extraHtml = brokerage.address
+      ? `<p>${escapeHtml(`${brokerage.address.line1}, ${brokerage.address.city}, ${brokerage.address.state} ${brokerage.address.zip}`)}</p>`
+      : "";
   }
 
   const bodyHtml = `
@@ -125,8 +141,6 @@ ${extraHtml}
         url: homeUrl,
         name: brokerage.name,
         image: site.hero_photo_url || brokerage.logo,
-        phone: undefined,
-        email: undefined,
         region: "Oklahoma",
         brokerageAddress: brokerage.address,
         sameAs: [site.instagram_url, site.facebook_url, site.linkedin_url].filter(Boolean),
@@ -134,12 +148,7 @@ ${extraHtml}
     );
   }
   if (page) {
-    schemas.push(
-      buildBreadcrumbSchema([
-        { name: brokerage.name, url: homeUrl },
-        { name: PAGE_LABELS[page], url },
-      ]),
-    );
+    schemas.push(buildBreadcrumbSchema([{ name: brokerage.name, url: homeUrl }, { name: PAGE_LABELS[page], url }]));
   }
 
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
@@ -152,6 +161,73 @@ ${extraHtml}
       heading: escapeHtml(heading),
       bodyHtml,
       structuredData: schemas.length ? schemas : undefined,
+    }),
+  );
+}
+
+async function handlePost(req, res, supabase, site, homeUrl) {
+  const postSlug = req.query.post;
+  const url = `${homeUrl}/blog/${postSlug}`;
+
+  const { data: post } = await supabase
+    .from("brokerage_posts")
+    .select("*")
+    .eq("slug", postSlug)
+    .or(publishedOrDueFilter())
+    .maybeSingle();
+
+  if (!post) {
+    res.status(404).send(
+      renderMetaPage({
+        title: "Post not found | The Agency",
+        description: "This post may have been unpublished or the link is incorrect.",
+        image: "",
+        url,
+        heading: "Post not found",
+        bodyHtml: "<p>This post may have been unpublished or the link is incorrect.</p>",
+        noindex: true,
+      }),
+    );
+    return;
+  }
+
+  const meta = buildBrokeragePostMeta(post, site);
+
+  const bodyHtml = `
+${post.category ? `<p>${escapeHtml(post.category)}</p>` : ""}
+<p>${escapeHtml(meta.description)}</p>
+${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
+<p><a href="${url}">Read full post →</a></p>
+`;
+
+  const structuredData = [
+    buildBlogPostSchema({
+      url,
+      headline: post.title,
+      description: meta.description,
+      image: meta.image,
+      datePublished: post.post_date,
+      dateModified: post.updated_at,
+      publisherName: brokerage.name,
+      publisherLogo: absoluteUrl(brokerage.logo),
+    }),
+    buildBreadcrumbSchema([
+      { name: brokerage.name, url: homeUrl },
+      { name: "Blog", url: `${homeUrl}/blog` },
+      { name: post.title, url },
+    ]),
+  ];
+
+  res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
+  res.status(200).send(
+    renderMetaPage({
+      title: escapeHtml(meta.title),
+      description: escapeHtml(meta.description),
+      image: meta.image,
+      url,
+      heading: escapeHtml(post.title),
+      bodyHtml,
+      structuredData,
     }),
   );
 }

@@ -42,7 +42,7 @@
           "value": ".*(facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Googlebot|bingbot|Applebot|Pinterest|redditbot|SkypeUriPreview|vkShare|W3C_Validator).*"
         }
       ],
-      "destination": "/api/meta-brokerage-post?post=:postSlug"
+      "destination": "/api/meta-brokerage?post=:postSlug"
     },
     {
       "source": "/brokerage",
@@ -53,7 +53,7 @@
           "value": ".*(facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Googlebot|bingbot|Applebot|Pinterest|redditbot|SkypeUriPreview|vkShare|W3C_Validator).*"
         }
       ],
-      "destination": "/api/meta-brokerage-site"
+      "destination": "/api/meta-brokerage"
     },
     {
       "source": "/brokerage/:page(about|agents|areas|blog|listings|search|home-valuation|contact)",
@@ -64,7 +64,7 @@
           "value": ".*(facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Googlebot|bingbot|Applebot|Pinterest|redditbot|SkypeUriPreview|vkShare|W3C_Validator).*"
         }
       ],
-      "destination": "/api/meta-brokerage-site?page=:page"
+      "destination": "/api/meta-brokerage?page=:page"
     },
     {
       "source": "/listings/:slug",
@@ -86,7 +86,7 @@
           "value": ".*(facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Googlebot|bingbot|Applebot|Pinterest|redditbot|SkypeUriPreview|vkShare|W3C_Validator).*"
         }
       ],
-      "destination": "/api/meta-custom-domain-post?post=:postSlug"
+      "destination": "/api/meta-custom-domain?post=:postSlug"
     },
     {
       "source": "/",
