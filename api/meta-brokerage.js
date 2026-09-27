@@ -19,6 +19,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   buildBrokerageSitePageMeta,
   buildBrokeragePostMeta,
+  buildBrokerageAreaMeta,
   escapeHtml,
   absoluteUrl,
   publishedOrDueFilter,
@@ -55,6 +56,11 @@ export default async function handler(req, res) {
 
   if (req.query.post) {
     await handlePost(req, res, supabase, site, homeUrl);
+    return;
+  }
+
+  if (req.query.areaSlug) {
+    await handleAreaDetail(req, res, supabase, site, homeUrl);
     return;
   }
 
@@ -226,6 +232,55 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
       image: meta.image,
       url,
       heading: escapeHtml(post.title),
+      bodyHtml,
+      structuredData,
+    }),
+  );
+}
+
+async function handleAreaDetail(req, res, supabase, site, homeUrl) {
+  const areaSlug = req.query.areaSlug;
+  const url = `${homeUrl}/areas/${areaSlug}`;
+
+  const { data: area } = await supabase.from("brokerage_areas").select("*").eq("slug", areaSlug).maybeSingle();
+
+  if (!area) {
+    res.status(404).send(
+      renderMetaPage({
+        title: "Area not found | The Agency",
+        description: "This area page may have been removed or the link is incorrect.",
+        image: "",
+        url,
+        heading: "Area not found",
+        bodyHtml: "<p>This area page may have been removed or the link is incorrect.</p>",
+        noindex: true,
+      }),
+    );
+    return;
+  }
+
+  const meta = buildBrokerageAreaMeta(area, site);
+
+  const bodyHtml = `
+<p>${escapeHtml(meta.description)}</p>
+${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
+<p><a href="${url}">Visit page →</a></p>
+`;
+
+  const structuredData = buildBreadcrumbSchema([
+    { name: brokerage.name, url: homeUrl },
+    { name: "Areas of Expertise", url: `${homeUrl}/areas` },
+    { name: area.name, url },
+  ]);
+
+  res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
+  res.status(200).send(
+    renderMetaPage({
+      title: escapeHtml(meta.title),
+      description: escapeHtml(meta.description),
+      image: meta.image,
+      url,
+      heading: escapeHtml(area.name),
       bodyHtml,
       structuredData,
     }),

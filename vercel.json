@@ -12,6 +12,17 @@
       "destination": "/api/meta-agent-post?slug=:slug&post=:postSlug"
     },
     {
+      "source": "/sites/:slug/areas/:areaSlug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Googlebot|bingbot|Applebot|Pinterest|redditbot|SkypeUriPreview|vkShare|W3C_Validator).*"
+        }
+      ],
+      "destination": "/api/meta-agent-site?slug=:slug&areaSlug=:areaSlug"
+    },
+    {
       "source": "/sites/:slug",
       "has": [
         {
@@ -43,6 +54,17 @@
         }
       ],
       "destination": "/api/meta-brokerage?post=:postSlug"
+    },
+    {
+      "source": "/brokerage/areas/:areaSlug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Googlebot|bingbot|Applebot|Pinterest|redditbot|SkypeUriPreview|vkShare|W3C_Validator).*"
+        }
+      ],
+      "destination": "/api/meta-brokerage?areaSlug=:areaSlug"
     },
     {
       "source": "/brokerage",

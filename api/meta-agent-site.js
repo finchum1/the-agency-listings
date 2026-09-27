@@ -1,11 +1,13 @@
 // Vercel serverless function — server-rendered "snapshot" of an agent
-// site's homepage AND its standalone subpages (About/Listings/Areas/
-// Blog/Contact — see api/meta-listing.js for the full rationale).
-// `req.query.page` is one of "about"|"listings"|"areas"|"blog"|"contact",
-// or absent for Home (see vercel.json's rewrites for /sites/:slug and
-// /sites/:slug/:page).
+// site's homepage, its standalone subpages (About/Listings/Areas/Blog/
+// Contact), AND a single area's own detail page (/sites/:slug/areas/
+// :areaSlug, branching on req.query.areaSlug — see api/meta-listing.js
+// for the full rationale). `req.query.page` is one of "about"|"listings"|
+// "areas"|"blog"|"contact", or absent for Home (see vercel.json's
+// rewrites for /sites/:slug, /sites/:slug/:page, and /sites/:slug/areas/
+// :areaSlug).
 import { createClient } from "@supabase/supabase-js";
-import { buildAgentSitePageMeta, escapeHtml, publishedOrDueFilter, SITE_ORIGIN } from "../src/lib/seo.js";
+import { buildAgentSitePageMeta, buildAgentAreaMeta, escapeHtml, publishedOrDueFilter, SITE_ORIGIN } from "../src/lib/seo.js";
 import { buildAgentSchema, buildBreadcrumbSchema } from "../src/lib/structuredData.js";
 import brokerage from "../src/lib/brokerage.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
@@ -37,6 +39,12 @@ export default async function handler(req, res) {
     .maybeSingle();
 
   const homeUrl = `${SITE_ORIGIN}/sites/${slug}`;
+
+  if (req.query.areaSlug) {
+    await handleAreaDetail(req, res, supabase, site, homeUrl);
+    return;
+  }
+
   const url = page ? `${homeUrl}/${page}` : homeUrl;
 
   if (!site) {
@@ -152,6 +160,57 @@ ${extraHtml}
       heading: escapeHtml(heading),
       bodyHtml,
       structuredData: schemas.length ? schemas : undefined,
+    }),
+  );
+}
+
+async function handleAreaDetail(req, res, supabase, site, homeUrl) {
+  const areaSlug = req.query.areaSlug;
+  const url = `${homeUrl}/areas/${areaSlug}`;
+
+  const { data: area } = site
+    ? await supabase.from("agent_site_areas").select("*").eq("agent_site_id", site.id).eq("slug", areaSlug).maybeSingle()
+    : { data: null };
+
+  if (!site || !area) {
+    res.status(404).send(
+      renderMetaPage({
+        title: "Area not found | The Agency",
+        description: "This area page may have been removed or the link is incorrect.",
+        image: "",
+        url,
+        heading: "Area not found",
+        bodyHtml: "<p>This area page may have been removed or the link is incorrect.</p>",
+        noindex: true,
+      }),
+    );
+    return;
+  }
+
+  const meta = buildAgentAreaMeta(area, site, site.agent);
+
+  const bodyHtml = `
+<p>${escapeHtml(meta.description)}</p>
+${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
+<p><a href="${url}">Visit page →</a></p>
+`;
+
+  const structuredData = buildBreadcrumbSchema([
+    { name: site.agent?.full_name || "Home", url: homeUrl },
+    { name: "Areas", url: `${homeUrl}/areas` },
+    { name: area.name, url },
+  ]);
+
+  res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
+  res.status(200).send(
+    renderMetaPage({
+      title: escapeHtml(meta.title),
+      description: escapeHtml(meta.description),
+      image: meta.image,
+      url,
+      heading: escapeHtml(area.name),
+      bodyHtml,
+      structuredData,
     }),
   );
 }
