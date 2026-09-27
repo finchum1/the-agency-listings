@@ -371,6 +371,14 @@
 .rich-text h3:first-child {
   margin-top: 0;
 }
+.rich-text a {
+  color: var(--as-accent, #ed2127);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.rich-text a:hover {
+  opacity: 0.75;
+}
 
 /* Home Search's map (IdxMap.jsx) — price-bubble markers and cluster
    badges, styled as plain divIcon HTML rather than Leaflet's default pin

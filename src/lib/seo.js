@@ -22,6 +22,18 @@ export function absoluteUrl(url) {
   return `${SITE_ORIGIN}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
+// A post row is publicly visible when it's actually published, OR it's
+// scheduled and its scheduled_at has already passed (see the scheduled-
+// publishing feature — status stays literally "scheduled" in the row;
+// visibility is computed at read time rather than flipped by a cron job).
+// Same condition the client-side hooks (useAgentSite.js, useBrokerageSite.js,
+// useAgentPost.js, useBrokeragePost.js) already use — this is the
+// server-side (api/meta-*.js, api/sitemap.js) equivalent, one place so it
+// can't drift from those or from itself across files.
+export function publishedOrDueFilter(nowIso = new Date().toISOString()) {
+  return `status.eq.published,and(status.eq.scheduled,scheduled_at.lte.${nowIso})`;
+}
+
 export function escapeHtml(value) {
   return String(value ?? "").replace(
     /[&<>"']/g,
@@ -143,6 +155,47 @@ export function buildBrokerageSiteMeta(site) {
     `${brokerage.name}'s Oklahoma office — a boutique brokerage representing Oklahoma's most distinctive properties.`;
   const image = absoluteUrl(site.og_image_url || site.hero_photo_url || brokerage.logo);
   return { title, description, image };
+}
+
+// Per-page defaults for the brokerage site's own standalone subpages
+// (About, Agents, Areas of Expertise, Blog, Our Listings, Home Search,
+// Home Valuation, Contact — see App.jsx's /brokerage/* routes). Mirrors
+// AGENT_SITE_PAGE_LABELS/DESCRIPTIONS above, brokerage-wide instead of
+// per-agent since there's no single "agent" for these pages.
+const BROKERAGE_PAGE_LABELS = {
+  about: "About",
+  agents: "Agents",
+  areas: "Areas of Expertise",
+  blog: "Blog",
+  listings: "Our Listings",
+  search: "Home Search",
+  "home-valuation": "Home Valuation",
+  contact: "Contact",
+};
+const BROKERAGE_PAGE_DESCRIPTIONS = {
+  about: (site) =>
+    `Learn about ${brokerage.name}'s Oklahoma office — a boutique brokerage representing Oklahoma's most distinctive properties.`,
+  agents: () => `Meet the agents at ${brokerage.name}'s Oklahoma office.`,
+  areas: () => `Explore the neighborhoods and areas ${brokerage.name} serves across Oklahoma.`,
+  blog: () => `Real estate insights, market updates, and local guides from ${brokerage.name}.`,
+  listings: () => `Browse current listings from ${brokerage.name}'s Oklahoma office.`,
+  search: () => `Search every home for sale across the whole MLS with ${brokerage.name}.`,
+  "home-valuation": () => `Get an honest home valuation estimate from ${brokerage.name}.`,
+  contact: () => `Get in touch with ${brokerage.name}'s Oklahoma office to buy, sell, or ask a question.`,
+};
+
+// site: a raw `brokerage_site` row. page: one of BROKERAGE_PAGE_LABELS's
+// keys, or falsy for the site's own Home page (identical to
+// buildBrokerageSiteMeta in that case).
+export function buildBrokerageSitePageMeta(site, page) {
+  const base = buildBrokerageSiteMeta(site);
+  const label = BROKERAGE_PAGE_LABELS[page];
+  if (!label) return base;
+
+  const description =
+    site.seo_description?.trim() || BROKERAGE_PAGE_DESCRIPTIONS[page](site) || base.description;
+
+  return { title: `${label} | ${base.title}`, description, image: base.image };
 }
 
 // post: a raw `brokerage_posts` row. site: the brokerage_site row.

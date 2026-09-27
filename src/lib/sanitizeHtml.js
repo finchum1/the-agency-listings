@@ -10,9 +10,14 @@ import DOMPurify from "dompurify";
 // entirely) that would then run in every visitor's browser. Sanitizing on
 // read, not just trusting the editor's output, is what actually closes
 // that gap.
-const ALLOWED_TAGS = ["p", "h3", "strong", "em", "u", "br"];
+// "a"/"href" added for RichTextEditor.jsx's Link extension (internal
+// blog-post linking). DOMPurify's default ALLOWED_URI_REGEXP already
+// blocks javascript:/data: hrefs even with "href" allowed — no scheme
+// allowlist needed here on top of that.
+const ALLOWED_TAGS = ["p", "h3", "strong", "em", "u", "br", "a"];
+const ALLOWED_ATTR = ["href"];
 
 export function sanitizeHtml(html) {
   if (!html) return "";
-  return DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR: [] });
+  return DOMPurify.sanitize(html, { ALLOWED_TAGS, ALLOWED_ATTR });
 }

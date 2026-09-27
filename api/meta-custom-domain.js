@@ -1,19 +1,20 @@
 // Vercel serverless function — server-rendered "snapshot" for a bot/link-
-// unfurler hitting "/" on a listing's or an agent site's own attached
-// custom domain (e.g. terrencefinchum.com, 1645SaratogaWay.com), the one
-// case the other three api/meta-*.js functions don't cover: they all
-// match a /sites/:slug or /listings/:slug PATH, but a custom domain
-// serves that same content at the bare root — see vercel.json's rewrite
-// for "/" and CustomDomainSitePage.jsx for the equivalent client-side
-// (real-browser) resolution this mirrors, by Host header instead of a
-// route param. Same "try a listing first, then an agent site" order.
+// unfurler hitting "/" on a listing's, an agent site's, or the brokerage
+// site's own attached custom domain (e.g. terrencefinchum.com,
+// 1645SaratogaWay.com), the one case the other api/meta-*.js functions
+// don't cover: they all match a /sites/:slug, /listings/:slug, or
+// /brokerage PATH, but a custom domain serves that same content at the
+// bare root — see vercel.json's rewrite for "/" and CustomDomainSitePage.jsx
+// for the equivalent client-side (real-browser) resolution this mirrors,
+// by Host header instead of a route param. Same "listing, then agent
+// site, then brokerage site last" order.
 //
 // The same rewrite also fires for bots hitting the app's own host's root
 // (the-agency-listings.vercel.app/) — isAppHost() below detects that case
 // and returns the same generic title index.html already has, so nothing
 // changes for the main app; this function is additive.
 import { createClient } from "@supabase/supabase-js";
-import { buildListingMeta, buildAgentSiteMeta, escapeHtml } from "../src/lib/seo.js";
+import { buildListingMeta, buildAgentSiteMeta, buildBrokerageSiteMeta, escapeHtml } from "../src/lib/seo.js";
 import { buildListingSchema, buildAgentSchema } from "../src/lib/structuredData.js";
 import brokerage from "../src/lib/brokerage.js";
 import { bareHost, isAppHost } from "../src/lib/appHosts.js";
@@ -156,14 +157,53 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
     return;
   }
 
+  const { data: brokerageSite } = await supabase
+    .from("brokerage_site")
+    .select("*")
+    .ilike("custom_domain", host)
+    .maybeSingle();
+
+  if (brokerageSite) {
+    const meta = buildBrokerageSiteMeta(brokerageSite);
+
+    const bodyHtml = `
+<p>${escapeHtml(meta.description)}</p>
+${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
+<p><a href="${url}">Visit site →</a></p>
+`;
+
+    const structuredData = buildAgentSchema({
+      url,
+      name: brokerage.name,
+      image: brokerage.logo,
+      region: "Oklahoma",
+      brokerageName: undefined,
+      sameAs: [brokerageSite.instagram_url, brokerageSite.facebook_url, brokerageSite.linkedin_url].filter(Boolean),
+    });
+
+    res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
+    res.status(200).send(
+      renderMetaPage({
+        title: escapeHtml(meta.title),
+        description: escapeHtml(meta.description),
+        image: meta.image,
+        url,
+        heading: brokerage.name,
+        bodyHtml,
+        structuredData,
+      }),
+    );
+    return;
+  }
+
   res.status(404).send(
     renderMetaPage({
       title: "Site not found | The Agency",
-      description: "This domain isn't attached to a listing or agent site.",
+      description: "This domain isn't attached to a listing, agent site, or the brokerage site.",
       image: "",
       url,
       heading: "Site not found",
-      bodyHtml: "<p>This domain isn't attached to a listing or agent site.</p>",
+      bodyHtml: "<p>This domain isn't attached to a listing, agent site, or the brokerage site.</p>",
       noindex: true,
     }),
   );

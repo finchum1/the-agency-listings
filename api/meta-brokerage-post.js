@@ -1,19 +1,19 @@
 // Vercel serverless function — server-rendered "snapshot" of a single
-// agent-site blog post, served ONLY to crawlers/link-unfurlers. See
-// api/meta-listing.js for the full rationale; this is the same idea for
-// /sites/:slug/blog/:postSlug.
+// brokerage-site blog post, served ONLY to crawlers/link-unfurlers. See
+// api/meta-agent-post.js for the full rationale; this is the same idea
+// for /brokerage/blog/:postSlug.
 import { createClient } from "@supabase/supabase-js";
-import { buildAgentPostMeta, escapeHtml, absoluteUrl, publishedOrDueFilter, SITE_ORIGIN } from "../src/lib/seo.js";
+import { buildBrokeragePostMeta, escapeHtml, absoluteUrl, publishedOrDueFilter, SITE_ORIGIN } from "../src/lib/seo.js";
 import { buildBlogPostSchema, buildBreadcrumbSchema } from "../src/lib/structuredData.js";
 import brokerage from "../src/lib/brokerage.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
 
 export default async function handler(req, res) {
-  const { slug, post: postSlug } = req.query;
+  const { post: postSlug } = req.query;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
 
-  if (!slug || !postSlug) {
-    res.status(400).send("Missing slug");
+  if (!postSlug) {
+    res.status(400).send("Missing post slug");
     return;
   }
 
@@ -25,25 +25,18 @@ export default async function handler(req, res) {
   }
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  const { data: site } = await supabase
-    .from("agent_sites")
-    .select("*, agent:profiles(*)")
-    .eq("slug", slug)
+  const { data: site } = await supabase.from("brokerage_site").select("*").maybeSingle();
+
+  const url = `${SITE_ORIGIN}/brokerage/blog/${postSlug}`;
+
+  const { data: post } = await supabase
+    .from("brokerage_posts")
+    .select("*")
+    .eq("slug", postSlug)
+    .or(publishedOrDueFilter())
     .maybeSingle();
 
-  const url = `${SITE_ORIGIN}/sites/${slug}/blog/${postSlug}`;
-
-  const { data: post } = site
-    ? await supabase
-        .from("agent_site_posts")
-        .select("*")
-        .eq("agent_site_id", site.id)
-        .eq("slug", postSlug)
-        .or(publishedOrDueFilter())
-        .maybeSingle()
-    : { data: null };
-
-  if (!site || !post) {
+  if (!post) {
     res.status(404).send(
       renderMetaPage({
         title: "Post not found | The Agency",
@@ -58,7 +51,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const meta = buildAgentPostMeta(post, site, site.agent);
+  const meta = buildBrokeragePostMeta(post, site);
 
   const bodyHtml = `
 ${post.category ? `<p>${escapeHtml(post.category)}</p>` : ""}
@@ -67,7 +60,7 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
 <p><a href="${url}">Read full post →</a></p>
 `;
 
-  const homeUrl = `${SITE_ORIGIN}/sites/${slug}`;
+  const homeUrl = `${SITE_ORIGIN}/brokerage`;
   const structuredData = [
     buildBlogPostSchema({
       url,
@@ -76,12 +69,11 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
       image: meta.image,
       datePublished: post.post_date,
       dateModified: post.updated_at,
-      authorName: site.agent?.full_name,
       publisherName: brokerage.name,
       publisherLogo: absoluteUrl(brokerage.logo),
     }),
     buildBreadcrumbSchema([
-      { name: site.agent?.full_name || "Home", url: homeUrl },
+      { name: brokerage.name, url: homeUrl },
       { name: "Blog", url: `${homeUrl}/blog` },
       { name: post.title, url },
     ]),

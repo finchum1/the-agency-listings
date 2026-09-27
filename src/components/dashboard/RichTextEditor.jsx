@@ -2,6 +2,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
+import Link from "@tiptap/extension-link";
 import { useEffect } from "react";
 
 // Shared WYSIWYG editor used in every rich-text field across the
@@ -13,9 +14,16 @@ import { useEffect } from "react";
 //
 // Deliberately narrow: paragraph, one heading level (h3 — matches the
 // blog post convention that already existed before this), bold, italic,
-// underline. No links, no colors, no multiple heading levels — this is
+// underline, links. No colors, no multiple heading levels — this is
 // short-form marketing copy (a bio, a testimonial, a blog post), not a
-// general document editor.
+// general document editor. Links were added specifically for blog-post
+// internal linking (an SEO ask — link between your own posts) that was
+// otherwise impossible from this editor; rel/target are stripped rather
+// than tiptap's Link default of "noopener noreferrer nofollow", since
+// "nofollow" on an intentional internal link defeats the entire point.
+// (lib/sanitizeHtml.js's ALLOWED_ATTR only lets `href` through on public
+// render regardless, so this is really about keeping the stored HTML
+// clean, not a security boundary.)
 export default function RichTextEditor({ value, onChange, placeholder, minHeight = "8rem" }) {
   const editor = useEditor({
     extensions: [
@@ -33,6 +41,11 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
         listItem: false,
       }),
       Underline,
+      Link.configure({
+        openOnClick: false,
+        autolink: false,
+        HTMLAttributes: { rel: null, target: null },
+      }),
       Placeholder.configure({ placeholder: placeholder || "" }),
     ],
     content: value || "",
@@ -64,6 +77,17 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
   }, [value, editor]);
 
   if (!editor) return null;
+
+  const setLink = () => {
+    const previousUrl = editor.getAttributes("link").href || "";
+    const url = window.prompt("Link URL (leave blank to remove)", previousUrl || "https://");
+    if (url === null) return; // cancelled
+    if (url.trim() === "") {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      return;
+    }
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url.trim() }).run();
+  };
 
   const buttonClass = (active) =>
     `h-7 min-w-7 px-1.5 rounded-md text-xs font-semibold transition-colors ${
@@ -113,6 +137,21 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
           title="Underline"
         >
           U
+        </button>
+        <span className="w-px h-5 bg-black/10 dark:bg-white/15 mx-1" />
+        <button
+          type="button"
+          onClick={setLink}
+          className={buttonClass(editor.isActive("link"))}
+          title="Link"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14" className="mx-auto">
+            <path
+              d="M9 15l6-6M10.5 6.5l1-1a3.5 3.5 0 015 5l-1 1M13.5 17.5l-1 1a3.5 3.5 0 01-5-5l1-1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
       </div>
       <div style={{ minHeight }}>

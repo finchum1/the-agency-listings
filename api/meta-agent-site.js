@@ -5,7 +5,7 @@
 // or absent for Home (see vercel.json's rewrites for /sites/:slug and
 // /sites/:slug/:page).
 import { createClient } from "@supabase/supabase-js";
-import { buildAgentSitePageMeta, escapeHtml, SITE_ORIGIN } from "../src/lib/seo.js";
+import { buildAgentSitePageMeta, escapeHtml, publishedOrDueFilter, SITE_ORIGIN } from "../src/lib/seo.js";
 import { buildAgentSchema, buildBreadcrumbSchema } from "../src/lib/structuredData.js";
 import brokerage from "../src/lib/brokerage.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
@@ -89,7 +89,7 @@ export default async function handler(req, res) {
       .from("agent_site_posts")
       .select("slug, title, excerpt")
       .eq("agent_site_id", site.id)
-      .eq("status", "published")
+      .or(publishedOrDueFilter())
       .order("post_date", { ascending: false });
     extraHtml = (posts || [])
       .map(
