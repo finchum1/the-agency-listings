@@ -32,6 +32,7 @@ import {
   escapeHtml,
   absoluteUrl,
   publishedOrDueFilter,
+  SITE_ORIGIN,
 } from "../src/lib/seo.js";
 import { buildListingSchema, buildAgentSchema, buildBlogPostSchema, buildBreadcrumbSchema } from "../src/lib/structuredData.js";
 import brokerage from "../src/lib/brokerage.js";
@@ -41,7 +42,22 @@ import { renderMetaPage } from "./_lib/renderMetaPage.js";
 const APP_DEFAULT_TITLE = "The Agency Listings";
 const APP_DEFAULT_DESCRIPTION = "The Agency — property listing sites and agent dashboard";
 
+// Google Search Console site-verification tokens, keyed by bare custom
+// domain — see middleware.js's VERIFIED_HOSTS for how a request gets
+// routed here with ?verify=1 in the first place. Add a new domain by
+// adding it to both that Set and this map.
+const GOOGLE_SITE_VERIFICATION = {
+  "terrencefinchum.com": "e9f3EdK-JafciudKWSUna24_LF_kM-70yBL6jZsUi-Q",
+};
+
 export default async function handler(req, res) {
+  const host = bareHost(req.headers.host);
+
+  if (req.query.verify) {
+    await handleVerification(req, res, host);
+    return;
+  }
+
   res.setHeader("Content-Type", "text/html; charset=utf-8");
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -51,7 +67,6 @@ export default async function handler(req, res) {
     return;
   }
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
-  const host = bareHost(req.headers.host);
 
   if (req.query.post) {
     await handlePost(req, res, supabase, host);
@@ -364,4 +379,25 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
       structuredData,
     }),
   );
+}
+
+// The real app shell (index.html), not the bot-snapshot page — the
+// visitor here (a human, or Google's site-verification checker, which
+// doesn't share Googlebot's UA and so isn't caught by middleware.js's
+// bot pattern) needs the actual React SPA, just with one meta tag added.
+// index.html is identical across every host this app serves, so it's
+// fetched from the app's own canonical origin rather than the visitor's
+// custom domain — the content doesn't differ per host, only whether this
+// tag gets spliced in does, and that's decided entirely by which domain
+// middleware.js routed here for.
+async function handleVerification(req, res, host) {
+  const token = GOOGLE_SITE_VERIFICATION[host];
+  const origin = await fetch(`${SITE_ORIGIN}/index.html`);
+  let html = await origin.text();
+  if (token) {
+    html = html.replace("</head>", `    <meta name="google-site-verification" content="${token}" />\n  </head>`);
+  }
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
+  res.status(200).send(html);
 }
