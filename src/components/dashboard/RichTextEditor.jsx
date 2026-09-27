@@ -12,11 +12,16 @@ import { useEffect } from "react";
 // plain HTML strings; the public-facing components render that HTML
 // through lib/sanitizeHtml.js, never trusting it as-is.
 //
-// Deliberately narrow: paragraph, one heading level (h3 — matches the
-// blog post convention that already existed before this), bold, italic,
-// underline, links. No colors, no multiple heading levels — this is
-// short-form marketing copy (a bio, a testimonial, a blog post), not a
-// general document editor. Links were added specifically for blog-post
+// Deliberately narrow: paragraph, two heading levels (h2/h3 — h3 matches
+// the blog post convention that already existed before this; h2 was
+// added alongside it for SEO subheadings, see below), bold, italic,
+// underline, links. No colors, no lists — this is short-form marketing
+// copy (a bio, a testimonial, a blog post), not a general document
+// editor. h2/h3 exist specifically so a blog post can be broken into a
+// couple of real subheadings (an SEO ask — Google parses H2/H3
+// structure, and it helps readers skim) rather than one long run of
+// paragraphs; h2 for a post's main sections, h3 for anything nested
+// under one. Links were added specifically for blog-post
 // internal linking (an SEO ask — link between your own posts) that was
 // otherwise impossible from this editor; rel/target are stripped rather
 // than tiptap's Link default of "noopener noreferrer nofollow", since
@@ -28,7 +33,7 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: { levels: [3] },
+        heading: { levels: [2, 3] },
         // Keep the tag surface minimal to match ALLOWED_TAGS in
         // lib/sanitizeHtml.js — no blockquote/codeBlock/horizontalRule/
         // lists in this editor's UI, so nothing it can produce needs a
@@ -53,10 +58,10 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
     editorProps: {
       attributes: {
         // No @tailwindcss/typography plugin in this app, and Tailwind's
-        // own preflight resets h1-h6 to inherit size/weight — so h3 needs
-        // explicit styling here (see the .tiptap rules in index.css) or
-        // the Heading button would produce text indistinguishable from a
-        // plain paragraph.
+        // own preflight resets h1-h6 to inherit size/weight — so h2/h3
+        // need explicit styling here (see the .tiptap rules in index.css)
+        // or the Heading buttons would produce text indistinguishable
+        // from a plain paragraph.
         class: "max-w-none focus:outline-none px-3.5 py-2.5 text-sm",
       },
     },
@@ -107,11 +112,19 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
         </button>
         <button
           type="button"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          className={buttonClass(editor.isActive("heading", { level: 2 }))}
+          title="Heading 2 (section)"
+        >
+          H2
+        </button>
+        <button
+          type="button"
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
           className={buttonClass(editor.isActive("heading", { level: 3 }))}
-          title="Heading"
+          title="Heading 3 (sub-section)"
         >
-          H
+          H3
         </button>
         <span className="w-px h-5 bg-black/10 dark:bg-white/15 mx-1" />
         <button

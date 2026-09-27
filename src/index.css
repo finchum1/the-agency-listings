@@ -343,6 +343,13 @@
    preflight resets h1-h6 to inherit font-size/weight — so the editor's
    one heading level needs its look defined explicitly here, or the H
    toolbar button would produce text visually identical to a paragraph. */
+.tiptap h2 {
+  font-size: 1.3125rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 1em;
+  margin-bottom: 0.3em;
+}
 .tiptap h3 {
   font-size: 1.0625rem;
   font-weight: 700;
@@ -360,6 +367,14 @@
    Uses --font-display (already themed per agent/listing site) rather than
    a fixed font so a heading inside bio/blog copy matches that site's own
    headings. */
+.rich-text h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.25;
+  font-size: 1.35em;
+  margin-top: 1.8em;
+  margin-bottom: 0.4em;
+}
 .rich-text h3 {
   font-family: var(--font-display);
   font-weight: 600;
@@ -368,6 +383,7 @@
   margin-top: 1.4em;
   margin-bottom: 0.35em;
 }
+.rich-text h2:first-child,
 .rich-text h3:first-child {
   margin-top: 0;
 }

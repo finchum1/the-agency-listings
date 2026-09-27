@@ -14,7 +14,7 @@ import DOMPurify from "dompurify";
 // blog-post linking). DOMPurify's default ALLOWED_URI_REGEXP already
 // blocks javascript:/data: hrefs even with "href" allowed — no scheme
 // allowlist needed here on top of that.
-const ALLOWED_TAGS = ["p", "h3", "strong", "em", "u", "br", "a"];
+const ALLOWED_TAGS = ["p", "h2", "h3", "strong", "em", "u", "br", "a"];
 const ALLOWED_ATTR = ["href"];
 
 export function sanitizeHtml(html) {
