@@ -30,10 +30,12 @@ const LINKS = [
 // dashboard's neutral ink pill), and the solid (scrolled) pill's shadow
 // carries a faint warm red tint alongside the usual neutral drop shadow.
 // The solid pill itself is black (--as-dark's literal #1c1a17, same ink
-// used everywhere else) rather than a light/cream fill — logo and link
-// text flip to their light-on-dark variants only once scrolled; at the
-// top (clear, no visible pill yet) they stay dark, since the page behind
-// them there is still the light cream body background.
+// used everywhere else) rather than a light/cream fill — link text flips
+// to its light-on-dark variant only once scrolled; at the top (clear, no
+// visible pill yet) it stays dark, since the page behind it there is
+// still the light cream body background. The logo stays the one red
+// mark+wordmark variant in both states on purpose (not swapped to the
+// white mark on black, unlike everywhere else this app does that swap).
 //
 // Below `sm` the link row collapses into a hamburger that opens a second
 // floating panel directly beneath the pill, same mechanism
@@ -77,7 +79,7 @@ export default function MarketingNav() {
           }`}
         >
           <Link to="/" className="shrink-0 pl-1">
-            <img src={scrolled ? brokerage.logos.white : brokerage.logo} alt={brokerage.name} className="h-12 w-auto" />
+            <img src={brokerage.logo} alt={brokerage.name} className="h-12 w-auto" />
           </Link>
 
           <div className="ml-auto flex items-center gap-2">
