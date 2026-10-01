@@ -146,6 +146,7 @@ export default function SiteForm({ site, onSaved }) {
       accent_color: s.accent_color || "",
       logo_variant: s.logo_variant || "red",
       home_sections: s.home_sections?.length ? s.home_sections : DEFAULT_HOME_SECTIONS,
+      idx_enabled: !!s.idx_enabled,
       secondary_logo_url: s.secondary_logo_url || "",
       hero_photo_url: s.hero_photo_url || "",
       hero_video_url: s.hero_video_url || "",
@@ -237,6 +238,7 @@ export default function SiteForm({ site, onSaved }) {
       accent_color: form.accent_color || null,
       logo_variant: form.logo_variant,
       home_sections: form.home_sections,
+      idx_enabled: form.idx_enabled,
       secondary_logo_url: form.secondary_logo_url || null,
       hero_photo_url: form.hero_photo_url || null,
       hero_video_url: form.hero_video_url || null,
@@ -494,6 +496,25 @@ export default function SiteForm({ site, onSaved }) {
               ))}
             </div>
           </div>
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Home Search (IDX)" description="Full MLS search on your area pages.">
+          <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.idx_enabled}
+              onChange={(e) => set("idx_enabled", e.target.checked)}
+              className="mt-0.5 accent-[#ed2127] dark:accent-[#f2454b]"
+            />
+            <span>
+              <span className="block text-sm font-medium">Enable full MLS home search</span>
+              <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5">
+                Adds a "Search Homes in {"{Area}"}" section to each of your Areas of Expertise
+                pages, letting visitors search the whole market — not just The Agency's own
+                listings. Off by default; your own listings still show on area pages either way.
+              </span>
+            </span>
+          </label>
         </CollapsibleSection>
 
         <CollapsibleSection title="Photos, Video & Bio" description="Secondary logo, hero media, your bio, and stats.">

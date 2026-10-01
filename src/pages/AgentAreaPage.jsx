@@ -16,11 +16,14 @@ import IdxListings from "../components/brokerage-site/IdxListings";
 // /sites/:slug/areas/:areaSlug (PublicAgentAreaPage.jsx) and when a
 // request arrives on the parent site's own attached custom domain.
 // Takes the raw shape returned by useAgentArea(). Parallel to
-// AgentPostPage.jsx, with two IdxListings sections added below the
-// overview: a curated preview of The Agency's own listings in this area,
-// and a full open-market search pre-scoped to it — both reuse the
-// brokerage site's own MLS search component (see IdxListings.jsx's own
-// comment on why that's safe outside a BrokerageSiteProvider).
+// AgentPostPage.jsx, with up to two IdxListings sections added below the
+// overview: a curated preview of The Agency's own listings in this area
+// (always shown — it's the office's own inventory, not an MLS feed), and
+// a full open-market search pre-scoped to it, shown only when the agent
+// opted in (site.idxEnabled — see SiteForm.jsx's "Home Search (IDX)"
+// toggle; most agents don't). Both reuse the brokerage site's own MLS
+// search component (see IdxListings.jsx's own comment on why that's safe
+// outside a BrokerageSiteProvider).
 export default function AgentAreaPage({ site, agent, area, loading, notFound }) {
   const adapted = site
     ? adaptAgentSite({ site, agent, testimonials: [], areas: [], posts: [], listings: [] })
@@ -118,14 +121,16 @@ export default function AgentAreaPage({ site, agent, area, loading, notFound }) 
           titleOverride={`Our Listings in ${area.name}`}
         />
 
-        <IdxListings
-          isStandalonePage
-          officeOnly={false}
-          initialCity={area.name}
-          sectionId="area-search"
-          eyebrowOverride="Home Search"
-          titleOverride={`Search Homes in ${area.name}`}
-        />
+        {adapted.idxEnabled && (
+          <IdxListings
+            isStandalonePage
+            officeOnly={false}
+            initialCity={area.name}
+            sectionId="area-search"
+            eyebrowOverride="Home Search"
+            titleOverride={`Search Homes in ${area.name}`}
+          />
+        )}
 
         <Footer />
       </div>

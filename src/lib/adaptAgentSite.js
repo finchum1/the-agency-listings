@@ -31,6 +31,11 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     homeSections: site.home_sections?.length
       ? site.home_sections
       : ["bio", "testimonials", "listings", "areas", "blog"],
+    // Whether this agent opted in to the full MLS search block on their
+    // own area pages (AgentAreaPage.jsx's "Search Homes in {Area}") — see
+    // SiteForm.jsx's "Home Search (IDX)" toggle. Off by default for a new
+    // site; most agents don't opt in.
+    idxEnabled: !!site.idx_enabled,
     secondaryLogo: site.secondary_logo_url || "",
     heroPhoto: site.hero_photo_url || agent?.photo_url || "",
     heroVideo: site.hero_video_url || null,
