@@ -12,73 +12,45 @@ const LINKS = [
   { path: "/upcoming", label: "Upcoming" },
 ];
 
-// Floating pill header for every marketing page (home + the three product
-// deep-dives). Clear/transparent at the very top of the page — just the
-// logo and links sitting directly on the hero, no bar — and crossfades
-// into the solid floating pill (background, border, shadow) once the
-// page scrolls, via a scroll-position listener. The outer wrapper is
-// what actually sticks (top-0, with its own pt-4 for the gap), so once
-// scrolled the pill sits the same 16px below the viewport top and never
-// touches an edge.
+// Flush, full-width sticky header for every marketing page (home + the
+// three product deep-dives) — always solid, no scroll-triggered
+// transition. (A floating, clear-at-top-then-pill-on-scroll version of
+// this existed briefly; removed per feedback, specifically from the
+// marketing site only — agent sites still have that exact treatment
+// available as an opt-in "Floating" header style, see Navbar.jsx /
+// SiteForm.jsx, unaffected by this.)
 //
-// Nav links sit at the far right of the pill (ml-auto) rather than
-// centered — with no Sign In/CTA on the right to balance against, a
-// centered link row read as adrift; anchored right, the logo anchors
-// left and the links read as a single deliberate cluster.
+// Black (#1c1a17, the same ink used everywhere else) rather than the
+// original cream fill, with the logo kept in its red mark+wordmark
+// variant and link text in white — both per explicit requests.
 //
-// Agency-branded: active link is a solid Agency-red pill (not the
-// dashboard's neutral ink pill), and the solid (scrolled) pill's shadow
-// carries a faint warm red tint alongside the usual neutral drop shadow.
-// The solid pill itself is black (--as-dark's literal #1c1a17, same ink
-// used everywhere else) rather than a light/cream fill — link text flips
-// to its light-on-dark variant only once scrolled; at the top (clear, no
-// visible pill yet) it stays dark, since the page behind it there is
-// still the light cream body background. The logo stays the one red
-// mark+wordmark variant in both states on purpose (not swapped to the
-// white mark on black, unlike everywhere else this app does that swap).
+// Nav links sit at the far right (ml-auto) rather than centered — with
+// no Sign In/CTA on the right to balance against, a centered link row
+// read as adrift; anchored right, the logo anchors left and the links
+// read as a single deliberate cluster. Active link is a solid Agency-red
+// pill.
 //
-// Below `sm` the link row collapses into a hamburger that opens a second
-// floating panel directly beneath the pill, same mechanism
-// DashboardLayout.jsx uses for its own mobile nav. That panel always
-// keeps its own solid background regardless of scroll state — an
-// open menu needs to stay legible over whatever hero content is behind
-// it even before the user has scrolled.
+// Below `sm` the link row collapses into a hamburger that opens a
+// dropdown directly beneath the bar, inside the same header element.
 //
 // No Sign In link here on purpose — this is a pure product-marketing
 // page now (also served standalone at theagency.latchpointstudios.com,
 // a Latchpoint Studios marketing subdomain with no dashboard access at
 // all), not a login funnel. /login itself is untouched and still reachable
 // by direct URL on the main app host.
-const FLOAT_SHADOW =
-  "shadow-[0_18px_40px_-18px_rgba(237,33,39,0.35),0_10px_26px_-12px_rgba(28,26,23,0.28)]";
-
 export default function MarketingNav() {
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     setMobileNavOpen(false);
   }, [location.pathname]);
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
-    <div className="sticky top-0 z-40 pt-4 px-4 sm:px-6">
-      <header className="mx-auto max-w-5xl">
-        <div
-          className={`h-16 flex items-center gap-4 rounded-full px-3 sm:px-4 transition-all duration-300 ${
-            scrolled
-              ? `border border-white/10 bg-[#1c1a17]/95 backdrop-blur-md ${FLOAT_SHADOW}`
-              : "border border-transparent bg-transparent"
-          }`}
-        >
-          <Link to="/" className="shrink-0 pl-1">
+    <header className="sticky top-0 z-40 bg-[#1c1a17] border-b border-white/10">
+      <div className="mx-auto max-w-7xl px-6 lg:px-10">
+        <div className="h-20 flex items-center gap-4">
+          <Link to="/" className="shrink-0">
             <img src={brokerage.logo} alt={brokerage.name} className="h-12 w-auto" />
           </Link>
 
@@ -91,11 +63,7 @@ export default function MarketingNav() {
                     key={link.path}
                     to={link.path}
                     className={`text-sm font-medium px-4 py-2 rounded-full transition-colors ${
-                      active
-                        ? "bg-[#ed2127] text-white shadow-sm"
-                        : scrolled
-                          ? "text-white/70 hover:bg-white/10 hover:text-white"
-                          : "text-[#1c1a17]/70 hover:bg-[#ed2127]/10 hover:text-[#ed2127]"
+                      active ? "bg-[#ed2127] text-white shadow-sm" : "text-white/70 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     {link.label}
@@ -109,9 +77,7 @@ export default function MarketingNav() {
               onClick={() => setMobileNavOpen((v) => !v)}
               aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileNavOpen}
-              className={`sm:hidden -mr-1 p-2 rounded-full transition-colors ${
-                scrolled ? "text-white/70 hover:bg-white/10 hover:text-white" : "text-[#1c1a17]/70 hover:bg-black/5 hover:text-[#1c1a17]"
-              }`}
+              className="sm:hidden -mr-1 p-2 rounded-full text-white/70 hover:bg-white/10 hover:text-white"
             >
               {mobileNavOpen ? (
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -127,17 +93,15 @@ export default function MarketingNav() {
         </div>
 
         {mobileNavOpen && (
-          <nav
-            className={`sm:hidden mt-2 rounded-2xl border border-white/10 bg-[#1c1a17]/98 backdrop-blur-md p-2 flex flex-col gap-1 ${FLOAT_SHADOW}`}
-          >
+          <nav className="sm:hidden pb-4 flex flex-col gap-1">
             {LINKS.map((link) => {
               const active = location.pathname === link.path;
               return (
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
-                    active ? "bg-[#ed2127] text-white" : "text-white/70 hover:bg-white/10 hover:text-white"
+                  className={`rounded-lg px-3 py-2.5 text-sm font-medium ${
+                    active ? "bg-[#ed2127] text-white" : "text-white/70"
                   }`}
                 >
                   {link.label}
@@ -146,7 +110,7 @@ export default function MarketingNav() {
             })}
           </nav>
         )}
-      </header>
-    </div>
+      </div>
+    </header>
   );
 }
