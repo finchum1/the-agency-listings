@@ -29,6 +29,11 @@ const LINKS = [
 // Agency-branded: active link is a solid Agency-red pill (not the
 // dashboard's neutral ink pill), and the solid (scrolled) pill's shadow
 // carries a faint warm red tint alongside the usual neutral drop shadow.
+// The solid pill itself is black (--as-dark's literal #1c1a17, same ink
+// used everywhere else) rather than a light/cream fill — logo and link
+// text flip to their light-on-dark variants only once scrolled; at the
+// top (clear, no visible pill yet) they stay dark, since the page behind
+// them there is still the light cream body background.
 //
 // Below `sm` the link row collapses into a hamburger that opens a second
 // floating panel directly beneath the pill, same mechanism
@@ -67,12 +72,12 @@ export default function MarketingNav() {
         <div
           className={`h-16 flex items-center gap-4 rounded-full px-3 sm:px-4 transition-all duration-300 ${
             scrolled
-              ? `border border-black/5 bg-[#faf9f7]/95 backdrop-blur-md ${FLOAT_SHADOW}`
+              ? `border border-white/10 bg-[#1c1a17]/95 backdrop-blur-md ${FLOAT_SHADOW}`
               : "border border-transparent bg-transparent"
           }`}
         >
           <Link to="/" className="shrink-0 pl-1">
-            <img src={brokerage.logo} alt={brokerage.name} className="h-12 w-auto" />
+            <img src={scrolled ? brokerage.logos.white : brokerage.logo} alt={brokerage.name} className="h-12 w-auto" />
           </Link>
 
           <div className="ml-auto flex items-center gap-2">
@@ -84,7 +89,11 @@ export default function MarketingNav() {
                     key={link.path}
                     to={link.path}
                     className={`text-sm font-medium px-4 py-2 rounded-full transition-colors ${
-                      active ? "bg-[#ed2127] text-white shadow-sm" : "text-[#1c1a17]/70 hover:bg-[#ed2127]/10 hover:text-[#ed2127]"
+                      active
+                        ? "bg-[#ed2127] text-white shadow-sm"
+                        : scrolled
+                          ? "text-white/70 hover:bg-white/10 hover:text-white"
+                          : "text-[#1c1a17]/70 hover:bg-[#ed2127]/10 hover:text-[#ed2127]"
                     }`}
                   >
                     {link.label}
@@ -98,7 +107,9 @@ export default function MarketingNav() {
               onClick={() => setMobileNavOpen((v) => !v)}
               aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileNavOpen}
-              className="sm:hidden -mr-1 p-2 rounded-full text-[#1c1a17]/70 hover:bg-black/5 hover:text-[#1c1a17]"
+              className={`sm:hidden -mr-1 p-2 rounded-full transition-colors ${
+                scrolled ? "text-white/70 hover:bg-white/10 hover:text-white" : "text-[#1c1a17]/70 hover:bg-black/5 hover:text-[#1c1a17]"
+              }`}
             >
               {mobileNavOpen ? (
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -115,7 +126,7 @@ export default function MarketingNav() {
 
         {mobileNavOpen && (
           <nav
-            className={`sm:hidden mt-2 rounded-2xl border border-black/5 bg-[#faf9f7]/98 backdrop-blur-md p-2 flex flex-col gap-1 ${FLOAT_SHADOW}`}
+            className={`sm:hidden mt-2 rounded-2xl border border-white/10 bg-[#1c1a17]/98 backdrop-blur-md p-2 flex flex-col gap-1 ${FLOAT_SHADOW}`}
           >
             {LINKS.map((link) => {
               const active = location.pathname === link.path;
@@ -124,7 +135,7 @@ export default function MarketingNav() {
                   key={link.path}
                   to={link.path}
                   className={`rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
-                    active ? "bg-[#ed2127] text-white" : "text-[#1c1a17]/70 hover:bg-[#ed2127]/10 hover:text-[#ed2127]"
+                    active ? "bg-[#ed2127] text-white" : "text-white/70 hover:bg-white/10 hover:text-white"
                   }`}
                 >
                   {link.label}
