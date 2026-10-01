@@ -26,6 +26,12 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     tagline: site.tagline || "",
     region: site.region || "",
     theme: site.theme || "classic",
+    // Independent of the color/font `theme` above — whether the Navbar
+    // renders as today's flush full-width bar ("classic") or the
+    // marketing site's floating pill that's clear at the top and gains a
+    // rounded, shadowed pill once scrolled ("floating"). See
+    // Navbar.jsx and SiteForm.jsx's "Header Style" picker.
+    headerStyle: site.header_style || "classic",
     fontPairing: site.font_pairing || "playfair-jost",
     accentColor: site.accent_color || "",
     homeSections: site.home_sections?.length

@@ -17,6 +17,19 @@ const PAGES = [
   { path: "/contact", label: "Contact" },
 ];
 
+// Two presentational styles share all the scroll/active-link/mobile-menu
+// logic below (one source of truth for nav links and behavior) and only
+// branch on the actual markup — see SiteForm.jsx's "Header Style" picker
+// (agent_sites.header_style, adapted as site.headerStyle):
+//   - "classic" (default): today's flush, full-width fixed bar —
+//     transparent over the home page's hero, solid --as-dark elsewhere.
+//   - "floating": the marketing site's own header (MarketingNav.jsx) —
+//     clear/transparent at the very top, crossfading into a detached,
+//     rounded, shadowed pill once scrolled. Same transparent-only-over-
+//     the-hero constraint as classic, so it reuses the identical `solid`
+//     logic — just renders as a floating pill instead of a flush bar
+//     when true, with nav links right-aligned and the active link a
+//     solid --as-accent pill (matching the marketing header's red one).
 export default function Navbar() {
   const { site } = useAgentSiteContext();
   const location = useLocation();
@@ -42,6 +55,106 @@ export default function Navbar() {
 
   const visiblePages = PAGES.filter((page) => !page.sectionKey || site.homeSections.includes(page.sectionKey));
 
+  const contactCta = (className) =>
+    site.agent.phone ? (
+      <a href={`tel:${site.agent.phone}`} className={className}>
+        {site.agent.phone}
+      </a>
+    ) : (
+      <SiteLink slug={site.slug} path="/contact" className={className}>
+        Let&rsquo;s Connect
+      </SiteLink>
+    );
+
+  const menuIcon = (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      {open ? (
+        <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+      ) : (
+        <path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round" />
+      )}
+    </svg>
+  );
+
+  const logo = (
+    <SiteLink slug={site.slug} path="" className="flex items-center gap-3 min-w-0 shrink-0">
+      <img src={site.brokerage.logo} alt={site.brokerage.name} className="h-9 sm:h-11 w-auto" />
+      {site.secondaryLogo && (
+        <>
+          <span className="h-8 w-px bg-[var(--as-on-dark)]/25 shrink-0" aria-hidden="true" />
+          <img src={site.secondaryLogo} alt="" className="agent-secondary-logo h-8 sm:h-10 w-auto" />
+        </>
+      )}
+      <span className="hidden sm:block ml-2 text-sm font-display tracked-wide whitespace-nowrap text-[var(--as-on-dark)]">
+        {site.agent.name}
+      </span>
+    </SiteLink>
+  );
+
+  if (site.headerStyle === "floating") {
+    const linkClass = "text-xs font-medium tracked-wide uppercase transition-colors whitespace-nowrap px-4 py-2 rounded-full";
+    const ctaClass =
+      "text-xs font-medium tracked-wide uppercase px-5 py-2.5 rounded-full border border-[var(--as-on-dark)]/70 text-[var(--as-on-dark)] whitespace-nowrap transition-colors hover:bg-[var(--as-on-dark)] hover:text-[var(--as-dark)]";
+
+    return (
+      <div className="fixed top-0 inset-x-0 z-50 pt-4 px-4 sm:px-6">
+        <header className="mx-auto max-w-7xl">
+          <div
+            className={`flex items-center gap-4 rounded-full px-4 sm:px-5 py-3 transition-all duration-300 ${
+              solid ? "bg-[var(--as-dark)] shadow-[0_16px_36px_-16px_rgba(0,0,0,0.45)]" : "bg-transparent"
+            }`}
+          >
+            {logo}
+
+            <div className="ml-auto flex items-center gap-2">
+              <nav className="hidden lg:flex items-center gap-1">
+                {visiblePages.map((page) => {
+                  const active = location.pathname === agentSiteHref(site.slug, page.path);
+                  return (
+                    <SiteLink
+                      key={page.path}
+                      slug={site.slug}
+                      path={page.path}
+                      className={`${linkClass} ${
+                        active
+                          ? "bg-[var(--as-accent)] text-white"
+                          : "text-[var(--as-on-dark)]/75 hover:text-[var(--as-on-dark)] hover:bg-[var(--as-on-dark)]/10"
+                      }`}
+                    >
+                      {page.label}
+                    </SiteLink>
+                  );
+                })}
+                {contactCta(`${ctaClass} ml-2`)}
+              </nav>
+
+              <button className="lg:hidden p-2 shrink-0 text-[var(--as-on-dark)]" onClick={() => setOpen((v) => !v)} aria-label="Toggle menu">
+                {menuIcon}
+              </button>
+            </div>
+          </div>
+
+          {open && (
+            <div className="lg:hidden mt-2 rounded-2xl bg-[var(--as-dark)] shadow-[0_16px_36px_-16px_rgba(0,0,0,0.45)] px-6 py-4 flex flex-col gap-4">
+              {visiblePages.map((page) => (
+                <SiteLink
+                  key={page.path}
+                  slug={site.slug}
+                  path={page.path}
+                  onClick={() => setOpen(false)}
+                  className="text-xs font-medium tracked-wide uppercase text-[var(--as-on-dark)]/80"
+                >
+                  {page.label}
+                </SiteLink>
+              ))}
+              {contactCta("text-xs font-medium tracked-wide uppercase px-5 py-3 rounded-full bg-[var(--as-accent)] text-white text-center")}
+            </div>
+          )}
+        </header>
+      </div>
+    );
+  }
+
   const linkClass =
     "text-xs font-medium tracked-wide uppercase transition-colors whitespace-nowrap text-[var(--as-on-dark)]/75 hover:text-[var(--as-on-dark)]";
 
@@ -52,18 +165,7 @@ export default function Navbar() {
       }`}
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-10 flex items-center justify-between py-4">
-        <SiteLink slug={site.slug} path="" className="flex items-center gap-3 min-w-0">
-          <img src={site.brokerage.logo} alt={site.brokerage.name} className="h-9 sm:h-11 w-auto" />
-          {site.secondaryLogo && (
-            <>
-              <span className="h-8 w-px bg-[var(--as-on-dark)]/25 shrink-0" aria-hidden="true" />
-              <img src={site.secondaryLogo} alt="" className="agent-secondary-logo h-8 sm:h-10 w-auto" />
-            </>
-          )}
-          <span className="hidden sm:block ml-2 text-sm font-display tracked-wide whitespace-nowrap text-[var(--as-on-dark)]">
-            {site.agent.name}
-          </span>
-        </SiteLink>
+        {logo}
 
         <nav className="hidden lg:flex items-center gap-6 xl:gap-8 shrink-0">
           {visiblePages.map((page) => {
@@ -79,21 +181,8 @@ export default function Navbar() {
               </SiteLink>
             );
           })}
-          {site.agent.phone ? (
-            <a
-              href={`tel:${site.agent.phone}`}
-              className="text-xs font-medium tracked-wide uppercase px-5 py-2.5 border border-[var(--as-on-dark)]/70 text-[var(--as-on-dark)] whitespace-nowrap transition-colors hover:bg-[var(--as-on-dark)] hover:text-[var(--as-dark)]"
-            >
-              {site.agent.phone}
-            </a>
-          ) : (
-            <SiteLink
-              slug={site.slug}
-              path="/contact"
-              className="text-xs font-medium tracked-wide uppercase px-5 py-2.5 border border-[var(--as-on-dark)]/70 text-[var(--as-on-dark)] whitespace-nowrap transition-colors hover:bg-[var(--as-on-dark)] hover:text-[var(--as-dark)]"
-            >
-              Let&rsquo;s Connect
-            </SiteLink>
+          {contactCta(
+            "text-xs font-medium tracked-wide uppercase px-5 py-2.5 border border-[var(--as-on-dark)]/70 text-[var(--as-on-dark)] whitespace-nowrap transition-colors hover:bg-[var(--as-on-dark)] hover:text-[var(--as-dark)]",
           )}
         </nav>
 
@@ -102,13 +191,7 @@ export default function Navbar() {
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
         >
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            {open ? (
-              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-            ) : (
-              <path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round" />
-            )}
-          </svg>
+          {menuIcon}
         </button>
       </div>
 
@@ -125,24 +208,7 @@ export default function Navbar() {
               {page.label}
             </SiteLink>
           ))}
-          {site.agent.phone ? (
-            <a
-              href={`tel:${site.agent.phone}`}
-              onClick={() => setOpen(false)}
-              className="text-xs font-medium tracked-wide uppercase px-5 py-3 bg-[var(--as-accent)] text-white text-center"
-            >
-              {site.agent.phone}
-            </a>
-          ) : (
-            <SiteLink
-              slug={site.slug}
-              path="/contact"
-              onClick={() => setOpen(false)}
-              className="text-xs font-medium tracked-wide uppercase px-5 py-3 bg-[var(--as-accent)] text-white text-center"
-            >
-              Let&rsquo;s Connect
-            </SiteLink>
-          )}
+          {contactCta("text-xs font-medium tracked-wide uppercase px-5 py-3 bg-[var(--as-accent)] text-white text-center")}
         </div>
       )}
     </header>

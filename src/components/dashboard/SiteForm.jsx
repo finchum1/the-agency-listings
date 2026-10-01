@@ -46,6 +46,23 @@ const THEMES = [
   },
 ];
 
+// Independent of THEMES above (color/font) — how the fixed nav itself
+// behaves, see Navbar.jsx. Kept in sync with the check constraint on
+// agent_sites.header_style.
+const HEADER_STYLES = [
+  {
+    value: "classic",
+    label: "Classic",
+    description: "Flush, full-width bar — transparent over the hero, solid once you scroll.",
+  },
+  {
+    value: "floating",
+    label: "Floating",
+    description:
+      "The Agency marketing site's own header — clear at the top, becomes a detached, rounded pill once you scroll.",
+  },
+];
+
 // The first entry (kept under its original "playfair-jost" value so
 // existing picks don't move) is The Agency's own pairing, straight off
 // theagencyre.com — the recommended default for new sites. The rest are
@@ -142,6 +159,7 @@ export default function SiteForm({ site, onSaved }) {
       tagline: s.tagline || "",
       region: s.region || "",
       theme: s.theme || "classic",
+      header_style: s.header_style || "classic",
       font_pairing: s.font_pairing || "playfair-jost",
       accent_color: s.accent_color || "",
       logo_variant: s.logo_variant || "red",
@@ -234,6 +252,7 @@ export default function SiteForm({ site, onSaved }) {
       tagline: form.tagline,
       region: form.region,
       theme: form.theme,
+      header_style: form.header_style,
       font_pairing: form.font_pairing,
       accent_color: form.accent_color || null,
       logo_variant: form.logo_variant,
@@ -360,6 +379,27 @@ export default function SiteForm({ site, onSaved }) {
                   </div>
                   <p className="text-sm font-semibold">{t.label}</p>
                   <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{t.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Header style</label>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {HEADER_STYLES.map((h) => (
+                <button
+                  key={h.value}
+                  type="button"
+                  onClick={() => set("header_style", h.value)}
+                  className={`text-left rounded-xl border p-3.5 transition-colors ${
+                    form.header_style === h.value
+                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
+                  }`}
+                >
+                  <p className="text-sm font-semibold">{h.label}</p>
+                  <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{h.description}</p>
                 </button>
               ))}
             </div>
