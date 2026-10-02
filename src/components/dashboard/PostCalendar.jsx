@@ -29,7 +29,7 @@ function anchorDateKey(post) {
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MAX_PER_DAY = 3;
 
-export default function PostCalendar({ posts, onEdit, onAddDate }) {
+export default function PostCalendar({ posts, onEdit, onAddDate, viewCounts = {} }) {
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
 
   const postsByDate = {};
@@ -51,10 +51,12 @@ export default function PostCalendar({ posts, onEdit, onAddDate }) {
   const todayKey = toDateKey(new Date());
   const monthLabel = month.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 
+  const isLivePost = (post) =>
+    post.status === "published" ||
+    (post.status === "scheduled" && post.scheduled_at && new Date(post.scheduled_at) <= new Date());
+
   const statusClass = (post) => {
-    const isDue = post.status === "scheduled" && post.scheduled_at && new Date(post.scheduled_at) <= new Date();
-    const isLive = post.status === "published" || isDue;
-    if (isLive) return "bg-emerald-600/15 text-emerald-700 dark:text-emerald-400";
+    if (isLivePost(post)) return "bg-emerald-600/15 text-emerald-700 dark:text-emerald-400";
     if (post.status === "scheduled") return "bg-amber-600/15 text-amber-700 dark:text-amber-400";
     return "bg-black/10 dark:bg-white/10 text-[#1c1a17]/60 dark:text-[#faf9f7]/60";
   };
@@ -131,9 +133,12 @@ export default function PostCalendar({ posts, onEdit, onAddDate }) {
                       onEdit(post);
                     }}
                     className={`text-left truncate rounded px-1.5 py-0.5 text-[11px] font-medium ${statusClass(post)}`}
-                    title={post.title}
+                    title={isLivePost(post) ? `${post.title} — ${viewCounts[post.id]?.total || 0} views` : post.title}
                   >
                     {post.title}
+                    {isLivePost(post) && (
+                      <span className="opacity-70"> · {viewCounts[post.id]?.total || 0}</span>
+                    )}
                   </button>
                 ))}
                 {dayPosts.length > MAX_PER_DAY && (

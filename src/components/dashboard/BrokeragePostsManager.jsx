@@ -4,6 +4,7 @@ import ImageUploadField from "./ImageUploadField";
 import RichTextEditor from "./RichTextEditor";
 import PostChecklist from "./PostChecklist";
 import PostCalendar from "./PostCalendar";
+import PostAnalytics from "./PostAnalytics";
 import { usePostViewCounts } from "../../hooks/usePostViewCounts";
 
 const emptyForm = {
@@ -179,6 +180,15 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
               >
                 Calendar
               </button>
+              <button
+                type="button"
+                onClick={() => setView("analytics")}
+                className={`px-2.5 py-1 rounded-full transition-colors ${
+                  view === "analytics" ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60"
+                }`}
+              >
+                Analytics
+              </button>
             </div>
             <button type="button" onClick={startAdd} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
               + Add post
@@ -320,7 +330,11 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
       {posts.length === 0 && editingId === null && <p className="text-sm text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No posts yet.</p>}
 
       {editingId === null && view === "calendar" && posts.length > 0 && (
-        <PostCalendar posts={posts} onEdit={startEdit} onAddDate={startAddOnDate} />
+        <PostCalendar posts={posts} onEdit={startEdit} onAddDate={startAddOnDate} viewCounts={viewCounts} />
+      )}
+
+      {editingId === null && view === "analytics" && posts.length > 0 && (
+        <PostAnalytics posts={posts} viewCounts={viewCounts} onEdit={startEdit} />
       )}
 
       {editingId === null && view === "list" && posts.length > 0 && (
