@@ -3,6 +3,7 @@ import { supabase } from "../../lib/supabaseClient";
 import ImageUploadField from "./ImageUploadField";
 import RichTextEditor from "./RichTextEditor";
 import PostChecklist from "./PostChecklist";
+import PostCalendar from "./PostCalendar";
 import { blocksToHtml } from "../../lib/richTextFallback";
 
 const emptyForm = {
@@ -60,6 +61,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
   const [showAll, setShowAll] = useState(false);
   const [showSlugField, setShowSlugField] = useState(false);
   const [useOtherCategory, setUseOtherCategory] = useState(false);
+  const [view, setView] = useState("list");
 
   useEffect(() => {
     if (!agentId) return;
@@ -108,6 +110,13 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
     setShowSlugField(false);
     setUseOtherCategory(false);
     setError("");
+  };
+
+  const startAddOnDate = (dateKey) => {
+    setForm({ ...emptyForm, post_date: dateKey });
+    setShowSlugField(false);
+    setUseOtherCategory(false);
+    setEditingId("new");
   };
 
   const update = (field) => (e) => {
@@ -160,12 +169,34 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
 
   return (
     <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold">Blog Posts</h2>
         {editingId === null && (
-          <button type="button" onClick={startAdd} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
-            + Add post
-          </button>
+          <div className="flex items-center gap-3">
+            <div className="inline-flex rounded-full border border-black/10 dark:border-white/15 p-0.5 text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => setView("list")}
+                className={`px-2.5 py-1 rounded-full transition-colors ${
+                  view === "list" ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60"
+                }`}
+              >
+                List
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("calendar")}
+                className={`px-2.5 py-1 rounded-full transition-colors ${
+                  view === "calendar" ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60"
+                }`}
+              >
+                Calendar
+              </button>
+            </div>
+            <button type="button" onClick={startAdd} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+              + Add post
+            </button>
+          </div>
         )}
       </div>
 
@@ -314,7 +345,11 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
 
       {posts.length === 0 && editingId === null && <p className="text-sm text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No posts yet.</p>}
 
-      {posts.length > 0 && (
+      {editingId === null && view === "calendar" && posts.length > 0 && (
+        <PostCalendar posts={posts} onEdit={startEdit} onAddDate={startAddOnDate} />
+      )}
+
+      {editingId === null && view === "list" && posts.length > 0 && (
         <div className="space-y-2">
           {(showAll ? posts : posts.slice(0, COLLAPSED_COUNT)).map((post) => {
             const isDue = post.status === "scheduled" && post.scheduled_at && new Date(post.scheduled_at) <= new Date();
