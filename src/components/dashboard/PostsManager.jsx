@@ -195,16 +195,18 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
               >
                 Calendar
               </button>
-              <button
-                type="button"
-                onClick={() => setView("analytics")}
-                className={`px-2.5 py-1 rounded-full transition-colors ${
-                  view === "analytics" ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60"
-                }`}
-              >
-                Analytics
-              </button>
             </div>
+            <button
+              type="button"
+              onClick={() => setView(view === "analytics" ? "list" : "analytics")}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                view === "analytics"
+                  ? "bg-[#1c1a17] dark:bg-[#f2454b] border-transparent text-white"
+                  : "border-black/10 dark:border-white/15 text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+              }`}
+            >
+              Analytics
+            </button>
             <button type="button" onClick={startAdd} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
               + Add post
             </button>
@@ -394,8 +396,11 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
                   {isLive && (
                     <>
                       {" "}
-                      · {viewCounts[post.id]?.total || 0} view{(viewCounts[post.id]?.total || 0) === 1 ? "" : "s"}
-                      {" "}({viewCounts[post.id]?.last30 || 0} in last 30 days)
+                      ·{" "}
+                      <span className="font-medium text-[#1c1a17]/80 dark:text-[#faf9f7]/80">
+                        {(viewCounts[post.id]?.total || 0).toLocaleString()} all-time view{(viewCounts[post.id]?.total || 0) === 1 ? "" : "s"}
+                      </span>{" "}
+                      · {(viewCounts[post.id]?.last30 || 0).toLocaleString()} in last 30 days
                     </>
                   )}
                 </p>
