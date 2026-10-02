@@ -11,6 +11,7 @@ const emptyForm = {
   phone: "",
   photo_url: "",
   role: "agent",
+  site_access: "full",
   sendInvite: false,
 };
 
@@ -30,6 +31,7 @@ export default function AgentsPage() {
   const [success, setSuccess] = useState("");
   const [enablingId, setEnablingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [togglingAccessId, setTogglingAccessId] = useState(null);
 
   const refresh = () => {
     setLoading(true);
@@ -109,6 +111,30 @@ export default function AgentsPage() {
     }
   };
 
+  // Direct client update (no service-role API needed) — RLS's
+  // profiles_update_own_or_admin policy already lets an admin update any
+  // profile column, same as handleEnableLogin's login_enabled update
+  // above. Switchable anytime in either direction, independent of
+  // whether their login is enabled yet.
+  const handleToggleAccess = async (agent) => {
+    setError("");
+    setSuccess("");
+    setTogglingAccessId(agent.id);
+    const next = agent.site_access === "limited" ? "full" : "limited";
+    try {
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ site_access: next })
+        .eq("id", agent.id);
+      if (updateError) throw updateError;
+      refresh();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setTogglingAccessId(null);
+    }
+  };
+
   const handleDelete = async (agent) => {
     if (
       !confirm(
@@ -174,6 +200,19 @@ export default function AgentsPage() {
                   >
                     {a.role === "admin" ? "Admin" : "Agent"}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleAccess(a)}
+                    disabled={togglingAccessId === a.id}
+                    title="Click to switch between full editing access and blog-only access"
+                    className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
+                      a.site_access === "limited"
+                        ? "bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-400"
+                        : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/60 dark:text-[#faf9f7]/60"
+                    }`}
+                  >
+                    {togglingAccessId === a.id ? "…" : a.site_access === "limited" ? "Blog only" : "Full access"}
+                  </button>
                   {!a.login_enabled && (
                     <button
                       type="button"
@@ -241,6 +280,17 @@ export default function AgentsPage() {
                 <option value="admin">Admin</option>
               </select>
             </div>
+          </div>
+          <div>
+            <label className={labelClass}>Website access</label>
+            <select value={form.site_access} onChange={update("site_access")} className={inputClass}>
+              <option value="full">Full — all editing options (theme, bio, photos, custom domain, etc.)</option>
+              <option value="limited">Limited — blog posts only</option>
+            </select>
+            <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-1">
+              Limited agents only see their Blog Posts when they log in — you can still edit
+              everything else on their site yourself from the Agent Sites page. Switchable anytime.
+            </p>
           </div>
           <ImageUploadField
             bucket="profile-photos"

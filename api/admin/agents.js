@@ -90,7 +90,7 @@ export default async function handler(req, res) {
   });
 
   if (action === "add") {
-    const { email, full_name, title, license, phone, photo_url, role, sendInvite } = req.body || {};
+    const { email, full_name, title, license, phone, photo_url, role, sendInvite, site_access } = req.body || {};
     if (!email || !full_name) {
       return res.status(400).json({ error: "Email and full name are required." });
     }
@@ -135,7 +135,13 @@ export default async function handler(req, res) {
     // entered.
     const { error: updateError } = await admin
       .from("profiles")
-      .update({ title, license, phone, photo_url: photo_url || null })
+      .update({
+        title,
+        license,
+        phone,
+        photo_url: photo_url || null,
+        site_access: site_access === "limited" ? "limited" : "full",
+      })
       .eq("id", newUserId);
     if (updateError) console.error("Profile update after create failed:", updateError);
 

@@ -58,7 +58,10 @@ export default function DashboardLayout() {
       <div className="space-y-1">
         {NAV_ITEMS.map((item) => (
           <Link key={item.to} to={item.to} onClick={onNavigate} className={navLinkClass(item.activeWhen(location.pathname))}>
-            {item.label}
+            {/* "My Site" becomes "Blog" for a limited-access agent — see
+                SiteEditor.jsx/MySitePage.jsx, that page shows only their
+                Blog Posts in that case, so "My Site" would overpromise. */}
+            {item.to === "/dashboard" && profile?.site_access === "limited" ? "Blog" : item.label}
           </Link>
         ))}
       </div>
