@@ -4,6 +4,7 @@ import ImageUploadField from "./ImageUploadField";
 import RichTextEditor from "./RichTextEditor";
 import PostChecklist from "./PostChecklist";
 import PostCalendar from "./PostCalendar";
+import { usePostViewCounts } from "../../hooks/usePostViewCounts";
 
 const emptyForm = {
   slug: "",
@@ -61,6 +62,7 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
   const [showSlugField, setShowSlugField] = useState(false);
   const [useOtherCategory, setUseOtherCategory] = useState(false);
   const [view, setView] = useState("list");
+  const viewCounts = usePostViewCounts("brokerage_post", posts.map((p) => p.id));
 
   const inputClass =
     "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -347,6 +349,13 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
                         ? `Scheduled · ${formatScheduled(post.scheduled_at)}`
                         : "Draft"}
                   </span>
+                  {isLive && (
+                    <>
+                      {" "}
+                      · {viewCounts[post.id]?.total || 0} view{(viewCounts[post.id]?.total || 0) === 1 ? "" : "s"}
+                      {" "}({viewCounts[post.id]?.last30 || 0} in last 30 days)
+                    </>
+                  )}
                 </p>
               </div>
               <div className="flex items-center gap-3 shrink-0 text-xs">

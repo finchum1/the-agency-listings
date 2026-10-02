@@ -4,6 +4,7 @@ import ImageUploadField from "./ImageUploadField";
 import RichTextEditor from "./RichTextEditor";
 import PostChecklist from "./PostChecklist";
 import PostCalendar from "./PostCalendar";
+import { usePostViewCounts } from "../../hooks/usePostViewCounts";
 import { blocksToHtml } from "../../lib/richTextFallback";
 
 const emptyForm = {
@@ -62,6 +63,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
   const [showSlugField, setShowSlugField] = useState(false);
   const [useOtherCategory, setUseOtherCategory] = useState(false);
   const [view, setView] = useState("list");
+  const viewCounts = usePostViewCounts("agent_post", posts.map((p) => p.id));
 
   useEffect(() => {
     if (!agentId) return;
@@ -375,6 +377,13 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
                         ? `Scheduled · ${formatScheduled(post.scheduled_at)}`
                         : "Draft"}
                   </span>
+                  {isLive && (
+                    <>
+                      {" "}
+                      · {viewCounts[post.id]?.total || 0} view{(viewCounts[post.id]?.total || 0) === 1 ? "" : "s"}
+                      {" "}({viewCounts[post.id]?.last30 || 0} in last 30 days)
+                    </>
+                  )}
                 </p>
               </div>
               <div className="flex items-center gap-3 shrink-0 text-xs">
