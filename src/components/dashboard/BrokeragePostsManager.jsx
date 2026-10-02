@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import ImageUploadField from "./ImageUploadField";
 import RichTextEditor from "./RichTextEditor";
+import PostChecklist from "./PostChecklist";
 
 const emptyForm = {
   slug: "",
@@ -42,6 +43,10 @@ function formatScheduled(iso) {
 // toggle rather than stacking every post ever written.
 const COLLAPSED_COUNT = 4;
 
+// Preset categories instead of a blank free-text field — see PostsManager.jsx
+// for the same pattern on agent sites. "Other" drops back to free text.
+const CATEGORIES = ["Market Update", "Neighborhood Guide", "New Listing Spotlight", "Buyer Tips", "Seller Tips", "Just Sold"];
+
 // Blog CRUD for the brokerage site — parallel to PostsManager.jsx (agent
 // sites), targeting brokerage_posts instead of agent_site_posts. No
 // agent_site_id/related_listing_id: these posts are brokerage-wide, not
@@ -52,6 +57,8 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showAll, setShowAll] = useState(false);
+  const [showSlugField, setShowSlugField] = useState(false);
+  const [useOtherCategory, setUseOtherCategory] = useState(false);
 
   const inputClass =
     "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -59,6 +66,8 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
 
   const startAdd = () => {
     setForm(emptyForm);
+    setShowSlugField(false);
+    setUseOtherCategory(false);
     setEditingId("new");
   };
 
@@ -74,12 +83,16 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
       status: post.status,
       scheduled_at: toDatetimeLocalValue(post.scheduled_at),
     });
+    setShowSlugField(false);
+    setUseOtherCategory(!!post.category && !CATEGORIES.includes(post.category));
     setEditingId(post.id);
   };
 
   const cancel = () => {
     setEditingId(null);
     setForm(emptyForm);
+    setShowSlugField(false);
+    setUseOtherCategory(false);
     setError("");
   };
 
@@ -149,14 +162,63 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
               <input required value={form.title} onChange={update("title")} className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Slug</label>
-              <input required value={form.slug} onChange={update("slug")} className={inputClass} />
+              {showSlugField ? (
+                <>
+                  <label className={labelClass}>URL slug</label>
+                  <input required value={form.slug} onChange={update("slug")} className={inputClass} />
+                </>
+              ) : (
+                <>
+                  <label className={labelClass}>Web address</label>
+                  <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50 px-1 py-2.5">
+                    <span className="font-mono">/blog/{form.slug || "…"}</span>{" "}
+                    <button
+                      type="button"
+                      onClick={() => setShowSlugField(true)}
+                      className="text-[#ed2127] dark:text-[#f2454b] hover:underline font-medium"
+                    >
+                      Customize
+                    </button>
+                  </p>
+                </>
+              )}
             </div>
           </div>
           <div className="grid sm:grid-cols-3 gap-3">
             <div>
               <label className={labelClass}>Category</label>
-              <input value={form.category} onChange={update("category")} className={inputClass} placeholder="MARKET UPDATE" />
+              <select
+                value={useOtherCategory ? "Other" : form.category}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "Other") {
+                    setUseOtherCategory(true);
+                    setForm((f) => ({ ...f, category: CATEGORIES.includes(f.category) ? "" : f.category }));
+                  } else {
+                    setUseOtherCategory(false);
+                    setForm((f) => ({ ...f, category: v }));
+                  }
+                }}
+                className={inputClass}
+              >
+                <option value="" disabled>
+                  Choose…
+                </option>
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+                <option value="Other">Other…</option>
+              </select>
+              {useOtherCategory && (
+                <input
+                  value={form.category}
+                  onChange={update("category")}
+                  placeholder="Custom category"
+                  className={`${inputClass} mt-2`}
+                />
+              )}
             </div>
             <div>
               <label className={labelClass}>Date</label>
@@ -205,6 +267,7 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
               minHeight="14rem"
             />
           </div>
+          <PostChecklist form={form} />
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex items-center gap-3">
             <button
