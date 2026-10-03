@@ -32,6 +32,8 @@ import BrokerageSitePage from "./pages/BrokerageSitePage";
 import BrokeragePostPage from "./pages/BrokeragePostPage";
 import BrokerageAreaPage from "./pages/BrokerageAreaPage";
 import BrokerageSiteEditor from "./components/dashboard/BrokerageSiteEditor";
+import PeopleGate from "./components/dashboard/people/PeopleGate";
+import PeopleBoard from "./components/dashboard/people/PeopleBoard";
 
 import HomeSections from "./components/agent-site/HomeSections";
 import Bio from "./components/agent-site/Bio";
@@ -273,6 +275,11 @@ export default function App() {
         <Route path="profile" element={<MyProfilePage />} />
         <Route path="site" element={<MySitePage />} />
         <Route path="upcoming" element={<UpcomingModule />} />
+        <Route path="people" element={<PeopleGate />}>
+          <Route index element={<Navigate to="leads" replace />} />
+          <Route path="leads" element={<PeopleBoard group="lead" />} />
+          <Route path="pipeline" element={<PeopleBoard group="pipeline" />} />
+        </Route>
         {/* Old separate routes, now combined into one "Upcoming" tab —
             redirect rather than 404 in case either was already bookmarked. */}
         <Route path="upcoming-listings" element={<Navigate to="/dashboard/upcoming" replace />} />

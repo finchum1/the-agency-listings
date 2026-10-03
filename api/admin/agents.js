@@ -90,7 +90,7 @@ export default async function handler(req, res) {
   });
 
   if (action === "add") {
-    const { email, full_name, title, license, phone, photo_url, role, sendInvite, site_access } = req.body || {};
+    const { email, full_name, title, license, phone, photo_url, role, sendInvite, site_access, people_enabled } = req.body || {};
     if (!email || !full_name) {
       return res.status(400).json({ error: "Email and full name are required." });
     }
@@ -141,6 +141,7 @@ export default async function handler(req, res) {
         phone,
         photo_url: photo_url || null,
         site_access: site_access === "limited" ? "limited" : "full",
+        people_enabled: !!people_enabled,
       })
       .eq("id", newUserId);
     if (updateError) console.error("Profile update after create failed:", updateError);

@@ -23,6 +23,14 @@ const NAV_ITEMS = [
 // rather than mixed into NAV_ITEMS. Previously tucked into a dropdown
 // (AdminNavMenu.jsx) to save width in a horizontal header; a left-hand
 // sidebar has the vertical room to just list them, so that's gone now.
+// People is its own module, switched on per agent by an admin
+// (profiles.people_enabled) — separate from site_access, which only
+// governs website editing. Shown as a collapsible group.
+const PEOPLE_ITEMS = [
+  { to: "/dashboard/people/leads", label: "Leads" },
+  { to: "/dashboard/people/pipeline", label: "Pipeline" },
+];
+
 const ADMIN_ITEMS = [
   { to: "/dashboard/brokerage-site", label: "Brokerage Site" },
   { to: "/dashboard/sites", label: "Agent Sites" },
@@ -38,6 +46,7 @@ export default function DashboardLayout() {
   const { profile, isAdmin } = useAuth();
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [peopleOpen, setPeopleOpen] = useState(location.pathname.startsWith("/dashboard/people"));
 
   // Never leave the mobile menu open behind a new page after a nav tap.
   useEffect(() => {
@@ -65,6 +74,41 @@ export default function DashboardLayout() {
           </Link>
         ))}
       </div>
+      {profile?.people_enabled && (
+        <div className="mt-1 space-y-1">
+          <button
+            type="button"
+            onClick={() => setPeopleOpen((v) => !v)}
+            aria-expanded={peopleOpen}
+            className={`${navLinkClass(false)} w-full flex items-center justify-between text-left`}
+          >
+            <span>People</span>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              className={`transition-transform ${peopleOpen ? "rotate-90" : ""}`}
+            >
+              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          {peopleOpen && (
+            <div className="ml-3 pl-2 border-l border-black/10 dark:border-white/10 space-y-1">
+              {PEOPLE_ITEMS.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  onClick={onNavigate}
+                  className={navLinkClass(location.pathname === item.to)}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {isAdmin && (
         <div className="mt-6">
           <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-[#1c1a17]/40 dark:text-[#faf9f7]/40">Admin</p>

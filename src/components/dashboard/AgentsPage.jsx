@@ -12,6 +12,7 @@ const emptyForm = {
   photo_url: "",
   role: "agent",
   site_access: "full",
+  people_enabled: false,
   sendInvite: false,
 };
 
@@ -32,6 +33,7 @@ export default function AgentsPage() {
   const [enablingId, setEnablingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [togglingAccessId, setTogglingAccessId] = useState(null);
+  const [togglingPeopleId, setTogglingPeopleId] = useState(null);
 
   const refresh = () => {
     setLoading(true);
@@ -116,6 +118,24 @@ export default function AgentsPage() {
   // profile column, same as handleEnableLogin's login_enabled update
   // above. Switchable anytime in either direction, independent of
   // whether their login is enabled yet.
+  const handleTogglePeople = async (agent) => {
+    setError("");
+    setSuccess("");
+    setTogglingPeopleId(agent.id);
+    try {
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ people_enabled: !agent.people_enabled })
+        .eq("id", agent.id);
+      if (updateError) throw updateError;
+      refresh();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setTogglingPeopleId(null);
+    }
+  };
+
   const handleToggleAccess = async (agent) => {
     setError("");
     setSuccess("");
@@ -213,6 +233,19 @@ export default function AgentsPage() {
                   >
                     {togglingAccessId === a.id ? "…" : a.site_access === "limited" ? "Blog only" : "Full access"}
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTogglePeople(a)}
+                    disabled={togglingPeopleId === a.id}
+                    title="Click to turn the People module (Leads, Pipeline) on or off for this agent"
+                    className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
+                      a.people_enabled
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"
+                        : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/50 dark:text-[#faf9f7]/50"
+                    }`}
+                  >
+                    {togglingPeopleId === a.id ? "…" : a.people_enabled ? "People on" : "People off"}
+                  </button>
                   {!a.login_enabled && (
                     <button
                       type="button"
@@ -292,6 +325,21 @@ export default function AgentsPage() {
               everything else on their site yourself from the Agent Sites page. Switchable anytime.
             </p>
           </div>
+          <label className="flex items-start gap-2.5 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.people_enabled}
+              onChange={(e) => setForm((f) => ({ ...f, people_enabled: e.target.checked }))}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="font-medium">People module</span>
+              <span className="block text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
+                Leads and Pipeline boards with contact info, follow-ups and notes. Private to this agent —
+                even admins can't see their people. Switchable anytime.
+              </span>
+            </span>
+          </label>
           <ImageUploadField
             bucket="profile-photos"
             folder={pendingPhotoFolder}
