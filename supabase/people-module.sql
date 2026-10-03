@@ -175,3 +175,48 @@ alter table public.people
   add column if not exists appraisal_date date,
   add column if not exists financing_deadline date,
   add column if not exists closing_date date;
+
+-- 8. Checklists (phase 4). Templates are per agent and side; applying one
+--    to a transaction copies its items into transaction_tasks so later
+--    template edits never rewrite deals already in progress. A task's due
+--    date = the person's <anchor> date + offset_days, unless due_override
+--    is set to a specific date.
+create table if not exists public.checklist_templates (
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  side text not null check (side in ('buyer', 'seller')),
+  sections jsonb not null default '[]'::jsonb,
+  updated_at timestamptz not null default now(),
+  primary key (owner_id, side)
+);
+alter table public.checklist_templates enable row level security;
+drop policy if exists checklist_templates_owner_all on public.checklist_templates;
+create policy checklist_templates_owner_all on public.checklist_templates
+  for all
+  using (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled))
+  with check (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled));
+
+create table if not exists public.transaction_tasks (
+  id uuid primary key default gen_random_uuid(),
+  person_id uuid not null references public.people(id) on delete cascade,
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  section text not null default '',
+  position integer not null default 0,
+  text text not null,
+  anchor text not null default 'contract_date' check (anchor in ('contract_date', 'inspection_date', 'closing_date')),
+  offset_days integer not null default 0,
+  due_override date,
+  done boolean not null default false,
+  done_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists transaction_tasks_person_idx on public.transaction_tasks (person_id, position);
+alter table public.transaction_tasks enable row level security;
+drop policy if exists transaction_tasks_owner_all on public.transaction_tasks;
+create policy transaction_tasks_owner_all on public.transaction_tasks
+  for all
+  using (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled))
+  with check (
+    owner_id = auth.uid()
+    and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled)
+    and exists (select 1 from public.people pe where pe.id = person_id and pe.owner_id = auth.uid())
+  );

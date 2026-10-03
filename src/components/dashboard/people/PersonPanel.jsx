@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS, ARCHIVE_REASONS, SOURCES } from "../../../lib/peopleStages";
 import ContactButtons from "./ContactButtons";
+import TransactionChecklist from "./TransactionChecklist";
 
 const inputClass =
   "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -353,6 +354,17 @@ export default function PersonPanel({
                 ))}
               </div>
             </div>
+          )}
+          {person.stage_group === "transaction" && (
+            <TransactionChecklist
+              person={person}
+              side={form.side}
+              dates={{
+                contract_date: form.contract_date,
+                inspection_date: form.inspection_date,
+                closing_date: form.closing_date,
+              }}
+            />
           )}
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         </div>

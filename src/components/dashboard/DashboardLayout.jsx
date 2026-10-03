@@ -111,6 +111,13 @@ export default function DashboardLayout() {
           )}
         </div>
       )}
+      {profile?.people_enabled && (
+        <div className="mt-1">
+          <Link to="/dashboard/settings" onClick={onNavigate} className={navLinkClass(location.pathname === "/dashboard/settings")}>
+            Settings
+          </Link>
+        </div>
+      )}
       {isAdmin && (
         <div className="mt-6">
           <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-[#1c1a17]/40 dark:text-[#faf9f7]/40">Admin</p>
