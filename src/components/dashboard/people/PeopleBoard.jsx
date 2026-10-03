@@ -77,6 +77,7 @@ export default function PeopleBoard({ group }) {
   const { stages: allStages, renameStage } = usePeopleStages();
   const stages = allStages[group];
   const nextStageNames = board.next ? allStages[board.next.group] : null;
+  const prevStageNames = board.prev ? allStages[board.prev.group] : null;
 
   const [selectedId, setSelectedId] = useState(null);
   const [addingStage, setAddingStage] = useState(null);
@@ -330,6 +331,7 @@ export default function PeopleBoard({ group }) {
           person={selected}
           stageNames={stages}
           nextStageNames={nextStageNames}
+          prevStageNames={prevStageNames}
           position={siblingIdx >= 0 ? siblingIdx + 1 : 0}
           total={siblings.length}
           onPrev={siblingIdx > 0 ? () => setSelectedId(siblings[siblingIdx - 1].id) : undefined}

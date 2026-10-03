@@ -44,6 +44,7 @@ export default function PersonPanel({
   person,
   stageNames,
   nextStageNames,
+  prevStageNames,
   position,
   total,
   onPrev,
@@ -65,6 +66,7 @@ export default function PersonPanel({
   const [noteText, setNoteText] = useState("");
   const [addingNote, setAddingNote] = useState(false);
   const [moveStage, setMoveStage] = useState(nextStageNames?.[0] || "");
+  const [backStage, setBackStage] = useState(prevStageNames?.[prevStageNames.length - 1] || "");
   const [archiveReason, setArchiveReason] = useState(ARCHIVE_REASONS[0]);
 
   const flush = useCallback(async () => {
@@ -157,6 +159,11 @@ export default function PersonPanel({
   const handleMove = async () => {
     await flush();
     if (await patch({ stage_group: board.next.group, stage: moveStage })) onClose();
+  };
+
+  const handleMoveBack = async () => {
+    await flush();
+    if (await patch({ stage_group: board.prev.group, stage: backStage })) onClose();
   };
 
   const handleArchive = async () => {
@@ -396,6 +403,29 @@ export default function PersonPanel({
               <button type="button" onClick={handleMove} className={primaryBtn}>
                 {board.next.label}
               </button>
+            </div>
+          )}
+          {board.prev && !person.archived && (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <select value={backStage} onChange={(e) => setBackStage(e.target.value)} className={`${inputClass} !w-auto`}>
+                  {prevStageNames.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleMoveBack}
+                  className="rounded-full border border-black/10 dark:border-white/15 text-sm font-semibold px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/10"
+                >
+                  {board.prev.label}
+                </button>
+              </div>
+              <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
+                For a deal that fell through. Their deal details and notes are kept in case it comes back.
+              </p>
             </div>
           )}
           {person.archived ? (

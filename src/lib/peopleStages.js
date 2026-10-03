@@ -15,6 +15,7 @@ export const BOARDS = {
     title: "Transactions",
     stages: ["Pending", "Closing Soon", "Closed"],
     next: null,
+    prev: { group: "pipeline", label: "Move back to Pipeline" },
   },
 };
 
