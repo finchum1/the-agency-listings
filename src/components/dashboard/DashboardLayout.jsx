@@ -27,6 +27,7 @@ const NAV_ITEMS = [
 // (profiles.people_enabled) — separate from site_access, which only
 // governs website editing. Shown as a collapsible group.
 const PEOPLE_ITEMS = [
+  { to: "/dashboard/people/overview", label: "Overview" },
   { to: "/dashboard/people/leads", label: "Leads" },
   { to: "/dashboard/people/pipeline", label: "Pipeline" },
   { to: "/dashboard/people/transactions", label: "Transactions" },

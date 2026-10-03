@@ -34,6 +34,7 @@ import BrokerageAreaPage from "./pages/BrokerageAreaPage";
 import BrokerageSiteEditor from "./components/dashboard/BrokerageSiteEditor";
 import PeopleGate from "./components/dashboard/people/PeopleGate";
 import PeopleBoard from "./components/dashboard/people/PeopleBoard";
+import PeopleOverview from "./components/dashboard/people/PeopleOverview";
 
 import HomeSections from "./components/agent-site/HomeSections";
 import Bio from "./components/agent-site/Bio";
@@ -276,7 +277,8 @@ export default function App() {
         <Route path="site" element={<MySitePage />} />
         <Route path="upcoming" element={<UpcomingModule />} />
         <Route path="people" element={<PeopleGate />}>
-          <Route index element={<Navigate to="leads" replace />} />
+          <Route index element={<Navigate to="overview" replace />} />
+          <Route path="overview" element={<PeopleOverview />} />
           <Route path="leads" element={<PeopleBoard group="lead" />} />
           <Route path="pipeline" element={<PeopleBoard group="pipeline" />} />
           <Route path="transactions" element={<PeopleBoard group="transaction" />} />
