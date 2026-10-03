@@ -11,7 +11,18 @@ const primaryBtn =
 const navBtn =
   "h-8 w-8 flex items-center justify-center rounded-full border border-black/10 dark:border-white/15 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed";
 
-const FIELDS = ["name", "email", "phone", "source", "next_follow_up"];
+const DATE_FIELDS = ["next_follow_up", "contract_date", "inspection_date", "appraisal_date", "financing_deadline", "closing_date"];
+const NUMBER_FIELDS = ["price", "commission"];
+const TEXT_FIELDS = ["name", "email", "phone", "source", "property_address", "other_agent", "title_company", "lender"];
+const FIELDS = [...TEXT_FIELDS, ...DATE_FIELDS, ...NUMBER_FIELDS, "side"];
+
+const openPicker = (e) => {
+  try {
+    e.currentTarget.showPicker();
+  } catch {
+    /* browser without showPicker — native control still works */
+  }
+};
 const TEXT_DEBOUNCE_MS = 700;
 
 function formatNoteTime(iso) {
@@ -19,13 +30,12 @@ function formatNoteTime(iso) {
 }
 
 function toForm(person) {
-  return {
-    name: person.name,
-    email: person.email,
-    phone: person.phone,
-    source: person.source,
-    next_follow_up: person.next_follow_up || "",
-  };
+  const form = {};
+  for (const key of TEXT_FIELDS) form[key] = person[key] || "";
+  for (const key of DATE_FIELDS) form[key] = person[key] || "";
+  for (const key of NUMBER_FIELDS) form[key] = person[key] == null ? "" : String(person[key]);
+  form.side = person.side || "";
+  return form;
 }
 
 // Edits save automatically: text fields after a short pause (and when the
@@ -65,7 +75,9 @@ export default function PersonPanel({
     const changes = {};
     for (const key of FIELDS) {
       if (cur[key] === saved[key]) continue;
-      changes[key] = key === "next_follow_up" ? cur[key] || null : cur[key].trim();
+      if (DATE_FIELDS.includes(key) || key === "side") changes[key] = cur[key] || null;
+      else if (NUMBER_FIELDS.includes(key)) changes[key] = cur[key] === "" ? null : Number(cur[key]);
+      else changes[key] = cur[key].trim();
     }
     if (Object.keys(changes).length === 0) return;
     savedRef.current = { ...saved, ...cur };
@@ -246,13 +258,7 @@ export default function PersonPanel({
                 type="date"
                 value={form.next_follow_up}
                 onChange={setField("next_follow_up", true)}
-                onClick={(e) => {
-                  try {
-                    e.currentTarget.showPicker();
-                  } catch {
-                    /* browser without showPicker — native control still works */
-                  }
-                }}
+                onClick={openPicker}
                 className={`${inputClass} cursor-pointer`}
               />
             </div>
@@ -282,6 +288,65 @@ export default function PersonPanel({
               ))}
             </select>
           </div>
+          {person.stage_group === "transaction" && (
+            <div className="space-y-3 pt-4 mt-1 border-t border-black/5 dark:border-white/10">
+              <h3 className="font-display text-base font-semibold">Transaction</h3>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Side</label>
+                  <select value={form.side} onChange={setField("side", true)} className={inputClass}>
+                    <option value="">Select…</option>
+                    <option value="buyer">Buyer</option>
+                    <option value="seller">Seller</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Property address</label>
+                  <input value={form.property_address} onChange={setField("property_address")} onBlur={flush} className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Price ($)</label>
+                  <input type="number" min="0" step="any" inputMode="decimal" value={form.price} onChange={setField("price")} onBlur={flush} className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Commission ($)</label>
+                  <input type="number" min="0" step="any" inputMode="decimal" value={form.commission} onChange={setField("commission")} onBlur={flush} className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Other agent</label>
+                  <input value={form.other_agent} onChange={setField("other_agent")} onBlur={flush} className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Title company</label>
+                  <input value={form.title_company} onChange={setField("title_company")} onBlur={flush} className={inputClass} />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className={labelClass}>Lender</label>
+                  <input value={form.lender} onChange={setField("lender")} onBlur={flush} className={inputClass} />
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {[
+                  ["contract_date", "Contract date"],
+                  ["inspection_date", "Inspection"],
+                  ["appraisal_date", "Appraisal"],
+                  ["financing_deadline", "Financing deadline"],
+                  ["closing_date", "Closing"],
+                ].map(([key, label]) => (
+                  <div key={key}>
+                    <label className={labelClass}>{label}</label>
+                    <input
+                      type="date"
+                      value={form[key]}
+                      onChange={setField(key, true)}
+                      onClick={openPicker}
+                      className={`${inputClass} cursor-pointer`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         </div>
 

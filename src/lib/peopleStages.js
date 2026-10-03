@@ -9,7 +9,7 @@ export const BOARDS = {
   pipeline: {
     title: "Pipeline",
     stages: ["12+ Months", "6+ Months", "3-6 Months", "Coming Soon", "Active"],
-    next: null,
+    next: { group: "transaction", label: "Move to Transactions" },
   },
   transaction: {
     title: "Transactions",
@@ -19,6 +19,7 @@ export const BOARDS = {
 };
 
 export const ARCHIVE_REASONS = [
+  "Deal fell through",
   "Went with another agent",
   "Not interested",
   "Not responding",

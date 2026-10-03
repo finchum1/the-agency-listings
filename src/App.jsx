@@ -279,6 +279,7 @@ export default function App() {
           <Route index element={<Navigate to="leads" replace />} />
           <Route path="leads" element={<PeopleBoard group="lead" />} />
           <Route path="pipeline" element={<PeopleBoard group="pipeline" />} />
+          <Route path="transactions" element={<PeopleBoard group="transaction" />} />
         </Route>
         {/* Old separate routes, now combined into one "Upcoming" tab —
             redirect rather than 404 in case either was already bookmarked. */}

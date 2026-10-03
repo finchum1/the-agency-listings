@@ -250,7 +250,22 @@ export default function PeopleBoard({ group }) {
                     className="cursor-pointer bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl p-3 space-y-2 hover:shadow-sm transition-shadow"
                   >
                     <p className="text-sm font-medium truncate">{p.name}</p>
-                    {(p.phone || p.email) && (
+                    {group === "transaction" && (
+                      <div className="space-y-0.5">
+                        {p.property_address && (
+                          <p className="text-xs text-[#1c1a17]/70 dark:text-[#faf9f7]/70 truncate">{p.property_address}</p>
+                        )}
+                        <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">
+                          {[p.side === "buyer" ? "Buyer" : p.side === "seller" ? "Seller" : "", p.price ? `$${Number(p.price).toLocaleString()}` : ""]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </p>
+                        {p.closing_date && (
+                          <p className="text-xs font-medium text-[#1c1a17]/70 dark:text-[#faf9f7]/70">Closes {followUpLabel(p.closing_date)}</p>
+                        )}
+                      </div>
+                    )}
+                    {group !== "transaction" && (p.phone || p.email) && (
                       <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">{p.phone || p.email}</p>
                     )}
                     {p.next_follow_up && (

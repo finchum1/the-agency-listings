@@ -29,6 +29,7 @@ const NAV_ITEMS = [
 const PEOPLE_ITEMS = [
   { to: "/dashboard/people/leads", label: "Leads" },
   { to: "/dashboard/people/pipeline", label: "Pipeline" },
+  { to: "/dashboard/people/transactions", label: "Transactions" },
 ];
 
 const ADMIN_ITEMS = [

@@ -160,3 +160,18 @@ create policy people_settings_owner_all on public.people_settings
   for all
   using (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled))
   with check (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled));
+
+-- 7. Transactions (phase 2): deal details live on the same person row.
+alter table public.people
+  add column if not exists side text check (side in ('buyer', 'seller')),
+  add column if not exists property_address text not null default '',
+  add column if not exists price numeric,
+  add column if not exists commission numeric,
+  add column if not exists other_agent text not null default '',
+  add column if not exists title_company text not null default '',
+  add column if not exists lender text not null default '',
+  add column if not exists contract_date date,
+  add column if not exists inspection_date date,
+  add column if not exists appraisal_date date,
+  add column if not exists financing_deadline date,
+  add column if not exists closing_date date;
