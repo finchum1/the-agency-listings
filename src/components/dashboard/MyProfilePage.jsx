@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 import { useTheme } from "../../hooks/useTheme";
@@ -124,6 +125,21 @@ export default function MyProfilePage() {
           {saving ? "Saving…" : "Save Changes"}
         </button>
       </form>
+
+      {profile.people_enabled && (
+        <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mt-6">
+          <h2 className="font-display text-lg font-semibold">Transactions</h2>
+          <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1 mb-4">
+            Edit the buyer and seller checklists that get added to your transactions.
+          </p>
+          <Link
+            to="/dashboard/settings"
+            className="inline-block rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors"
+          >
+            Transactions Checklist
+          </Link>
+        </div>
+      )}
 
       <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mt-6">
         <h2 className="font-display text-lg font-semibold">Appearance</h2>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { SIDE_LABELS } from "../../../lib/checklists";
 import ChecklistTemplateEditor from "./ChecklistTemplateEditor";
 
@@ -7,9 +8,12 @@ export default function SettingsPage() {
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-display font-semibold">Settings</h1>
+        <Link to="/dashboard/profile" className="text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
+          ← My Profile
+        </Link>
+        <h1 className="text-2xl font-display font-semibold mt-2">Transactions Checklist</h1>
         <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
-          Your transaction checklist templates. When you add a checklist to a deal, it copies the template for that side —
+          Your buyer and seller checklist templates. When you add a checklist to a deal, it copies the template for that side —
           editing a template here never changes deals already in progress.
         </p>
       </div>
