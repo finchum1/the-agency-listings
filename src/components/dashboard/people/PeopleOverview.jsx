@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS } from "../../../lib/peopleStages";
+import { effectiveDue } from "../../../lib/checklists";
 import { usePeople } from "../../../hooks/usePeople";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
 import ContactButtons from "./ContactButtons";
@@ -85,6 +87,25 @@ export default function PeopleOverview() {
   const { people, loading, error, refresh } = usePeople();
   const { stages } = usePeopleStages();
   const [selectedId, setSelectedId] = useState(null);
+  const [openTasks, setOpenTasks] = useState([]);
+
+  const loadTasks = useCallback(async () => {
+    const { data } = await supabase.from("transaction_tasks").select("*").eq("done", false);
+    setOpenTasks(data || []);
+  }, []);
+
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  const completeTask = async (id) => {
+    setOpenTasks((list) => list.filter((t) => t.id !== id));
+    const { error: err } = await supabase
+      .from("transaction_tasks")
+      .update({ done: true, done_at: new Date().toISOString() })
+      .eq("id", id);
+    if (err) loadTasks();
+  };
 
   if (loading) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
 
@@ -123,6 +144,16 @@ export default function PeopleOverview() {
     .sort((a, b) => a.next_follow_up.localeCompare(b.next_follow_up));
   const dueNow = followUps.filter((p) => p.next_follow_up <= today);
   const dueSoon = followUps.filter((p) => p.next_follow_up > today);
+
+  const dueTasks = openTasks
+    .map((t) => {
+      const person = openDeals.find((p) => p.id === t.person_id);
+      return person ? { task: t, person, due: effectiveDue(t, person) } : null;
+    })
+    .filter((x) => x && x.due && x.due <= followHorizon)
+    .sort((a, b) => a.due.localeCompare(b.due));
+  const overdueTasks = dueTasks.filter((x) => x.due < today);
+  const upcomingTasks = dueTasks.filter((x) => x.due >= today);
 
   const selected = people.find((p) => p.id === selectedId) || null;
 
@@ -229,6 +260,48 @@ export default function PeopleOverview() {
         </section>
       </div>
 
+      <section className={`${card} space-y-3`}>
+        <h2 className="font-display text-base font-semibold">Checklist tasks due</h2>
+        {dueTasks.length === 0 ? (
+          <p className={`text-sm ${muted}`}>No checklist tasks are overdue or due in the next {FOLLOW_UP_DAYS} days.</p>
+        ) : (
+          <div className="space-y-4">
+            {[
+              ["Overdue", overdueTasks],
+              [`Next ${FOLLOW_UP_DAYS} days`, upcomingTasks],
+            ]
+              .filter(([, list]) => list.length > 0)
+              .map(([title, list]) => (
+                <div key={title} className="space-y-1.5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#1c1a17]/60 dark:text-[#faf9f7]/60">
+                    {title} ({list.length})
+                  </p>
+                  <ul className="space-y-1.5">
+                    {list.map(({ task, person, due }) => (
+                      <li key={task.id} className="flex items-start gap-2.5 rounded-xl border border-black/10 dark:border-white/15 px-3 py-2.5">
+                        <input
+                          type="checkbox"
+                          checked={false}
+                          onChange={() => completeTask(task.id)}
+                          aria-label="Mark done"
+                          className="mt-0.5 h-4 w-4 shrink-0 accent-[#ed2127]"
+                        />
+                        <button type="button" onClick={() => setSelectedId(person.id)} className="min-w-0 flex-1 text-left">
+                          <span className="block text-sm leading-snug">{task.text}</span>
+                          <span className={`block text-xs mt-0.5 truncate ${due < today ? "text-red-600 dark:text-red-400" : muted}`}>
+                            {person.name}
+                            {person.property_address ? ` · ${person.property_address}` : ""} · {dayLabel(due, today)}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+          </div>
+        )}
+      </section>
+
       {selected && (
         <PersonPanel
           key={selected.id}
@@ -238,7 +311,10 @@ export default function PeopleOverview() {
           prevStageNames={BOARDS[selected.stage_group].prev ? stages[BOARDS[selected.stage_group].prev.group] : null}
           position={0}
           total={0}
-          onClose={() => setSelectedId(null)}
+          onClose={() => {
+            setSelectedId(null);
+            loadTasks();
+          }}
           onChanged={refresh}
         />
       )}

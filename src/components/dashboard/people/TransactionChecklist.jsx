@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTransactionTasks } from "../../../hooks/useTransactionTasks";
 import { ANCHORS, SIDE_LABELS, effectiveDue, loadTemplate, ruleLabel } from "../../../lib/checklists";
 
@@ -29,6 +29,29 @@ export default function TransactionChecklist({ person, side, dates }) {
   const [newText, setNewText] = useState("");
   const [working, setWorking] = useState(false);
   const today = todayKey();
+
+  // Picking a side applies that side's checklist automatically. Switching
+  // sides swaps the checklist too, but only while nothing has been ticked
+  // off, so completed work is never thrown away.
+  const prevSide = useRef(side);
+  const tasksRef = useRef(tasks);
+  tasksRef.current = tasks;
+  useEffect(() => {
+    const prev = prevSide.current;
+    if (loading || prev === side) return;
+    prevSide.current = side;
+    if (!side) return;
+    const current = tasksRef.current;
+    const swap = current.length > 0 && prev && !current.some((t) => t.done);
+    if (current.length > 0 && !swap) return;
+    (async () => {
+      setWorking(true);
+      if (swap) await clearAll();
+      await applyTemplate(await loadTemplate(side));
+      setWorking(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [side, loading]);
 
   if (loading) return null;
 
@@ -91,7 +114,7 @@ export default function TransactionChecklist({ person, side, dates }) {
               </button>
             </>
           ) : (
-            <p className={`text-sm ${muted}`}>Choose Buyer or Seller above to add a checklist.</p>
+            <p className={`text-sm ${muted}`}>Choose Buyer or Seller above and the checklist is added automatically.</p>
           )}
         </div>
       ) : (
