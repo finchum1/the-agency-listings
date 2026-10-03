@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
-import { BOARDS, ARCHIVE_REASONS } from "../../../lib/peopleStages";
+import { BOARDS, ARCHIVE_REASONS, SOURCES } from "../../../lib/peopleStages";
 import ContactButtons from "./ContactButtons";
 
 const inputClass =
@@ -8,29 +8,93 @@ const inputClass =
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 const primaryBtn =
   "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60";
+const navBtn =
+  "h-8 w-8 flex items-center justify-center rounded-full border border-black/10 dark:border-white/15 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed";
+
+const FIELDS = ["name", "email", "phone", "source", "next_follow_up"];
+const TEXT_DEBOUNCE_MS = 700;
 
 function formatNoteTime(iso) {
   return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
-export default function PersonPanel({ person, onClose, onChanged }) {
-  const board = BOARDS[person.stage_group];
-  const [form, setForm] = useState({
+function toForm(person) {
+  return {
     name: person.name,
     email: person.email,
     phone: person.phone,
     source: person.source,
     next_follow_up: person.next_follow_up || "",
-  });
-  const [saving, setSaving] = useState(false);
+  };
+}
+
+// Edits save automatically: text fields after a short pause (and when the
+// panel closes or you jump to another contact), dropdowns/dates right away.
+export default function PersonPanel({
+  person,
+  stageNames,
+  nextStageNames,
+  position,
+  total,
+  onPrev,
+  onNext,
+  onClose,
+  onChanged,
+}) {
+  const board = BOARDS[person.stage_group];
+  const [form, setForm] = useState(() => toForm(person));
+  const formRef = useRef(form);
+  const savedRef = useRef(form);
+  const timerRef = useRef(null);
+  const onChangedRef = useRef(onChanged);
+  onChangedRef.current = onChanged;
+
+  const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [notes, setNotes] = useState([]);
   const [noteText, setNoteText] = useState("");
   const [addingNote, setAddingNote] = useState(false);
-  const [moveStage, setMoveStage] = useState(
-    board.next ? BOARDS[board.next.group].stages[0] : "",
-  );
+  const [moveStage, setMoveStage] = useState(nextStageNames?.[0] || "");
   const [archiveReason, setArchiveReason] = useState(ARCHIVE_REASONS[0]);
+
+  const flush = useCallback(async () => {
+    clearTimeout(timerRef.current);
+    const cur = formRef.current;
+    const saved = savedRef.current;
+    if (!cur.name.trim()) return;
+    const changes = {};
+    for (const key of FIELDS) {
+      if (cur[key] === saved[key]) continue;
+      changes[key] = key === "next_follow_up" ? cur[key] || null : cur[key].trim();
+    }
+    if (Object.keys(changes).length === 0) return;
+    savedRef.current = { ...saved, ...cur };
+    setStatus("Saving…");
+    const { error: err } = await supabase.from("people").update(changes).eq("id", person.id);
+    if (err) {
+      savedRef.current = saved;
+      setError(err.message);
+      setStatus("");
+      return;
+    }
+    setError("");
+    setStatus("Saved");
+    onChangedRef.current();
+  }, [person.id]);
+
+  // Closing the panel or jumping to another contact unmounts this one —
+  // push out anything still waiting on the debounce timer first.
+  useEffect(() => () => void flush(), [flush]);
+
+  const setField = (field, immediate) => (e) => {
+    const value = e.target.value;
+    formRef.current = { ...formRef.current, [field]: value };
+    setForm(formRef.current);
+    setStatus("");
+    clearTimeout(timerRef.current);
+    if (immediate) flush();
+    else timerRef.current = setTimeout(flush, TEXT_DEBOUNCE_MS);
+  };
 
   const loadNotes = useCallback(async () => {
     const { data } = await supabase
@@ -45,8 +109,6 @@ export default function PersonPanel({ person, onClose, onChanged }) {
     loadNotes();
   }, [loadNotes]);
 
-  const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
-
   const patch = async (changes) => {
     setError("");
     const { error: err } = await supabase.from("people").update(changes).eq("id", person.id);
@@ -56,20 +118,6 @@ export default function PersonPanel({ person, onClose, onChanged }) {
     }
     onChanged();
     return true;
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    if (!form.name.trim()) return;
-    setSaving(true);
-    await patch({
-      name: form.name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim(),
-      source: form.source.trim(),
-      next_follow_up: form.next_follow_up || null,
-    });
-    setSaving(false);
   };
 
   const addNote = async (e) => {
@@ -95,10 +143,12 @@ export default function PersonPanel({ person, onClose, onChanged }) {
   };
 
   const handleMove = async () => {
+    await flush();
     if (await patch({ stage_group: board.next.group, stage: moveStage })) onClose();
   };
 
   const handleArchive = async () => {
+    await flush();
     const ok = await patch({
       archived: true,
       archived_reason: archiveReason,
@@ -113,6 +163,8 @@ export default function PersonPanel({ person, onClose, onChanged }) {
 
   const handleDelete = async () => {
     if (!confirm(`Permanently delete ${person.name} and all their notes?`)) return;
+    clearTimeout(timerRef.current);
+    formRef.current = savedRef.current;
     const { error: err } = await supabase.from("people").delete().eq("id", person.id);
     if (err) {
       setError(err.message);
@@ -122,48 +174,98 @@ export default function PersonPanel({ person, onClose, onChanged }) {
     onClose();
   };
 
+  const sourceOptions = form.source && !SOURCES.includes(form.source) ? [form.source, ...SOURCES] : SOURCES;
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-black/40" />
       <div className="relative w-full max-w-md h-full overflow-y-auto bg-white dark:bg-[#1a1a1a] text-[#1c1a17] dark:text-[#faf9f7] shadow-xl p-6 space-y-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="font-display text-xl font-semibold truncate">{person.name}</h2>
-            <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5">
-              {board.title} · {person.stage}
-              {person.archived && " · Archived"}
-            </p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            {position > 0 && (
+              <>
+                <button type="button" onClick={onPrev} disabled={!onPrev} className={navBtn} aria-label="Previous contact in this column">
+                  ‹
+                </button>
+                <button type="button" onClick={onNext} disabled={!onNext} className={navBtn} aria-label="Next contact in this column">
+                  ›
+                </button>
+                <span className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+                  {position} of {total}
+                </span>
+              </>
+            )}
           </div>
-          <button type="button" onClick={onClose} className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]" aria-label="Close panel">
-            ✕
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 min-w-12 text-right">{status}</span>
+            <button type="button" onClick={onClose} className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]" aria-label="Close panel">
+              ✕
+            </button>
+          </div>
         </div>
 
-        <ContactButtons person={person} />
+        <div className="min-w-0">
+          <h2 className="font-display text-xl font-semibold truncate">{form.name || person.name}</h2>
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5">
+            {board.title} · {person.stage}
+            {person.archived && " · Archived"}
+          </p>
+        </div>
 
-        <form onSubmit={handleSave} className="space-y-3">
+        <ContactButtons person={{ ...person, phone: form.phone, email: form.email }} />
+
+        <div className="space-y-3">
           <div>
             <label className={labelClass}>Name</label>
-            <input required value={form.name} onChange={update("name")} className={inputClass} />
+            <input
+              value={form.name}
+              onChange={setField("name")}
+              onBlur={() => {
+                if (!formRef.current.name.trim()) {
+                  formRef.current = { ...formRef.current, name: savedRef.current.name };
+                  setForm(formRef.current);
+                } else flush();
+              }}
+              className={inputClass}
+            />
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Phone</label>
-              <input type="tel" value={form.phone} onChange={update("phone")} className={inputClass} />
+              <input type="tel" value={form.phone} onChange={setField("phone")} onBlur={flush} className={inputClass} />
             </div>
             <div>
               <label className={labelClass}>Email</label>
-              <input type="email" value={form.email} onChange={update("email")} className={inputClass} />
+              <input type="email" value={form.email} onChange={setField("email")} onBlur={flush} className={inputClass} />
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Next follow-up</label>
-              <input type="date" value={form.next_follow_up} onChange={update("next_follow_up")} className={inputClass} />
+              <input
+                type="date"
+                value={form.next_follow_up}
+                onChange={setField("next_follow_up", true)}
+                onClick={(e) => {
+                  try {
+                    e.currentTarget.showPicker();
+                  } catch {
+                    /* browser without showPicker — native control still works */
+                  }
+                }}
+                className={`${inputClass} cursor-pointer`}
+              />
             </div>
             <div>
               <label className={labelClass}>Source</label>
-              <input value={form.source} onChange={update("source")} className={inputClass} placeholder="Referral, Open house…" />
+              <select value={form.source} onChange={setField("source", true)} className={inputClass}>
+                <option value="">Select…</option>
+                {sourceOptions.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div>
@@ -173,7 +275,7 @@ export default function PersonPanel({ person, onClose, onChanged }) {
               onChange={(e) => patch({ stage: e.target.value })}
               className={inputClass}
             >
-              {board.stages.map((s) => (
+              {stageNames.map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
@@ -181,10 +283,7 @@ export default function PersonPanel({ person, onClose, onChanged }) {
             </select>
           </div>
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-          <button type="submit" disabled={saving} className={primaryBtn}>
-            {saving ? "Saving…" : "Save"}
-          </button>
-        </form>
+        </div>
 
         <section className="space-y-3">
           <h3 className="font-display text-base font-semibold">Notes</h3>
@@ -223,7 +322,7 @@ export default function PersonPanel({ person, onClose, onChanged }) {
           {board.next && !person.archived && (
             <div className="flex items-center gap-2 flex-wrap">
               <select value={moveStage} onChange={(e) => setMoveStage(e.target.value)} className={`${inputClass} !w-auto`}>
-                {BOARDS[board.next.group].stages.map((s) => (
+                {nextStageNames.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>

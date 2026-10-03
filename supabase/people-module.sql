@@ -145,3 +145,18 @@ drop trigger if exists create_person_from_lead on public.leads;
 create trigger create_person_from_lead
   after insert on public.leads
   for each row execute function public.create_person_from_lead();
+
+-- 6. Per-agent custom column names (renaming kanban stages). `stages` is
+--    { lead: [...], pipeline: [...], transaction: [...] }; any group
+--    missing falls back to the defaults in src/lib/peopleStages.js.
+create table if not exists public.people_settings (
+  owner_id uuid primary key default auth.uid() references public.profiles(id) on delete cascade,
+  stages jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+alter table public.people_settings enable row level security;
+drop policy if exists people_settings_owner_all on public.people_settings;
+create policy people_settings_owner_all on public.people_settings
+  for all
+  using (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled))
+  with check (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled));

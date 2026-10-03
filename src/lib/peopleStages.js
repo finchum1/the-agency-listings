@@ -25,3 +25,17 @@ export const ARCHIVE_REASONS = [
   "Timing / no longer moving",
   "Other",
 ];
+
+export const SOURCES = [
+  "Website inquiry",
+  "Referral",
+  "Past client",
+  "Sphere of influence",
+  "Open house",
+  "Sign call",
+  "Online portal",
+  "Social media",
+  "Cold call / door knocking",
+  "Added manually",
+  "Other",
+];
