@@ -226,12 +226,9 @@ create policy transaction_tasks_owner_all on public.transaction_tasks
 alter table public.profiles drop constraint if exists profiles_site_access_check;
 alter table public.profiles add constraint profiles_site_access_check check (site_access in ('full', 'limited', 'none'));
 
--- 10. New agent sites start with a copy of the template site's Areas of
---     Expertise (names, blurbs, descriptions, stats, photos). The template
---     is the single row in area_template_site (currently terrence-finchum);
---     RLS is on with no policies, so it can only be changed from SQL.
---     Photos are copied by URL — areas never delete the stored file, so
---     editing or deleting the original never breaks a copy.
+-- 10. (SUPERSEDED by section 11 — the live-site template below was
+--     replaced with a standalone snapshot.) New agent sites start with a
+--     copy of a template site's Areas of Expertise.
 create table if not exists public.area_template_site (
   id boolean primary key default true check (id),
   site_id uuid not null references public.agent_sites(id) on delete cascade
@@ -261,3 +258,37 @@ drop trigger if exists copy_template_areas on public.agent_sites;
 create trigger copy_template_areas
   after insert on public.agent_sites
   for each row execute function public.copy_template_areas();
+
+-- 11. The starting Areas of Expertise are a standalone snapshot
+--     (area_template_areas), NOT tied to any agent's live site — editing
+--     or deleting areas on terrence-finchum never changes what new agents
+--     get, and copies are never linked back. Photos are copied by URL;
+--     areas never delete the stored file, so they stay valid. RLS is on
+--     with no policies: the snapshot can only be changed from SQL.
+create table if not exists public.area_template_areas (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null,
+  name text not null,
+  blurb text not null default '',
+  description text not null default '',
+  photo_url text,
+  sort_order integer not null default 0,
+  stats jsonb not null default '[]'::jsonb
+);
+alter table public.area_template_areas enable row level security;
+
+create or replace function public.copy_template_areas()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.agent_site_areas (agent_site_id, slug, name, blurb, description, photo_url, sort_order, stats)
+  select new.id, t.slug, t.name, t.blurb, t.description, t.photo_url, t.sort_order, t.stats
+  from public.area_template_areas t;
+  return new;
+end;
+$$;
+
+drop table if exists public.area_template_site;

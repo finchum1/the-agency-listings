@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 import ImageUploadField from "./ImageUploadField";
+import AgentRow from "./AgentRow";
 
 const emptyForm = {
   email: "",
@@ -32,11 +33,10 @@ export default function AgentsPage() {
   const [success, setSuccess] = useState("");
   const [enablingId, setEnablingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
-  const [togglingAccessId, setTogglingAccessId] = useState(null);
-  const [togglingPeopleId, setTogglingPeopleId] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
 
-  const refresh = () => {
-    setLoading(true);
+  const refresh = (silent) => {
+    if (silent !== true) setLoading(true);
     supabase
       .from("profiles")
       .select("*")
@@ -47,7 +47,9 @@ export default function AgentsPage() {
       });
   };
 
-  useEffect(refresh, []);
+  useEffect(() => {
+    refresh();
+  }, []);
 
   const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
@@ -113,48 +115,6 @@ export default function AgentsPage() {
     }
   };
 
-  // Direct client update (no service-role API needed) — RLS's
-  // profiles_update_own_or_admin policy already lets an admin update any
-  // profile column, same as handleEnableLogin's login_enabled update
-  // above. Switchable anytime in either direction, independent of
-  // whether their login is enabled yet.
-  const handleTogglePeople = async (agent) => {
-    setError("");
-    setSuccess("");
-    setTogglingPeopleId(agent.id);
-    try {
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ people_enabled: !agent.people_enabled })
-        .eq("id", agent.id);
-      if (updateError) throw updateError;
-      refresh();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setTogglingPeopleId(null);
-    }
-  };
-
-  const handleToggleAccess = async (agent) => {
-    setError("");
-    setSuccess("");
-    setTogglingAccessId(agent.id);
-    const next = agent.site_access === "none" ? "full" : agent.site_access === "limited" ? "none" : "limited";
-    try {
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ site_access: next })
-        .eq("id", agent.id);
-      if (updateError) throw updateError;
-      refresh();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setTogglingAccessId(null);
-    }
-  };
-
   const handleDelete = async (agent) => {
     if (
       !confirm(
@@ -188,88 +148,21 @@ export default function AgentsPage() {
         {loading ? (
           <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>
         ) : (
-          <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl divide-y divide-black/5">
+          <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl divide-y divide-black/5 dark:divide-white/10">
             {agents.map((a) => (
-              <div key={a.id} className="px-5 py-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <img
-                    src={
-                      a.photo_url ||
-                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4' fill='%23e5e0d8'/%3E%3Cpath d='M4 20c0-4 4-6 8-6s8 2 8 6' fill='%23e5e0d8'/%3E%3C/svg%3E"
-                    }
-                    alt=""
-                    className="h-9 w-9 rounded-full object-cover bg-black/5 dark:bg-white/10 shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <p className="font-medium text-sm truncate">{a.full_name || "(no name yet)"}</p>
-                    <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">{a.email}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                      a.login_enabled ? "bg-emerald-50 text-emerald-700 dark:text-emerald-400" : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/50 dark:text-[#faf9f7]/50"
-                    }`}
-                  >
-                    {a.login_enabled ? "Can log in" : "No login"}
-                  </span>
-                  <span
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                      a.role === "admin" ? "bg-[#ed2127]/15 text-[#ed2127] dark:text-[#f2454b]" : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/60 dark:text-[#faf9f7]/60"
-                    }`}
-                  >
-                    {a.role === "admin" ? "Admin" : "Agent"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleAccess(a)}
-                    disabled={togglingAccessId === a.id}
-                    title="Click to cycle website access: Full → Blog only → No website"
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
-                      a.site_access === "limited"
-                        ? "bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-400"
-                        : a.site_access === "none"
-                          ? "bg-black/10 dark:bg-white/15 text-[#1c1a17]/70 dark:text-[#faf9f7]/70"
-                        : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/60 dark:text-[#faf9f7]/60"
-                    }`}
-                  >
-                    {togglingAccessId === a.id ? "…" : a.site_access === "limited" ? "Blog only" : a.site_access === "none" ? "No website" : "Full access"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleTogglePeople(a)}
-                    disabled={togglingPeopleId === a.id}
-                    title="Click to turn the People module (Leads, Pipeline) on or off for this agent"
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
-                      a.people_enabled
-                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400"
-                        : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/50 dark:text-[#faf9f7]/50"
-                    }`}
-                  >
-                    {togglingPeopleId === a.id ? "…" : a.people_enabled ? "People on" : "People off"}
-                  </button>
-                  {!a.login_enabled && (
-                    <button
-                      type="button"
-                      onClick={() => handleEnableLogin(a)}
-                      disabled={enablingId === a.id}
-                      className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline disabled:opacity-50 whitespace-nowrap"
-                    >
-                      {enablingId === a.id ? "Sending…" : "Enable Login"}
-                    </button>
-                  )}
-                  {a.id !== user?.id && (
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(a)}
-                      disabled={deletingId === a.id}
-                      className="text-xs font-semibold text-red-600 dark:text-red-400 hover:underline disabled:opacity-50 whitespace-nowrap"
-                    >
-                      {deletingId === a.id ? "Deleting…" : "Delete"}
-                    </button>
-                  )}
-                </div>
-              </div>
+              <AgentRow
+                key={a.id}
+                agent={a}
+                isSelf={a.id === user?.id}
+                expanded={expandedId === a.id}
+                onToggle={() => setExpandedId((id) => (id === a.id ? null : a.id))}
+                onSaved={() => refresh(true)}
+                onError={setError}
+                onEnableLogin={() => handleEnableLogin(a)}
+                enabling={enablingId === a.id}
+                onDelete={() => handleDelete(a)}
+                deleting={deletingId === a.id}
+              />
             ))}
           </div>
         )}
