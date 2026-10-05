@@ -53,6 +53,31 @@ export default function DashboardLayout() {
     ADMIN_ITEMS.some((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)),
   );
 
+  // The strip behind the phone's status bar takes its color from the page
+  // (html background) and theme-color. Left at the marketing defaults
+  // (cream page, red theme-color) it reads as a mismatched, frosted band
+  // above the white mobile header — match both to the header instead, and
+  // follow the light/dark switch.
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const root = document.documentElement;
+    const originalMeta = meta?.getAttribute("content");
+    const originalBg = root.style.backgroundColor;
+    const apply = () => {
+      const color = root.classList.contains("dark") ? "#1a1a1a" : "#ffffff";
+      meta?.setAttribute("content", color);
+      root.style.backgroundColor = color;
+    };
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => {
+      observer.disconnect();
+      if (meta && originalMeta != null) meta.setAttribute("content", originalMeta);
+      root.style.backgroundColor = originalBg;
+    };
+  }, []);
+
   // Never leave the mobile menu open behind a new page after a nav tap.
   useEffect(() => {
     setMobileNavOpen(false);
@@ -207,6 +232,8 @@ export default function DashboardLayout() {
         <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <img src={brokerage.logo} alt={brokerage.name} className="h-8 w-auto shrink-0" />
+            <span className="h-5 w-px bg-black/10 dark:bg-white/15" aria-hidden="true" />
+            <span className="text-[10px] font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Oklahoma</span>
           </div>
           <button
             type="button"
