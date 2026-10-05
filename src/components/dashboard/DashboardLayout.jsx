@@ -53,31 +53,6 @@ export default function DashboardLayout() {
     ADMIN_ITEMS.some((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)),
   );
 
-  // The strip behind the phone's status bar takes its color from the page
-  // (html background) and theme-color. Left at the marketing defaults
-  // (cream page, red theme-color) it reads as a mismatched, frosted band
-  // above the white mobile header — match both to the header instead, and
-  // follow the light/dark switch.
-  useEffect(() => {
-    const meta = document.querySelector('meta[name="theme-color"]');
-    const root = document.documentElement;
-    const originalMeta = meta?.getAttribute("content");
-    const originalBg = root.style.backgroundColor;
-    const apply = () => {
-      const color = root.classList.contains("dark") ? "#1a1a1a" : "#ffffff";
-      meta?.setAttribute("content", color);
-      root.style.backgroundColor = color;
-    };
-    apply();
-    const observer = new MutationObserver(apply);
-    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
-    return () => {
-      observer.disconnect();
-      if (meta && originalMeta != null) meta.setAttribute("content", originalMeta);
-      root.style.backgroundColor = originalBg;
-    };
-  }, []);
-
   // Never leave the mobile menu open behind a new page after a nav tap.
   useEffect(() => {
     setMobileNavOpen(false);

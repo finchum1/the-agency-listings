@@ -199,7 +199,7 @@ export default function PersonPanel({
   return (
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-black/40" />
-      <div className="relative w-full max-w-md h-full overflow-y-auto bg-white dark:bg-[#1a1a1a] text-[#1c1a17] dark:text-[#faf9f7] shadow-xl p-6 space-y-6">
+      <div className="relative w-full max-w-md h-full overflow-y-auto bg-white dark:bg-[#1a1a1a] text-[#1c1a17] dark:text-[#faf9f7] shadow-xl p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] space-y-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             {position > 0 && (

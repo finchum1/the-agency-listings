@@ -32,6 +32,22 @@
          the unambiguous, correctly-sized candidate. -->
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Installed home-screen app only: extend the page under the status
+         bar and push content down by the safe-area height. Browsers and
+         every public site are left untouched. -->
+    <script>
+      (function () {
+        try {
+          var standalone =
+            window.navigator.standalone === true ||
+            (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+          if (!standalone) return;
+          var vp = document.querySelector('meta[name="viewport"]');
+          if (vp) vp.setAttribute("content", vp.getAttribute("content") + ", viewport-fit=cover");
+          document.documentElement.style.paddingTop = "env(safe-area-inset-top)";
+        } catch (e) {}
+      })();
+    </script>
     <meta name="description" content="The Agency — property listing sites and agent dashboard" />
     <!-- PWA install/home-screen metadata for the dashboard host — see
          src/main.jsx's isAppHost() gate on the service worker itself;
@@ -40,7 +56,12 @@
     <meta name="theme-color" content="#ed2127" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- black-translucent: the page draws under the status bar (clock/battery
+         stay white), instead of iOS painting its own light, frosted band
+         above a dark dashboard. iOS stores this when the app is added to
+         the home screen. The strip behind the status bar is drawn by
+         StandaloneStatusBar.jsx. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="The Agency" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
