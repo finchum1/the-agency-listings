@@ -52,7 +52,7 @@ const COLLAPSED_COUNT = 4;
 // Preset categories instead of a blank free-text field — an agent staring
 // at an empty "Category" box doesn't know what we expect there. "Other"
 // drops back to free text for anything that doesn't fit.
-const CATEGORIES = ["Market Update", "Neighborhood Guide", "New Listing Spotlight", "Buyer Tips", "Seller Tips", "Just Sold"];
+const CATEGORIES = ["Market Update", "Neighborhood Guide", "New Listing Spotlight", "Buyer Tips", "Seller Tips", "Just Sold", "Weekly Local Events"];
 
 export default function PostsManager({ agentSiteId, agentId, posts, onChanged }) {
   const [editingId, setEditingId] = useState(null); // null closed, "new" adding

@@ -48,7 +48,7 @@ const COLLAPSED_COUNT = 4;
 
 // Preset categories instead of a blank free-text field — see PostsManager.jsx
 // for the same pattern on agent sites. "Other" drops back to free text.
-const CATEGORIES = ["Market Update", "Neighborhood Guide", "New Listing Spotlight", "Buyer Tips", "Seller Tips", "Just Sold"];
+const CATEGORIES = ["Market Update", "Neighborhood Guide", "New Listing Spotlight", "Buyer Tips", "Seller Tips", "Just Sold", "Weekly Local Events"];
 
 // Blog CRUD for the brokerage site — parallel to PostsManager.jsx (agent
 // sites), targeting brokerage_posts instead of agent_site_posts. No
