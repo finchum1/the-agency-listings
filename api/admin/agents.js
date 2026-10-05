@@ -140,7 +140,7 @@ export default async function handler(req, res) {
         license,
         phone,
         photo_url: photo_url || null,
-        site_access: site_access === "limited" ? "limited" : "full",
+        site_access: ["limited", "none"].includes(site_access) ? site_access : "full",
         people_enabled: !!people_enabled,
       })
       .eq("id", newUserId);

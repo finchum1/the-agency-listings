@@ -140,7 +140,7 @@ export default function AgentsPage() {
     setError("");
     setSuccess("");
     setTogglingAccessId(agent.id);
-    const next = agent.site_access === "limited" ? "full" : "limited";
+    const next = agent.site_access === "none" ? "full" : agent.site_access === "limited" ? "none" : "limited";
     try {
       const { error: updateError } = await supabase
         .from("profiles")
@@ -224,14 +224,16 @@ export default function AgentsPage() {
                     type="button"
                     onClick={() => handleToggleAccess(a)}
                     disabled={togglingAccessId === a.id}
-                    title="Click to switch between full editing access and blog-only access"
+                    title="Click to cycle website access: Full → Blog only → No website"
                     className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors disabled:opacity-50 ${
                       a.site_access === "limited"
                         ? "bg-amber-50 text-amber-700 dark:bg-amber-400/10 dark:text-amber-400"
+                        : a.site_access === "none"
+                          ? "bg-black/10 dark:bg-white/15 text-[#1c1a17]/70 dark:text-[#faf9f7]/70"
                         : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/60 dark:text-[#faf9f7]/60"
                     }`}
                   >
-                    {togglingAccessId === a.id ? "…" : a.site_access === "limited" ? "Blog only" : "Full access"}
+                    {togglingAccessId === a.id ? "…" : a.site_access === "limited" ? "Blog only" : a.site_access === "none" ? "No website" : "Full access"}
                   </button>
                   <button
                     type="button"
@@ -319,10 +321,12 @@ export default function AgentsPage() {
             <select value={form.site_access} onChange={update("site_access")} className={inputClass}>
               <option value="full">Full — all editing options (theme, bio, photos, custom domain, etc.)</option>
               <option value="limited">Limited — blog posts only</option>
+              <option value="none">None — no website (Listings, Upcoming and People only)</option>
             </select>
             <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-1">
               Limited agents only see their Blog Posts when they log in — you can still edit
-              everything else on their site yourself from the Agent Sites page. Switchable anytime.
+              everything else on their site yourself from the Agent Sites page. "None" hides My Site
+              entirely for agents who only use Listings, Upcoming and People. Switchable anytime.
             </p>
           </div>
           <label className="flex items-start gap-2.5 text-sm cursor-pointer">

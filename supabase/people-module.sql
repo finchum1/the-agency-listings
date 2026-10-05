@@ -220,3 +220,8 @@ create policy transaction_tasks_owner_all on public.transaction_tasks
     and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled)
     and exists (select 1 from public.people pe where pe.id = person_id and pe.owner_id = auth.uid())
   );
+
+-- 9. site_access gains 'none' for agents who only use Listings / Upcoming /
+--    People and have no website: 'full' | 'limited' (blog only) | 'none'.
+alter table public.profiles drop constraint if exists profiles_site_access_check;
+alter table public.profiles add constraint profiles_site_access_check check (site_access in ('full', 'limited', 'none'));

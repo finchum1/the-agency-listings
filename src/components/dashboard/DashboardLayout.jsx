@@ -4,25 +4,29 @@ import { supabase } from "../../lib/supabaseClient";
 import brokerage from "../../lib/brokerage";
 import { useAuth } from "../../hooks/useAuth";
 
-// Each item's own `activeWhen` instead of a generic "starts with `to`"
-// check — the generic version broke down for My Site specifically, since
-// its `to` ("/dashboard") is a literal string-prefix of every other tab's
-// path ("/dashboard/listings", "/dashboard/upcoming-listings", …), so it
-// matched everywhere and stayed highlighted no matter which tab you were
-// on. My Site is first — it's the /dashboard index route (App.jsx), so
-// it's what every "back to the dashboard" redirect (login, admin-gate
-// fallback, session-already-active root) lands on.
+// Plain top-level tabs. (My Site is a collapsible group of its own —
+// see SITE_ITEMS below — and the /dashboard index route just redirects to
+// the right first page for each agent, see DashboardHome.jsx.)
 const NAV_ITEMS = [
-  { to: "/dashboard", label: "My Site", activeWhen: (p) => p === "/dashboard" },
   { to: "/dashboard/listings", label: "Listings", activeWhen: (p) => p === "/dashboard/listings" || p.startsWith("/dashboard/listings/") },
   { to: "/dashboard/upcoming", label: "Upcoming", activeWhen: (p) => p === "/dashboard/upcoming" },
 ];
 
+// My Site is a collapsible group, one page per section. profiles.site_access
+// decides what an agent gets: "full" = every page, "limited" = Blog Posts
+// only, "none" = no My Site group at all (Listings / Upcoming / People
+// only).
+const SITE_ITEMS = [
+  { to: "/dashboard/site/analytics", label: "Analytics" },
+  { to: "/dashboard/site/details", label: "Site Details" },
+  { to: "/dashboard/site/testimonials", label: "Testimonials" },
+  { to: "/dashboard/site/areas", label: "Areas of Expertise" },
+  { to: "/dashboard/site/blog", label: "Blog Posts" },
+];
+
 // Sites/Agents/Brokerage Site are office settings, not something every
-// agent reaches for day to day — grouped under their own "Admin" heading
-// rather than mixed into NAV_ITEMS. Previously tucked into a dropdown
-// (AdminNavMenu.jsx) to save width in a horizontal header; a left-hand
-// sidebar has the vertical room to just list them, so that's gone now.
+// agent reaches for day to day — grouped under a collapsible "Admin"
+// group rather than mixed into NAV_ITEMS.
 // People is its own module, switched on per agent by an admin
 // (profiles.people_enabled) — separate from site_access, which only
 // governs website editing. Shown as a collapsible group.
@@ -48,6 +52,7 @@ export default function DashboardLayout() {
   const { profile, isAdmin } = useAuth();
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [siteOpen, setSiteOpen] = useState(location.pathname.startsWith("/dashboard/site"));
   const [peopleOpen, setPeopleOpen] = useState(location.pathname.startsWith("/dashboard/people"));
   const [adminOpen, setAdminOpen] = useState(
     ADMIN_ITEMS.some((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)),
@@ -95,90 +100,61 @@ export default function DashboardLayout() {
     profile?.photo_url ||
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4' fill='%23e5e0d8'/%3E%3Cpath d='M4 20c0-4 4-6 8-6s8 2 8 6' fill='%23e5e0d8'/%3E%3C/svg%3E";
 
-  const NavList = ({ onNavigate }) => (
-    <>
-      <div className="space-y-1">
-        {NAV_ITEMS.map((item) => (
-          <Link key={item.to} to={item.to} onClick={onNavigate} className={navLinkClass(item.activeWhen(location.pathname))}>
-            {/* "My Site" becomes "Blog" for a limited-access agent — see
-                SiteEditor.jsx/MySitePage.jsx, that page shows only their
-                Blog Posts in that case, so "My Site" would overpromise. */}
-            {item.to === "/dashboard" && profile?.site_access === "limited" ? "Blog" : item.label}
-          </Link>
-        ))}
+  const siteAccess = profile?.site_access || "full";
+  const siteItems = siteAccess === "limited" ? SITE_ITEMS.filter((i) => i.to.endsWith("/blog")) : SITE_ITEMS;
+
+  const NavList = ({ onNavigate }) => {
+    const group = (label, open, setOpen, items) => (
+      <div className="mt-1 space-y-1">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className={`${navLinkClass(false)} w-full flex items-center justify-between text-left`}
+        >
+          <span>{label}</span>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            className={`transition-transform ${open ? "rotate-90" : ""}`}
+          >
+            <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        {open && (
+          <div className="ml-3 pl-2 border-l border-black/10 dark:border-white/10 space-y-1">
+            {items.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={onNavigate}
+                className={navLinkClass(location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
-      {profile?.people_enabled && (
+    );
+
+    return (
+      <>
+        {siteAccess !== "none" && group("My Site", siteOpen, setSiteOpen, siteItems)}
         <div className="mt-1 space-y-1">
-          <button
-            type="button"
-            onClick={() => setPeopleOpen((v) => !v)}
-            aria-expanded={peopleOpen}
-            className={`${navLinkClass(false)} w-full flex items-center justify-between text-left`}
-          >
-            <span>People</span>
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              className={`transition-transform ${peopleOpen ? "rotate-90" : ""}`}
-            >
-              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          {peopleOpen && (
-            <div className="ml-3 pl-2 border-l border-black/10 dark:border-white/10 space-y-1">
-              {PEOPLE_ITEMS.map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={onNavigate}
-                  className={navLinkClass(location.pathname === item.to)}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          )}
+          {NAV_ITEMS.map((item) => (
+            <Link key={item.to} to={item.to} onClick={onNavigate} className={navLinkClass(item.activeWhen(location.pathname))}>
+              {item.label}
+            </Link>
+          ))}
         </div>
-      )}
-      {isAdmin && (
-        <div className="mt-1 space-y-1">
-          <button
-            type="button"
-            onClick={() => setAdminOpen((v) => !v)}
-            aria-expanded={adminOpen}
-            className={`${navLinkClass(false)} w-full flex items-center justify-between text-left`}
-          >
-            <span>Admin</span>
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              className={`transition-transform ${adminOpen ? "rotate-90" : ""}`}
-            >
-              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-          {adminOpen && (
-            <div className="ml-3 pl-2 border-l border-black/10 dark:border-white/10 space-y-1">
-              {ADMIN_ITEMS.map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={onNavigate}
-                  className={navLinkClass(location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </>
-  );
+        {profile?.people_enabled && group("People", peopleOpen, setPeopleOpen, PEOPLE_ITEMS)}
+        {isAdmin && group("Admin", adminOpen, setAdminOpen, ADMIN_ITEMS)}
+      </>
+    );
+  };
 
   const ProfileBlock = ({ onNavigate }) => (
     <div className="space-y-3">

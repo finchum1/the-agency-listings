@@ -16,6 +16,7 @@ import AgentsPage from "./components/dashboard/AgentsPage";
 import UpcomingModule from "./components/dashboard/UpcomingModule";
 import MyProfilePage from "./components/dashboard/MyProfilePage";
 import MySitePage from "./components/dashboard/MySitePage";
+import DashboardHome from "./components/dashboard/DashboardHome";
 import SitesPage from "./components/dashboard/SitesPage";
 import EditAgentSitePage from "./components/dashboard/EditAgentSitePage";
 import PublicListingPage from "./pages/PublicListingPage";
@@ -276,13 +277,18 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<MySitePage />} />
+        <Route index element={<DashboardHome />} />
         <Route path="listings" element={<ListingsTable />} />
         <Route path="listings/new" element={<NewListingPage />} />
         <Route path="listings/:id/edit" element={<EditListingPage />} />
         <Route path="listings/:id/flyer" element={<FlyerPage />} />
         <Route path="profile" element={<MyProfilePage />} />
-        <Route path="site" element={<MySitePage />} />
+        <Route path="site" element={<DashboardHome />} />
+        <Route path="site/analytics" element={<MySitePage section="analytics" />} />
+        <Route path="site/details" element={<MySitePage section="details" />} />
+        <Route path="site/testimonials" element={<MySitePage section="testimonials" />} />
+        <Route path="site/areas" element={<MySitePage section="areas" />} />
+        <Route path="site/blog" element={<MySitePage section="blog" />} />
         <Route path="upcoming" element={<UpcomingModule />} />
         <Route path="settings" element={<PeopleGate />}>
           <Route index element={<SettingsPage />} />
