@@ -321,7 +321,7 @@ export default function App() {
           }
         />
         <Route
-          path="sites/:agentId"
+          path="sites/:agentId/:section?"
           element={
             <ProtectedRoute adminOnly>
               <EditAgentSitePage />

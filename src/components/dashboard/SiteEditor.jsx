@@ -42,7 +42,7 @@ const SECTIONS = {
   },
 };
 
-export default function SiteEditor({ agentId, agentName, heading, section }) {
+export default function SiteEditor({ agentId, agentName, heading, section, hideHeader }) {
   const { site, testimonials, areas, posts, loading, error, refresh } = useAgentSiteEditor(
     agentId,
     agentName,
@@ -70,14 +70,16 @@ export default function SiteEditor({ agentId, agentName, heading, section }) {
 
   return (
     <div className="max-w-3xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-display font-semibold">{heading || meta?.title || "My Site"}</h1>
-        <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
-          {meta
-            ? meta.blurb
-            : "Your bio, testimonials, areas of expertise, and blog posts. Your listings show automatically — no separate step needed."}
-        </p>
-      </div>
+      {!hideHeader && (
+        <div>
+          <h1 className="text-2xl font-display font-semibold">{heading || meta?.title || "My Site"}</h1>
+          <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
+            {meta
+              ? meta.blurb
+              : "Your bio, testimonials, areas of expertise, and blog posts. Your listings show automatically — no separate step needed."}
+          </p>
+        </div>
+      )}
 
       {show("analytics") && (
         <PeriodAnalyticsPanel
