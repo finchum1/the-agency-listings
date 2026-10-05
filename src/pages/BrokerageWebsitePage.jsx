@@ -26,7 +26,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with
 
 export default function BrokerageWebsitePage() {
   return (
-    <div className="min-h-screen bg-[#faf9f7] overflow-x-clip">
+    <div className="min-h-screen bg-[#faf9f7] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] overflow-x-clip">
       <MarketingNav />
 
       {/* Hero */}
@@ -36,7 +36,7 @@ export default function BrokerageWebsitePage() {
             <h1 className="text-5xl sm:text-6xl font-display font-semibold leading-[1.08] mb-6">
               One office site. The whole market, searchable.
             </h1>
-            <p className="text-[17px] text-[#1c1a17]/70 leading-relaxed mb-8 max-w-md">
+            <p className="text-[17px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-8 max-w-md">
               A real IDX home search — every listing on the board, a live map, draw-your-own
               search area — plus the office's own listings, roster, and a real lead-capture
               valuation form. All one site, live right now.
@@ -44,7 +44,7 @@ export default function BrokerageWebsitePage() {
             <div className="flex flex-wrap items-center gap-4">
               <a
                 href={contactMailto("Interested in a Brokerage Site")}
-                className="text-sm font-semibold px-7 py-3.5 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 transition-colors"
+                className="text-sm font-semibold px-7 py-3.5 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 dark:bg-white dark:text-[#1c1a17] dark:hover:bg-white/90 transition-colors"
               >
                 Get in Touch
               </a>
@@ -52,7 +52,7 @@ export default function BrokerageWebsitePage() {
                 href="/brokerage"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1c1a17]/70 hover:text-[#1c1a17] transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] transition-colors"
               >
                 View a live example
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -78,13 +78,13 @@ export default function BrokerageWebsitePage() {
       </section>
 
       {/* Home Search — the headline capability */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
           <Reveal variant="fromLeft">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Search every home for sale, not just this office's.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
               A real reciprocal IDX search — the whole board, live. Draw a boundary right on the
               map and the list updates instantly. Sort, filter by beds/baths/price, switch between
               a full-width list or a split map view.
@@ -92,7 +92,7 @@ export default function BrokerageWebsitePage() {
             <ul className="space-y-3">
               {["Draw-a-boundary map search", "Full board, not a curated slice", "List and map, side by side"].map(
                 (item) => (
-                  <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75">
+                  <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75 dark:text-[#faf9f7]/75">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2">
                       <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -121,7 +121,7 @@ export default function BrokerageWebsitePage() {
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               The office's own inventory, front and center too.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
               Our Listings is the same search experience, scoped to just this office's own
               properties, sorted most-expensive-first — the site's own showcase, kept separate
               from the full-market Home Search.
@@ -130,7 +130,7 @@ export default function BrokerageWebsitePage() {
               href="/brokerage/listings"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:text-[#ed2127] transition-colors"
             >
               See it live
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -142,13 +142,13 @@ export default function BrokerageWebsitePage() {
       </section>
 
       {/* Home Valuation — honest lead capture */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
           <Reveal variant="fromLeft">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               A real lead, not a fabricated number.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
               The Home Valuation form collects an address and contact details and routes straight
               to the office's inbox for a real, agent-built market analysis — deliberately not an
               instant automated estimate the office can't actually stand behind.
@@ -156,7 +156,7 @@ export default function BrokerageWebsitePage() {
             <ul className="space-y-3">
               {["Lands directly in the office inbox", "Built for a real follow-up, not a guess", "One more way a visitor becomes a lead"].map(
                 (item) => (
-                  <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75">
+                  <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75 dark:text-[#faf9f7]/75">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2">
                       <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -173,7 +173,7 @@ export default function BrokerageWebsitePage() {
       </section>
 
       {/* Capability strip */}
-      <section className="px-6 lg:px-10 py-24 bg-white border-y border-black/5">
+      <section className="px-6 lg:px-10 py-24 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl">
           <Reveal className="max-w-xl mb-14">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold leading-tight">
@@ -190,9 +190,9 @@ export default function BrokerageWebsitePage() {
               ["One dashboard, one login", "Managed from the exact same dashboard as agent sites and listings — nothing extra to learn."],
             ].map(([title, copy], i) => (
               <Reveal key={title} delay={(i % 3) * 0.08} variant="scaleIn">
-                <div className="bg-white rounded-2xl shadow-xl shadow-black/5 p-6 h-full">
+                <div className="bg-white dark:bg-[#161616] rounded-2xl shadow-xl shadow-black/5 p-6 h-full">
                   <h3 className="font-display text-lg font-semibold mb-2">{title}</h3>
-                  <p className="text-sm text-[#1c1a17]/65 leading-relaxed">{copy}</p>
+                  <p className="text-sm text-[#1c1a17]/65 dark:text-[#faf9f7]/65 leading-relaxed">{copy}</p>
                 </div>
               </Reveal>
             ))}
@@ -206,12 +206,12 @@ export default function BrokerageWebsitePage() {
           <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
             Ready to give your office a front door like this?
           </h2>
-          <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-8">
+          <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-8">
             Sign-up is invite-only — reach out and we'll get you set up.
           </p>
           <a
             href={contactMailto("Interested in a Brokerage Site")}
-            className="inline-block text-sm font-semibold px-8 py-4 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 transition-colors"
+            className="inline-block text-sm font-semibold px-8 py-4 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 dark:bg-white dark:text-[#1c1a17] dark:hover:bg-white/90 transition-colors"
           >
             Get in Touch
           </a>

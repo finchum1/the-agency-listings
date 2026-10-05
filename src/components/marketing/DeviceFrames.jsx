@@ -39,7 +39,7 @@ export function BrowserWindow({ children, className }) {
         <span className="h-2.5 w-2.5 rounded-full bg-[#e8b23d]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#3fae5c]" />
       </div>
-      <div className="bg-[#faf9f7]">{children}</div>
+      <div className="bg-[#faf9f7] text-[#1c1a17]">{children}</div>
     </motion.div>
   );
 }

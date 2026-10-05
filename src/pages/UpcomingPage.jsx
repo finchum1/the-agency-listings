@@ -26,7 +26,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with
 
 export default function UpcomingPage() {
   return (
-    <div className="min-h-screen bg-[#faf9f7] overflow-x-clip">
+    <div className="min-h-screen bg-[#faf9f7] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] overflow-x-clip">
       <MarketingNav />
 
       {/* Hero */}
@@ -36,7 +36,7 @@ export default function UpcomingPage() {
             <h1 className="text-5xl sm:text-6xl font-display font-semibold leading-[1.08] mb-6">
               Know what's coming before it's public.
             </h1>
-            <p className="text-[17px] text-[#1c1a17]/70 leading-relaxed mb-8 max-w-md">
+            <p className="text-[17px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-8 max-w-md">
               Track a coming-soon listing and see what your buyers actually want — both live in
               the same dashboard, visible to the whole office.
             </p>
@@ -62,13 +62,13 @@ export default function UpcomingPage() {
           dense data table, not a photo, so it needs the extra display
           width to stay legible. Same "intro, then a big centered shot"
           pattern as PropertyWebsitesPage.jsx's real-listing showcase. */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl">
           <Reveal className="max-w-2xl mb-12">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               A coming-soon property, tracked before it's ever public.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed">
               Beds, baths, an estimated price, notes on the seller's timeline — logged the moment
               you hear about it, visible to the whole office. No slug, no public page, no SEO to
               worry about — just a shared, living list.
@@ -91,7 +91,7 @@ export default function UpcomingPage() {
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               What your buyers want, in one shared list.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed">
               Budget range, beds and baths, the areas they're considering — logged once, checked
               by anyone in the office. When a colleague's off-market lead matches, everyone
               already knows.
@@ -108,7 +108,7 @@ export default function UpcomingPage() {
       </section>
 
       {/* Capability strip */}
-      <section className="px-6 lg:px-10 py-24 bg-white border-y border-black/5">
+      <section className="px-6 lg:px-10 py-24 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl">
           <Reveal className="max-w-xl mb-14">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold leading-tight">
@@ -125,9 +125,9 @@ export default function UpcomingPage() {
               ["Nothing public", "Both lists live entirely inside the dashboard — no public page, no SEO surface."],
             ].map(([title, copy], i) => (
               <Reveal key={title} delay={(i % 3) * 0.08} variant="scaleIn">
-                <div className="bg-white rounded-2xl shadow-xl shadow-black/5 p-6 h-full">
+                <div className="bg-white dark:bg-[#161616] rounded-2xl shadow-xl shadow-black/5 p-6 h-full">
                   <h3 className="font-display text-lg font-semibold mb-2">{title}</h3>
-                  <p className="text-sm text-[#1c1a17]/65 leading-relaxed">{copy}</p>
+                  <p className="text-sm text-[#1c1a17]/65 dark:text-[#faf9f7]/65 leading-relaxed">{copy}</p>
                 </div>
               </Reveal>
             ))}

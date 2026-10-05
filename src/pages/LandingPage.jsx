@@ -30,7 +30,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#faf9f7] overflow-x-clip">
+    <div className="min-h-screen bg-[#faf9f7] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] overflow-x-clip">
       <MarketingNav />
 
       {/* Hero — dashboard-first */}
@@ -42,14 +42,14 @@ export default function LandingPage() {
               <br />
               <span className="italic text-[#ed2127]">One dashboard.</span>
             </h1>
-            <p className="text-[17px] text-[#1c1a17]/70 leading-relaxed mb-8 max-w-md">
+            <p className="text-[17px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-8 max-w-md">
               Property sites, agent sites, leads, pipeline and transactions, coming-soon
               listings, and what your buyers want — all in the same place.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <a
                 href="#products"
-                className="text-sm font-semibold px-7 py-3.5 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 transition-colors inline-flex items-center gap-1.5"
+                className="text-sm font-semibold px-7 py-3.5 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 dark:bg-white dark:text-[#1c1a17] dark:hover:bg-white/90 transition-colors inline-flex items-center gap-1.5"
               >
                 See how it works
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -80,7 +80,7 @@ export default function LandingPage() {
           jargon most visitors wouldn't recognize, and besides, this page
           isn't about the old workflow anymore, it's about what the
           dashboard does today. */}
-      <section className="border-y border-black/5 bg-white">
+      <section className="border-y border-black/5 dark:border-white/10 bg-white dark:bg-[#161616]">
         <div className="mx-auto max-w-6xl px-6 lg:px-10 py-12 grid sm:grid-cols-2 lg:grid-cols-5 gap-8 text-center">
           {[
             ["Brokerage Site", "The office's own front door — full MLS search, draw-a-boundary, and more.", "/brokerage-website"],
@@ -93,7 +93,7 @@ export default function LandingPage() {
               <Link to={path} className="group block">
                 <p className="text-lg leading-snug">
                   <span className="font-display italic text-[#ed2127] group-hover:underline">{word}</span>{" "}
-                  <span className="text-[#1c1a17]/80">{copy}</span>
+                  <span className="text-[#1c1a17]/80 dark:text-[#faf9f7]/80">{copy}</span>
                 </p>
               </Link>
             </Reveal>
@@ -104,7 +104,7 @@ export default function LandingPage() {
       {/* Three products — peer highlights, each linking to its own
           deep-dive page, ordered to match MarketingNav.jsx's own link
           order: Brokerage Site, Agent Websites, Property Sites. Alternates
-          image-left/image-right (and the bg-white band) by position for
+          image-left/image-right (and the bg-white dark:bg-[#161616] band) by position for
           rhythm down the page — keep that alternation if this order ever
           changes again, not just the content. Home Search is the headline
           capability for the Brokerage Site section (draw-a-boundary map
@@ -116,13 +116,13 @@ export default function LandingPage() {
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               The office's own front door — searching the whole market.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
               A real IDX home search across the whole board, draw-a-boundary map search, the
               office's own listings, and an honest lead-capture valuation form — all one site.
             </p>
             <Link
               to="/brokerage-website"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:text-[#ed2127] transition-colors"
             >
               See how it works
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -139,7 +139,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
           <Reveal variant="fromLeft" className="order-2 lg:order-1">
             <BrowserFrame src="/images/landing/agent-site-home.jpg" alt="Terrence Finchum's agent website" />
@@ -148,13 +148,13 @@ export default function LandingPage() {
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Every agent's own site, on the same trusted brand.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
               Your own bio, your own listings, your own blog — styled the way you want it, built
               on The Agency's brand. This one is live right now, and it took minutes to set up.
             </p>
             <Link
               to="/agent-websites"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:text-[#ed2127] transition-colors"
             >
               See how it works
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -171,14 +171,14 @@ export default function LandingPage() {
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               A premium site for every listing — instantly.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
               Fill out a form and a full property site goes live: gallery, hero video, open
               houses, a contact form that reaches you directly. Update status the moment a deal
               changes — no redeploy, ever.
             </p>
             <Link
               to="/property-websites"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:text-[#ed2127] transition-colors"
             >
               See how it works
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -197,26 +197,26 @@ export default function LandingPage() {
 
       {/* People — leads, pipeline, transactions. Sample-data rendering of
           the real boards (the module is private, behind a login). */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
           <Reveal variant="fromLeft" className="order-2 lg:order-1">
             <BrowserWindow>
               <BoardMock title="Pipeline" columns={PIPELINE_COLUMNS.slice(2)} />
             </BrowserWindow>
-            <p className="text-[11px] text-[#1c1a17]/40 mt-3 text-center">Sample data</p>
+            <p className="text-[11px] text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-3 text-center">Sample data</p>
           </Reveal>
           <Reveal variant="fromRight" delay={0.1} className="order-1 lg:order-2">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Every lead, every deal — from first inquiry to closing.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
               Website inquiries land on your Leads board automatically. Move people through your
               pipeline, then into Transactions with their dates, parties, and a buyer or seller
               checklist that builds itself.
             </p>
             <Link
               to="/people"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:text-[#ed2127] transition-colors"
             >
               See how it works
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -237,14 +237,14 @@ export default function LandingPage() {
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Dark mode, and an app you can actually install.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
               Switch the dashboard to light, dark, or match your device — set it once in Settings.
               And it installs straight to your home screen like a real app, no App Store required.
             </p>
             <ul className="space-y-3">
               {["Light, dark, or system — your call", "Installs to your home screen", "The same dashboard, just yours"].map(
                 (item) => (
-                  <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75">
+                  <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75 dark:text-[#faf9f7]/75">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2">
                       <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -264,18 +264,18 @@ export default function LandingPage() {
           products above (no browser-frame screenshot: neither has a public
           page to show, both live inside the dashboard itself), styled off
           AgentWebsitesPage.jsx's chip-grid pattern instead. */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl">
           <Reveal className="max-w-2xl mb-10">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Built for the whole office, not just one listing.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6">
               Two more tools live in the same dashboard, used quietly every day.
             </p>
             <Link
               to="/upcoming"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:text-[#ed2127] transition-colors"
             >
               See how it works
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -285,21 +285,21 @@ export default function LandingPage() {
           </Reveal>
 
           <div className="grid sm:grid-cols-2 gap-6">
-            <Reveal variant="scaleIn" className="bg-[#faf9f7] rounded-2xl shadow-xl shadow-black/5 p-8">
+            <Reveal variant="scaleIn" className="bg-[#faf9f7] dark:bg-[#0d0d0d] rounded-2xl shadow-xl shadow-black/5 p-8">
               <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">
                 Upcoming Listings
               </p>
-              <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed">
+              <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed">
                 Track a coming-soon property before it's ever public — beds, baths, an estimated
                 price, notes on the seller's timeline. The whole office sees it, not just the one
                 agent.
               </p>
             </Reveal>
-            <Reveal variant="scaleIn" delay={0.1} className="bg-[#faf9f7] rounded-2xl shadow-xl shadow-black/5 p-8">
+            <Reveal variant="scaleIn" delay={0.1} className="bg-[#faf9f7] dark:bg-[#0d0d0d] rounded-2xl shadow-xl shadow-black/5 p-8">
               <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">
                 Buyer Needs
               </p>
-              <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed">
+              <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed">
                 List exactly what a buyer wants — budget, beds, baths, the areas they're
                 considering. When a colleague's off-market lead matches, everyone already knows.
               </p>

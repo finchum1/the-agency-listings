@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import brokerage from "../../lib/brokerage";
+import { useTheme } from "../../hooks/useTheme";
 
 // Order matches the home page's own product sections (LandingPage.jsx) —
 // Brokerage Site leads, then Agent Websites, then Property Sites, then
@@ -43,6 +44,45 @@ const LINKS = [
 // a Latchpoint Studios marketing subdomain with no dashboard access at
 // all), not a login funnel. /login itself is untouched and still reachable
 // by direct URL on the main app host.
+// Light/dark switch for the marketing pages. useTheme (shared with the
+// dashboard) owns storage and the `dark` class on <html>; this just flips
+// between the two explicit choices, starting from whatever the page is
+// showing right now (the device setting until someone picks one).
+function ThemeToggle() {
+  const [, setTheme] = useTheme();
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains("dark"));
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const sync = () => setIsDark(root.classList.contains("dark"));
+    sync();
+    const observer = new MutationObserver(sync);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <button
+      type="button"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      className="p-2 rounded-full text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] transition-colors"
+    >
+      {isDark ? (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+        </svg>
+      ) : (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 export default function MarketingNav() {
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -62,7 +102,7 @@ export default function MarketingNav() {
   return (
     <header
       className={`sticky top-0 z-40 transition-colors duration-300 ${
-        scrolled ? "bg-white/95 backdrop-blur-md border-b border-black/5 shadow-sm" : "bg-transparent border-b border-transparent"
+        scrolled ? "bg-white/95 dark:bg-[#0d0d0d]/95 backdrop-blur-md border-b border-black/5 dark:border-white/10 shadow-sm" : "bg-transparent border-b border-transparent"
       }`}
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
@@ -80,7 +120,7 @@ export default function MarketingNav() {
                     key={link.path}
                     to={link.path}
                     className={`text-sm font-medium px-4 py-2 rounded-full transition-colors ${
-                      active ? "bg-[#ed2127] text-white shadow-sm" : "text-[#1c1a17]/70 hover:bg-[#ed2127]/10 hover:text-[#ed2127]"
+                      active ? "bg-[#ed2127] text-white shadow-sm" : "text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-[#ed2127]/10 hover:text-[#ed2127]"
                     }`}
                   >
                     {link.label}
@@ -89,12 +129,14 @@ export default function MarketingNav() {
               })}
             </nav>
 
+            <ThemeToggle />
+
             <button
               type="button"
               onClick={() => setMobileNavOpen((v) => !v)}
               aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileNavOpen}
-              className="sm:hidden -mr-1 p-2 rounded-full text-[#1c1a17]/70 hover:bg-black/5 hover:text-[#1c1a17]"
+              className="sm:hidden -mr-1 p-2 rounded-full text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
             >
               {mobileNavOpen ? (
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -110,7 +152,7 @@ export default function MarketingNav() {
         </div>
 
         {mobileNavOpen && (
-          <nav className="sm:hidden mb-4 rounded-xl bg-white border border-black/5 shadow-sm p-2 flex flex-col gap-1">
+          <nav className="sm:hidden mb-4 rounded-xl bg-white dark:bg-[#161616] border border-black/5 dark:border-white/10 shadow-sm p-2 flex flex-col gap-1">
             {LINKS.map((link) => {
               const active = location.pathname === link.path;
               return (
@@ -118,7 +160,7 @@ export default function MarketingNav() {
                   key={link.path}
                   to={link.path}
                   className={`rounded-lg px-3 py-2.5 text-sm font-medium ${
-                    active ? "bg-[#ed2127] text-white" : "text-[#1c1a17]/70"
+                    active ? "bg-[#ed2127] text-white" : "text-[#1c1a17]/70 dark:text-[#faf9f7]/70"
                   }`}
                 >
                   {link.label}

@@ -218,7 +218,7 @@ export default function AgentsPage() {
             </select>
             <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-1">
               Limited agents only see their Blog Posts when they log in — you can still edit
-              everything else on their site yourself from the Agent Sites page. "None" hides My Site
+              everything else on their site yourself from the Agent Sites page. "None" hides Website
               entirely for agents who only use Listings, Upcoming and People. Switchable anytime.
             </p>
           </div>

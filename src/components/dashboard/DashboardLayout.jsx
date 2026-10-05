@@ -4,7 +4,7 @@ import { supabase } from "../../lib/supabaseClient";
 import brokerage from "../../lib/brokerage";
 import { useAuth } from "../../hooks/useAuth";
 
-// Plain top-level tabs. (My Site is a collapsible group of its own —
+// Plain top-level tabs. (Website is a collapsible group of its own —
 // see SITE_ITEMS below — and the /dashboard index route just redirects to
 // the right first page for each agent, see DashboardHome.jsx.)
 const NAV_ITEMS = [
@@ -12,9 +12,9 @@ const NAV_ITEMS = [
   { to: "/dashboard/upcoming", label: "Upcoming", activeWhen: (p) => p === "/dashboard/upcoming" },
 ];
 
-// My Site is a collapsible group, one page per section. profiles.site_access
+// Website is a collapsible group, one page per section. profiles.site_access
 // decides what an agent gets: "full" = every page, "limited" = Blog Posts
-// only, "none" = no My Site group at all (Listings / Upcoming / People
+// only, "none" = no Website group at all (Listings / Upcoming / People
 // only).
 const SITE_ITEMS = [
   { to: "/dashboard/site/analytics", label: "Analytics" },
@@ -142,7 +142,8 @@ export default function DashboardLayout() {
 
     return (
       <>
-        {siteAccess !== "none" && group("My Site", siteOpen, setSiteOpen, siteItems)}
+        {siteAccess !== "none" && group("Website", siteOpen, setSiteOpen, siteItems)}
+        {profile?.people_enabled && group("People", peopleOpen, setPeopleOpen, PEOPLE_ITEMS)}
         <div className="mt-1 space-y-1">
           {NAV_ITEMS.map((item) => (
             <Link key={item.to} to={item.to} onClick={onNavigate} className={navLinkClass(item.activeWhen(location.pathname))}>
@@ -150,7 +151,6 @@ export default function DashboardLayout() {
             </Link>
           ))}
         </div>
-        {profile?.people_enabled && group("People", peopleOpen, setPeopleOpen, PEOPLE_ITEMS)}
         {isAdmin && group("Admin", adminOpen, setAdminOpen, ADMIN_ITEMS)}
       </>
     );

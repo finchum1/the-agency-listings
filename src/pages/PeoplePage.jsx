@@ -24,7 +24,7 @@ const SAMPLE = "Sample data";
 
 export default function PeoplePage() {
   return (
-    <div className="min-h-screen bg-[#faf9f7] overflow-x-clip">
+    <div className="min-h-screen bg-[#faf9f7] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] overflow-x-clip">
       <MarketingNav />
 
       {/* Hero */}
@@ -36,7 +36,7 @@ export default function PeoplePage() {
               <br />
               <span className="italic text-[#ed2127]">Nothing slips.</span>
             </h1>
-            <p className="text-[17px] text-[#1c1a17]/70 leading-relaxed mb-8 max-w-md">
+            <p className="text-[17px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-8 max-w-md">
               Leads, pipeline and transactions on simple boards — with one-tap calling and texting,
               follow-up reminders, notes, and a checklist for every closing.
             </p>
@@ -49,20 +49,20 @@ export default function PeoplePage() {
             <BrowserWindow>
               <BoardMock title="Leads" columns={LEAD_COLUMNS} />
             </BrowserWindow>
-            <p className="text-[11px] text-[#1c1a17]/40 mt-3 text-center">{SAMPLE}</p>
+            <p className="text-[11px] text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-3 text-center">{SAMPLE}</p>
           </motion.div>
         </div>
       </section>
 
       {/* Leads */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
           <Reveal variant="fromLeft">
             <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">Leads</p>
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               A website inquiry becomes a lead the moment it's sent.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
               When someone fills out the contact form on your agent site or a listing page, they
               land on your Leads board automatically — with their message saved as the first note.
               No retyping, no forgotten email.
@@ -73,7 +73,7 @@ export default function PeoplePage() {
                 "A next follow-up date on everyone — overdue ones show red",
                 "Drag people between stages, and rename the stages to fit how you work",
               ].map((item) => (
-                <li key={item} className="flex items-start gap-3 text-sm text-[#1c1a17]/75">
+                <li key={item} className="flex items-start gap-3 text-sm text-[#1c1a17]/75 dark:text-[#faf9f7]/75">
                   <svg className="mt-0.5 shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2">
                     <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -86,7 +86,7 @@ export default function PeoplePage() {
             <BrowserWindow>
               <BoardMock title="Leads" columns={LEAD_COLUMNS.slice(0, 3)} />
             </BrowserWindow>
-            <p className="text-[11px] text-[#1c1a17]/40 mt-3 text-center">{SAMPLE}</p>
+            <p className="text-[11px] text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-3 text-center">{SAMPLE}</p>
           </Reveal>
         </div>
       </section>
@@ -98,14 +98,14 @@ export default function PeoplePage() {
             <BrowserWindow>
               <BoardMock title="Pipeline" columns={PIPELINE_COLUMNS.slice(1)} />
             </BrowserWindow>
-            <p className="text-[11px] text-[#1c1a17]/40 mt-3 text-center">{SAMPLE}</p>
+            <p className="text-[11px] text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-3 text-center">{SAMPLE}</p>
           </Reveal>
           <Reveal variant="fromRight" delay={0.1} className="order-1 lg:order-2">
             <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">Pipeline</p>
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Know who's ready in a year, and who's ready this week.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
               Sort the people you're working with by when they'll actually move — 12+ months out
               down to Active — and keep every conversation on record with timestamped notes. When
               they're ready, one button moves them to Transactions.
@@ -115,14 +115,14 @@ export default function PeoplePage() {
       </section>
 
       {/* Transactions */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl">
           <Reveal className="max-w-2xl mb-12">
             <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">Transactions</p>
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Contract to closing, with a checklist that builds itself.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed">
               Every deal tracks the property, price and commission, the other agent, title company
               and lender, and the dates that matter — contract, inspection, appraisal, financing and
               closing. Pick buyer or seller and your checklist is added automatically, with due dates
@@ -133,7 +133,7 @@ export default function PeoplePage() {
             <BrowserWindow className="max-w-4xl mx-auto">
               <TransactionMock />
             </BrowserWindow>
-            <p className="text-[11px] text-[#1c1a17]/40 mt-3 text-center">{SAMPLE}</p>
+            <p className="text-[11px] text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-3 text-center">{SAMPLE}</p>
           </Reveal>
         </div>
       </section>
@@ -146,7 +146,7 @@ export default function PeoplePage() {
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Open it in the morning. Know your day.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed max-w-md">
               One page shows how many people sit in each stage, what's coming up this week —
               inspections, appraisals, closings — who's due a follow-up, which checklist tasks are
               overdue, and what your open deals are worth.
@@ -156,13 +156,13 @@ export default function PeoplePage() {
             <BrowserWindow>
               <OverviewMock />
             </BrowserWindow>
-            <p className="text-[11px] text-[#1c1a17]/40 mt-3 text-center">{SAMPLE}</p>
+            <p className="text-[11px] text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-3 text-center">{SAMPLE}</p>
           </Reveal>
         </div>
       </section>
 
       {/* Capability strip */}
-      <section className="px-6 lg:px-10 py-24 bg-white border-y border-black/5">
+      <section className="px-6 lg:px-10 py-24 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl">
           <Reveal className="max-w-xl mb-14">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold leading-tight">
@@ -179,9 +179,9 @@ export default function PeoplePage() {
               ["Works on your phone", "Install the dashboard to your home screen and work your boards anywhere."],
             ].map(([title, copy], i) => (
               <Reveal key={title} delay={(i % 3) * 0.08} variant="scaleIn">
-                <div className="bg-white rounded-2xl shadow-xl shadow-black/5 p-6 h-full">
+                <div className="bg-white dark:bg-[#161616] rounded-2xl shadow-xl shadow-black/5 p-6 h-full">
                   <h3 className="font-display text-lg font-semibold mb-2">{title}</h3>
-                  <p className="text-sm text-[#1c1a17]/65 leading-relaxed">{copy}</p>
+                  <p className="text-sm text-[#1c1a17]/65 dark:text-[#faf9f7]/65 leading-relaxed">{copy}</p>
                 </div>
               </Reveal>
             ))}

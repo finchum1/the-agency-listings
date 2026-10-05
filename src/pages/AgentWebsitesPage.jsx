@@ -58,7 +58,7 @@ const chip = {
 
 export default function AgentWebsitesPage() {
   return (
-    <div className="min-h-screen bg-[#faf9f7] overflow-x-clip">
+    <div className="min-h-screen bg-[#faf9f7] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] overflow-x-clip">
       <MarketingNav />
 
       {/* Hero */}
@@ -68,14 +68,14 @@ export default function AgentWebsitesPage() {
             <h1 className="text-5xl sm:text-6xl font-display font-semibold leading-[1.08] mb-6">
               Every agent's own site, on the same trusted brand.
             </h1>
-            <p className="text-[17px] text-[#1c1a17]/70 leading-relaxed mb-8 max-w-md">
+            <p className="text-[17px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-8 max-w-md">
               A personal bio, testimonials, listings, and a blog — styled the way you want it,
               built on The Agency's actual brand. Live in minutes, not weeks.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <a
                 href={contactMailto("Interested in an Agent Website")}
-                className="text-sm font-semibold px-7 py-3.5 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 transition-colors"
+                className="text-sm font-semibold px-7 py-3.5 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 dark:bg-white dark:text-[#1c1a17] dark:hover:bg-white/90 transition-colors"
               >
                 Get in Touch
               </a>
@@ -83,7 +83,7 @@ export default function AgentWebsitesPage() {
                 href="/sites/terrence-finchum"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1c1a17]/70 hover:text-[#1c1a17] transition-colors"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] transition-colors"
               >
                 View a live example
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -106,13 +106,13 @@ export default function AgentWebsitesPage() {
       </section>
 
       {/* Personal brand */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
           <Reveal variant="fromLeft">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Your bio, your story, your track record.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
               Fill in your own bio, stats, and testimonials from your own site editor — the same
               self-serve form pattern as the listings dashboard. No developer touches your page,
               ever.
@@ -120,7 +120,7 @@ export default function AgentWebsitesPage() {
             <ul className="space-y-3">
               {["Your own photo, bio, and stats", "Real client testimonials", "Service areas you actually work"].map(
                 (item) => (
-                  <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75">
+                  <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75 dark:text-[#faf9f7]/75">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2">
                       <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -143,7 +143,7 @@ export default function AgentWebsitesPage() {
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Make it yours — without ever going off-brand.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed">
               Four templates, six font pairings, and an accent color locked to The Agency's own
               red — every combination still reads as unmistakably The Agency, automatically.
             </p>
@@ -157,10 +157,10 @@ export default function AgentWebsitesPage() {
             className="grid sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-10"
           >
             {THEMES.map((t) => (
-              <motion.div key={t.label} variants={chip} className="bg-white rounded-2xl shadow-xl shadow-black/5 p-4">
+              <motion.div key={t.label} variants={chip} className="bg-white dark:bg-[#161616] rounded-2xl shadow-xl shadow-black/5 p-4">
                 <div className="flex gap-1.5 mb-3">
                   {t.swatches.map((c, i) => (
-                    <span key={i} className="h-5 w-5 rounded-full border border-black/10" style={{ background: c }} />
+                    <span key={i} className="h-5 w-5 rounded-full border border-black/10 dark:border-white/15" style={{ background: c }} />
                   ))}
                 </div>
                 <p className="text-sm font-semibold">{t.label}</p>
@@ -176,14 +176,14 @@ export default function AgentWebsitesPage() {
             className="grid sm:grid-cols-3 gap-4"
           >
             {FONT_PAIRINGS.map((f) => (
-              <motion.div key={f.label} variants={chip} className="bg-white rounded-2xl shadow-xl shadow-black/5 p-5">
+              <motion.div key={f.label} variants={chip} className="bg-white dark:bg-[#161616] rounded-2xl shadow-xl shadow-black/5 p-5">
                 {f.tag && (
                   <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-2">{f.tag}</p>
                 )}
                 <p className="text-2xl leading-none mb-2.5" style={{ fontFamily: f.display }}>
                   Aa
                 </p>
-                <p className="text-xs font-medium text-[#1c1a17]/70" style={{ fontFamily: f.body }}>
+                <p className="text-xs font-medium text-[#1c1a17]/70 dark:text-[#faf9f7]/70" style={{ fontFamily: f.body }}>
                   {f.label}
                 </p>
               </motion.div>
@@ -193,13 +193,13 @@ export default function AgentWebsitesPage() {
       </section>
 
       {/* Blog + contact */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
           <Reveal variant="fromLeft">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               A built-in blog, and leads that land in your inbox.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed max-w-md">
               Publish market updates and neighborhood guides without a separate tool. The contact
               form on every agent site emails you directly — the same reliable pattern every
               listing site already uses.
@@ -222,7 +222,7 @@ export default function AgentWebsitesPage() {
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               The site clients actually see, on the device they actually use.
             </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed max-w-md">
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed max-w-md">
               Fully responsive from the same single build a client meets you with in person —
               no separate mobile version to keep in sync.
             </p>
@@ -236,12 +236,12 @@ export default function AgentWebsitesPage() {
           <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
             Ready for a site that's actually yours?
           </h2>
-          <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-8">
+          <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-8">
             Sign-up is invite-only — reach out and we'll get you set up.
           </p>
           <a
             href={contactMailto("Interested in an Agent Website")}
-            className="inline-block text-sm font-semibold px-8 py-4 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 transition-colors"
+            className="inline-block text-sm font-semibold px-8 py-4 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 dark:bg-white dark:text-[#1c1a17] dark:hover:bg-white/90 transition-colors"
           >
             Get in Touch
           </a>

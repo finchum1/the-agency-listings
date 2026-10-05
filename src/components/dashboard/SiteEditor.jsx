@@ -72,7 +72,7 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
     <div className="max-w-3xl space-y-8">
       {!hideHeader && (
         <div>
-          <h1 className="text-2xl font-display font-semibold">{heading || meta?.title || "My Site"}</h1>
+          <h1 className="text-2xl font-display font-semibold">{heading || meta?.title || "Website"}</h1>
           <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
             {meta
               ? meta.blurb
