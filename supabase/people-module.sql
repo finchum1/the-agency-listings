@@ -225,3 +225,39 @@ create policy transaction_tasks_owner_all on public.transaction_tasks
 --    People and have no website: 'full' | 'limited' (blog only) | 'none'.
 alter table public.profiles drop constraint if exists profiles_site_access_check;
 alter table public.profiles add constraint profiles_site_access_check check (site_access in ('full', 'limited', 'none'));
+
+-- 10. New agent sites start with a copy of the template site's Areas of
+--     Expertise (names, blurbs, descriptions, stats, photos). The template
+--     is the single row in area_template_site (currently terrence-finchum);
+--     RLS is on with no policies, so it can only be changed from SQL.
+--     Photos are copied by URL — areas never delete the stored file, so
+--     editing or deleting the original never breaks a copy.
+create table if not exists public.area_template_site (
+  id boolean primary key default true check (id),
+  site_id uuid not null references public.agent_sites(id) on delete cascade
+);
+alter table public.area_template_site enable row level security;
+insert into public.area_template_site (id, site_id)
+select true, id from public.agent_sites where slug = 'terrence-finchum'
+on conflict (id) do nothing;
+
+create or replace function public.copy_template_areas()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.agent_site_areas (agent_site_id, slug, name, blurb, description, photo_url, sort_order, stats)
+  select new.id, a.slug, a.name, a.blurb, a.description, a.photo_url, a.sort_order, a.stats
+  from public.agent_site_areas a
+  join public.area_template_site t on t.site_id = a.agent_site_id
+  where t.site_id <> new.id;
+  return new;
+end;
+$$;
+
+drop trigger if exists copy_template_areas on public.agent_sites;
+create trigger copy_template_areas
+  after insert on public.agent_sites
+  for each row execute function public.copy_template_areas();
