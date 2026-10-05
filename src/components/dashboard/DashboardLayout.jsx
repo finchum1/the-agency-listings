@@ -53,6 +53,34 @@ export default function DashboardLayout() {
     ADMIN_ITEMS.some((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)),
   );
 
+  // On recent iOS the installed app's status bar area is drawn by the
+  // system, in the page's <body> background color (cached at launch).
+  // The global body color is the marketing cream, so a dark dashboard got
+  // a light, frosted-looking band above its dark header. Match html/body
+  // to the mobile header (white, or dark gray in dark mode) while the
+  // dashboard is open; the layout's own min-h-screen background covers
+  // everything else, so nothing visible changes.
+  useEffect(() => {
+    const root = document.documentElement;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const originalMeta = meta?.getAttribute("content");
+    const apply = () => {
+      const color = root.classList.contains("dark") ? "#1a1a1a" : "#ffffff";
+      root.style.backgroundColor = color;
+      document.body.style.backgroundColor = color;
+      meta?.setAttribute("content", color);
+    };
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => {
+      observer.disconnect();
+      root.style.backgroundColor = "";
+      document.body.style.backgroundColor = "";
+      if (meta && originalMeta != null) meta.setAttribute("content", originalMeta);
+    };
+  }, []);
+
   // Never leave the mobile menu open behind a new page after a nav tap.
   useEffect(() => {
     setMobileNavOpen(false);
