@@ -6,6 +6,8 @@ import { usePeopleStages } from "../../../hooks/usePeopleStages";
 import ContactButtons from "./ContactButtons";
 import PersonPanel from "./PersonPanel";
 
+const COLUMN_DRAG_TYPE = "application/x-people-column";
+
 const inputClass =
   "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
 
@@ -71,10 +73,55 @@ function ColumnTitle({ name, onRename }) {
   );
 }
 
+const menuItem =
+  "w-full text-left px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40 disabled:hover:bg-transparent";
+
+function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleClosed, onDelete }) {
+  const [open, setOpen] = useState(false);
+  const run = (fn) => () => {
+    setOpen(false);
+    fn();
+  };
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Column options"
+        aria-expanded={open}
+        className="h-6 w-6 flex items-center justify-center rounded-full text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/10 dark:hover:bg-white/15"
+      >
+        ⋯
+      </button>
+      {open && (
+        <>
+          <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="fixed inset-0 z-30 cursor-default" />
+          <div className="absolute right-0 top-7 z-40 w-56 overflow-hidden rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] shadow-lg text-[#1c1a17] dark:text-[#faf9f7]">
+            <button type="button" className={menuItem} disabled={index === 0} onClick={run(() => onMove(index - 1))}>
+              ← Move left
+            </button>
+            <button type="button" className={menuItem} disabled={index === count - 1} onClick={run(() => onMove(index + 1))}>
+              Move right →
+            </button>
+            {isTransactions && (
+              <button type="button" className={menuItem} disabled={isClosed} onClick={run(onToggleClosed)}>
+                {isClosed ? "✓ Counts as closed deals" : "Count as closed deals"}
+              </button>
+            )}
+            <button type="button" className={`${menuItem} text-red-600 dark:text-red-400`} onClick={run(onDelete)}>
+              Delete column
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function PeopleBoard({ group }) {
   const board = BOARDS[group];
   const { people, setPeople, loading, error, refresh } = usePeople();
-  const { stages: allStages, renameStage } = usePeopleStages();
+  const { stages: allStages, closedStage, renameStage, addStage, moveStage, removeStage, setClosedStage } = usePeopleStages();
   const stages = allStages[group];
   const nextStageNames = board.next ? allStages[board.next.group] : null;
   const prevStageNames = board.prev ? allStages[board.prev.group] : null;
@@ -86,6 +133,8 @@ export default function PeopleBoard({ group }) {
   const [boardError, setBoardError] = useState("");
   const [dragOver, setDragOver] = useState(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [addingColumn, setAddingColumn] = useState(false);
+  const [newColumnName, setNewColumnName] = useState("");
 
   const inGroup = people.filter((p) => p.stage_group === group);
   const active = inGroup.filter((p) => !p.archived);
@@ -139,6 +188,29 @@ export default function PeopleBoard({ group }) {
     else refresh();
   };
 
+  const runStageChange = async (change) => {
+    setBoardError("");
+    const err = await change();
+    if (err) setBoardError(err);
+    return !err;
+  };
+
+  const handleAddColumn = async (e) => {
+    e.preventDefault();
+    if (!newColumnName.trim()) return;
+    if (await runStageChange(() => addStage(group, newColumnName))) {
+      setNewColumnName("");
+      setAddingColumn(false);
+    }
+  };
+
+  const handleDeleteColumn = (stage) => {
+    // Everyone in the column counts, archived included.
+    const count = inGroup.filter((p) => p.stage === stage).length;
+    if (count === 0 && !confirm(`Delete the "${stage}" column?`)) return;
+    runStageChange(() => removeStage(group, stage, count));
+  };
+
   if (loading) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
 
   return (
@@ -146,7 +218,7 @@ export default function PeopleBoard({ group }) {
       <div>
         <h1 className="text-2xl font-display font-semibold">{board.title}</h1>
         <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
-          {active.length} {active.length === 1 ? "person" : "people"} · drag cards between columns, click a column title to rename it, or use + to add someone.
+          {active.length} {active.length === 1 ? "person" : "people"} · drag cards between columns, drag a column's ⋮⋮ grip (or use ⋯) to reorder, click a title to rename it, or use + to add someone.
         </p>
       </div>
 
@@ -157,7 +229,7 @@ export default function PeopleBoard({ group }) {
           the bottom of the screen and empty space under a column still
           scrolls sideways. */}
       <div className="flex gap-3 overflow-x-auto overflow-y-auto h-[calc(100vh-14rem)] min-h-[26rem] -mx-1 px-1 pb-1">
-        {stages.map((stage) => {
+        {stages.map((stage, stageIndex) => {
           const col = sortCol(active.filter((p) => p.stage === stage));
           return (
             <div
@@ -170,6 +242,11 @@ export default function PeopleBoard({ group }) {
               onDrop={(e) => {
                 e.preventDefault();
                 setDragOver(null);
+                const columnName = e.dataTransfer.getData(COLUMN_DRAG_TYPE);
+                if (columnName) {
+                  runStageChange(() => moveStage(group, columnName, stageIndex));
+                  return;
+                }
                 const id = e.dataTransfer.getData("text/plain");
                 if (id) moveToStage(id, stage);
               }}
@@ -178,9 +255,23 @@ export default function PeopleBoard({ group }) {
               }`}
             >
               <div className="flex items-center justify-between gap-2 px-1.5 pt-1">
-                <ColumnTitle name={stage} onRename={(n) => handleRename(stage, n)} />
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">{col.length}</span>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData(COLUMN_DRAG_TYPE, stage);
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
+                    title="Drag to reorder this column"
+                    aria-hidden="true"
+                    className="cursor-grab select-none text-[#1c1a17]/30 dark:text-[#faf9f7]/30 hover:text-[#1c1a17]/60 dark:hover:text-[#faf9f7]/60 text-xs leading-none"
+                  >
+                    ⋮⋮
+                  </span>
+                  <ColumnTitle name={stage} onRename={(n) => handleRename(stage, n)} />
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mr-1">{col.length}</span>
                   <button
                     type="button"
                     onClick={() => startAdd(stage)}
@@ -190,6 +281,15 @@ export default function PeopleBoard({ group }) {
                   >
                     +
                   </button>
+                  <ColumnMenu
+                    index={stageIndex}
+                    count={stages.length}
+                    isTransactions={group === "transaction"}
+                    isClosed={stage === closedStage}
+                    onMove={(to) => runStageChange(() => moveStage(group, stage, to))}
+                    onToggleClosed={() => runStageChange(() => setClosedStage(stage))}
+                    onDelete={() => handleDeleteColumn(stage)}
+                  />
                 </div>
               </div>
 
@@ -293,6 +393,46 @@ export default function PeopleBoard({ group }) {
             </div>
           );
         })}
+
+        <div className="w-64 shrink-0">
+          {addingColumn ? (
+            <form onSubmit={handleAddColumn} className="rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] p-2.5 space-y-2">
+              <input
+                autoFocus
+                value={newColumnName}
+                onChange={(e) => setNewColumnName(e.target.value)}
+                placeholder="Column name"
+                className={inputClass}
+              />
+              <div className="flex items-center gap-3">
+                <button
+                  type="submit"
+                  className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-4 py-1.5"
+                >
+                  Add column
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddingColumn(false);
+                    setNewColumnName("");
+                  }}
+                  className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAddingColumn(true)}
+              className="w-full rounded-2xl border border-dashed border-black/15 dark:border-white/20 px-4 py-3 text-sm font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] hover:bg-black/[0.02] dark:hover:bg-white/[0.03] text-left"
+            >
+              + Add column
+            </button>
+          )}
+        </div>
       </div>
 
       {archived.length > 0 && (

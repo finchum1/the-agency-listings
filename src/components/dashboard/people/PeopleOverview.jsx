@@ -85,7 +85,7 @@ function ValueTile({ label, value, sub }) {
 
 export default function PeopleOverview() {
   const { people, loading, error, refresh } = usePeople();
-  const { stages } = usePeopleStages();
+  const { stages, closedStage } = usePeopleStages();
   const [selectedId, setSelectedId] = useState(null);
   const [openTasks, setOpenTasks] = useState([]);
 
@@ -117,7 +117,6 @@ export default function PeopleOverview() {
 
   const live = people.filter((p) => !p.archived);
   const transactions = live.filter((p) => p.stage_group === "transaction");
-  const closedStage = stages.transaction[stages.transaction.length - 1];
   const openDeals = transactions.filter((p) => p.stage !== closedStage);
   const closedThisYear = transactions.filter(
     (p) => p.stage === closedStage && Number((p.closing_date || p.updated_at || "").slice(0, 4)) === year,
