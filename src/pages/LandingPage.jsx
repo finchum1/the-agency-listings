@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import MarketingNav from "../components/marketing/MarketingNav";
 import MarketingFooter from "../components/marketing/MarketingFooter";
-import { BrowserFrame } from "../components/marketing/DeviceFrames";
+import { BrowserFrame, BrowserWindow } from "../components/marketing/DeviceFrames";
+import { BoardMock, PIPELINE_COLUMNS } from "../components/marketing/PeopleMocks";
 import { Reveal, variants, easeOut } from "../components/marketing/motion";
 
 /*
@@ -42,8 +43,8 @@ export default function LandingPage() {
               <span className="italic text-[#ed2127]">One dashboard.</span>
             </h1>
             <p className="text-[17px] text-[#1c1a17]/70 leading-relaxed mb-8 max-w-md">
-              Property sites, agent sites, coming-soon listings, and what your buyers
-              want — all live the moment you save, all in the same place.
+              Property sites, agent sites, leads, pipeline and transactions, coming-soon
+              listings, and what your buyers want — all in the same place.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <a
@@ -80,11 +81,12 @@ export default function LandingPage() {
           isn't about the old workflow anymore, it's about what the
           dashboard does today. */}
       <section className="border-y border-black/5 bg-white">
-        <div className="mx-auto max-w-6xl px-6 lg:px-10 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+        <div className="mx-auto max-w-6xl px-6 lg:px-10 py-12 grid sm:grid-cols-2 lg:grid-cols-5 gap-8 text-center">
           {[
             ["Brokerage Site", "The office's own front door — full MLS search, draw-a-boundary, and more.", "/brokerage-website"],
             ["Agent Websites", "Every agent's own site — bio, listings, blog — on the same trusted brand.", "/agent-websites"],
             ["Property Sites", "Every listing gets its own site automatically, live the moment you hit save.", "/property-websites"],
+            ["People", "Leads, pipeline and transactions on simple boards — with a checklist for every closing.", "/people"],
             ["Upcoming", "Track a coming-soon listing, or what a buyer wants, before it's ever public.", "/upcoming"],
           ].map(([word, copy, path], i) => (
             <Reveal key={word} delay={i * 0.1} variant="scaleIn">
@@ -193,16 +195,45 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* People — leads, pipeline, transactions. Sample-data rendering of
+          the real boards (the module is private, behind a login). */}
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
+        <div className="mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
+          <Reveal variant="fromLeft" className="order-2 lg:order-1">
+            <BrowserWindow>
+              <BoardMock title="Pipeline" columns={PIPELINE_COLUMNS.slice(2)} />
+            </BrowserWindow>
+            <p className="text-[11px] text-[#1c1a17]/40 mt-3 text-center">Sample data</p>
+          </Reveal>
+          <Reveal variant="fromRight" delay={0.1} className="order-1 lg:order-2">
+            <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
+              Every lead, every deal — from first inquiry to closing.
+            </h2>
+            <p className="text-[15.5px] text-[#1c1a17]/70 leading-relaxed mb-6 max-w-md">
+              Website inquiries land on your Leads board automatically. Move people through your
+              pipeline, then into Transactions with their dates, parties, and a buyer or seller
+              checklist that builds itself.
+            </p>
+            <Link
+              to="/people"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] hover:text-[#ed2127] transition-colors"
+            >
+              See how it works
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          </Reveal>
+        </div>
+      </section>
+
       {/* Dashboard experience — dark mode + installable app. Lighter
           treatment (no browser-frame device pair, just one screenshot):
           this is a quality-of-life improvement to the existing dashboard,
           not a new product with its own deep-dive page. */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
+      <section className="px-6 lg:px-10 py-24 lg:py-32">
         <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
-          <Reveal variant="fromLeft" className="order-2 lg:order-1">
-            <BrowserFrame src="/images/landing/dashboard-dark-mode.jpg" alt="The dashboard in dark mode" />
-          </Reveal>
-          <Reveal variant="fromRight" delay={0.1} className="order-1 lg:order-2">
+          <Reveal variant="fromLeft">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Dark mode, and an app you can actually install.
             </h2>
@@ -223,6 +254,9 @@ export default function LandingPage() {
               )}
             </ul>
           </Reveal>
+          <Reveal variant="fromRight" delay={0.1}>
+            <BrowserFrame src="/images/landing/dashboard-dark-mode.jpg" alt="The dashboard in dark mode" />
+          </Reveal>
         </div>
       </section>
 
@@ -230,7 +264,7 @@ export default function LandingPage() {
           products above (no browser-frame screenshot: neither has a public
           page to show, both live inside the dashboard itself), styled off
           AgentWebsitesPage.jsx's chip-grid pattern instead. */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32">
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white border-y border-black/5">
         <div className="mx-auto max-w-6xl">
           <Reveal className="max-w-2xl mb-10">
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
@@ -251,7 +285,7 @@ export default function LandingPage() {
           </Reveal>
 
           <div className="grid sm:grid-cols-2 gap-6">
-            <Reveal variant="scaleIn" className="bg-white rounded-2xl shadow-xl shadow-black/5 p-8">
+            <Reveal variant="scaleIn" className="bg-[#faf9f7] rounded-2xl shadow-xl shadow-black/5 p-8">
               <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">
                 Upcoming Listings
               </p>
@@ -261,7 +295,7 @@ export default function LandingPage() {
                 agent.
               </p>
             </Reveal>
-            <Reveal variant="scaleIn" delay={0.1} className="bg-white rounded-2xl shadow-xl shadow-black/5 p-8">
+            <Reveal variant="scaleIn" delay={0.1} className="bg-[#faf9f7] rounded-2xl shadow-xl shadow-black/5 p-8">
               <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">
                 Buyer Needs
               </p>

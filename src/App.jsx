@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import { isAppHost, isMarketingHost } from "./lib/appHosts";
 import useSwUpdateOnNavigate from "./hooks/useSwUpdateOnNavigate";
+import { isStandalone } from "./lib/pwa";
 
 import LoginPage from "./components/auth/LoginPage";
 import SetPasswordPage from "./components/auth/SetPasswordPage";
@@ -27,6 +28,7 @@ import LandingPage from "./pages/LandingPage";
 import AgentWebsitesPage from "./pages/AgentWebsitesPage";
 import PropertyWebsitesPage from "./pages/PropertyWebsitesPage";
 import UpcomingPage from "./pages/UpcomingPage";
+import PeoplePage from "./pages/PeoplePage";
 import BrokerageWebsitePage from "./pages/BrokerageWebsitePage";
 import BrokerageSitePage from "./pages/BrokerageSitePage";
 import BrokeragePostPage from "./pages/BrokeragePostPage";
@@ -59,6 +61,9 @@ function Root() {
   const { session, loading } = useAuth();
   if (loading) return null;
   if (session) return <Navigate to="/dashboard" replace />;
+  // The installed home-screen app is for signing in and working, not for
+  // reading the marketing page — send it straight to the login screen.
+  if (isStandalone()) return <Navigate to="/login" replace />;
   return <LandingPage />;
 }
 
@@ -82,6 +87,7 @@ export default function App() {
         <Route path="/property-websites" element={<PropertyWebsitesPage />} />
         <Route path="/brokerage-website" element={<BrokerageWebsitePage />} />
         <Route path="/upcoming" element={<UpcomingPage />} />
+        <Route path="/people" element={<PeoplePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     );
@@ -102,6 +108,7 @@ export default function App() {
       <Route path="/property-websites" element={<PropertyWebsitesPage />} />
       <Route path="/brokerage-website" element={<BrokerageWebsitePage />} />
       <Route path="/upcoming" element={<UpcomingPage />} />
+        <Route path="/people" element={<PeoplePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/accept-invite" element={<SetPasswordPage />} />
 

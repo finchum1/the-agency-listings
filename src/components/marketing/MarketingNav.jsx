@@ -3,12 +3,13 @@ import { Link, useLocation } from "react-router-dom";
 import brokerage from "../../lib/brokerage";
 
 // Order matches the home page's own product sections (LandingPage.jsx) —
-// Brokerage Site leads, then Agent Websites, then Property Sites,
-// Upcoming last. Keep both in sync if this order ever changes again.
+// Brokerage Site leads, then Agent Websites, then Property Sites, then
+// People, Upcoming last. Keep both in sync if this order ever changes again.
 const LINKS = [
   { path: "/brokerage-website", label: "Brokerage Site" },
   { path: "/agent-websites", label: "Agent Websites" },
   { path: "/property-websites", label: "Property Sites" },
+  { path: "/people", label: "People" },
   { path: "/upcoming", label: "Upcoming" },
 ];
 

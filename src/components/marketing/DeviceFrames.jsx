@@ -23,6 +23,27 @@ export function BrowserFrame({ src, alt, className }) {
   );
 }
 
+// Same chrome as BrowserFrame, but wraps live JSX instead of a screenshot.
+// Used where the dashboard screen can't be captured as a real photo (the
+// People module is behind a login and holds private data), so the page
+// renders a faithful sample-data version of it instead.
+export function BrowserWindow({ children, className }) {
+  return (
+    <motion.div
+      whileHover={{ y: -6 }}
+      transition={{ duration: 0.4, ease: easeOut }}
+      className={`rounded-xl overflow-hidden border border-black/10 bg-white shadow-2xl shadow-black/20 ${className || ""}`}
+    >
+      <div className="flex items-center gap-1.5 px-3.5 py-2.5 bg-[#f1efe9] border-b border-black/5">
+        <span className="h-2.5 w-2.5 rounded-full bg-[#e4574c]" />
+        <span className="h-2.5 w-2.5 rounded-full bg-[#e8b23d]" />
+        <span className="h-2.5 w-2.5 rounded-full bg-[#3fae5c]" />
+      </div>
+      <div className="bg-[#faf9f7]">{children}</div>
+    </motion.div>
+  );
+}
+
 // Signature proof device #2 — same family as BrowserFrame (soft shadow,
 // white chrome, proof-of-real intent) sized for a phone screenshot
 // instead of a desktop one. Used wherever a page proves "this works on

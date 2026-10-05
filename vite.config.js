@@ -22,7 +22,10 @@ export default defineConfig({
         name: 'The Agency Dashboard',
         short_name: 'The Agency',
         description: 'The Agency — agent dashboard and listings',
-        start_url: '/',
+        // Launch into the dashboard: logged-in agents go straight in, and
+        // anyone signed out is bounced to /login by ProtectedRoute — never
+        // the marketing landing page that "/" shows to a logged-out visitor.
+        start_url: '/dashboard',
         scope: '/',
         display: 'standalone',
         background_color: '#f7f4ee',
