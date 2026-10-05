@@ -14,8 +14,19 @@ import DOMPurify from "dompurify";
 // blog-post linking). DOMPurify's default ALLOWED_URI_REGEXP already
 // blocks javascript:/data: hrefs even with "href" allowed — no scheme
 // allowlist needed here on top of that.
-const ALLOWED_TAGS = ["p", "h2", "h3", "strong", "em", "u", "br", "a"];
-const ALLOWED_ATTR = ["href"];
+const ALLOWED_TAGS = ["p", "h2", "h3", "strong", "em", "u", "br", "a", "span"];
+const ALLOWED_ATTR = ["href", "class"];
+
+// "span"/"class" exist only for RichTextEditor's Agency-red text
+// (<span class="brand-red">). `class` is dangerous in general — a
+// compromised agent account could write Tailwind utility classes
+// (fixed, inset-0, …) to overlay the page — so this hook drops every
+// class except that one exact value on a span.
+DOMPurify.addHook("uponSanitizeAttribute", (node, data) => {
+  if (data.attrName === "class" && !(node.tagName === "SPAN" && data.attrValue === "brand-red")) {
+    data.keepAttr = false;
+  }
+});
 
 export function sanitizeHtml(html) {
   if (!html) return "";

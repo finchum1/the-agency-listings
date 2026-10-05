@@ -357,6 +357,10 @@
   margin-top: 0.75em;
   margin-bottom: 0.25em;
 }
+.tiptap .brand-red,
+.rich-text .brand-red {
+  color: #ed2127;
+}
 .tiptap p + p {
   margin-top: 0.6em;
 }

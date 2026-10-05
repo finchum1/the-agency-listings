@@ -3,6 +3,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
+import { BrandRed } from "../../lib/brandRedMark";
 import { useEffect } from "react";
 
 // Shared WYSIWYG editor used in every rich-text field across the
@@ -15,7 +16,8 @@ import { useEffect } from "react";
 // Deliberately narrow: paragraph, two heading levels (h2/h3 — h3 matches
 // the blog post convention that already existed before this; h2 was
 // added alongside it for SEO subheadings, see below), bold, italic,
-// underline, links. No colors, no lists — this is short-form marketing
+// underline, links, and one color — The Agency red (lib/brandRedMark.js;
+// also what a red passage pasted from Word becomes). No other colors, no lists — this is short-form marketing
 // copy (a bio, a testimonial, a blog post), not a general document
 // editor. h2/h3 exist specifically so a blog post can be broken into a
 // couple of real subheadings (an SEO ask — Google parses H2/H3
@@ -46,6 +48,7 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
         listItem: false,
       }),
       Underline,
+      BrandRed,
       Link.configure({
         openOnClick: false,
         autolink: false,
@@ -150,6 +153,14 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
           title="Underline"
         >
           U
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBrandRed().run()}
+          className={buttonClass(editor.isActive("brandRed"))}
+          title="The Agency red"
+        >
+          <span className="text-[#ed2127] dark:text-[#f2454b] border-b-2 border-[#ed2127] dark:border-[#f2454b] leading-none pb-px">A</span>
         </button>
         <span className="w-px h-5 bg-black/10 dark:bg-white/15 mx-1" />
         <button
