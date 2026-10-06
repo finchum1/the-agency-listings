@@ -15,7 +15,7 @@
 import { rewrite, next } from "@vercel/functions";
 
 const BOT_UA_PATTERN =
-  /(facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Googlebot|bingbot|Applebot|Pinterest|redditbot|SkypeUriPreview|vkShare|W3C_Validator)/i;
+  /(facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Googlebot|bingbot|Applebot|Pinterest|redditbot|SkypeUriPreview|vkShare|W3C_Validator|GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|Claude-User|Claude-SearchBot|anthropic-ai|PerplexityBot|Perplexity-User|DuckAssistBot|Amazonbot|CCBot|Meta-ExternalAgent|cohere-ai|MistralAI-User)/i;
 
 // Custom domains that need a Google Search Console site-verification meta
 // tag injected into their real index.html (not the bot-snapshot page,

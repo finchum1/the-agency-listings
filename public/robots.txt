@@ -1,7 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /dashboard
-Disallow: /login
-Disallow: /accept-invite
-
-Sitemap: https://the-agency-listings.vercel.app/sitemap.xml

@@ -19,7 +19,7 @@
 // under the app's own Search Console property, not a per-agent domain.
 import { createClient } from "@supabase/supabase-js";
 import { SITE_ORIGIN, publishedOrDueFilter } from "../src/lib/seo.js";
-import { bareHost, isAppHost } from "../src/lib/appHosts.js";
+import { bareHost, isAppHost, isMarketingHost } from "../src/lib/appHosts.js";
 
 // Every agent site also has 5 standalone subpages (see App.jsx's
 // /sites/:slug/* routes and api/meta-agent-site.js's ?page= handling) —
@@ -53,7 +53,31 @@ ${u.lastmod ? `    <lastmod>${new Date(u.lastmod).toISOString().slice(0, 10)}</l
 `;
 }
 
+// robots.txt, served from here (vercel.json rewrites /robots.txt to
+// /api/sitemap?robots=1) rather than as a static file because the
+// Sitemap line has to name the host actually being asked for — every
+// agent's custom domain has its own sitemap (see buildCustomDomainSitemap),
+// and a static file pointed all of them at the app host's sitemap, which
+// lists none of their pages. The marketing host has no sitemap at all, so
+// it gets no Sitemap line. Merged into this function (not a new file)
+// to stay under Vercel's Hobby-plan 12-function cap.
+function robotsTxt(req) {
+  const rawHost = req.headers.host || "";
+  const lines = ["User-agent: *", "Allow: /", "Disallow: /dashboard", "Disallow: /login", "Disallow: /accept-invite"];
+  if (!isMarketingHost(rawHost)) {
+    lines.push("", `Sitemap: https://${rawHost}/sitemap.xml`);
+  }
+  return `${lines.join("\n")}\n`;
+}
+
 export default async function handler(req, res) {
+  if (req.query?.robots) {
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=3600");
+    res.status(200).send(robotsTxt(req));
+    return;
+  }
+
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
