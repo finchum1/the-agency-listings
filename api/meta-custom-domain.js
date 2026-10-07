@@ -37,6 +37,7 @@ import {
 import { buildListingSchema, buildAgentSchema, buildBlogPostSchema, buildBreadcrumbSchema } from "../src/lib/structuredData.js";
 import brokerage from "../src/lib/brokerage.js";
 import { bareHost, isAppHost } from "../src/lib/appHosts.js";
+import { marketingMetaFor, MARKETING_META } from "../src/lib/marketingMeta.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
 
 const APP_DEFAULT_TITLE = "The Agency Listings";
@@ -55,6 +56,11 @@ export default async function handler(req, res) {
 
   if (req.query.verify) {
     await handleVerification(req, res, host);
+    return;
+  }
+
+  if (req.query.marketing) {
+    await handleMarketing(req, res);
     return;
   }
 
@@ -397,6 +403,60 @@ async function handleVerification(req, res, host) {
   if (token) {
     html = html.replace("</head>", `    <meta name="google-site-verification" content="${token}" />\n  </head>`);
   }
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
+  res.status(200).send(html);
+}
+
+// Marketing host (theagency.latchpointstudios.com): the same index.html
+// every visitor gets, with this page's own title/description/social tags
+// and a plain-text fallback inside #root. React's createRoot replaces
+// that fallback the moment the app boots, so people never see it — it
+// exists for crawlers that don't run JavaScript.
+async function handleMarketing(req, res) {
+  const { path, meta } = marketingMetaFor(String(req.query.marketing));
+  const origin = `https://${req.headers.host}`;
+  const url = `${origin}${path === "/" ? "/" : path}`;
+
+  let html = "";
+  for (let attempt = 0; attempt < 2 && !html; attempt++) {
+    try {
+      const upstream = await fetch(`${SITE_ORIGIN}/index.html`);
+      if (upstream.ok) html = await upstream.text();
+    } catch {
+      // retry once, then fall through to the error below
+    }
+  }
+  if (!html) {
+    res.status(502).send("Page temporarily unavailable.");
+    return;
+  }
+
+  const title = escapeHtml(meta.title);
+  const description = escapeHtml(meta.description);
+  const tags = [
+    `<link rel="canonical" href="${url}" />`,
+    `<meta property="og:type" content="website" />`,
+    `<meta property="og:title" content="${title}" />`,
+    `<meta property="og:description" content="${description}" />`,
+    `<meta property="og:url" content="${url}" />`,
+    `<meta name="twitter:card" content="summary" />`,
+    `<meta name="twitter:title" content="${title}" />`,
+    `<meta name="twitter:description" content="${description}" />`,
+  ].join("\n    ");
+  const links = Object.entries(MARKETING_META)
+    .map(([p, m]) => `<li><a href="${origin}${p}">${escapeHtml(m.title)}</a></li>`)
+    .join("");
+
+  html = html
+    .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
+    .replace(/(<meta name="description" content=")[^"]*(")/, `$1${description}$2`)
+    .replace("</head>", `    ${tags}\n  </head>`)
+    .replace(
+      '<div id="root"></div>',
+      `<div id="root"><h1>${title}</h1><p>${description}</p><ul>${links}</ul></div>`,
+    );
+
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
   res.status(200).send(html);

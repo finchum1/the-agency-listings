@@ -19,6 +19,7 @@
 // under the app's own Search Console property, not a per-agent domain.
 import { createClient } from "@supabase/supabase-js";
 import { SITE_ORIGIN, publishedOrDueFilter } from "../src/lib/seo.js";
+import { MARKETING_META } from "../src/lib/marketingMeta.js";
 import { bareHost, isAppHost, isMarketingHost } from "../src/lib/appHosts.js";
 
 // Every agent site also has 5 standalone subpages (see App.jsx's
@@ -58,15 +59,13 @@ ${u.lastmod ? `    <lastmod>${new Date(u.lastmod).toISOString().slice(0, 10)}</l
 // Sitemap line has to name the host actually being asked for — every
 // agent's custom domain has its own sitemap (see buildCustomDomainSitemap),
 // and a static file pointed all of them at the app host's sitemap, which
-// lists none of their pages. The marketing host has no sitemap at all, so
-// it gets no Sitemap line. Merged into this function (not a new file)
+// lists none of their pages. The marketing host's sitemap lists its
+// handful of product pages (see handler below). Merged into this function (not a new file)
 // to stay under Vercel's Hobby-plan 12-function cap.
 function robotsTxt(req) {
   const rawHost = req.headers.host || "";
   const lines = ["User-agent: *", "Allow: /", "Disallow: /dashboard", "Disallow: /login", "Disallow: /accept-invite"];
-  if (!isMarketingHost(rawHost)) {
-    lines.push("", `Sitemap: https://${rawHost}/sitemap.xml`);
-  }
+  lines.push("", `Sitemap: https://${rawHost}/sitemap.xml`);
   return `${lines.join("\n")}\n`;
 }
 
@@ -79,6 +78,13 @@ export default async function handler(req, res) {
   }
 
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
+
+  if (isMarketingHost(req.headers.host)) {
+    const origin = `https://${req.headers.host}`;
+    res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400");
+    res.status(200).send(renderUrlset(Object.keys(MARKETING_META).map((p) => ({ loc: `${origin}${p === "/" ? "/" : p}` }))));
+    return;
+  }
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;

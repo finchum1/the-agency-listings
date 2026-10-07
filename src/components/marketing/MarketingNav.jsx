@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import brokerage from "../../lib/brokerage";
 import { useTheme } from "../../hooks/useTheme";
+import { applyPageMeta } from "../../lib/pageMeta";
+import { marketingMetaFor } from "../../lib/marketingMeta";
 
 // Order matches the home page's own product sections (LandingPage.jsx) —
 // Brokerage Site leads, then Agent Websites, then Property Sites, then
@@ -90,6 +92,13 @@ export default function MarketingNav() {
 
   useEffect(() => {
     setMobileNavOpen(false);
+  }, [location.pathname]);
+
+  // Every marketing page renders this nav, so it's the one place that sets
+  // the page's own title and description (lib/marketingMeta.js).
+  useEffect(() => {
+    const { path, meta } = marketingMetaFor(location.pathname);
+    applyPageMeta({ ...meta, url: `${window.location.origin}${path === "/" ? "/" : path}` });
   }, [location.pathname]);
 
   useEffect(() => {

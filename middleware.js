@@ -32,17 +32,39 @@ const BOT_UA_PATTERN =
 // falsely claim every other site too.
 const VERIFIED_HOSTS = new Set(["terrencefinchum.com"]);
 
+// The marketing-only host (theagency.latchpointstudios.com — see
+// src/lib/appHosts.js) serves a handful of static product pages. For
+// every visitor on that host (not just bots) these paths are answered by
+// api/meta-custom-domain.js's ?marketing= branch, which returns the real
+// index.html with that page's own <title>, description, social tags and a
+// short text fallback filled in — so crawlers that don't run JavaScript
+// (most AI crawlers) see real page content instead of a blank shell.
+const MARKETING_HOST = "theagency.latchpointstudios.com";
+const MARKETING_PATHS = new Set(["/", "/brokerage-website", "/agent-websites", "/property-websites", "/people", "/upcoming"]);
+
 export const config = {
-  matcher: "/",
+  matcher: ["/", "/brokerage-website", "/agent-websites", "/property-websites", "/people", "/upcoming"],
 };
 
 export default function middleware(request) {
+  const pathname = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
+  const hostname = (request.headers.get("host") || "").replace(/^www\./i, "").toLowerCase();
+
+  if (hostname === MARKETING_HOST) {
+    if (MARKETING_PATHS.has(pathname)) {
+      return rewrite(new URL(`/api/meta-custom-domain?marketing=${encodeURIComponent(pathname)}`, request.url));
+    }
+    return next();
+  }
+
+  // Everywhere else this middleware only ever handled the root path.
+  if (pathname !== "/") return next();
+
   const userAgent = request.headers.get("user-agent") || "";
   if (BOT_UA_PATTERN.test(userAgent)) {
     return rewrite(new URL("/api/meta-custom-domain", request.url));
   }
-  const host = (request.headers.get("host") || "").replace(/^www\./i, "").toLowerCase();
-  if (VERIFIED_HOSTS.has(host)) {
+  if (VERIFIED_HOSTS.has(hostname)) {
     return rewrite(new URL("/api/meta-custom-domain?verify=1", request.url));
   }
   return next();
