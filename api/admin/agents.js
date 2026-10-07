@@ -34,6 +34,10 @@
 //   this checks first and returns a clear, actionable error instead of a
 //   raw FK violation.
 //
+// action: "list-sitemap" / "import-post" — the blog importer for moving a
+//   client's posts over from another site (see api/_lib/importPost.js).
+//   Folded into this function, like the rest, to stay under the 12-function cap.
+//
 // Requires SUPABASE_SERVICE_ROLE_KEY as a Vercel env var (Project Settings
 // > Environment Variables — add it in the Vercel dashboard yourself, never
 // via chat/code). This key can do anything, including bypass RLS, so it's
@@ -42,6 +46,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
+import { listSitemap, importPost } from "../_lib/importPost.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -59,8 +64,8 @@ export default async function handler(req, res) {
   }
 
   const { action } = req.body || {};
-  if (action !== "add" && action !== "delete") {
-    return res.status(400).json({ error: 'action must be "add" or "delete".' });
+  if (!["add", "delete", "list-sitemap", "import-post"].includes(action)) {
+    return res.status(400).json({ error: 'action must be "add", "delete", "list-sitemap" or "import-post".' });
   }
 
   const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
@@ -147,6 +152,33 @@ export default async function handler(req, res) {
     if (updateError) console.error("Profile update after create failed:", updateError);
 
     return res.status(200).json({ ok: true, userId: newUserId });
+  }
+
+  // action === "list-sitemap" — blog importer step 1: find the addresses on
+  // the old site (see api/_lib/importPost.js; admin-verified above).
+  if (action === "list-sitemap") {
+    try {
+      const urls = await listSitemap(req.body?.site);
+      return res.status(200).json({ ok: true, urls });
+    } catch (err) {
+      return res.status(400).json({ error: err.message || "Couldn't read that sitemap." });
+    }
+  }
+
+  // action === "import-post" — blog importer step 2: one old page in, one
+  // DRAFT post out. The client calls this once per address so a long list
+  // never hits the function time limit.
+  if (action === "import-post") {
+    const { agentSiteId, url } = req.body || {};
+    if (!agentSiteId || !url) return res.status(400).json({ error: "agentSiteId and url are required." });
+    const { data: site } = await admin.from("agent_sites").select("id").eq("id", agentSiteId).maybeSingle();
+    if (!site) return res.status(404).json({ error: "That agent site wasn't found." });
+    try {
+      const result = await importPost({ admin, agentSiteId, url });
+      return res.status(200).json({ ok: true, ...result });
+    } catch (err) {
+      return res.status(200).json({ ok: false, status: "failed", error: err.message || "Import failed." });
+    }
   }
 
   // action === "delete"

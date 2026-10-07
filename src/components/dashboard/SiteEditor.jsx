@@ -7,6 +7,8 @@ import AreasManager from "./AreasManager";
 import PostsManager from "./PostsManager";
 import PeriodAnalyticsPanel from "./PeriodAnalyticsPanel";
 import RedirectsManager from "./RedirectsManager";
+import ImportPosts from "./ImportPosts";
+import { useAuth } from "../../hooks/useAuth";
 
 // Shared editor for an agent's personal site — used both for an agent's
 // own "My Site" pages and, for admins, to edit any other agent's site from
@@ -48,6 +50,7 @@ const SECTIONS = {
 };
 
 export default function SiteEditor({ agentId, agentName, heading, section, hideHeader }) {
+  const { isAdmin } = useAuth();
   const { site, testimonials, areas, posts, loading, error, refresh } = useAgentSiteEditor(
     agentId,
     agentName,
@@ -100,6 +103,7 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
       {show("areas") && <AreasManager agentSiteId={site.id} areas={areas} onChanged={refresh} />}
       {show("redirects") && <RedirectsManager site={site} />}
       {show("blog") && <PostsManager agentSiteId={site.id} agentId={agentId} posts={posts} onChanged={refresh} />}
+      {show("blog") && isAdmin && <ImportPosts agentSiteId={site.id} onImported={refresh} />}
     </div>
   );
 }
