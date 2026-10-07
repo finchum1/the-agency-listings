@@ -289,6 +289,7 @@ export default function App() {
         <Route path="site/testimonials" element={<MySitePage section="testimonials" />} />
         <Route path="site/areas" element={<MySitePage section="areas" />} />
         <Route path="site/blog" element={<MySitePage section="blog" />} />
+        <Route path="site/redirects" element={<MySitePage section="redirects" />} />
         <Route path="upcoming" element={<UpcomingModule />} />
         <Route path="settings" element={<PeopleGate />}>
           <Route index element={<SettingsPage />} />

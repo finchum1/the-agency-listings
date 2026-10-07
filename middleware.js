@@ -9,10 +9,14 @@
 // /sites/:slug, none of which collide with a real static file, so they
 // don't hit this issue).
 //
-// Scoped to "/" only (see matcher below) — bots hitting /sites/:slug,
-// /listings/:slug, or /sites/:slug/blog/:postSlug are already covered by
-// vercel.json's existing rewrites, unaffected by any of this.
+// It now sees every page navigation (see matcher below), so each branch
+// returns next() immediately unless it has a specific job: the marketing
+// host's pages, a custom domain's redirects, or a custom domain's root
+// (bot snapshot / Search Console tag). Bots hitting /sites/:slug,
+// /listings/:slug, or /sites/:slug/blog/:postSlug on the dashboard's own
+// host are still covered by vercel.json's rewrites, unaffected by this.
 import { rewrite, next } from "@vercel/functions";
+import { matchRedirect } from "./src/lib/redirectMatch.js";
 
 const BOT_UA_PATTERN =
   /(facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Googlebot|bingbot|Applebot|Pinterest|redditbot|SkypeUriPreview|vkShare|W3C_Validator|GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|Claude-User|Claude-SearchBot|anthropic-ai|PerplexityBot|Perplexity-User|DuckAssistBot|Amazonbot|CCBot|Meta-ExternalAgent|cohere-ai|MistralAI-User)/i;
@@ -42,12 +46,49 @@ const VERIFIED_HOSTS = new Set(["terrencefinchum.com"]);
 const MARKETING_HOST = "theagency.latchpointstudios.com";
 const MARKETING_PATHS = new Set(["/", "/brokerage-website", "/agent-websites", "/property-websites", "/people", "/upcoming"]);
 
+// Page navigations only — anything with a file extension (assets, icons,
+// robots.txt, sitemap.xml, the manifest) and /api/* are skipped, so this
+// never adds work to an image or script request.
 export const config = {
-  matcher: ["/", "/brokerage-website", "/agent-websites", "/property-websites", "/people", "/upcoming"],
+  matcher: ["/((?!api/|assets/|.*\\..*).*)"],
 };
 
-export default function middleware(request) {
-  const pathname = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
+// Per-site redirects (the dashboard's Redirects page -> site_redirects):
+// on an agent's own custom domain, an old address is answered with a
+// permanent 301 here, before anything renders. Rules are read with the
+// public anon key and cached per host for a minute per server instance,
+// so most requests cost nothing; if the lookup ever fails the request
+// just continues (a redirect is never worth taking a site down for).
+const RULES_TTL_MS = 60_000;
+const rulesCache = new Map();
+
+async function loadRules(host) {
+  const cached = rulesCache.get(host);
+  if (cached && Date.now() - cached.at < RULES_TTL_MS) return cached.rules;
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !anonKey) return [];
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/site_redirects?select=from_path,to_path,agent_sites!inner(custom_domain)&agent_sites.custom_domain=eq.${encodeURIComponent(host)}`,
+      { headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` }, signal: AbortSignal.timeout(1500) },
+    );
+    if (!res.ok) throw new Error(`redirect lookup ${res.status}`);
+    const rules = (await res.json()).map((r) => ({ from_path: r.from_path, to_path: r.to_path }));
+    rulesCache.set(host, { at: Date.now(), rules });
+    return rules;
+  } catch {
+    return cached?.rules || [];
+  }
+}
+
+function isDashboardHost(host) {
+  return host === "localhost" || host.endsWith(".vercel.app");
+}
+
+export default async function middleware(request) {
+  const url = new URL(request.url);
+  const pathname = url.pathname.replace(/\/+$/, "") || "/";
   const hostname = (request.headers.get("host") || "").replace(/^www\./i, "").toLowerCase();
 
   if (hostname === MARKETING_HOST) {
@@ -57,7 +98,18 @@ export default function middleware(request) {
     return next();
   }
 
-  // Everywhere else this middleware only ever handled the root path.
+  // The dashboard's own host has no redirects and no root special-casing.
+  if (isDashboardHost(hostname)) return next();
+
+  // Anything else is an agent's own custom domain.
+  const target = matchRedirect(pathname, await loadRules(hostname));
+  if (target) {
+    const destination = new URL(target, request.url);
+    if (!target.includes("?")) destination.search = url.search;
+    return Response.redirect(destination, 301);
+  }
+
+  // Beyond redirects, this middleware only ever special-cased the root.
   if (pathname !== "/") return next();
 
   const userAgent = request.headers.get("user-agent") || "";

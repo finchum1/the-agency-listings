@@ -9,6 +9,7 @@ const TABS = [
   ["testimonials", "Testimonials"],
   ["areas", "Areas of Expertise"],
   ["blog", "Blog Posts"],
+  ["redirects", "Redirects"],
 ];
 
 // Admin-only: edit any agent's site by their profile id (route

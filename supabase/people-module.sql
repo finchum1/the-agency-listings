@@ -292,3 +292,31 @@ end;
 $$;
 
 drop table if exists public.area_template_site;
+
+-- 12. Per-site redirects (site_redirects): old URL -> new URL, answered with
+--     a permanent 301 by middleware.js on the agent site's custom domain
+--     before anything renders — for moving a site over from another
+--     platform (e.g. Luxury Presence) without losing search rankings.
+--     Readable by anyone (middleware reads it with the anon key; the
+--     redirects are public the moment they work); writable only by the
+--     site's own agent or an admin. from_path is stored lowercase with no
+--     trailing slash or query; a trailing /* means "everything under".
+create table if not exists public.site_redirects (
+  id uuid primary key default gen_random_uuid(),
+  agent_site_id uuid not null references public.agent_sites(id) on delete cascade,
+  from_path text not null,
+  to_path text not null,
+  created_at timestamptz not null default now(),
+  unique (agent_site_id, from_path)
+);
+create index if not exists site_redirects_site_idx on public.site_redirects (agent_site_id);
+alter table public.site_redirects enable row level security;
+drop policy if exists site_redirects_public_read on public.site_redirects;
+create policy site_redirects_public_read on public.site_redirects for select using (true);
+drop policy if exists site_redirects_owner_admin_write on public.site_redirects;
+create policy site_redirects_owner_admin_write on public.site_redirects
+  for all
+  using (exists (select 1 from public.agent_sites s where s.id = site_redirects.agent_site_id
+    and (s.agent_id = auth.uid() or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'))))
+  with check (exists (select 1 from public.agent_sites s where s.id = site_redirects.agent_site_id
+    and (s.agent_id = auth.uid() or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'))));

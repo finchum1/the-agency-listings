@@ -6,6 +6,7 @@ import TestimonialsManager from "./TestimonialsManager";
 import AreasManager from "./AreasManager";
 import PostsManager from "./PostsManager";
 import PeriodAnalyticsPanel from "./PeriodAnalyticsPanel";
+import RedirectsManager from "./RedirectsManager";
 
 // Shared editor for an agent's personal site — used both for an agent's
 // own "My Site" pages and, for admins, to edit any other agent's site from
@@ -39,6 +40,10 @@ const SECTIONS = {
   blog: {
     title: "Blog Posts",
     blurb: "Write and manage your blog posts.",
+  },
+  redirects: {
+    title: "Redirects",
+    blurb: "Keep old web addresses working — and your search ranking — when a site moves over.",
   },
 };
 
@@ -93,6 +98,7 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
       {show("details") && <SiteForm site={site} onSaved={refresh} />}
       {show("testimonials") && <TestimonialsManager agentSiteId={site.id} testimonials={testimonials} onChanged={refresh} />}
       {show("areas") && <AreasManager agentSiteId={site.id} areas={areas} onChanged={refresh} />}
+      {show("redirects") && <RedirectsManager site={site} />}
       {show("blog") && <PostsManager agentSiteId={site.id} agentId={agentId} posts={posts} onChanged={refresh} />}
     </div>
   );
