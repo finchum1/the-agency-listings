@@ -12,6 +12,10 @@
 @theme {
   --font-display: "Playfair Display", "Georgia", serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Latchpoint Studios' own faces -- only the Latchpoint-branded
+     header/footer on theagency.latchpointstudios.com use these. */
+  --font-geist: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-geist-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 @layer base {
@@ -508,5 +512,80 @@
   .latchpoint-credit,
   .latchpoint-credit::before {
     animation: none;
+  }
+}
+
+
+/* Latchpoint Studios header/footer (theagency.latchpointstudios.com only).
+   The floating "glass pill" is the same material Latchpoint's own site and
+   realestate.latchpointstudios.com use: blur + saturation, layered borders,
+   a soft highlight. Tokens swap with the dashboard's `dark` class so it sits
+   correctly on both the cream and the near-black marketing surfaces. In a
+   component layer so Tailwind utilities (e.g. `absolute`) still win over
+   this class's own `position: relative`. */
+:root {
+  --lp-text: #16171a;
+  --lp-text-muted: #55565e;
+  --lp-text-faint: #83848c;
+  --lp-border-strong: rgba(0, 0, 0, 0.14);
+  --lp-ember: #e8623f;
+  --glass-grad-1: rgba(255, 255, 255, 0.75);
+  --glass-grad-2: rgba(255, 255, 255, 0.35);
+  --glass-base: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-inset-top: rgba(255, 255, 255, 0.9);
+  --glass-inset-bottom: rgba(0, 0, 0, 0.04);
+  --glass-shadow: rgba(0, 0, 0, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.6);
+  --glass-fallback: rgba(250, 249, 247, 0.97);
+}
+.dark {
+  --lp-text: #f5f5f4;
+  --lp-text-muted: #a4a5ac;
+  --lp-text-faint: #6c6e76;
+  --lp-border-strong: rgba(255, 255, 255, 0.16);
+  --glass-grad-1: rgba(255, 255, 255, 0.1);
+  --glass-grad-2: rgba(255, 255, 255, 0.03);
+  --glass-base: rgba(8, 9, 11, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-inset-top: rgba(255, 255, 255, 0.14);
+  --glass-inset-bottom: rgba(255, 255, 255, 0.04);
+  --glass-shadow: rgba(0, 0, 0, 0.35);
+  --glass-highlight: rgba(255, 255, 255, 0.16);
+  --glass-fallback: rgba(13, 13, 13, 0.97);
+}
+@layer components {
+  .glass-pill {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+    background:
+      linear-gradient(135deg, var(--glass-grad-1), var(--glass-grad-2)),
+      var(--glass-base);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    box-shadow:
+      inset 0 1px 0 var(--glass-inset-top),
+      inset 0 -1px 0 var(--glass-inset-bottom),
+      0 10px 30px var(--glass-shadow);
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease;
+  }
+  .glass-pill::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(circle at 18% 0%, var(--glass-highlight), transparent 45%);
+    pointer-events: none;
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .glass-pill {
+      background: var(--glass-fallback);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
   }
 }

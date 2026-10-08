@@ -1,23 +1,17 @@
 import { Link } from "react-router-dom";
 import brokerage from "../../lib/brokerage";
-
-// The real Latchpoint Studios mark (rounded-square outline + accent
-// chip), ported from that project's own src/components/logomark.tsx —
-// same paths, with its var(--accent) swapped for the literal color
-// (#e8623f) since that CSS variable doesn't exist in this app.
-function LatchpointLogomark({ className = "" }) {
-  return (
-    <svg viewBox="2.5 1.2 20.3 20.3" fill="none" className={className} aria-hidden="true">
-      <rect x="3.5" y="3.5" width="17" height="17" rx="6" stroke="currentColor" strokeWidth="2" />
-      <rect x="14.8" y="1.2" width="8" height="8" rx="2.7" fill="#e8623f" />
-    </svg>
-  );
-}
+import { isMarketingHost } from "../../lib/appHosts";
+import { LatchpointLogomark } from "./LatchpointMarks";
+import LatchpointFooter from "./LatchpointFooter";
 
 // Shared footer for every marketing page. Kept deliberately simple (no
 // social, no newsletter) — this is a product-marketing pitch page, not a
 // consumer brand site.
 export default function MarketingFooter() {
+  // Latchpoint's marketing subdomain gets Latchpoint's footer; the app's own
+  // host keeps this one (with its small "Designed by" credit below).
+  if (isMarketingHost(window.location.hostname)) return <LatchpointFooter />;
+
   return (
     <footer className="bg-[#1c1a17] text-white/60 px-6 lg:px-10 py-10">
       <div className="mx-auto max-w-6xl">
