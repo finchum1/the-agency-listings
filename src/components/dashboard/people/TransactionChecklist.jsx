@@ -25,6 +25,7 @@ const openPicker = (e) => {
 export default function TransactionChecklist({ person, side, dates }) {
   const { tasks, loading, error, applyTemplate, addTask, updateTask, removeTask, clearAll } = useTransactionTasks(person.id);
   const [collapsed, setCollapsed] = useState({});
+  const [completedShown, setCompletedShown] = useState({});
   const [addingTo, setAddingTo] = useState(null);
   const [newText, setNewText] = useState("");
   const [working, setWorking] = useState(false);
@@ -87,6 +88,71 @@ export default function TransactionChecklist({ person, side, dates }) {
     setAddingTo(null);
   };
 
+  const renderTask = (t) => {
+    const due = effectiveDue(t, dates);
+    const overdue = due && !t.done && due < today;
+    return (
+      <li key={t.id} className="flex items-start gap-2 rounded-lg px-1 py-1.5 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]">
+        <input
+          type="checkbox"
+          checked={t.done}
+          onChange={(e) =>
+            updateTask(t.id, {
+              done: e.target.checked,
+              done_at: e.target.checked ? new Date().toISOString() : null,
+            })
+          }
+          className="mt-1 h-4 w-4 shrink-0 accent-[#ed2127]"
+        />
+        <div className="min-w-0 flex-1 space-y-1">
+          <textarea
+            defaultValue={t.text}
+            rows={Math.max(1, Math.ceil(t.text.length / 42))}
+            onBlur={(e) => {
+              const v = e.target.value.trim();
+              if (!v) e.target.value = t.text;
+              else if (v !== t.text) updateTask(t.id, { text: v });
+            }}
+            className={`w-full resize-none bg-transparent text-sm leading-snug focus:outline-none focus:bg-black/[0.03] dark:focus:bg-white/[0.05] rounded ${
+              t.done ? "line-through opacity-50" : ""
+            }`}
+          />
+          <div className="flex items-center gap-2 flex-wrap">
+            <input
+              type="date"
+              value={due || ""}
+              onChange={(e) => updateTask(t.id, { due_override: e.target.value || null })}
+              onClick={openPicker}
+              title={due ? "Click to set a specific due date" : "Add the date this is based on to get an automatic due date"}
+              className={`${smallInput} cursor-pointer ${overdue ? "text-red-600 dark:text-red-400 border-red-300" : ""}`}
+            />
+            {t.due_override ? (
+              <button
+                type="button"
+                onClick={() => updateTask(t.id, { due_override: null })}
+                className="text-[11px] text-[#ed2127] dark:text-[#f2454b] hover:underline"
+              >
+                Back to automatic
+              </button>
+            ) : !due ? (
+              <span className={`text-[11px] ${muted}`}>
+                Set the {ANCHORS.find((a) => a.value === t.anchor)?.label || "date"} above
+              </span>
+            ) : null}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => removeTask(t.id)}
+          aria-label="Delete task"
+          className="shrink-0 px-1 text-[#1c1a17]/30 dark:text-[#faf9f7]/30 hover:text-red-600 dark:hover:text-red-400"
+        >
+          ✕
+        </button>
+      </li>
+    );
+  };
+
   return (
     <div className="space-y-3 pt-4 mt-1 border-t border-black/5 dark:border-white/10">
       <div className="flex items-center justify-between gap-3">
@@ -120,8 +186,11 @@ export default function TransactionChecklist({ person, side, dates }) {
       ) : (
         <div className="space-y-4">
           {sections.map((sec) => {
-            const done = sec.tasks.filter((t) => t.done).length;
+            const openTasks = sec.tasks.filter((t) => !t.done);
+            const doneTasks = sec.tasks.filter((t) => t.done);
+            const done = doneTasks.length;
             const open = !collapsed[sec.title];
+            const completedOpen = !!completedShown[sec.title];
             return (
               <div key={sec.title} className="space-y-1.5">
                 <button
@@ -149,72 +218,7 @@ export default function TransactionChecklist({ person, side, dates }) {
                 {open && (
                   <>
                     <p className={`text-[11px] ml-4 ${muted}`}>{ruleLabel(sec.anchor, sec.offset_days)}</p>
-                    <ul className="space-y-1">
-                      {sec.tasks.map((t) => {
-                        const due = effectiveDue(t, dates);
-                        const overdue = due && !t.done && due < today;
-                        return (
-                          <li key={t.id} className="flex items-start gap-2 rounded-lg px-1 py-1.5 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]">
-                            <input
-                              type="checkbox"
-                              checked={t.done}
-                              onChange={(e) =>
-                                updateTask(t.id, {
-                                  done: e.target.checked,
-                                  done_at: e.target.checked ? new Date().toISOString() : null,
-                                })
-                              }
-                              className="mt-1 h-4 w-4 shrink-0 accent-[#ed2127]"
-                            />
-                            <div className="min-w-0 flex-1 space-y-1">
-                              <textarea
-                                defaultValue={t.text}
-                                rows={Math.max(1, Math.ceil(t.text.length / 42))}
-                                onBlur={(e) => {
-                                  const v = e.target.value.trim();
-                                  if (!v) e.target.value = t.text;
-                                  else if (v !== t.text) updateTask(t.id, { text: v });
-                                }}
-                                className={`w-full resize-none bg-transparent text-sm leading-snug focus:outline-none focus:bg-black/[0.03] dark:focus:bg-white/[0.05] rounded ${
-                                  t.done ? "line-through opacity-50" : ""
-                                }`}
-                              />
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <input
-                                  type="date"
-                                  value={due || ""}
-                                  onChange={(e) => updateTask(t.id, { due_override: e.target.value || null })}
-                                  onClick={openPicker}
-                                  title={due ? "Click to set a specific due date" : "Add the date this is based on to get an automatic due date"}
-                                  className={`${smallInput} cursor-pointer ${overdue ? "text-red-600 dark:text-red-400 border-red-300" : ""}`}
-                                />
-                                {t.due_override ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => updateTask(t.id, { due_override: null })}
-                                    className="text-[11px] text-[#ed2127] dark:text-[#f2454b] hover:underline"
-                                  >
-                                    Back to automatic
-                                  </button>
-                                ) : !due ? (
-                                  <span className={`text-[11px] ${muted}`}>
-                                    Set the {ANCHORS.find((a) => a.value === t.anchor)?.label || "date"} above
-                                  </span>
-                                ) : null}
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => removeTask(t.id)}
-                              aria-label="Delete task"
-                              className="shrink-0 px-1 text-[#1c1a17]/30 dark:text-[#faf9f7]/30 hover:text-red-600 dark:hover:text-red-400"
-                            >
-                              ✕
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                    <ul className="space-y-1">{openTasks.map(renderTask)}</ul>
                     {addingTo === sec.title ? (
                       <form onSubmit={(e) => submitNewTask(e, sec)} className="flex items-center gap-2 ml-1">
                         <input
@@ -242,6 +246,28 @@ export default function TransactionChecklist({ person, side, dates }) {
                       >
                         + Add task
                       </button>
+                    )}
+                    {doneTasks.length > 0 && (
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setCompletedShown((c) => ({ ...c, [sec.title]: !completedOpen }))}
+                          aria-expanded={completedOpen}
+                          className={`flex items-center gap-1.5 text-xs font-medium hover:text-[#1c1a17] dark:hover:text-[#faf9f7] ${muted}`}
+                        >
+                          <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            className={`shrink-0 transition-transform ${completedOpen ? "rotate-90" : ""}`}
+                          >
+                            <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          Completed ({doneTasks.length})
+                        </button>
+                        {completedOpen && <ul className="space-y-1 mt-1">{doneTasks.map(renderTask)}</ul>}
+                      </div>
                     )}
                   </>
                 )}
