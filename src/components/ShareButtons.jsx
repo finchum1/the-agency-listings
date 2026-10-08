@@ -1,4 +1,4 @@
-import { facebookShareUrl, linkedinShareUrl, xShareUrl } from "../lib/shareLinks";
+import { emailShareUrl, facebookShareUrl, linkedinShareUrl, xShareUrl } from "../lib/shareLinks";
 
 // Same icon paths as agent-site/Footer.jsx and brokerage-site/Footer.jsx
 // use for their own social links — kept visually consistent.
@@ -28,6 +28,15 @@ function XIcon() {
   );
 }
 
+function EmailIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="16" height="16">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3.5 7l8.5 6 8.5-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 // Opens the share dialog in a small popup instead of a full new tab —
 // standard share-button UX. Falls back gracefully to a real new-tab
 // navigation (the plain href) if a popup blocker eats window.open.
@@ -48,7 +57,7 @@ const openPopup = (href) => (e) => {
   }
 };
 
-// "Share" row for a blog post — Facebook, LinkedIn, and X, no API keys
+// "Share" row for a blog post — Facebook, LinkedIn, X and Email, no API keys
 // or login required. Shared between agent-site and brokerage-site post
 // pages, both of which use the same --as-* theme tokens. `url` must be
 // the post's own absolute, canonical URL. `title` is optional — passed
@@ -59,6 +68,7 @@ export default function ShareButtons({ url, title, className = "" }) {
   const fb = facebookShareUrl(url);
   const li = linkedinShareUrl(url);
   const x = xShareUrl(url, title);
+  const mail = emailShareUrl(url, title);
 
   return (
     <div className={`flex items-center gap-3 ${className}`}>
@@ -92,6 +102,13 @@ export default function ShareButtons({ url, title, className = "" }) {
         className="h-8 w-8 rounded-full border border-[var(--as-text)]/15 flex items-center justify-center text-[var(--as-text)]/60 transition-colors hover:text-[var(--as-accent)] hover:border-[var(--as-accent)]/40"
       >
         <XIcon />
+      </a>
+      <a
+        href={mail}
+        aria-label="Share by email"
+        className="h-8 w-8 rounded-full border border-[var(--as-text)]/15 flex items-center justify-center text-[var(--as-text)]/60 transition-colors hover:text-[var(--as-accent)] hover:border-[var(--as-accent)]/40"
+      >
+        <EmailIcon />
       </a>
     </div>
   );

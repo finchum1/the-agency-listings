@@ -19,3 +19,12 @@ export function xShareUrl(url, text) {
   if (text) params.set("text", text);
   return `https://x.com/intent/tweet?${params.toString()}`;
 }
+
+// A mailto: link — opens the reader's own mail app with the subject and
+// body filled in. No popup, no third party. `title` is optional; it
+// becomes the subject and leads the body.
+export function emailShareUrl(url, title) {
+  const subject = title || "Thought you'd like this";
+  const body = title ? `${title}\n\n${url}` : url;
+  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
