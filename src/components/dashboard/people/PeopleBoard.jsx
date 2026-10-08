@@ -215,11 +215,51 @@ export default function PeopleBoard({ group }) {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-display font-semibold">{board.title}</h1>
-        <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
-          {active.length} {active.length === 1 ? "person" : "people"} · drag cards between columns, drag a column's ⋮⋮ grip (or use ⋯) to reorder, click a title to rename it, or use + to add someone.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-display font-semibold">{board.title}</h1>
+          <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
+            {active.length} {active.length === 1 ? "person" : "people"} · drag cards between columns, drag a column's ⋮⋮ grip (or use ⋯) to reorder, click a title to rename it, or use + to add someone.
+          </p>
+        </div>
+        {/* Add-column lives up here rather than as a tile at the end of the
+            board — a trailing tile made the board wider than its columns
+            need. */}
+        {addingColumn ? (
+          <form onSubmit={handleAddColumn} className="flex items-center gap-2 shrink-0">
+            <input
+              autoFocus
+              value={newColumnName}
+              onChange={(e) => setNewColumnName(e.target.value)}
+              placeholder="Column name"
+              className={`${inputClass} w-44`}
+            />
+            <button
+              type="submit"
+              className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-4 py-2"
+            >
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAddingColumn(false);
+                setNewColumnName("");
+              }}
+              className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+            >
+              Cancel
+            </button>
+          </form>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAddingColumn(true)}
+            className="shrink-0 rounded-full border border-black/15 dark:border-white/20 px-4 py-2 text-sm font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+          >
+            + Add column
+          </button>
+        )}
       </div>
 
       {(error || boardError) && <p className="text-sm text-red-600 dark:text-red-400">{error || boardError}</p>}
@@ -393,46 +433,6 @@ export default function PeopleBoard({ group }) {
             </div>
           );
         })}
-
-        <div className="w-64 shrink-0">
-          {addingColumn ? (
-            <form onSubmit={handleAddColumn} className="rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] p-2.5 space-y-2">
-              <input
-                autoFocus
-                value={newColumnName}
-                onChange={(e) => setNewColumnName(e.target.value)}
-                placeholder="Column name"
-                className={inputClass}
-              />
-              <div className="flex items-center gap-3">
-                <button
-                  type="submit"
-                  className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-4 py-1.5"
-                >
-                  Add column
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAddingColumn(false);
-                    setNewColumnName("");
-                  }}
-                  className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setAddingColumn(true)}
-              className="w-full rounded-2xl border border-dashed border-black/15 dark:border-white/20 px-4 py-3 text-sm font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] hover:bg-black/[0.02] dark:hover:bg-white/[0.03] text-left"
-            >
-              + Add column
-            </button>
-          )}
-        </div>
       </div>
 
       {archived.length > 0 && (
