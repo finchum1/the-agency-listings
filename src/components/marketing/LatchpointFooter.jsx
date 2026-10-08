@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import brokerage from "../../lib/brokerage";
 import { LatchpointWordmark } from "./LatchpointMarks";
 
 const PLATFORM = [
@@ -20,10 +19,9 @@ const STUDIO = [
 const heading = "font-geist-mono text-[11px] uppercase tracking-[0.14em] text-[#6c6e76]";
 const link = "text-sm text-[#a4a5ac] transition-colors hover:text-[#f5f5f4]";
 
-// Latchpoint Studios' footer for theagency.latchpointstudios.com: Latchpoint
-// leads (wordmark tagged "The Agency", then the studio's own links), and The
-// Agency's logo and office address sit underneath as the client the platform
-// was built for. Always dark, like Latchpoint's own footer, on both themes.
+// Latchpoint Studios' footer for theagency.latchpointstudios.com: the
+// wordmark tagged "The Agency", the platform's pages, and the studio's own
+// links. Always dark, like Latchpoint's own footer, on both themes.
 export default function LatchpointFooter() {
   return (
     <footer className="border-t border-white/10 bg-[#08090b] font-geist">
@@ -67,13 +65,7 @@ export default function LatchpointFooter() {
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col gap-6 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <img src={brokerage.logo} alt={brokerage.name} className="h-9 w-auto" />
-            <p className="text-xs leading-relaxed text-[#6c6e76]">
-              {brokerage.address.line1}, {brokerage.address.city}, {brokerage.address.state} {brokerage.address.zip}
-            </p>
-          </div>
+        <div className="mt-14 border-t border-white/10 pt-8">
           <p className="text-xs text-[#6c6e76]">
             &copy; {new Date().getFullYear()} Latchpoint Studios. Edmond, Oklahoma.
           </p>
