@@ -80,7 +80,7 @@ export default function AgentWebsitesPage() {
                 Get in Touch
               </a>
               <a
-                href="/sites/terrence-finchum"
+                href="https://www.terrencefinchum.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] transition-colors"

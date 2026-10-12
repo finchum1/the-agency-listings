@@ -49,7 +49,7 @@ export default function PropertyWebsitesPage() {
                 Get in Touch
               </a>
               <a
-                href="/listings/1645-saratoga-way"
+                href="https://the-agency-listings.vercel.app/listings/1645-saratoga-way"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] transition-colors"

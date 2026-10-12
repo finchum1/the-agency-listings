@@ -49,7 +49,7 @@ export default function BrokerageWebsitePage() {
                 Get in Touch
               </a>
               <a
-                href="/brokerage"
+                href="https://the-agency-oklahoma.vercel.app/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] transition-colors"
@@ -127,7 +127,7 @@ export default function BrokerageWebsitePage() {
               from the full-market Home Search.
             </p>
             <a
-              href="/brokerage/listings"
+              href="https://the-agency-oklahoma.vercel.app/listings"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:text-[#ed2127] transition-colors"
