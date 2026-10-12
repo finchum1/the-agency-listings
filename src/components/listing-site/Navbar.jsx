@@ -9,7 +9,7 @@ const links = [
   { href: "#contact", label: "Contact" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ backLink }) {
   const { listing } = useListingContext();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -27,13 +27,29 @@ export default function Navbar() {
       }`}
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-10 flex items-center justify-between py-3">
-        <a href="#overview" className="flex items-center min-w-0">
-          <img
-            src={listing.brokerage.logo}
-            alt={listing.brokerage.name}
-            className="h-14 sm:h-16 w-auto"
-          />
-        </a>
+        <div className="flex items-center gap-3 sm:gap-5 min-w-0">
+          <a href="#overview" className="flex items-center min-w-0">
+            <img
+              src={listing.brokerage.logo}
+              alt={listing.brokerage.name}
+              className="h-14 sm:h-16 w-auto"
+            />
+          </a>
+          {backLink && (
+            <a
+              href={backLink.href}
+              className={`inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors ${
+                scrolled
+                  ? "text-[var(--ls-text)]/80 hover:text-[var(--ls-text)]"
+                  : "text-[var(--ls-on-dark)]/85 hover:text-[var(--ls-on-dark)]"
+              }`}
+            >
+              <span aria-hidden="true">←</span>
+              <span className="hidden sm:inline">{backLink.label}</span>
+              <span className="sm:hidden">Back</span>
+            </a>
+          )}
+        </div>
 
         <nav className="hidden lg:flex items-center gap-6 xl:gap-8 shrink-0">
           {links.map((link) => (

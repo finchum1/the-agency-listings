@@ -24,7 +24,7 @@ import Footer from "../components/listing-site/Footer";
 // /listings/:slug (PublicListingPage.jsx) and when a request arrives on a
 // listing's own attached custom domain (CustomDomainSitePage.jsx).
 // Takes the raw shape returned by useListing().
-export default function ListingSitePage({ listing, agent, photos, openHouses, loading, notFound }) {
+export default function ListingSitePage({ listing, agent, photos, openHouses, loading, notFound, backLink }) {
   const adapted = listing ? adaptListing({ listing, agent, photos }) : null;
 
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function ListingSitePage({ listing, agent, photos, openHouses, lo
         data-font={isLuxury ? "bodoni-manrope" : adapted.fontPairing}
         style={!isLuxury && adapted.accentColor ? { "--ls-accent": adapted.accentColor } : undefined}
       >
-        <Navbar />
+        <Navbar backLink={backLink} />
         {isLuxury ? <LuxuryHero /> : <Hero />}
         <StatsBar />
         <OpenHouseBanner />

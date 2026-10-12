@@ -13,6 +13,7 @@ import BrokerageSitePage from "./BrokerageSitePage";
 import BrokeragePostPage from "./BrokeragePostPage";
 import BrokerageAreaPage from "./BrokerageAreaPage";
 import NotFoundPage from "./NotFoundPage";
+import { safeFromPath } from "../lib/backLink";
 import HomeSections from "../components/agent-site/HomeSections";
 import Bio from "../components/agent-site/Bio";
 import Testimonials from "../components/agent-site/Testimonials";
@@ -124,7 +125,13 @@ function SharedCustomDomainListingDetailPage() {
   const listingResult = useListing({ slug: param });
 
   if (agentSiteResult.loading) return null;
-  if (agentSiteResult.site) return <ListingSitePage {...listingResult} />;
+  if (agentSiteResult.site) {
+    // On an agent's own site, a listing page always offers the way back to
+    // the website — the page they came from (portfolio links add ?from=),
+    // else the home page.
+    const from = safeFromPath(new URLSearchParams(window.location.search).get("from"));
+    return <ListingSitePage {...listingResult} backLink={{ href: from || "/", label: "Back to website" }} />;
+  }
   return (
     <BrokerageSitePage customDomain={hostname} path="/listings" pageTitle="Listings">
       <IdxListingDetail mlsNumber={param} />

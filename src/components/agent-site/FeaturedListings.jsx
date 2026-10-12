@@ -1,5 +1,6 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { formatPrice, STATUS_LABELS } from "../../lib/format";
+import { agentSiteHref } from "../../lib/agentSiteLinks";
 
 export default function FeaturedListings() {
   const { site, isStandalonePage } = useAgentSiteContext();
@@ -20,7 +21,7 @@ export default function FeaturedListings() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {site.listings.map((listing) => (
-            <a key={listing.id} href={`/listings/${listing.slug}`} className="group block">
+            <a key={listing.id} href={`/listings/${listing.slug}?from=${encodeURIComponent(agentSiteHref(site.slug, "/listings"))}`} className="group block">
               <div className="relative overflow-hidden bg-[var(--as-surface)] aspect-[4/3]">
                 {listing.hero_photo_url && (
                   <img
