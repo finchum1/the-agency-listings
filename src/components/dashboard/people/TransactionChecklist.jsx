@@ -59,6 +59,37 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [side, loading]);
 
+  // A section whose items are all done collapses itself. `collapsed` only
+  // holds the user's manual choices; ticking off the last item (or
+  // un-ticking / adding one) clears that section's choice so it follows
+  // the automatic rule again.
+  const completeKey = (() => {
+    const total = {};
+    const done = {};
+    for (const t of tasks) {
+      total[t.section] = (total[t.section] || 0) + 1;
+      if (t.done) done[t.section] = (done[t.section] || 0) + 1;
+    }
+    return Object.keys(total)
+      .filter((title) => done[title] === total[title])
+      .join("\u0001");
+  })();
+  const prevComplete = useRef(null);
+  useEffect(() => {
+    if (loading) return;
+    const now = new Set(completeKey ? completeKey.split("\u0001") : []);
+    const prev = prevComplete.current;
+    prevComplete.current = now;
+    if (!prev) return;
+    const changed = [...now].filter((t) => !prev.has(t)).concat([...prev].filter((t) => !now.has(t)));
+    if (changed.length)
+      setCollapsed((c) => {
+        const next = { ...c };
+        for (const t of changed) delete next[t];
+        return next;
+      });
+  }, [completeKey, loading]);
+
   if (loading) return null;
 
   const sections = [];
@@ -185,7 +216,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
             const openTasks = sec.tasks.filter((t) => !t.done);
             const doneTasks = sec.tasks.filter((t) => t.done);
             const done = doneTasks.length;
-            const open = !collapsed[sec.title];
+            const open = collapsed[sec.title] === undefined ? done < sec.tasks.length : !collapsed[sec.title];
             const completedOpen = !!completedShown[sec.title];
             return (
               <div key={sec.title} className="space-y-1.5">

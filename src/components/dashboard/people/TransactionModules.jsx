@@ -33,20 +33,41 @@ function ProgressRing({ done, total, size = 44 }) {
   );
 }
 
+// Clicking the header folds the whole card down to its title, count and
+// ring. The body stays mounted (just hidden) so the counts keep updating.
 function Module({ title, summary, unit, children }) {
   const { done = 0, total = 0 } = summary || {};
+  const [open, setOpen] = useState(true);
   return (
-    <section className="min-w-0 rounded-2xl border border-black/10 dark:border-white/10 p-5 space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="font-display text-base font-semibold">{title}</h3>
-          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
-            {total > 0 ? `${done} of ${total} ${unit}` : "Nothing added yet"}
-          </p>
-        </div>
+    <section className="min-w-0 rounded-2xl border border-black/10 dark:border-white/10 p-5">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-3 text-left"
+      >
+        <span className="flex items-center gap-2 min-w-0">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            className={`shrink-0 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 transition-transform ${open ? "rotate-90" : ""}`}
+          >
+            <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="min-w-0">
+            <span className="block font-display text-base font-semibold">{title}</span>
+            <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+              {total > 0 ? `${done} of ${total} ${unit}` : "Nothing added yet"}
+            </span>
+          </span>
+        </span>
         {total > 0 && <ProgressRing done={done} total={total} />}
+      </button>
+      <div hidden={!open} className="pt-4">
+        {children}
       </div>
-      {children}
     </section>
   );
 }
