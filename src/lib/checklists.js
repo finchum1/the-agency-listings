@@ -132,9 +132,43 @@ export async function loadTemplate(side) {
 }
 
 // Documents to collect on a deal. Same sections/items shape as the task
-// templates but with no due rule. Starts empty — each agent fills in their
-// own list under Settings → Transactions Checklist → Documents.
-export const DEFAULT_DOCUMENT_TEMPLATES = { buyer: [], seller: [] };
+// templates but with no due rule. Each agent can edit their own copy under
+// Settings -> Transactions Checklist -> Documents; this is the starting list.
+export const DEFAULT_DOCUMENT_TEMPLATES = {
+  buyer: [],
+  seller: [
+    {
+      title: "Listing Docs",
+      items: [
+        "Listing Agreement",
+        "Wire Fraud",
+        "Seller Net Sheet List Price",
+        "Tax Record",
+        "Property Disclosure, Disclaimer, or Exempt",
+        "Sales Docs",
+        "Purchase Agreement",
+        "Counteroffer",
+        "Financing",
+        "Net Sheet at Contract Price",
+        "Cooperative Compensation Supplement",
+        "HOA Doc",
+        "Sales of Buyers Property",
+        "Contingency Removal",
+        "Earnest Money Receipt",
+        "MLS Print Out",
+        "Addendum",
+        "Referral Agreement",
+        "Referral W9",
+      ],
+    },
+    {
+      title: "Disclosure Docs",
+      items: ["Property Disclosure, Disclaimer, or Exempt", "Lead Based Paint Disclosure", "Beneficial Interest, Familial Relationship"],
+    },
+    { title: "Reports", items: ["Home Inspection", "Pest Inspection", "TRR"] },
+    { title: "Closing Docs", items: ["Closing Documents", "Closing Checks", "DA"] },
+  ],
+};
 
 export async function loadDocumentTemplate(side) {
   const { data } = await supabase.from("document_templates").select("sections").eq("side", side).maybeSingle();
