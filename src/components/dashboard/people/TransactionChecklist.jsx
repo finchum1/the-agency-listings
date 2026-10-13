@@ -141,7 +141,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
               </button>
             ) : !due ? (
               <span className={`text-[11px] ${muted}`}>
-                Set the {ANCHORS.find((a) => a.value === t.anchor)?.label || "date"} above
+                Set the {ANCHORS.find((a) => a.value === t.anchor)?.label || "date"} on the Transaction tab
               </span>
             ) : null}
           </div>
@@ -184,7 +184,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
               </button>
             </>
           ) : (
-            <p className={`text-sm ${muted}`}>Choose Buyer or Seller above and the checklist is added automatically.</p>
+            <p className={`text-sm ${muted}`}>Choose Buyer or Seller on the Transaction tab and the checklist is added automatically.</p>
           )}
         </div>
       ) : (

@@ -196,10 +196,75 @@ export default function PersonPanel({
 
   const sourceOptions = form.source && !SOURCES.includes(form.source) ? [form.source, ...SOURCES] : SOURCES;
 
+  const isTransaction = person.stage_group === "transaction";
+  const transactionDetails = (
+    <div className="space-y-3">
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label className={labelClass}>Side</label>
+            <select value={form.side} onChange={setField("side", true)} className={inputClass}>
+              <option value="">Select…</option>
+              <option value="buyer">Buyer</option>
+              <option value="seller">Seller</option>
+            </select>
+          </div>
+          <div>
+            <label className={labelClass}>Property address</label>
+            <input value={form.property_address} onChange={setField("property_address")} onBlur={flush} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Price ($)</label>
+            <input type="number" min="0" step="any" inputMode="decimal" value={form.price} onChange={setField("price")} onBlur={flush} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Commission ($)</label>
+            <input type="number" min="0" step="any" inputMode="decimal" value={form.commission} onChange={setField("commission")} onBlur={flush} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Other agent</label>
+            <input value={form.other_agent} onChange={setField("other_agent")} onBlur={flush} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Title company</label>
+            <input value={form.title_company} onChange={setField("title_company")} onBlur={flush} className={inputClass} />
+          </div>
+          <div className="sm:col-span-2">
+            <label className={labelClass}>Lender</label>
+            <input value={form.lender} onChange={setField("lender")} onBlur={flush} className={inputClass} />
+          </div>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {[
+            ["contract_date", "Contract date"],
+            ["inspection_date", "Inspection"],
+            ["appraisal_date", "Appraisal"],
+            ["financing_deadline", "Financing deadline"],
+            ["closing_date", "Closing"],
+          ].map(([key, label]) => (
+            <div key={key}>
+              <label className={labelClass}>{label}</label>
+              <input
+                type="date"
+                value={form[key]}
+                onChange={setField(key, true)}
+                onClick={openPicker}
+                className={`${inputClass} cursor-pointer`}
+              />
+            </div>
+          ))}
+        </div>
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center sm:p-6" role="dialog" aria-modal="true">
       <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-black/40" />
-      <div className="relative w-full max-w-md h-full overflow-y-auto bg-white dark:bg-[#1a1a1a] text-[#1c1a17] dark:text-[#faf9f7] shadow-xl p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] space-y-6">
+      <div
+        className={`relative w-full h-full sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden bg-white dark:bg-[#1a1a1a] text-[#1c1a17] dark:text-[#faf9f7] shadow-xl sm:rounded-2xl ${
+          isTransaction ? "sm:max-w-5xl sm:min-h-[70vh]" : "sm:max-w-xl"
+        }`}
+      >
+      <div className="shrink-0 px-6 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-4 space-y-4 border-b border-black/5 dark:border-white/10">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             {position > 0 && (
@@ -233,7 +298,11 @@ export default function PersonPanel({
         </div>
 
         <ContactButtons person={{ ...person, phone: form.phone, email: form.email }} />
+      </div>
 
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6">
+      <div className={`grid gap-y-6 ${isTransaction ? "lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)] lg:gap-x-8" : ""}`}>
+        <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-1">
         <div className="space-y-3">
           <div>
             <label className={labelClass}>Name</label>
@@ -296,66 +365,12 @@ export default function PersonPanel({
               ))}
             </select>
           </div>
-          {person.stage_group === "transaction" && (
-            <div className="space-y-3 pt-4 mt-1 border-t border-black/5 dark:border-white/10">
-              <h3 className="font-display text-base font-semibold">Transaction</h3>
-              <div className="grid sm:grid-cols-2 gap-3">
-                <div>
-                  <label className={labelClass}>Side</label>
-                  <select value={form.side} onChange={setField("side", true)} className={inputClass}>
-                    <option value="">Select…</option>
-                    <option value="buyer">Buyer</option>
-                    <option value="seller">Seller</option>
-                  </select>
-                </div>
-                <div>
-                  <label className={labelClass}>Property address</label>
-                  <input value={form.property_address} onChange={setField("property_address")} onBlur={flush} className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>Price ($)</label>
-                  <input type="number" min="0" step="any" inputMode="decimal" value={form.price} onChange={setField("price")} onBlur={flush} className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>Commission ($)</label>
-                  <input type="number" min="0" step="any" inputMode="decimal" value={form.commission} onChange={setField("commission")} onBlur={flush} className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>Other agent</label>
-                  <input value={form.other_agent} onChange={setField("other_agent")} onBlur={flush} className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>Title company</label>
-                  <input value={form.title_company} onChange={setField("title_company")} onBlur={flush} className={inputClass} />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className={labelClass}>Lender</label>
-                  <input value={form.lender} onChange={setField("lender")} onBlur={flush} className={inputClass} />
-                </div>
-              </div>
-              <div className="grid sm:grid-cols-2 gap-3">
-                {[
-                  ["contract_date", "Contract date"],
-                  ["inspection_date", "Inspection"],
-                  ["appraisal_date", "Appraisal"],
-                  ["financing_deadline", "Financing deadline"],
-                  ["closing_date", "Closing"],
-                ].map(([key, label]) => (
-                  <div key={key}>
-                    <label className={labelClass}>{label}</label>
-                    <input
-                      type="date"
-                      value={form[key]}
-                      onChange={setField(key, true)}
-                      onClick={openPicker}
-                      className={`${inputClass} cursor-pointer`}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {person.stage_group === "transaction" && (
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        </div>
+        </div>
+
+        {isTransaction && (
+          <div className="min-w-0 order-first lg:order-none lg:col-start-2 lg:row-start-1 lg:row-span-2">
             <TransactionTabs
               person={person}
               side={form.side}
@@ -364,11 +379,12 @@ export default function PersonPanel({
                 inspection_date: form.inspection_date,
                 closing_date: form.closing_date,
               }}
+              details={transactionDetails}
             />
-          )}
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-        </div>
+          </div>
+        )}
 
+        <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-2">
         <section className="space-y-3">
           <h3 className="font-display text-base font-semibold">Notes</h3>
           <form onSubmit={addNote} className="space-y-2">
@@ -471,6 +487,9 @@ export default function PersonPanel({
             Delete permanently
           </button>
         </section>
+        </div>
+      </div>
+      </div>
       </div>
     </div>
   );

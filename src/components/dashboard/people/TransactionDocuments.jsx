@@ -179,7 +179,7 @@ export default function TransactionDocuments({ person, side, onSummary }) {
               </p>
             </>
           ) : (
-            <p className={`text-sm ${muted}`}>Choose Buyer or Seller above and the document list is added automatically.</p>
+            <p className={`text-sm ${muted}`}>Choose Buyer or Seller on the Transaction tab and the document list is added automatically.</p>
           )}
         </div>
       ) : (
