@@ -97,13 +97,43 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
               {post.title}
             </h1>
             <div className="flex flex-wrap items-center justify-between gap-4 mb-10">
-              <p className="text-sm text-[var(--as-text)]/50">
-                {new Date(`${post.post_date}T00:00:00`).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
+              <div className="flex items-center gap-3">
+                {adapted.agent.photo ? (
+                  <img
+                    src={adapted.agent.photo}
+                    alt={adapted.agent.name}
+                    className="h-11 w-11 shrink-0 rounded-full object-cover object-top bg-[var(--as-surface)]"
+                  />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="h-11 w-11 shrink-0 rounded-full bg-[var(--as-surface)] flex items-center justify-center text-sm font-semibold text-[var(--as-text)]/50"
+                  >
+                    {adapted.agent.name
+                      .split(/\s+/)
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((w) => w[0])
+                      .join("")
+                      .toUpperCase()}
+                  </span>
+                )}
+                <div className="leading-snug">
+                  <p className="text-sm text-[var(--as-text)]/60">
+                    Written by{" "}
+                    <SiteLink slug={site.slug} path="" className="font-medium text-[var(--as-text)] hover:underline">
+                      {adapted.agent.name}
+                    </SiteLink>
+                  </p>
+                  <p className="text-xs text-[var(--as-text)]/50">
+                    {new Date(`${post.post_date}T00:00:00`).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                </div>
+              </div>
               <ShareButtons url={postUrl} title={post.title} />
             </div>
 
@@ -120,13 +150,7 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
               }}
             />
 
-            <div className="mt-14 pt-6 border-t border-[var(--as-text)]/10 flex items-center justify-between">
-              <p className="text-sm text-[var(--as-text)]/60">
-                Written by{" "}
-                <SiteLink slug={site.slug} path="" className="text-[var(--as-text)] hover:underline">
-                  {adapted.agent.name}
-                </SiteLink>
-              </p>
+            <div className="mt-14 pt-6 border-t border-[var(--as-text)]/10 flex items-center justify-end">
               <SiteLink
                 slug={site.slug}
                 path="/blog"
