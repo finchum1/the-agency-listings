@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuth } from "../../../hooks/useAuth";
-import { ANCHORS, DEFAULT_TEMPLATES, SIDE_LABELS, ruleLabel } from "../../../lib/checklists";
+import { ANCHORS, DEFAULT_DOCUMENT_TEMPLATES, DEFAULT_TEMPLATES, SIDE_LABELS, ruleLabel } from "../../../lib/checklists";
 
 const inputClass =
   "rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -23,7 +23,11 @@ function move(list, from, to) {
 // Edits one side's template. Saves automatically; applying a template to a
 // transaction copies it, so changing it here never touches deals already
 // in progress.
-export default function ChecklistTemplateEditor({ side }) {
+export default function ChecklistTemplateEditor({ side, kind = "tasks" }) {
+  const isDocs = kind === "documents";
+  const table = isDocs ? "document_templates" : "checklist_templates";
+  const defaults = isDocs ? DEFAULT_DOCUMENT_TEMPLATES : DEFAULT_TEMPLATES;
+  const noun = isDocs ? "document" : "task";
   const { user } = useAuth();
   const [sections, setSections] = useState(null);
   const [status, setStatus] = useState("");
@@ -35,26 +39,26 @@ export default function ChecklistTemplateEditor({ side }) {
     let active = true;
     setSections(null);
     supabase
-      .from("checklist_templates")
+      .from(table)
       .select("sections")
       .eq("side", side)
       .maybeSingle()
       .then(({ data }) => {
         if (!active) return;
-        const loaded = data?.sections?.length ? data.sections : clone(DEFAULT_TEMPLATES[side]);
+        const loaded = data?.sections?.length ? data.sections : clone(defaults[side]);
         latestRef.current = loaded;
         setSections(loaded);
       });
     return () => {
       active = false;
     };
-  }, [side]);
+  }, [side, table]);
 
   const save = useCallback(async () => {
     clearTimeout(timerRef.current);
     if (!user?.id || !latestRef.current) return;
     setStatus("Saving…");
-    const { error: err } = await supabase.from("checklist_templates").upsert({
+    const { error: err } = await supabase.from(table).upsert({
       owner_id: user.id,
       side,
       sections: latestRef.current,
@@ -67,7 +71,7 @@ export default function ChecklistTemplateEditor({ side }) {
       setError("");
       setStatus("Saved");
     }
-  }, [side, user?.id]);
+  }, [side, table, user?.id]);
 
   useEffect(() => () => void (timerRef.current && save()), [save]);
 
@@ -84,15 +88,15 @@ export default function ChecklistTemplateEditor({ side }) {
     patchSection(i, { items: sections[i].items.map((t, idx) => (idx === j ? text : t)) });
 
   const handleReset = async () => {
-    if (!confirm(`Replace your ${SIDE_LABELS[side]} template with the original default? Your edits will be lost.`)) return;
+    if (!confirm(`Replace your ${SIDE_LABELS[side]} ${noun} list with the original default? Your edits will be lost.`)) return;
     clearTimeout(timerRef.current);
     timerRef.current = null;
-    const { error: err } = await supabase.from("checklist_templates").delete().eq("side", side);
+    const { error: err } = await supabase.from(table).delete().eq("side", side);
     if (err) {
       setError(err.message);
       return;
     }
-    const fresh = clone(DEFAULT_TEMPLATES[side]);
+    const fresh = clone(defaults[side]);
     latestRef.current = fresh;
     setSections(fresh);
     setStatus("Reset");
@@ -104,7 +108,7 @@ export default function ChecklistTemplateEditor({ side }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <p className={`text-sm ${muted}`}>
-          {sections.reduce((n, s) => n + s.items.length, 0)} tasks in {sections.length} sections
+          {sections.reduce((n, s) => n + s.items.length, 0)} {noun}s in {sections.length} section{sections.length === 1 ? "" : "s"}
         </p>
         <span className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">{status}</span>
       </div>
@@ -131,7 +135,7 @@ export default function ChecklistTemplateEditor({ side }) {
                 type="button"
                 className={`${iconBtn} hover:!text-red-600`}
                 onClick={() => {
-                  if (confirm(`Delete the "${sec.title || "untitled"}" section and its ${sec.items.length} tasks?`)) edit(sections.filter((_, idx) => idx !== i));
+                  if (confirm(`Delete the "${sec.title || "untitled"}" section and its ${sec.items.length} ${noun}s?`)) edit(sections.filter((_, idx) => idx !== i));
                 }}
                 aria-label="Delete section"
               >
@@ -139,40 +143,44 @@ export default function ChecklistTemplateEditor({ side }) {
               </button>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap text-sm">
-              <span className={muted}>Due</span>
-              <input
-                type="number"
-                min="0"
-                value={Math.abs(offset)}
-                onChange={(e) => {
-                  const n = Math.max(0, Math.floor(Number(e.target.value) || 0));
-                  patchSection(i, { offset_days: offset < 0 ? -n : n });
-                }}
-                className={`${inputClass} w-20`}
-              />
-              <span className={muted}>days</span>
-              <select
-                value={offset < 0 ? "before" : "after"}
-                onChange={(e) => {
-                  const n = Math.abs(offset) || 1;
-                  patchSection(i, { offset_days: e.target.value === "before" ? -n : n });
-                }}
-                className={inputClass}
-              >
-                <option value="after">after</option>
-                <option value="before">before</option>
-              </select>
-              <span className={muted}>the</span>
-              <select value={sec.anchor} onChange={(e) => patchSection(i, { anchor: e.target.value })} className={inputClass}>
-                {ANCHORS.map((a) => (
-                  <option key={a.value} value={a.value}>
-                    {a.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <p className={`text-xs -mt-1 ${muted}`}>{ruleLabel(sec.anchor, offset)}. You can still pick a specific date on any task.</p>
+            {!isDocs && (
+              <>
+                <div className="flex items-center gap-2 flex-wrap text-sm">
+                  <span className={muted}>Due</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={Math.abs(offset)}
+                    onChange={(e) => {
+                      const n = Math.max(0, Math.floor(Number(e.target.value) || 0));
+                      patchSection(i, { offset_days: offset < 0 ? -n : n });
+                    }}
+                    className={`${inputClass} w-20`}
+                  />
+                  <span className={muted}>days</span>
+                  <select
+                    value={offset < 0 ? "before" : "after"}
+                    onChange={(e) => {
+                      const n = Math.abs(offset) || 1;
+                      patchSection(i, { offset_days: e.target.value === "before" ? -n : n });
+                    }}
+                    className={inputClass}
+                  >
+                    <option value="after">after</option>
+                    <option value="before">before</option>
+                  </select>
+                  <span className={muted}>the</span>
+                  <select value={sec.anchor} onChange={(e) => patchSection(i, { anchor: e.target.value })} className={inputClass}>
+                    {ANCHORS.map((a) => (
+                      <option key={a.value} value={a.value}>
+                        {a.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <p className={`text-xs -mt-1 ${muted}`}>{ruleLabel(sec.anchor, offset)}. You can still pick a specific date on any task.</p>
+              </>
+            )}
 
             <ul className="space-y-1.5">
               {sec.items.map((text, j) => (
@@ -184,10 +192,10 @@ export default function ChecklistTemplateEditor({ side }) {
                     className={`${inputClass} flex-1 resize-none leading-snug`}
                   />
                   <div className="flex flex-col">
-                    <button type="button" className={`${iconBtn} h-5`} disabled={j === 0} onClick={() => patchSection(i, { items: move(sec.items, j, j - 1) })} aria-label="Move task up">
+                    <button type="button" className={`${iconBtn} h-5`} disabled={j === 0} onClick={() => patchSection(i, { items: move(sec.items, j, j - 1) })} aria-label={`Move ${noun} up`}>
                       ↑
                     </button>
-                    <button type="button" className={`${iconBtn} h-5`} disabled={j === sec.items.length - 1} onClick={() => patchSection(i, { items: move(sec.items, j, j + 1) })} aria-label="Move task down">
+                    <button type="button" className={`${iconBtn} h-5`} disabled={j === sec.items.length - 1} onClick={() => patchSection(i, { items: move(sec.items, j, j + 1) })} aria-label={`Move ${noun} down`}>
                       ↓
                     </button>
                   </div>
@@ -195,7 +203,7 @@ export default function ChecklistTemplateEditor({ side }) {
                     type="button"
                     className={`${iconBtn} hover:!text-red-600`}
                     onClick={() => patchSection(i, { items: sec.items.filter((_, idx) => idx !== j) })}
-                    aria-label="Delete task"
+                    aria-label={`Delete ${noun}`}
                   >
                     ✕
                   </button>
@@ -207,7 +215,7 @@ export default function ChecklistTemplateEditor({ side }) {
               onClick={() => patchSection(i, { items: [...sec.items, ""] })}
               className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline"
             >
-              + Add task
+              + Add {noun}
             </button>
           </section>
         );
@@ -216,7 +224,7 @@ export default function ChecklistTemplateEditor({ side }) {
       <div className="flex items-center gap-4">
         <button
           type="button"
-          onClick={() => edit([...sections, { title: "New section", anchor: "contract_date", offset_days: 7, items: [""] }])}
+          onClick={() => edit([...sections, isDocs ? { title: "New section", items: [""] } : { title: "New section", anchor: "contract_date", offset_days: 7, items: [""] }])}
           className="rounded-full border border-black/10 dark:border-white/15 text-sm font-semibold px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/10"
         >
           + Add section

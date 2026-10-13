@@ -5,6 +5,7 @@ import ChecklistTemplateEditor from "./ChecklistTemplateEditor";
 
 export default function SettingsPage() {
   const [side, setSide] = useState("buyer");
+  const [kind, setKind] = useState("tasks");
   return (
     <div className="max-w-3xl space-y-6">
       <div>
@@ -13,11 +14,29 @@ export default function SettingsPage() {
         </Link>
         <h1 className="text-2xl font-display font-semibold mt-2">Transactions Checklist</h1>
         <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
-          Your buyer and seller checklist templates. When you add a checklist to a deal, it copies the template for that side —
-          editing a template here never changes deals already in progress.
+          Your buyer and seller task and document lists. When you add one to a deal, it copies the list for that side —
+          editing it here never changes deals already in progress.
         </p>
       </div>
 
+      <div className="flex items-center gap-3 flex-wrap">
+      <div className="inline-flex rounded-full border border-black/10 dark:border-white/15 p-0.5 text-sm font-medium">
+        {[
+          ["tasks", "Tasks"],
+          ["documents", "Documents"],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setKind(key)}
+            className={`px-4 py-1.5 rounded-full transition-colors ${
+              kind === key ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <div className="inline-flex rounded-full border border-black/10 dark:border-white/15 p-0.5 text-sm font-medium">
         {Object.entries(SIDE_LABELS).map(([key, label]) => (
           <button
@@ -28,12 +47,13 @@ export default function SettingsPage() {
               side === key ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60"
             }`}
           >
-            {label} checklist
+            {label}
           </button>
         ))}
       </div>
+      </div>
 
-      <ChecklistTemplateEditor key={side} side={side} />
+      <ChecklistTemplateEditor key={`${kind}-${side}`} side={side} kind={kind} />
     </div>
   );
 }

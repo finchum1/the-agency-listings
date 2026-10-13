@@ -22,7 +22,7 @@ const openPicker = (e) => {
 
 // `dates` is the deal's live form values, so due dates update the moment a
 // contract / inspection / closing date is typed in above.
-export default function TransactionChecklist({ person, side, dates }) {
+export default function TransactionChecklist({ person, side, dates, onSummary }) {
   const { tasks, loading, error, applyTemplate, addTask, updateTask, removeTask, clearAll } = useTransactionTasks(person.id);
   const [collapsed, setCollapsed] = useState({});
   const [completedShown, setCompletedShown] = useState({});
@@ -30,6 +30,11 @@ export default function TransactionChecklist({ person, side, dates }) {
   const [newText, setNewText] = useState("");
   const [working, setWorking] = useState(false);
   const today = todayKey();
+
+  useEffect(() => {
+    if (!loading) onSummary?.({ done: tasks.filter((t) => t.done).length, total: tasks.length });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks, loading]);
 
   // Picking a side applies that side's checklist automatically. Switching
   // sides swaps the checklist too, but only while nothing has been ticked
@@ -154,15 +159,14 @@ export default function TransactionChecklist({ person, side, dates }) {
   };
 
   return (
-    <div className="space-y-3 pt-4 mt-1 border-t border-black/5 dark:border-white/10">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="font-display text-base font-semibold">Checklist</h3>
-        {tasks.length > 0 && (
+    <div className="space-y-3">
+      {tasks.length > 0 && (
+        <div className="flex justify-end">
           <span className={`text-xs ${muted}`}>
             {doneCount} of {tasks.length} done
           </span>
-        )}
-      </div>
+        </div>
+      )}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {tasks.length === 0 ? (

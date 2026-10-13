@@ -320,3 +320,47 @@ create policy site_redirects_owner_admin_write on public.site_redirects
     and (s.agent_id = auth.uid() or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'))))
   with check (exists (select 1 from public.agent_sites s where s.id = site_redirects.agent_site_id
     and (s.agent_id = auth.uid() or exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'))));
+
+-- 13. Transaction documents: a second checklist per deal for the paperwork
+--     to collect (listing/seller set vs. buyer set), shown on its own
+--     "Documents" tab beside "Tasks". Same shape as the task checklist but
+--     with no due dates, and kept in separate tables so the overdue/follow-up
+--     views on the People overview (which read transaction_tasks) are
+--     untouched. document_templates holds the agent's saved list per side;
+--     applying one to a deal copies it into transaction_documents.
+create table if not exists public.document_templates (
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  side text not null check (side in ('buyer', 'seller')),
+  sections jsonb not null default '[]'::jsonb,
+  updated_at timestamptz not null default now(),
+  primary key (owner_id, side)
+);
+alter table public.document_templates enable row level security;
+drop policy if exists document_templates_owner_all on public.document_templates;
+create policy document_templates_owner_all on public.document_templates
+  for all
+  using (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled))
+  with check (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled));
+
+create table if not exists public.transaction_documents (
+  id uuid primary key default gen_random_uuid(),
+  person_id uuid not null references public.people(id) on delete cascade,
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  section text not null default '',
+  position integer not null default 0,
+  text text not null,
+  done boolean not null default false,
+  done_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists transaction_documents_person_idx on public.transaction_documents (person_id, position);
+alter table public.transaction_documents enable row level security;
+drop policy if exists transaction_documents_owner_all on public.transaction_documents;
+create policy transaction_documents_owner_all on public.transaction_documents
+  for all
+  using (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled))
+  with check (
+    owner_id = auth.uid()
+    and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled)
+    and exists (select 1 from public.people pe where pe.id = person_id and pe.owner_id = auth.uid())
+  );

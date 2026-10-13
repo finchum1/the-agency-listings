@@ -130,3 +130,13 @@ export async function loadTemplate(side) {
   const { data } = await supabase.from("checklist_templates").select("sections").eq("side", side).maybeSingle();
   return data?.sections?.length ? data.sections : DEFAULT_TEMPLATES[side];
 }
+
+// Documents to collect on a deal. Same sections/items shape as the task
+// templates but with no due rule. Starts empty — each agent fills in their
+// own list under Settings → Transactions Checklist → Documents.
+export const DEFAULT_DOCUMENT_TEMPLATES = { buyer: [], seller: [] };
+
+export async function loadDocumentTemplate(side) {
+  const { data } = await supabase.from("document_templates").select("sections").eq("side", side).maybeSingle();
+  return data?.sections?.length ? data.sections : DEFAULT_DOCUMENT_TEMPLATES[side];
+}
