@@ -33,6 +33,12 @@ export function isAppHost(hostname) {
   return false;
 }
 
+// The email signature generator's host (a single static page in
+// public/signature-generator/). middleware.js answers every page request on
+// it with that page, and api/sitemap.js lists it. Its images are linked from
+// every signature agents have pasted, so don't rename this host.
+export const SIGNATURE_HOST = "emailsignature.latchpointstudios.com";
+
 // Marketing-only hosts: serve just the standalone product-marketing pages
 // (LandingPage + its /agent-websites, /property-websites,
 // /brokerage-website, /upcoming deep-dives) — no login/dashboard access,

@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Animated Email Signature Generator | The Agency</title>
+  <meta name="description" content="Build your animated The Agency email signature in two minutes. Add your name, title, phone, website and social links, then copy it into Gmail, Outlook or Apple Mail." />
+  <meta property="og:title" content="Animated Email Signature Generator | The Agency" />
+  <meta property="og:description" content="Add your details, copy your animated signature, and paste it into your email app." />
+  <meta property="og:type" content="website" />
+  <link rel="icon" href="/favicon-32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f7f4ee;
+      --surface: #ffffff;
+      --text: #1c1a17;
+      --muted: #6b6760;
+      --line: #e4e0d8;
+      --accent: #ed2127;
+      --accent-ink: #ffffff;
+      --ok: #1f7a43;
+      --err: #b3261e;
+      --radius: 14px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #141311;
+        --surface: #1e1c19;
+        --text: #f3efe8;
+        --muted: #a39d93;
+        --line: #34312c;
+        --accent: #f2454b;
+        --ok: #5cc98a;
+        --err: #ff8a80;
+      }
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Jost", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+    header.top { padding: 28px 0 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .brand { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+    h1, h2 { font-family: "Playfair Display", Georgia, serif; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+    h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.1; margin-top: 18px; max-width: 18ch; }
+    .lede { max-width: 56ch; color: var(--muted); font-size: 18px; margin: 14px 0 0; }
+    .grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; margin: 36px 0 24px; align-items: start; }
+    @media (min-width: 900px) { .grid { grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 32px; } .sticky { position: sticky; top: 20px; } }
+    .sticky { min-width: 0; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; }
+    .step { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .step .n { width: 26px; height: 26px; border-radius: 50%; background: var(--text); color: var(--bg); font-size: 13px; font-weight: 600; display: grid; place-items: center; flex: none; }
+    h2 { font-size: 22px; }
+    label { display: block; font-size: 13px; font-weight: 500; color: var(--muted); margin: 0 0 6px; }
+    input[type="text"], input[type="tel"], input[type="url"] {
+      width: 100%; font: inherit; font-size: 16px; color: var(--text); background: transparent;
+      border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px;
+    }
+    input:focus-visible, button:focus-visible, textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    input::placeholder { color: color-mix(in srgb, var(--muted) 65%, transparent); }
+    .field { margin-bottom: 16px; }
+    .field .hint { font-size: 12px; color: var(--muted); margin-top: 5px; }
+    .sub { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 26px 0 12px; padding-top: 20px; border-top: 1px solid var(--line); }
+    .social { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .social img { width: 28px; height: 28px; display: block; }
+    .fixed-note { font-size: 13px; color: var(--muted); margin: 18px 0 0; }
+    .btn { font: inherit; font-weight: 500; font-size: 15px; border-radius: 999px; padding: 12px 22px; cursor: pointer; border: 1px solid transparent; }
+    .btn.primary { background: var(--accent); color: var(--accent-ink); }
+    .btn.secondary { background: transparent; color: var(--text); border-color: var(--line); }
+    .btn.link { background: none; border: 0; color: var(--muted); padding: 6px 4px; font-size: 13px; text-decoration: underline; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn:not(:disabled):hover { filter: brightness(0.94); }
+    .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+    .status { font-size: 14px; color: var(--ok); min-height: 1.4em; margin-top: 10px; }
+    .status.err { color: var(--err); }
+    .preview-box { background: #ffffff; color: #1c1a17; border: 1px solid var(--line); border-radius: 12px; padding: 24px; overflow: hidden; }
+    #sigInner { transform-origin: top left; width: max-content; }
+    .preview-box.is-sample { opacity: 0.55; }
+    .preview-note { font-size: 13px; color: var(--muted); margin: 12px 0 0; }
+    details { margin-top: 18px; }
+    summary { cursor: pointer; font-size: 14px; color: var(--muted); }
+    textarea#code { width: 100%; height: 220px; margin-top: 10px; font: 12px/1.5 ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: transparent; color: var(--text); resize: vertical; }
+    .guide { margin: 8px 0 56px; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 20px; }
+    .tab { font: inherit; font-size: 14px; font-weight: 500; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+    .tab[aria-selected="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+    .panel[hidden] { display: none; }
+    .panel ol { margin: 0; padding-left: 22px; }
+    .panel li { margin: 0 0 10px; max-width: 70ch; }
+    .callout { margin-top: 18px; padding: 14px 16px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 8%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); font-size: 14.5px; max-width: 70ch; }
+    .tips { display: grid; gap: 14px; margin-top: 28px; }
+    @media (min-width: 700px) { .tips { grid-template-columns: repeat(3, 1fr); } }
+    .tip { font-size: 14px; color: var(--muted); }
+    .tip b { display: block; color: var(--text); font-weight: 600; margin-bottom: 2px; }
+    footer { border-top: 1px solid var(--line); padding: 22px 0 40px; font-size: 13px; color: var(--muted); }
+    .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <span class="brand">The Agency &middot; Oklahoma</span>
+    </header>
+
+    <h1>Your animated email signature, ready in two minutes.</h1>
+    <p class="lede">The Agency logo draws itself, then your details sit beside it. Fill in the form, copy the result, and paste it into your email app.</p>
+
+    <div class="grid">
+      <section class="card" aria-labelledby="s1">
+        <div class="step"><span class="n">1</span><h2 id="s1">Your details</h2></div>
+        <form id="form" autocomplete="off" novalidate>
+          <div class="field">
+            <label for="name">Full name</label>
+            <input id="name" type="text" name="name" placeholder="Jane Smith" maxlength="80" autocomplete="name" />
+          </div>
+          <div class="field">
+            <label for="title">Title</label>
+            <input id="title" type="text" name="title" placeholder="Real Estate Advisor" maxlength="80" />
+          </div>
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input id="phone" type="tel" name="phone" placeholder="405-555-0123" maxlength="30" autocomplete="tel" />
+          </div>
+          <div class="field">
+            <label for="website">Website</label>
+            <input id="website" type="text" name="website" placeholder="janesmithhomes.com" maxlength="120" inputmode="url" />
+          </div>
+
+          <p class="sub">Social links <span style="text-transform:none;letter-spacing:0;font-weight:400">(optional)</span></p>
+          <div class="social"><img src="/signature-generator/assets/instagram.png" alt="" /><div><label class="sr" for="instagram">Instagram</label><input id="instagram" type="text" name="instagram" placeholder="Instagram: @username" maxlength="150" /></div></div>
+          <div class="social"><img src="/signature-generator/assets/facebook.png" alt="" /><div><label class="sr" for="facebook">Facebook</label><input id="facebook" type="text" name="facebook" placeholder="Facebook: page name or link" maxlength="150" /></div></div>
+          <div class="social"><img src="/signature-generator/assets/linkedin.png" alt="" /><div><label class="sr" for="linkedin">LinkedIn</label><input id="linkedin" type="text" name="linkedin" placeholder="LinkedIn: profile name or link" maxlength="150" /></div></div>
+          <div class="social"><img src="/signature-generator/assets/tiktok.png" alt="" /><div><label class="sr" for="tiktok">TikTok</label><input id="tiktok" type="text" name="tiktok" placeholder="TikTok: @username" maxlength="150" /></div></div>
+          <div class="social"><img src="/signature-generator/assets/x.png" alt="" /><div><label class="sr" for="x">X</label><input id="x" type="text" name="x" placeholder="X: @username" maxlength="150" /></div></div>
+          <div class="social"><img src="/signature-generator/assets/youtube.png" alt="" /><div><label class="sr" for="youtube">YouTube</label><input id="youtube" type="text" name="youtube" placeholder="YouTube: @channel or link" maxlength="150" /></div></div>
+          <p class="hint" style="font-size:12px;color:var(--muted);margin:2px 0 0">A username or a full link both work. Leave a box empty and its icon is left out.</p>
+
+          <p class="fixed-note">The logo, &ldquo;Oklahoma&rdquo; and the franchise disclosure line are added automatically and can&rsquo;t be edited.</p>
+          <div class="row"><button type="button" id="reset" class="btn link">Clear form</button></div>
+        </form>
+      </section>
+
+      <div class="sticky">
+        <section class="card" aria-labelledby="s2">
+          <div class="step"><span class="n">2</span><h2 id="s2">Preview &amp; copy</h2></div>
+          <div id="preview" class="preview-box is-sample" aria-live="polite"><div id="sigInner"></div></div>
+          <p class="preview-note" id="previewNote">This is an example. Type your name to see yours.</p>
+          <div class="row">
+            <button type="button" id="copy" class="btn primary" disabled>Copy signature</button>
+            <button type="button" id="copycode" class="btn secondary" disabled>Copy HTML code</button>
+          </div>
+          <div class="status" id="status" role="status"></div>
+          <details>
+            <summary>Show the HTML code</summary>
+            <textarea id="code" readonly spellcheck="false" aria-label="Signature HTML code"></textarea>
+          </details>
+        </section>
+      </div>
+    </div>
+
+    <section class="guide card" aria-labelledby="s3">
+      <div class="step"><span class="n">3</span><h2 id="s3">Add it to your email app</h2></div>
+      <p style="margin:0;color:var(--muted)">Pick your email app. In every case: click <b style="color:var(--text)">Copy signature</b> above first, then follow the steps.</p>
+      <div class="tabs" role="tablist" aria-label="Email app">
+        <button class="tab" role="tab" id="t-gmail" aria-selected="true" aria-controls="p-gmail">Gmail</button>
+        <button class="tab" role="tab" id="t-outlookweb" aria-selected="false" aria-controls="p-outlookweb" tabindex="-1">Outlook (web &amp; new)</button>
+        <button class="tab" role="tab" id="t-outlookwin" aria-selected="false" aria-controls="p-outlookwin" tabindex="-1">Outlook for Windows</button>
+        <button class="tab" role="tab" id="t-outlookmac" aria-selected="false" aria-controls="p-outlookmac" tabindex="-1">Outlook for Mac</button>
+        <button class="tab" role="tab" id="t-apple" aria-selected="false" aria-controls="p-apple" tabindex="-1">Apple Mail</button>
+        <button class="tab" role="tab" id="t-other" aria-selected="false" aria-controls="p-other" tabindex="-1">Other (HTML box)</button>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-gmail" aria-labelledby="t-gmail">
+        <ol>
+          <li>In Gmail, click the <b>gear</b> (top right), then <b>See all settings</b>.</li>
+          <li>On the <b>General</b> tab, scroll down to <b>Signature</b> and click <b>Create new</b>. Give it a name.</li>
+          <li>Click inside the signature box and paste (<b>Ctrl+V</b> on Windows, <b>Cmd+V</b> on Mac). Gmail has no HTML box, so paste the signature itself, not the code.</li>
+          <li>Under <b>Signature defaults</b>, choose this signature for <b>New emails</b> and <b>On reply/forward</b>.</li>
+          <li>Scroll to the bottom and click <b>Save Changes</b>.</li>
+        </ol>
+        <div class="callout">Gmail often shows the logo still while you edit. Send yourself a test email to see it move.</div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-outlookweb" aria-labelledby="t-outlookweb" hidden>
+        <ol>
+          <li>In Outlook on the web or the new Outlook, click the <b>gear</b> (top right), then <b>Accounts</b> &rarr; <b>Signatures</b>. (If you see <b>Mail</b> &rarr; <b>Compose and reply</b> instead, the signature box is there.)</li>
+          <li>Click <b>New signature</b> and give it a name.</li>
+          <li>Paste into the box (<b>Ctrl+V</b> / <b>Cmd+V</b>).</li>
+          <li>Choose it as the default for new messages and for replies/forwards, then click <b>Save</b>.</li>
+        </ol>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-outlookwin" aria-labelledby="t-outlookwin" hidden>
+        <ol>
+          <li>In Outlook for Windows, click <b>File</b> &rarr; <b>Options</b> &rarr; <b>Mail</b> &rarr; <b>Signatures&hellip;</b></li>
+          <li>Click <b>New</b>, name it, and click OK.</li>
+          <li>Click in the large editing box and paste (<b>Ctrl+V</b>).</li>
+          <li>Next to <b>New messages</b> and <b>Replies/forwards</b>, choose this signature, then click <b>OK</b>.</li>
+        </ol>
+        <div class="callout">Outlook for Windows doesn&rsquo;t play animated images. It shows the finished logo instead, which still looks right. People opening your email in Gmail, Apple Mail or Outlook on the web will see it animate.</div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-outlookmac" aria-labelledby="t-outlookmac" hidden>
+        <ol>
+          <li>In Outlook for Mac, click <b>Outlook</b> (menu bar) &rarr; <b>Settings</b> &rarr; <b>Signatures</b>.</li>
+          <li>Click <b>+</b> to add a signature, then click in the right-hand box.</li>
+          <li>Paste (<b>Cmd+V</b>).</li>
+          <li>Set it as the default for new messages and replies, then close the window to save.</li>
+        </ol>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-apple" aria-labelledby="t-apple" hidden>
+        <ol>
+          <li>In Apple Mail, click <b>Mail</b> (menu bar) &rarr; <b>Settings</b> &rarr; <b>Signatures</b>.</li>
+          <li>Click <b>+</b>, then <b>untick</b> &ldquo;Always match my default message font&rdquo;. If you skip this, Mail can strip the formatting.</li>
+          <li>Click in the right-hand box and paste (<b>Cmd+V</b>).</li>
+          <li>Drag the signature onto your email account in the left column, then choose it in <b>Choose Signature</b>.</li>
+        </ol>
+        <div class="callout">If the logo shows as an empty box, send yourself a test first. Apple Mail sometimes needs a moment to fetch the picture.</div>
+      </div>
+
+      <div class="panel" role="tabpanel" id="p-other" aria-labelledby="t-other" hidden>
+        <ol>
+          <li>Open your email provider&rsquo;s signature settings and look for an <b>HTML</b>, <b>Source</b> or <b>&lt;/&gt;</b> option. Zoho, Microsoft 365 admin, GoDaddy/Titan, Namecheap and many others have one.</li>
+          <li>Click <b>Copy HTML code</b> above and paste it into that box.</li>
+          <li>Save, then send yourself a test email.</li>
+        </ol>
+      </div>
+
+      <div class="tips">
+        <div class="tip"><b>Always send a test</b>Email it to yourself and open it on your phone and computer before you rely on it.</div>
+        <div class="tip"><b>Phones &amp; tablets</b>Mobile mail apps use their own signature setting. Set this one up on a computer first.</div>
+        <div class="tip"><b>Keep it as-is</b>The images load from this website, so paste the signature exactly as copied instead of re-saving pictures.</div>
+      </div>
+    </section>
+
+    <footer>
+      Everything you type stays in your browser. Nothing is sent or stored on a server. Built by Latchpoint Studios.
+    </footer>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  // The copied signature points at images on this site, so the address
+  // must stay put: changing it would break every signature already pasted.
+  var ASSET_BASE = "https://emailsignature.latchpointstudios.com/signature-generator/assets/";
+  var PREVIEW_BASE = location.origin + "/signature-generator/assets/";
+  var STORE_KEY = "agency-signature-v1";
+
+  var SAMPLE = { name: "Your Name", title: "Real Estate Advisor", phone: "405-555-0123", website: "yourwebsite.com",
+                 instagram: "", facebook: "", linkedin: "", tiktok: "", x: "", youtube: "" };
+
+  var NETWORKS = [
+    { key: "instagram", label: "Instagram", base: "https://instagram.com/" },
+    { key: "facebook",  label: "Facebook",  base: "https://facebook.com/" },
+    { key: "linkedin",  label: "LinkedIn",  base: "https://linkedin.com/in/" },
+    { key: "tiktok",    label: "TikTok",    base: "https://www.tiktok.com/@" },
+    { key: "x",         label: "X",         base: "https://x.com/" },
+    { key: "youtube",   label: "YouTube",   base: "https://youtube.com/@" }
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  var fields = ["name", "title", "phone", "website"].concat(NETWORKS.map(function (n) { return n.key; }));
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  // Only ever http(s). Anything else (javascript:, data:, ...) is dropped.
+  function safeUrl(raw) {
+    try {
+      var u = new URL(raw);
+      return (u.protocol === "https:" || u.protocol === "http:") ? u.href : "";
+    } catch (e) { return ""; }
+  }
+
+  function looksLikeLink(v) { return /^https?:\/\//i.test(v) || /^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/|$)/i.test(v); }
+
+  function socialUrl(network, value) {
+    var v = (value || "").trim();
+    if (!v) return "";
+    if (looksLikeLink(v)) return safeUrl(/^https?:\/\//i.test(v) ? v : "https://" + v);
+    var handle = v.replace(/^@/, "").replace(/[^\w.\-]/g, "");
+    return handle ? safeUrl(network.base + handle) : "";
+  }
+
+  function websiteParts(value) {
+    var v = (value || "").trim();
+    if (!v) return null;
+    var href = safeUrl(/^https?:\/\//i.test(v) ? v : "https://" + v);
+    if (!href) return null;
+    var shown = href.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/$/, "");
+    return { href: href, shown: shown };
+  }
+
+  function phoneHref(value) {
+    var v = (value || "").trim();
+    var digits = v.replace(/\D/g, "");
+    if (!digits) return "";
+    return "tel:" + (v.charAt(0) === "+" ? "+" : (digits.length === 10 ? "+1" : (digits.length === 11 && digits.charAt(0) === "1" ? "+" : ""))) + digits;
+  }
+
+  // 10 digits typed any way -> 405-555-0123. Anything else is shown as typed.
+  function phoneShown(value) {
+    var v = (value || "").trim();
+    var d = v.replace(/\D/g, "");
+    return d.length === 10 && !/[a-z+]/i.test(v) ? d.slice(0, 3) + "-" + d.slice(3, 6) + "-" + d.slice(6) : v;
+  }
+
+  // Same layout as the original signature, table-based with inline styles
+  // so it survives email clients.
+  function buildSignature(v, base) {
+    var site = websiteParts(v.website);
+    var tel = phoneHref(v.phone);
+    var icons = NETWORKS.map(function (n) {
+      var url = socialUrl(n, v[n.key]);
+      return url ? { n: n, url: url } : null;
+    }).filter(Boolean);
+
+    var h = [];
+    h.push('<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;color:#1c1a17;">');
+    h.push('  <tr>');
+    h.push('    <td valign="middle" style="padding:0 20px 0 0;border-right:1px solid #e4e0d8;">');
+    h.push('      <img src="' + base + 'logo-v1.gif" width="180" height="79" alt="The Agency" style="display:block;border:0;width:180px;height:79px;" />');
+    h.push('      <table cellpadding="0" cellspacing="0" border="0" width="180" style="border-collapse:collapse;width:180px;">');
+    h.push('        <tr>');
+    h.push('          <td width="36" style="width:36px;font-size:1px;line-height:1px;">&nbsp;</td>');
+    h.push('          <td width="141" align="center" style="width:141px;padding:6px 0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:14px;letter-spacing:4px;color:#6b6760;text-align:center;">OKLAHOMA</td>');
+    h.push('        </tr>');
+    h.push('      </table>');
+    h.push('    </td>');
+    h.push('    <td valign="middle" style="padding:0 0 0 20px;">');
+    h.push('      <div style="font-size:17px;font-weight:bold;line-height:1.3;color:#1c1a17;">' + esc(v.name) + '</div>');
+    if ((v.title || "").trim()) h.push('      <div style="font-size:13px;line-height:1.5;color:#ed2127;">' + esc(v.title.trim()) + '</div>');
+    if (tel) h.push('      <div style="font-size:13px;line-height:1.6;padding-top:8px;"><a href="' + esc(tel) + '" style="color:#1c1a17;text-decoration:none;">' + esc(phoneShown(v.phone)) + '</a></div>');
+    if (site) h.push('      <div style="font-size:13px;line-height:1.6;' + (tel ? '' : 'padding-top:8px;') + '"><a href="' + esc(site.href) + '" style="color:#ed2127;text-decoration:none;">' + esc(site.shown) + '</a></div>');
+    if (icons.length) {
+      h.push('      <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin-top:10px;">');
+      h.push('        <tr>');
+      icons.forEach(function (i, idx) {
+        var last = idx === icons.length - 1;
+        h.push('          <td style="padding:0' + (last ? '' : ' 6px 0 0') + ';"><a href="' + esc(i.url) + '"><img src="' + base + i.n.key + '.png" width="26" height="26" alt="' + i.n.label + '" style="display:block;border:0;" /></a></td>');
+      });
+      h.push('        </tr>');
+      h.push('      </table>');
+    }
+    h.push('    </td>');
+    h.push('  </tr>');
+    h.push('  <tr>');
+    h.push('    <td colspan="2" style="padding-top:16px;font-size:9px;line-height:1.5;letter-spacing:0.6px;color:#8a857c;text-transform:uppercase;">An independently owned and operated<br />franchisee of The Agency Real Estate Franchising, LLC.</td>');
+    h.push('  </tr>');
+    h.push('</table>');
+    return h.join("\n");
+  }
+
+  function readForm() {
+    var v = {};
+    fields.forEach(function (k) { v[k] = $(k).value; });
+    return v;
+  }
+
+  function save(v) { try { localStorage.setItem(STORE_KEY, JSON.stringify(v)); } catch (e) {} }
+  function load() { try { return JSON.parse(localStorage.getItem(STORE_KEY) || "null"); } catch (e) { return null; } }
+
+  var previewEl = $("preview"), innerEl = $("sigInner"), codeEl = $("code"), statusEl = $("status");
+  var copyBtn = $("copy"), copyCodeBtn = $("copycode"), noteEl = $("previewNote");
+
+  function render() {
+    var v = readForm();
+    var hasName = v.name.trim().length > 0;
+    var data = hasName ? v : SAMPLE;
+    innerEl.innerHTML = buildSignature(data, PREVIEW_BASE);
+    fit();
+    previewEl.classList.toggle("is-sample", !hasName);
+    noteEl.textContent = hasName ? "This is what your email recipients will see. The logo animates in most email apps." : "This is an example. Type your name to see yours.";
+    codeEl.value = hasName ? buildSignature(v, ASSET_BASE) : "";
+    copyBtn.disabled = copyCodeBtn.disabled = !hasName;
+    say("", true);
+    save(v);
+  }
+
+  // Shrinks the preview to fit narrow phones instead of scrolling sideways.
+  function fit() {
+    innerEl.style.transform = "none";
+    var avail = previewEl.clientWidth - 48;
+    var w = innerEl.scrollWidth;
+    var scale = w > avail && avail > 0 ? avail / w : 1;
+    innerEl.style.transform = scale < 1 ? "scale(" + scale + ")" : "none";
+    previewEl.style.height = scale < 1 ? innerEl.offsetHeight * scale + 48 + 2 + "px" : "";
+  }
+  window.addEventListener("resize", fit);
+
+  function say(msg, ok) {
+    statusEl.textContent = msg;
+    statusEl.classList.toggle("err", !ok);
+  }
+
+  copyBtn.addEventListener("click", async function () {
+    var html = buildSignature(readForm(), ASSET_BASE);
+    try {
+      await navigator.clipboard.write([new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([previewEl.innerText], { type: "text/plain" })
+      })]);
+      say("Copied. Now paste it into your email app (steps below).", true);
+    } catch (e) {
+      // Older browsers: select the preview and use the browser's own copy.
+      var range = document.createRange();
+      range.selectNodeContents(previewEl);
+      var sel = window.getSelection();
+      sel.removeAllRanges(); sel.addRange(range);
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e2) {}
+      sel.removeAllRanges();
+      say(ok ? "Copied. Now paste it into your email app (steps below)." : "Couldn't copy automatically. Select the signature above and press Ctrl+C (Cmd+C on Mac).", ok);
+    }
+  });
+
+  copyCodeBtn.addEventListener("click", async function () {
+    var html = buildSignature(readForm(), ASSET_BASE);
+    try {
+      await navigator.clipboard.writeText(html);
+      say("HTML code copied.", true);
+    } catch (e) {
+      codeEl.closest("details").open = true;
+      codeEl.focus(); codeEl.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e2) {}
+      say(ok ? "HTML code copied." : "Select all in the code box and copy it (Ctrl+A, then Ctrl+C).", ok);
+    }
+  });
+
+  $("reset").addEventListener("click", function () {
+    fields.forEach(function (k) { $(k).value = ""; });
+    render();
+  });
+
+  fields.forEach(function (k) { $(k).addEventListener("input", render); });
+
+  // Restore the last session, if any.
+  var saved = load();
+  if (saved) fields.forEach(function (k) { if (typeof saved[k] === "string") $(k).value = saved[k]; });
+  render();
+
+  // Tabs for the email-app instructions.
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+  function selectTab(tab) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    });
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener("click", function () { selectTab(t); });
+    t.addEventListener("keydown", function (e) {
+      var next = e.key === "ArrowRight" ? i + 1 : e.key === "ArrowLeft" ? i - 1 : -1;
+      if (next < 0) return;
+      e.preventDefault();
+      var target = tabs[(next + tabs.length) % tabs.length];
+      target.focus(); selectTab(target);
+    });
+  });
+})();
+</script>
+</body>
+</html>

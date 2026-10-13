@@ -20,7 +20,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { SITE_ORIGIN, publishedOrDueFilter } from "../src/lib/seo.js";
 import { MARKETING_META } from "../src/lib/marketingMeta.js";
-import { bareHost, isAppHost, isMarketingHost } from "../src/lib/appHosts.js";
+import { SIGNATURE_HOST, bareHost, isAppHost, isMarketingHost } from "../src/lib/appHosts.js";
 
 // Every agent site also has 5 standalone subpages (see App.jsx's
 // /sites/:slug/* routes and api/meta-agent-site.js's ?page= handling) —
@@ -78,6 +78,12 @@ export default async function handler(req, res) {
   }
 
   res.setHeader("Content-Type", "application/xml; charset=utf-8");
+
+  if (bareHost(req.headers.host) === SIGNATURE_HOST) {
+    res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=86400");
+    res.status(200).send(renderUrlset([{ loc: `https://${req.headers.host}/` }]));
+    return;
+  }
 
   if (isMarketingHost(req.headers.host)) {
     const origin = `https://${req.headers.host}`;

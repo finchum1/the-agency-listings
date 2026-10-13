@@ -17,6 +17,7 @@
 // host are still covered by vercel.json's rewrites, unaffected by this.
 import { rewrite, next } from "@vercel/functions";
 import { matchRedirect } from "./src/lib/redirectMatch.js";
+import { SIGNATURE_HOST } from "./src/lib/appHosts.js";
 
 const BOT_UA_PATTERN =
   /(facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Googlebot|bingbot|Applebot|Pinterest|redditbot|SkypeUriPreview|vkShare|W3C_Validator|GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|Claude-User|Claude-SearchBot|anthropic-ai|PerplexityBot|Perplexity-User|DuckAssistBot|Amazonbot|CCBot|Meta-ExternalAgent|cohere-ai|MistralAI-User)/i;
@@ -90,6 +91,11 @@ export default async function middleware(request) {
   const url = new URL(request.url);
   const pathname = url.pathname.replace(/\/+$/, "") || "/";
   const hostname = (request.headers.get("host") || "").replace(/^www\./i, "").toLowerCase();
+
+  // The email signature generator: one static page, whatever the path.
+  if (hostname === SIGNATURE_HOST) {
+    return rewrite(new URL("/signature-generator/index.html", request.url));
+  }
 
   if (hostname === MARKETING_HOST) {
     if (MARKETING_PATHS.has(pathname)) {
