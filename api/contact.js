@@ -22,11 +22,23 @@
 //     (see supabase/analytics.sql, supabase/brokerage-valuation-leads.sql),
 //     best-effort, so a Resend outage never loses the lead even if the
 //     email fails.
+// Both forms also get the same protection and follow-up as the agent-site
+// form (see api/_lib/inquiry.js): bot submissions are dropped, repeat
+// senders are rate-limited, the agent is told when the sender is already in
+// their People, and the visitor gets a short confirmation email.
 // (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are read too — same values
 // already set for the client build; Vercel functions can read them
 // regardless of the VITE_ prefix, which only affects client bundling.)
 
 import { createClient } from "@supabase/supabase-js";
+import {
+  checkRate,
+  describePerson,
+  findExistingPerson,
+  parseInquiry,
+  sendConfirmation,
+  sendNotification,
+} from "./_lib/inquiry.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -34,12 +46,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { name, email, phone, message, listingId, type, address } = req.body || {};
+  const { listingId, type } = req.body || {};
   const isValuation = type === "valuation";
 
-  if (!name || !email) {
-    return res.status(400).json({ error: "Name and email are required." });
-  }
+  const parsed = parseInquiry(req.body);
+  if (parsed.bot) return res.status(200).json({ ok: true });
+  if (parsed.error) return res.status(400).json({ error: parsed.error });
+  const { name, email, phone, message, address } = parsed.data;
   if (!isValuation && !listingId) {
     return res.status(400).json({ error: "listingId is required." });
   }
@@ -54,7 +67,7 @@ export default async function handler(req, res) {
   }
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  let recipientEmail, leadTargetType, leadTargetId, leadAgentId, subject, bodyLines;
+  let recipientEmail, leadTargetType, leadTargetId, leadAgentId, subject, bodyLines, agentName, about;
 
   if (isValuation) {
     const { data: site, error: siteError } = await supabase
@@ -69,6 +82,8 @@ export default async function handler(req, res) {
     leadTargetType = "brokerage_valuation";
     leadTargetId = site.id;
     leadAgentId = null;
+    agentName = null;
+    about = address;
     subject = `Home valuation request: ${address} — ${name}`;
     bodyLines = [`Property address: ${address}`, "", `Name: ${name}`, `Email: ${email}`, `Phone: ${phone || "—"}`, "", message || "(no additional message)"];
   } else {
@@ -85,21 +100,38 @@ export default async function handler(req, res) {
     leadTargetType = "listing";
     leadTargetId = listingId;
     leadAgentId = listing.agent_id;
+    agentName = listing.agent.full_name;
+    about = listing.address_line1;
     subject = `New inquiry: ${listing.address_line1} — ${name}`;
     bodyLines = [`Name: ${name}`, `Email: ${email}`, `Phone: ${phone || "—"}`, "", message || "(no message)"];
   }
 
+  let confirmedRecently = false;
+  let existingPerson = null;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (serviceKey) {
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+
+    const rate = await checkRate(supabaseAdmin, { targetId: leadTargetId, email, message });
+    if (rate.duplicate) return res.status(200).json({ ok: true });
+    if (rate.limited) {
+      return res.status(429).json({ error: "Too many messages from this address. Please try again later." });
+    }
+    confirmedRecently = rate.confirmedRecently;
+
+    // Looked up before the insert, because the database trigger that files
+    // the inquiry in People would otherwise make every sender look known.
+    existingPerson = await findExistingPerson(supabaseAdmin, leadAgentId, email);
+    if (existingPerson) bodyLines = [`Already in your People: ${describePerson(existingPerson)}`, "", ...bodyLines];
+
     const { error: leadError } = await supabaseAdmin.from("leads").insert({
       target_type: leadTargetType,
       target_id: leadTargetId,
       agent_id: leadAgentId,
       name,
       email,
-      phone: phone || "",
-      message: isValuation ? `Property: ${address}${message ? `\n\n${message}` : ""}` : message || "",
+      phone,
+      message: isValuation ? `Property: ${address}${message ? `\n\n${message}` : ""}` : message,
     });
     if (leadError) console.error("Failed to store lead:", leadError);
   }
@@ -114,25 +146,23 @@ export default async function handler(req, res) {
   const fromEmail = process.env.LEAD_FROM_EMAIL || "Listing Inquiries <onboarding@resend.dev>";
 
   try {
-    const resendRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: recipientEmail,
-        reply_to: email,
-        subject,
-        text: bodyLines.join("\n"),
-      }),
+    const sent = await sendNotification(apiKey, {
+      from: fromEmail,
+      to: recipientEmail,
+      replyTo: email,
+      subject: existingPerson ? `Repeat ${subject.charAt(0).toLowerCase()}${subject.slice(1)}` : subject,
+      text: bodyLines.join("\n"),
     });
+    if (!sent) return res.status(502).json({ error: "Failed to send email." });
 
-    if (!resendRes.ok) {
-      const detail = await resendRes.text();
-      console.error("Resend API error:", resendRes.status, detail);
-      return res.status(502).json({ error: "Failed to send email." });
+    if (!confirmedRecently) {
+      await sendConfirmation(apiKey, {
+        from: fromEmail,
+        visitor: { name, email },
+        agentName,
+        agentEmail: isValuation ? null : recipientEmail,
+        about,
+      });
     }
 
     return res.status(200).json({ ok: true });

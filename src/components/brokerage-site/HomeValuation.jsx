@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { HoneypotField, useSpamGuard } from "../../lib/spamGuard";
 import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
 
 // "What's my home worth?" lead-capture form — collects the property
@@ -13,6 +14,7 @@ import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
 export default function HomeValuation({ isStandalonePage = false }) {
   const { site } = useBrokerageSiteContext();
   const [form, setForm] = useState({ address: "", name: "", email: "", phone: "", message: "" });
+  const guard = useSpamGuard();
   // "idle" | "sending" | "sent" | "fallback" | "error"
   const [status, setStatus] = useState("idle");
 
@@ -39,7 +41,7 @@ export default function HomeValuation({ isStandalonePage = false }) {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, type: "valuation" }),
+        body: JSON.stringify({ ...form, type: "valuation", ...guard.fields() }),
       });
       if (!res.ok) throw new Error("Contact API returned an error");
       setStatus("sent");
@@ -72,6 +74,7 @@ export default function HomeValuation({ isStandalonePage = false }) {
         </p>
 
         <form onSubmit={handleSubmit} className="text-left space-y-4 border border-[var(--as-text)]/10 bg-[var(--as-bg-alt)] p-8 rounded-2xl">
+          <HoneypotField guard={guard} />
           <div>
             <label className="block text-xs font-medium tracked-wide uppercase text-[var(--as-text)]/50 mb-1.5">
               Property Address

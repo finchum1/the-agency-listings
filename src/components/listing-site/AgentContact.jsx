@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { HoneypotField, useSpamGuard } from "../../lib/spamGuard";
 import { useListingContext } from "../../context/ListingContext";
 
 export default function AgentContact() {
   const { listing, listingId } = useListingContext();
   const { agent, address, brokerage } = listing;
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
+  const guard = useSpamGuard();
   // "idle" | "sending" | "sent" | "fallback" | "error"
   const [status, setStatus] = useState("idle");
 
@@ -33,7 +35,7 @@ export default function AgentContact() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, listingId }),
+        body: JSON.stringify({ ...form, listingId, ...guard.fields() }),
       });
       if (!res.ok) throw new Error("Contact API returned an error");
       setStatus("sent");
@@ -90,6 +92,7 @@ export default function AgentContact() {
           onSubmit={handleSubmit}
           className="bg-[var(--ls-bg-alt)] border border-black/5 rounded-2xl p-8 space-y-5"
         >
+          <HoneypotField guard={guard} />
           <div className="grid sm:grid-cols-2 gap-5">
             <div>
               <label className="block text-xs font-medium text-[var(--ls-text)]/60 mb-1.5">

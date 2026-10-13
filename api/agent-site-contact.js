@@ -9,8 +9,21 @@
 // (already configured — see api/admin/add-agent.js) used here only to
 // store a durable copy of the submission in `leads` (see
 // supabase/analytics.sql), best-effort, alongside the email.
+//
+// Beyond emailing the agent it also: drops bot submissions (honeypot +
+// too-fast submit), rate-limits repeat senders, tells the agent when the
+// sender is already in their People, and sends the visitor a short
+// confirmation email. See api/_lib/inquiry.js.
 
 import { createClient } from "@supabase/supabase-js";
+import {
+  checkRate,
+  describePerson,
+  findExistingPerson,
+  parseInquiry,
+  sendConfirmation,
+  sendNotification,
+} from "./_lib/inquiry.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -18,11 +31,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { name, email, phone, message, agentSiteId } = req.body || {};
-
-  if (!name || !email || !agentSiteId) {
+  const { agentSiteId } = req.body || {};
+  const parsed = parseInquiry(req.body);
+  if (parsed.bot) return res.status(200).json({ ok: true });
+  if (parsed.error) return res.status(400).json({ error: parsed.error });
+  if (!agentSiteId) {
     return res.status(400).json({ error: "Name, email, and agentSiteId are required." });
   }
+  const { name, email, phone, message } = parsed.data;
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
@@ -42,17 +58,32 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: "Site not found." });
   }
 
+  let confirmedRecently = false;
+  let existingPerson = null;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (serviceKey) {
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+
+    const rate = await checkRate(supabaseAdmin, { targetId: agentSiteId, email, message });
+    if (rate.duplicate) return res.status(200).json({ ok: true });
+    if (rate.limited) {
+      return res.status(429).json({ error: "Too many messages from this address. Please try again later." });
+    }
+    confirmedRecently = rate.confirmedRecently;
+
+    // Looked up before the insert below, because the database trigger that
+    // files the inquiry in People would otherwise make every sender look
+    // like an existing contact.
+    existingPerson = await findExistingPerson(supabaseAdmin, site.agent_id, email);
+
     const { error: leadError } = await supabaseAdmin.from("leads").insert({
       target_type: "agent_site",
       target_id: agentSiteId,
       agent_id: site.agent_id,
       name,
       email,
-      phone: phone || "",
-      message: message || "",
+      phone,
+      message,
     });
     if (leadError) console.error("Failed to store lead:", leadError);
   }
@@ -67,31 +98,29 @@ export default async function handler(req, res) {
   const fromEmail = process.env.LEAD_FROM_EMAIL || "Site Inquiries <onboarding@resend.dev>";
 
   try {
-    const resendRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: site.agent.email,
-        reply_to: email,
-        subject: `New website inquiry from ${name}`,
-        text: [
-          `Name: ${name}`,
-          `Email: ${email}`,
-          `Phone: ${phone || "—"}`,
-          "",
-          message || "(no message)",
-        ].join("\n"),
-      }),
+    const sent = await sendNotification(apiKey, {
+      from: fromEmail,
+      to: site.agent.email,
+      replyTo: email,
+      subject: `${existingPerson ? "Repeat website inquiry" : "New website inquiry"} from ${name}`,
+      text: [
+        ...(existingPerson ? [`Already in your People: ${describePerson(existingPerson)}`, ""] : []),
+        `Name: ${name}`,
+        `Email: ${email}`,
+        `Phone: ${phone || "—"}`,
+        "",
+        message || "(no message)",
+      ].join("\n"),
     });
+    if (!sent) return res.status(502).json({ error: "Failed to send email." });
 
-    if (!resendRes.ok) {
-      const detail = await resendRes.text();
-      console.error("Resend API error:", resendRes.status, detail);
-      return res.status(502).json({ error: "Failed to send email." });
+    if (!confirmedRecently) {
+      await sendConfirmation(apiKey, {
+        from: fromEmail,
+        visitor: { name, email },
+        agentName: site.agent.full_name,
+        agentEmail: site.agent.email,
+      });
     }
 
     return res.status(200).json({ ok: true });

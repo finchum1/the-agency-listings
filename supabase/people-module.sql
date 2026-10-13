@@ -364,3 +364,63 @@ create policy transaction_documents_owner_all on public.transaction_documents
     and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled)
     and exists (select 1 from public.people pe where pe.id = person_id and pe.owner_id = auth.uid())
   );
+
+-- 14. A repeat website inquiry from someone already in People (matched by
+--     email, ignoring case) no longer creates a second card. It adds a note
+--     to their existing card, sets the follow-up to today, fills in a
+--     missing phone number, and brings the card back if it was archived.
+--     Their stage is never changed. New contacts work exactly as in 5.
+create or replace function public.create_person_from_lead()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  new_person_id uuid;
+  existing_id uuid;
+begin
+  if new.agent_id is null then
+    return new;
+  end if;
+  if not exists (select 1 from public.profiles p where p.id = new.agent_id and p.people_enabled) then
+    return new;
+  end if;
+
+  if coalesce(new.email, '') <> '' then
+    select pe.id into existing_id
+    from public.people pe
+    where pe.owner_id = new.agent_id and lower(pe.email) = lower(new.email)
+    order by pe.archived, pe.created_at
+    limit 1;
+  end if;
+
+  if existing_id is not null then
+    update public.people
+    set next_follow_up = current_date,
+        phone = case when phone = '' then coalesce(new.phone, '') else phone end,
+        archived = false,
+        archived_reason = '',
+        archived_at = null
+    where id = existing_id;
+
+    insert into public.people_notes (person_id, owner_id, body)
+    values (existing_id, new.agent_id,
+            case when coalesce(new.message, '') <> ''
+                 then 'Website inquiry (repeat): ' || new.message
+                 else 'Website inquiry (repeat), no message' end);
+    return new;
+  end if;
+
+  insert into public.people (owner_id, name, email, phone, stage_group, stage, source, next_follow_up, lead_id)
+  values (new.agent_id, new.name, coalesce(new.email, ''), coalesce(new.phone, ''), 'lead', 'New',
+          'Website inquiry', current_date, new.id)
+  returning id into new_person_id;
+
+  if coalesce(new.message, '') <> '' then
+    insert into public.people_notes (person_id, owner_id, body)
+    values (new_person_id, new.agent_id, 'Website inquiry: ' || new.message);
+  end if;
+  return new;
+end;
+$$;

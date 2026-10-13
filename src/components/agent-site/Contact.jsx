@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { HoneypotField, useSpamGuard } from "../../lib/spamGuard";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 
 export default function Contact() {
@@ -8,6 +9,7 @@ export default function Contact() {
   // this section IS the page at standalone /contact.
   const Heading = isStandalonePage ? "h1" : "h2";
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
+  const guard = useSpamGuard();
   // "idle" | "sending" | "sent" | "fallback" | "error"
   const [status, setStatus] = useState("idle");
 
@@ -29,7 +31,7 @@ export default function Contact() {
       const res = await fetch("/api/agent-site-contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, agentSiteId: siteId }),
+        body: JSON.stringify({ ...form, agentSiteId: siteId, ...guard.fields() }),
       });
       if (!res.ok) throw new Error("Contact API returned an error");
       setStatus("sent");
@@ -90,6 +92,7 @@ export default function Contact() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-[var(--as-bg-alt)] border border-[var(--as-text)]/10 p-8 space-y-5">
+          <HoneypotField guard={guard} />
           <div className="grid sm:grid-cols-2 gap-5">
             <div>
               <label className="block text-xs font-medium tracked uppercase text-[var(--as-text)]/60 mb-1.5">
