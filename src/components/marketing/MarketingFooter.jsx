@@ -3,6 +3,7 @@ import brokerage from "../../lib/brokerage";
 import { isMarketingHost } from "../../lib/appHosts";
 import { LatchpointLogomark } from "./LatchpointMarks";
 import LatchpointFooter from "./LatchpointFooter";
+import StartProjectSection from "./StartProjectSection";
 
 // Shared footer for every marketing page. Kept deliberately simple (no
 // social, no newsletter) — this is a product-marketing pitch page, not a
@@ -10,7 +11,14 @@ import LatchpointFooter from "./LatchpointFooter";
 export default function MarketingFooter() {
   // Latchpoint's marketing subdomain gets Latchpoint's footer; the app's own
   // host keeps this one (with its small "Designed by" credit below).
-  if (isMarketingHost(window.location.hostname)) return <LatchpointFooter />;
+  if (isMarketingHost(window.location.hostname)) {
+    return (
+      <>
+        <StartProjectSection />
+        <LatchpointFooter />
+      </>
+    );
+  }
 
   return (
     <footer className="bg-[#1c1a17] text-white/60 px-6 lg:px-10 py-10">

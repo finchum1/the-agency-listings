@@ -45,6 +45,12 @@ export default function LatchpointNav({ links, pathname, open, onToggle, onClose
             </nav>
 
             <div className="flex shrink-0 items-center gap-1">
+              <a
+                href="#start"
+                className="mr-1 hidden whitespace-nowrap rounded-full bg-(--lp-ember) px-4 py-2 font-geist text-sm font-medium text-[#08090b] transition-colors hover:bg-[#f0714f] lg:inline-flex xl:px-5"
+              >
+                Start<span className="hidden xl:inline">&nbsp;a project</span>
+              </a>
               <ThemeToggle />
               <button
                 type="button"
@@ -94,6 +100,13 @@ export default function LatchpointNav({ links, pathname, open, onToggle, onClose
                       </Link>
                     );
                   })}
+                  <a
+                    href="#start"
+                    onClick={onClose}
+                    className="mt-1 rounded-full bg-(--lp-ember) px-5 py-3 text-center font-geist text-[15px] font-medium text-[#08090b]"
+                  >
+                    Start a project
+                  </a>
                 </div>
               </motion.div>
             )}
