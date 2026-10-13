@@ -57,7 +57,6 @@ export default function TransactionDocuments({ person, side, onSummary }) {
     }
     sec.docs.push(d);
   }
-  const doneCount = docs.filter((d) => d.done).length;
 
   const handleApply = async () => {
     setWorking(true);
@@ -145,13 +144,6 @@ export default function TransactionDocuments({ person, side, onSummary }) {
 
   return (
     <div className="space-y-3">
-      {docs.length > 0 && (
-        <div className="flex justify-end">
-          <span className={`text-xs ${muted}`}>
-            {doneCount} of {docs.length} collected
-          </span>
-        </div>
-      )}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {docs.length === 0 ? (
@@ -179,7 +171,7 @@ export default function TransactionDocuments({ person, side, onSummary }) {
               </p>
             </>
           ) : (
-            <p className={`text-sm ${muted}`}>Choose Buyer or Seller on the Transaction tab and the document list is added automatically.</p>
+            <p className={`text-sm ${muted}`}>Choose Buyer or Seller in Details above and the document list is added automatically.</p>
           )}
         </div>
       ) : (

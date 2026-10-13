@@ -70,7 +70,6 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
     }
     sec.tasks.push(t);
   }
-  const doneCount = tasks.filter((t) => t.done).length;
 
   const handleApply = async () => {
     setWorking(true);
@@ -141,7 +140,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
               </button>
             ) : !due ? (
               <span className={`text-[11px] ${muted}`}>
-                Set the {ANCHORS.find((a) => a.value === t.anchor)?.label || "date"} on the Transaction tab
+                Set the {ANCHORS.find((a) => a.value === t.anchor)?.label || "date"} in Details above
               </span>
             ) : null}
           </div>
@@ -160,13 +159,6 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
 
   return (
     <div className="space-y-3">
-      {tasks.length > 0 && (
-        <div className="flex justify-end">
-          <span className={`text-xs ${muted}`}>
-            {doneCount} of {tasks.length} done
-          </span>
-        </div>
-      )}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {tasks.length === 0 ? (
@@ -184,7 +176,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
               </button>
             </>
           ) : (
-            <p className={`text-sm ${muted}`}>Choose Buyer or Seller on the Transaction tab and the checklist is added automatically.</p>
+            <p className={`text-sm ${muted}`}>Choose Buyer or Seller in Details above and the checklist is added automatically.</p>
           )}
         </div>
       ) : (

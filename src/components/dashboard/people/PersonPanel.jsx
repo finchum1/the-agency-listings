@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS, ARCHIVE_REASONS, SOURCES } from "../../../lib/peopleStages";
 import ContactButtons from "./ContactButtons";
-import TransactionTabs from "./TransactionTabs";
+import TransactionModules from "./TransactionModules";
 
 const inputClass =
   "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -301,8 +301,8 @@ export default function PersonPanel({
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6">
-      <div className={`grid gap-y-6 ${isTransaction ? "lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)] lg:gap-x-8" : ""}`}>
-        <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-1">
+      <div className={`grid gap-y-6 ${isTransaction ? "lg:grid-cols-2 lg:gap-x-8" : ""}`}>
+        <div className="min-w-0 space-y-6">
         <div className="space-y-3">
           <div>
             <label className={labelClass}>Name</label>
@@ -367,25 +367,8 @@ export default function PersonPanel({
           </div>
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         </div>
-        </div>
 
-        {isTransaction && (
-          <div className="min-w-0 order-first lg:order-none lg:col-start-2 lg:row-start-1 lg:row-span-2">
-            <TransactionTabs
-              person={person}
-              side={form.side}
-              dates={{
-                contract_date: form.contract_date,
-                inspection_date: form.inspection_date,
-                closing_date: form.closing_date,
-              }}
-              details={transactionDetails}
-            />
-          </div>
-        )}
-
-        <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-2">
-        <section className="space-y-3">
+        <section className="min-w-0 space-y-3">
           <h3 className="font-display text-base font-semibold">Notes</h3>
           <form onSubmit={addNote} className="space-y-2">
             <textarea
@@ -402,7 +385,7 @@ export default function PersonPanel({
           {notes.length === 0 ? (
             <p className="text-sm text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No notes yet.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-2 max-h-72 overflow-y-auto">
               {notes.map((n) => (
                 <li key={n.id} className="rounded-xl bg-black/[0.03] dark:bg-white/[0.05] p-3">
                   <p className="text-sm whitespace-pre-wrap">{n.body}</p>
@@ -417,8 +400,36 @@ export default function PersonPanel({
             </ul>
           )}
         </section>
+        </div>
 
-        <section className="space-y-3 pt-4 border-t border-black/5 dark:border-white/10">
+        {isTransaction && (
+          <section className="min-w-0 space-y-3">
+            <h3 className="font-display text-base font-semibold">Details</h3>
+            {transactionDetails}
+          </section>
+        )}
+
+        {isTransaction && (
+          <div className="min-w-0 lg:col-span-2">
+            <TransactionModules
+              person={person}
+              side={form.side}
+              dates={{
+                contract_date: form.contract_date,
+                inspection_date: form.inspection_date,
+                closing_date: form.closing_date,
+              }}
+            />
+          </div>
+        )}
+
+        <div className="contents">
+
+        <section
+          className={`min-w-0 space-y-3 pt-4 border-t border-black/5 dark:border-white/10 ${
+            isTransaction ? "lg:col-span-2" : ""
+          }`}
+        >
           {board.next && !person.archived && (
             <div className="flex items-center gap-2 flex-wrap">
               <select value={moveStage} onChange={(e) => setMoveStage(e.target.value)} className={`${inputClass} !w-auto`}>
