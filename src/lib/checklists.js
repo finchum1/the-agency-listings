@@ -135,7 +135,35 @@ export async function loadTemplate(side) {
 // templates but with no due rule. Each agent can edit their own copy under
 // Settings -> Transactions Checklist -> Documents; this is the starting list.
 export const DEFAULT_DOCUMENT_TEMPLATES = {
-  buyer: [],
+  buyer: [
+    {
+      title: "Sales Docs",
+      items: [
+        "Buyer Broker & Disclosure Broker Services",
+        "Inspection Authorization",
+        "Wire Fraud",
+        "Purchase Contract with Acknowledgement",
+        "Counteroffers",
+        "Financing",
+        "Buyer Cost Sheet at Contract Price",
+        "Cooperative Compensation Supplement",
+        "HOA - Single Family, Condo Home Owners Association",
+        "Sale of Buyers Property",
+        "Contingency Removal",
+        "Earnest Money Receipt",
+        "MLS Print Out",
+        "Addendums",
+        "Referral Agreement",
+        "Referral W9",
+      ],
+    },
+    {
+      title: "Disclosure Documentation",
+      items: ["Property Disclosure, Disclaimer or Exempt", "Lead Based Paint Disclosure", "Beneficial Interest, Familial Relationship"],
+    },
+    { title: "Reports", items: ["Home Inspection", "Pest Inspection", "TRR"] },
+    { title: "Closing Documents", items: ["Closing Docs", "Checks", "DA"] },
+  ],
   seller: [
     {
       title: "Listing Docs",
@@ -145,7 +173,11 @@ export const DEFAULT_DOCUMENT_TEMPLATES = {
         "Seller Net Sheet List Price",
         "Tax Record",
         "Property Disclosure, Disclaimer, or Exempt",
-        "Sales Docs",
+      ],
+    },
+    {
+      title: "Sales Docs",
+      items: [
         "Purchase Agreement",
         "Counteroffer",
         "Financing",
