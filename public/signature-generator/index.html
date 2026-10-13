@@ -11,7 +11,8 @@
   <link rel="icon" href="/favicon-32.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@500&family=Jost:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/signature-generator/logo-anim.css" />
   <style>
     :root {
       --bg: #f7f4ee;
@@ -48,7 +49,11 @@
       line-height: 1.55;
     }
     .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
-    header.top { padding: 28px 0 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    header.top { padding: 28px 0 8px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; }
+    .lockup { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-family: "Geist", "Jost", system-ui, sans-serif; font-weight: 500; font-size: 18px; letter-spacing: -0.01em; }
+    .lockup svg { width: 28px; height: 28px; flex: none; }
+    .lockup .studios { color: var(--muted); }
+    .sep { width: 1px; height: 22px; background: var(--line); }
     .brand { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
     h1, h2 { font-family: "Playfair Display", Georgia, serif; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
     h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.1; margin-top: 18px; max-width: 18ch; }
@@ -109,6 +114,35 @@
 <body>
   <div class="wrap">
     <header class="top">
+      <a class="lockup" href="https://latchpointstudios.com" target="_blank" rel="noopener" aria-label="Latchpoint Studios">
+        <svg viewBox="2.5 1.2 20.3 20.3" fill="none" class="lp-logo-anim" style="overflow:visible" aria-hidden="true">
+          <defs>
+            <radialGradient id="lp-glow-g">
+              <stop offset="0" stop-color="#e8623f" stop-opacity="0.85" />
+              <stop offset="0.6" stop-color="#e8623f" stop-opacity="0.3" />
+              <stop offset="1" stop-color="#e8623f" stop-opacity="0" />
+            </radialGradient>
+            <linearGradient id="lp-glint-g" x1="0" x2="1" y1="0" y2="0">
+              <stop offset="0" stop-color="#fff" stop-opacity="0" />
+              <stop offset="0.5" stop-color="#fff" stop-opacity="0.8" />
+              <stop offset="1" stop-color="#fff" stop-opacity="0" />
+            </linearGradient>
+            <mask id="lp-mask" maskUnits="userSpaceOnUse" x="-6" y="-6" width="36" height="36">
+              <path d="M14.5 3.5 A6 6 0 0 1 20.5 9.5 V14.5 A6 6 0 0 1 14.5 20.5 H9.5 A6 6 0 0 1 3.5 14.5 V9.5 A6 6 0 0 1 9.5 3.5 H14.5" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+              <rect x="14.8" y="1.2" width="8" height="8" rx="2.7" fill="#fff" />
+            </mask>
+          </defs>
+          <circle class="lp-glow" cx="18.8" cy="5.2" r="10" fill="url(#lp-glow-g)" />
+          <rect class="lp-shock lp-shock-1" x="14.7" y="1.1" width="8.2" height="8.2" rx="1.4" stroke="#e8623f" stroke-width="1" vector-effect="non-scaling-stroke" />
+          <rect class="lp-shock lp-shock-2" x="14.7" y="1.1" width="8.2" height="8.2" rx="1.4" stroke="#e8623f" stroke-width="1" vector-effect="non-scaling-stroke" />
+          <path class="lp-ring" d="M14.5 3.5 A6 6 0 0 1 20.5 9.5 V14.5 A6 6 0 0 1 14.5 20.5 H9.5 A6 6 0 0 1 3.5 14.5 V9.5 A6 6 0 0 1 9.5 3.5 H14.5" pathLength="1" stroke-dasharray="1" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <rect class="lp-chip" x="14.8" y="1.2" width="8" height="8" rx="2.7" fill="#e8623f" />
+          <circle class="lp-spark" cx="0" cy="0" r="1.5" fill="#e8623f" />
+          <g mask="url(#lp-mask)"><g transform="rotate(45 12 12)"><rect class="lp-glint" x="8.5" y="-12" width="7" height="48" fill="url(#lp-glint-g)" /></g></g>
+        </svg>
+        <span>Latchpoint<span class="studios"> Studios</span></span>
+      </a>
+      <span class="sep" aria-hidden="true"></span>
       <span class="brand">The Agency &middot; Oklahoma</span>
     </header>
 
