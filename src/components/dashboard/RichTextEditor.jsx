@@ -1,4 +1,5 @@
 import { useEditor, EditorContent } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -102,9 +103,8 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
       active ? "bg-[#ed2127]/10 text-[#ed2127] dark:text-[#f2454b]" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/5 dark:hover:bg-white/10"
     }`;
 
-  return (
-    <div className="rounded-lg border border-black/10 dark:border-white/15 focus-within:ring-2 focus-within:ring-[#ed2127]/40 overflow-hidden">
-      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-black/10 dark:border-white/15 bg-[#faf9f7] dark:bg-[#1c1a17]">
+  const formatButtons = (
+    <>
         <button
           type="button"
           onClick={() => editor.chain().focus().setParagraph().run()}
@@ -177,7 +177,28 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
             />
           </svg>
         </button>
+    </>
+  );
+
+  return (
+    <div className="rounded-lg border border-black/10 dark:border-white/15 focus-within:ring-2 focus-within:ring-[#ed2127]/40 overflow-hidden">
+      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-black/10 dark:border-white/15 bg-[#faf9f7] dark:bg-[#1c1a17]">
+        {formatButtons}
       </div>
+      {/* Floats just above whatever text is selected, so changing a color or
+          adding a link doesn't mean scrolling back up to the fixed toolbar. */}
+      <BubbleMenu
+        editor={editor}
+        options={{ placement: "top", offset: 8 }}
+        shouldShow={({ editor: ed, state }) => ed.isEditable && !state.selection.empty && ed.isFocused}
+      >
+        <div
+          onMouseDown={(e) => e.preventDefault()}
+          className="flex items-center gap-1 px-1.5 py-1 rounded-lg border border-black/10 dark:border-white/15 bg-white dark:bg-[#1c1a17] shadow-lg"
+        >
+          {formatButtons}
+        </div>
+      </BubbleMenu>
       <div style={{ minHeight }}>
         <EditorContent editor={editor} />
       </div>
