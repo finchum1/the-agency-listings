@@ -100,11 +100,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Email and full name are required." });
     }
 
-    const metadata = {
-      full_name,
-      role: role === "admin" ? "admin" : "agent",
-      login_enabled: !!sendInvite,
-    };
+    // Only the name goes in the account's metadata. Role and login access are
+    // NEVER read from metadata by the database (the sign-up trigger ignores
+    // them, since a visitor could otherwise sign themselves up as an admin);
+    // they are set below, by this admin-verified request alone.
+    const metadata = { full_name };
 
     let newUserId;
     if (sendInvite) {
@@ -136,11 +136,14 @@ export default async function handler(req, res) {
     }
 
     // The on_auth_user_created trigger already inserted a bare profiles row
-    // (id/email/full_name/role/login_enabled) — fill in the rest the admin
-    // entered.
+    // (id/email/full_name, always as an agent with login off) — set the role
+    // and login flag here, plus the rest the admin entered. The service-role
+    // client passes the guard_profile_privileged_columns trigger.
     const { error: updateError } = await admin
       .from("profiles")
       .update({
+        role: role === "admin" ? "admin" : "agent",
+        login_enabled: !!sendInvite,
         title,
         license,
         phone,
@@ -151,7 +154,13 @@ export default async function handler(req, res) {
       .eq("id", newUserId);
     if (updateError) console.error("Profile update after create failed:", updateError);
 
-    return res.status(200).json({ ok: true, userId: newUserId });
+    return res.status(200).json({
+      ok: true,
+      userId: newUserId,
+      // The account exists, but its role/details didn't save (it stays a
+      // plain agent with login off, the safe default). Edit them from Agents.
+      ...(updateError ? { warning: "The agent was created, but some details didn't save. Please review them." } : {}),
+    });
   }
 
   // action === "list-sitemap" — blog importer step 1: find the addresses on
