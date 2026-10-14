@@ -46,6 +46,14 @@ const THEMES = [
   },
 ];
 
+// Button shape on the public site (agent_sites.button_style, check
+// constraint kept in sync) — buttons and tags opt in with .as-btn, see
+// index.css.
+const BUTTON_STYLES = [
+  { value: "square", label: "Square", description: "Sharp-cornered buttons — the original look.", radius: "0" },
+  { value: "pill", label: "Pill", description: "Fully rounded buttons and tags throughout the site.", radius: "9999px" },
+];
+
 // Independent of THEMES above (color/font) — how the fixed nav itself
 // behaves, see Navbar.jsx. Kept in sync with the check constraint on
 // agent_sites.header_style.
@@ -160,6 +168,7 @@ export default function SiteForm({ site, onSaved }) {
       region: s.region || "",
       theme: s.theme || "classic",
       header_style: s.header_style || "classic",
+      button_style: s.button_style || "square",
       font_pairing: s.font_pairing || "playfair-jost",
       accent_color: s.accent_color || "",
       logo_variant: s.logo_variant || "red",
@@ -253,6 +262,7 @@ export default function SiteForm({ site, onSaved }) {
       region: form.region,
       theme: form.theme,
       header_style: form.header_style,
+      button_style: form.button_style,
       font_pairing: form.font_pairing,
       accent_color: form.accent_color || null,
       logo_variant: form.logo_variant,
@@ -400,6 +410,33 @@ export default function SiteForm({ site, onSaved }) {
                 >
                   <p className="text-sm font-semibold">{h.label}</p>
                   <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{h.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Button style</label>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {BUTTON_STYLES.map((b) => (
+                <button
+                  key={b.value}
+                  type="button"
+                  onClick={() => set("button_style", b.value)}
+                  className={`text-left rounded-xl border p-3.5 transition-colors ${
+                    form.button_style === b.value
+                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
+                  }`}
+                >
+                  <span
+                    className="inline-block mb-2.5 bg-[#ed2127] text-white text-[10px] font-medium uppercase tracking-widest px-5 py-2"
+                    style={{ borderRadius: b.radius }}
+                  >
+                    Contact
+                  </span>
+                  <p className="text-sm font-semibold">{b.label}</p>
+                  <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{b.description}</p>
                 </button>
               ))}
             </div>

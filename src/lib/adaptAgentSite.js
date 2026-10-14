@@ -32,6 +32,8 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     // rounded, shadowed pill once scrolled ("floating"). See
     // Navbar.jsx and SiteForm.jsx's "Header Style" picker.
     headerStyle: site.header_style || "classic",
+    // "square" (original) or "pill" — see index.css [data-buttons="pill"] .as-btn.
+    buttonStyle: site.button_style === "pill" ? "pill" : "square",
     fontPairing: site.font_pairing || "playfair-jost",
     accentColor: site.accent_color || "",
     homeSections: site.home_sections?.length

@@ -50,7 +50,7 @@ export default function Hero() {
           <SiteLink
             slug={site.slug}
             path="/contact"
-            className="inline-block text-xs font-medium tracked-wide uppercase px-8 py-4 bg-[var(--as-accent)] text-white transition duration-150 hover:opacity-90 active:scale-[0.98]"
+            className="as-btn inline-block text-xs font-medium tracked-wide uppercase px-8 py-4 bg-[var(--as-accent)] text-white transition duration-150 hover:opacity-90 active:scale-[0.98]"
           >
             Let&rsquo;s Connect
           </SiteLink>

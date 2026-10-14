@@ -182,7 +182,7 @@ export default function Navbar() {
             );
           })}
           {contactCta(
-            "text-xs font-medium tracked-wide uppercase px-5 py-2.5 border border-[var(--as-on-dark)]/70 text-[var(--as-on-dark)] whitespace-nowrap transition-colors hover:bg-[var(--as-on-dark)] hover:text-[var(--as-dark)]",
+            "as-btn text-xs font-medium tracked-wide uppercase px-5 py-2.5 border border-[var(--as-on-dark)]/70 text-[var(--as-on-dark)] whitespace-nowrap transition-colors hover:bg-[var(--as-on-dark)] hover:text-[var(--as-dark)]",
           )}
         </nav>
 
@@ -208,7 +208,7 @@ export default function Navbar() {
               {page.label}
             </SiteLink>
           ))}
-          {contactCta("text-xs font-medium tracked-wide uppercase px-5 py-3 bg-[var(--as-accent)] text-white text-center")}
+          {contactCta("as-btn text-xs font-medium tracked-wide uppercase px-5 py-3 bg-[var(--as-accent)] text-white text-center")}
         </div>
       )}
     </header>

@@ -60,6 +60,7 @@ export default function AgentAreaPage({ site, agent, area, loading, notFound }) 
       <div
         className="min-h-screen bg-[var(--as-bg)] font-agent-sans"
         data-theme={adapted.theme}
+        data-buttons={adapted.buttonStyle}
         data-font={adapted.fontPairing}
         style={adapted.accentColor ? { "--as-accent": adapted.accentColor } : undefined}
       >

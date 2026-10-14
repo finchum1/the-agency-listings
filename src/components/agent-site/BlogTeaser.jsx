@@ -56,7 +56,7 @@ export default function BlogTeaser() {
             <SiteLink
               slug={site.slug}
               path="/blog"
-              className="inline-block text-xs font-medium tracked-wide uppercase px-8 py-4 bg-[var(--as-accent)] text-white transition duration-150 hover:opacity-90 active:scale-[0.98]"
+              className="as-btn inline-block text-xs font-medium tracked-wide uppercase px-8 py-4 bg-[var(--as-accent)] text-white transition duration-150 hover:opacity-90 active:scale-[0.98]"
             >
               Read More
             </SiteLink>

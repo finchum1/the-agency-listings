@@ -424,3 +424,11 @@ begin
   return new;
 end;
 $$;
+
+-- 15. Agent sites: button shape. "square" (original) or "pill" (fully rounded
+--     buttons and tags across the public site). Picked in the Site editor
+--     next to Header style; applied by [data-buttons="pill"] .as-btn in index.css.
+alter table public.agent_sites
+  add column if not exists button_style text not null default 'square';
+alter table public.agent_sites drop constraint if exists agent_sites_button_style_check;
+alter table public.agent_sites add constraint agent_sites_button_style_check check (button_style in ('square', 'pill'));

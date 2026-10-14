@@ -141,6 +141,12 @@
      dashboard to corporate red (#ed2127) to match, so --ls-accent uses
      the exact same red/#f2454b split as --as-accent now. Templates still
      only vary neutrals. */
+  /* Button shape (agent_sites.button_style). Buttons and tags opt in with
+     .as-btn; the default square look is simply no rule. */
+  [data-buttons="pill"] .as-btn {
+    border-radius: 9999px;
+  }
+
   [data-theme="classic"] {
     --as-bg: #f7f4ee;      /* page background */
     --as-bg-alt: #ffffff;  /* alternating/bordered section background */

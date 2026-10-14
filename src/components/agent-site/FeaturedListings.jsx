@@ -30,7 +30,7 @@ export default function FeaturedListings() {
                     className="h-full w-full object-cover transition group-hover:scale-105"
                   />
                 )}
-                <span className="absolute top-4 left-4 bg-[var(--as-dark)] text-[var(--as-on-dark)] text-[10px] font-medium tracked-wide uppercase px-3 py-1.5">
+                <span className="as-btn absolute top-4 left-4 bg-[var(--as-dark)] text-[var(--as-on-dark)] text-[10px] font-medium tracked-wide uppercase px-3 py-1.5">
                   {STATUS_LABELS[listing.status] || listing.status}
                 </span>
               </div>
