@@ -374,6 +374,9 @@ declare `app.latchpointstudios.com` as canonical and its sitemap lists app-host 
 Search Console tag; the only change across all 19 monitored addresses is the brokerage page's canonical (vercel.app to app host). The "Copy login link" button now copies
 `https://app.latchpointstudios.com/login?org=<slug>` (origin confirmed baked into the app). Remaining: Supabase redirect URL for the app host (Terrence), first non-Agency organization.
 
+**2026-10-15 (Supabase redirect URL added).** Terrence added `https://app.latchpointstudios.com/**` to the production project's Auth redirect URLs (existing entries and the Site URL
+untouched). Not testable from here without sending a real email; the first invite sent from the app host should carry an app.latchpointstudios.com link.
+
 Still to do (post-cutover):
 1. Marketing pages stay Agency-branded on purpose (they are The Agency's showcase).
 2. (Rehearsal done, see above.) The production cutover, in this order: fresh backup, part A, deploy the API change,
