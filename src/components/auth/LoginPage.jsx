@@ -1,16 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
-import { brandFromOrg } from "../../lib/brand";
 import { useHostOrg } from "../../hooks/useHostOrg";
-import BrandLogo from "../BrandLogo";
+import AuthBrand from "./AuthBrand";
 
 // Sign-in only — there's no public sign-up here. Accounts are created by an
 // admin inviting an agent (see AgentsPage.jsx), which emails an invite link
 // that lands on SetPasswordPage.jsx.
 export default function LoginPage() {
   const { org } = useHostOrg();
-  const brokerage = brandFromOrg(org);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -33,13 +31,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#faf9f7] px-6">
       <div className="w-full max-w-sm">
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <BrandLogo src={brokerage.logo} name={brokerage.name} className="h-14 w-auto" />
-          <span className="h-9 w-px bg-black/10" aria-hidden="true" />
-          <span className="text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50">
-            {brokerage.locationLabel}
-          </span>
-        </div>
+        <AuthBrand org={org} className="mb-8" />
         <div className="bg-white border border-black/5 rounded-2xl p-8 shadow-sm">
           <h1 className="text-xl font-display font-semibold mb-1 text-center">
             Dashboard
@@ -58,8 +50,8 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
-                placeholder="you@theagencyre.com"
+                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-(--lp-ember)/40"
+                placeholder="you@example.com"
               />
             </div>
             <div>
@@ -71,7 +63,7 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
+                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-(--lp-ember)/40"
                 placeholder="••••••••"
               />
             </div>

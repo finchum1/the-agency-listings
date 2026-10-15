@@ -1,16 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
-import { brandFromOrg } from "../../lib/brand";
 import { useHostOrg } from "../../hooks/useHostOrg";
-import BrandLogo from "../BrandLogo";
+import AuthBrand from "./AuthBrand";
 
 // Landing page for the invite-email link (Supabase's inviteUserByEmail
 // establishes a temporary session and redirects here). The agent sets
 // their real password, then we send them into the dashboard.
 export default function SetPasswordPage() {
   const { org } = useHostOrg();
-  const brokerage = brandFromOrg(org);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -41,10 +39,10 @@ export default function SetPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#faf9f7] px-6">
       <div className="w-full max-w-sm">
-        <BrandLogo src={brokerage.logo} name={brokerage.name} className="h-14 w-auto mx-auto mb-8" />
+        <AuthBrand org={org} className="mb-8" />
         <div className="bg-white border border-black/5 rounded-2xl p-8 shadow-sm">
           <h1 className="text-xl font-display font-semibold mb-1 text-center">
-            Welcome to {brokerage.name}
+            {org ? `Welcome to ${org.name}` : "Welcome"}
           </h1>
           <p className="text-sm text-[#1c1a17]/60 text-center mb-6">
             Set a password to finish creating your account
@@ -60,7 +58,7 @@ export default function SetPasswordPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
+                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-(--lp-ember)/40"
                 placeholder="At least 8 characters"
               />
             </div>
@@ -73,7 +71,7 @@ export default function SetPasswordPage() {
                 type="password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
-                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
+                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-(--lp-ember)/40"
               />
             </div>
 
