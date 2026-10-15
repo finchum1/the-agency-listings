@@ -35,7 +35,8 @@ import {
   SITE_ORIGIN,
 } from "../src/lib/seo.js";
 import { buildListingSchema, buildAgentSchema, buildBlogPostSchema, buildBreadcrumbSchema } from "../src/lib/structuredData.js";
-import brokerage from "../src/lib/brokerage.js";
+import defaultBrokerage from "../src/lib/brokerage.js";
+import { brandFromOrg, brokerageSiteQuery } from "../src/lib/brand.js";
 import { bareHost, isAppHost } from "../src/lib/appHosts.js";
 import { marketingMetaFor, MARKETING_META } from "../src/lib/marketingMeta.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
@@ -52,6 +53,7 @@ const GOOGLE_SITE_VERIFICATION = {
 };
 
 export default async function handler(req, res) {
+  let brokerage = defaultBrokerage;
   const host = bareHost(req.headers.host);
 
   if (req.query.verify) {
@@ -97,11 +99,12 @@ export default async function handler(req, res) {
 
   const { data: listing } = await supabase
     .from("listings")
-    .select("*, agent:profiles(*), listing_photos(url, is_hero)")
+    .select("*, agent:profiles(*), listing_photos(url, is_hero), org:organizations(*)")
     .ilike("custom_domain", host)
     .maybeSingle();
 
   if (listing) {
+    brokerage = brandFromOrg(listing.org);
     const heroPhoto =
       listing.listing_photos?.find((p) => p.is_hero)?.url || listing.listing_photos?.[0]?.url || "";
     const meta = buildListingMeta(listing, listing.agent, heroPhoto);
@@ -157,11 +160,12 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
 
   const { data: site } = await supabase
     .from("agent_sites")
-    .select("*, agent:profiles(*)")
+    .select("*, agent:profiles(*), org:organizations(*)")
     .ilike("custom_domain", host)
     .maybeSingle();
 
   if (site) {
+    brokerage = brandFromOrg(site.org);
     const meta = buildAgentSiteMeta(site, site.agent);
     const heading = site.agent?.full_name || "Agent";
 
@@ -203,11 +207,12 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
 
   const { data: brokerageSite } = await supabase
     .from("brokerage_site")
-    .select("*")
+    .select("*, org:organizations!inner(*)")
     .ilike("custom_domain", host)
     .maybeSingle();
 
   if (brokerageSite) {
+    brokerage = brandFromOrg(brokerageSite.org);
     const meta = buildBrokerageSiteMeta(brokerageSite);
 
     const bodyHtml = `
@@ -257,15 +262,17 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
 // then a fallback to the brokerage site's own post (same order
 // CustomDomainSitePage.jsx's SharedCustomDomainPostPage uses client-side).
 async function handlePost(req, res, supabase, host) {
+  let brokerage = defaultBrokerage;
   const postSlug = req.query.post;
   const url = `https://${req.headers.host}/blog/${postSlug}`;
   const homeUrl = `https://${req.headers.host}/`;
 
   const { data: site } = await supabase
     .from("agent_sites")
-    .select("*, agent:profiles(*)")
+    .select("*, agent:profiles(*), org:organizations(*)")
     .ilike("custom_domain", host)
     .maybeSingle();
+  if (site) brokerage = brandFromOrg(site.org);
 
   const { data: post } = site
     ? await supabase
@@ -323,12 +330,13 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
 
   const { data: brokerageSite } = await supabase
     .from("brokerage_site")
-    .select("*")
+    .select("*, org:organizations!inner(*)")
     .ilike("custom_domain", host)
     .maybeSingle();
+  if (brokerageSite) brokerage = brandFromOrg(brokerageSite.org);
 
   const { data: brokeragePost } = brokerageSite
-    ? await supabase.from("brokerage_posts").select("*").eq("slug", postSlug).or(publishedOrDueFilter()).maybeSingle()
+    ? await supabase.from("brokerage_posts").select("*").eq("org_id", brokerageSite.org_id).eq("slug", postSlug).or(publishedOrDueFilter()).maybeSingle()
     : { data: null };
 
   if (!brokerageSite || !brokeragePost) {

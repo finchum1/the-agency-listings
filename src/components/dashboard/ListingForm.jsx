@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useOrg } from "../../context/OrgContext";
 import { useAuth } from "../../hooks/useAuth";
 import { normalizeDomain } from "../../lib/normalizeDomain";
 import StatusSelect from "./StatusSelect";
@@ -164,6 +165,7 @@ const emptyListing = {
 // to/from the DB shapes (text[] / jsonb) on load and save.
 export default function ListingForm({ mode, listing, onSaved }) {
   const { user, isAdmin } = useAuth();
+  const { orgId } = useOrg();
   const [form, setForm] = useState(emptyListing);
   const [descriptionText, setDescriptionText] = useState("");
   const [features, setFeatures] = useState([]);
@@ -173,14 +175,15 @@ export default function ListingForm({ mode, listing, onSaved }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin && orgId) {
       supabase
         .from("profiles")
         .select("id, full_name, email")
+        .eq("org_id", orgId)
         .order("full_name")
         .then(({ data }) => setAgents(data || []));
     }
-  }, [isAdmin]);
+  }, [isAdmin, orgId]);
 
   useEffect(() => {
     if (listing) {

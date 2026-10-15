@@ -7,7 +7,7 @@ import { buildAgentSchema, buildBreadcrumbSchema } from "../lib/structuredData";
 import { trackView } from "../lib/trackView";
 import { isAgentSiteAppHost } from "../lib/agentSiteLinks";
 import { AgentSiteProvider } from "../context/AgentSiteContext";
-import brokerage from "../lib/brokerage";
+import { brandFromOrg } from "../lib/brand";
 
 import Navbar from "../components/agent-site/Navbar";
 import Footer from "../components/agent-site/Footer";
@@ -74,8 +74,8 @@ export default function AgentSitePage({
           jobTitle: adapted.agent.title,
           region: adapted.region,
           license: adapted.agent.license,
-          brokerageName: brokerage.name,
-          brokerageAddress: brokerage.address,
+          brokerageName: brandFromOrg(site.org).name,
+          brokerageAddress: brandFromOrg(site.org).address,
           sameAs: [adapted.social.instagram, adapted.social.facebook, adapted.social.linkedin].filter(Boolean),
         }),
       );

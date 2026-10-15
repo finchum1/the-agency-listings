@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
+import { useOrg } from "../../context/OrgContext";
+
 
 // Admin-only overview of every agent's personal site — parallel to
 // ListingsTable, but one row per agent instead of per listing. A site
@@ -10,17 +12,23 @@ export default function SitesPage() {
   const [agents, setAgents] = useState([]);
   const [sites, setSites] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { orgId, loading: orgLoading } = useOrg();
 
   useEffect(() => {
+    if (orgLoading) return;
+    if (!orgId) {
+      setLoading(false);
+      return;
+    }
     Promise.all([
-      supabase.from("profiles").select("id, full_name, email").order("full_name"),
-      supabase.from("agent_sites").select("agent_id, slug, status, updated_at"),
+      supabase.from("profiles").select("id, full_name, email").eq("org_id", orgId).order("full_name"),
+      supabase.from("agent_sites").select("agent_id, slug, status, updated_at").eq("org_id", orgId),
     ]).then(([{ data: a }, { data: s }]) => {
       setAgents(a || []);
       setSites(s || []);
       setLoading(false);
     });
-  }, []);
+  }, [orgId, orgLoading]);
 
   const siteFor = (agentId) => sites.find((s) => s.agent_id === agentId);
 

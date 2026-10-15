@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { brokerageSiteQuery } from "../lib/brand";
 
 // Fetches one published brokerage_posts row by slug, plus the (published)
 // brokerage_site so the post page can render the same Navbar/Footer
@@ -17,7 +18,7 @@ export function useBrokeragePost({ postSlug }) {
     setNotFound(false);
 
     (async () => {
-      const { data: siteRow } = await supabase.from("brokerage_site").select("*").maybeSingle();
+      const { data: siteRow } = await brokerageSiteQuery(supabase).maybeSingle();
       if (!siteRow) {
         if (active) {
           setNotFound(true);
@@ -29,6 +30,7 @@ export function useBrokeragePost({ postSlug }) {
       const { data: postRow } = await supabase
         .from("brokerage_posts")
         .select("*")
+        .eq("org_id", siteRow.org_id)
         .eq("slug", postSlug)
         .or(`status.eq.published,and(status.eq.scheduled,scheduled_at.lte.${new Date().toISOString()})`)
         .maybeSingle();

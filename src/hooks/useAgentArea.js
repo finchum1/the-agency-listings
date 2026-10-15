@@ -17,7 +17,7 @@ export function useAgentArea({ siteSlug, siteCustomDomain, areaSlug }) {
     setLoading(true);
     setNotFound(false);
 
-    let siteQuery = supabase.from("agent_sites").select("*, agent:profiles(*)");
+    let siteQuery = supabase.from("agent_sites").select("*, agent:profiles(*), org:organizations(*)");
     siteQuery = siteSlug ? siteQuery.eq("slug", siteSlug) : siteQuery.ilike("custom_domain", siteCustomDomain);
     const { data: siteRow } = await siteQuery.maybeSingle();
 

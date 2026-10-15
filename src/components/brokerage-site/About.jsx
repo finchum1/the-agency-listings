@@ -13,7 +13,7 @@ export default function About({ isStandalonePage = false }) {
     <>
       <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">About</p>
       <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-6 text-[var(--as-text)]">
-        {site.brokerage.name} — Oklahoma
+        {site.brokerage.name} — {site.brokerage.locationLabel}
       </Heading>
     </>
   );

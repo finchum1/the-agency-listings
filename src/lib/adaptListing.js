@@ -1,16 +1,17 @@
-import brokerage from "./brokerage";
+import { brandFromOrg } from "./brand";
 import { STATUS_LABELS } from "./format";
 
 // Shapes a Supabase `listings` row (+ agent profile + photos) into the
 // exact object shape property-site-template/src/data/listing.js used to
 // export statically, so the ported site components need almost no changes.
 export function adaptListing({ listing, agent, photos }) {
+  const brokerage = brandFromOrg(listing.org);
   const mlsNumber = listing.mls_number ? `MLS# ${listing.mls_number}` : "";
 
   return {
     brand: {
       name: listing.address_line1,
-      tagline: `${agent?.full_name || "The Agency"} — ${brokerage.name}`,
+      tagline: `${agent?.full_name || brokerage.name} — ${brokerage.name}`,
     },
     // logo_variant picks among brokerage.logos (red/white/black) — falls
     // back to the default red mark for older listings saved before this

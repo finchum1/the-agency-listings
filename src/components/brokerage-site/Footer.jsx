@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
+import BrandLogo from "../BrandLogo";
 
 function InstagramIcon() {
   return (
@@ -87,11 +88,7 @@ export default function Footer() {
       <div className="mx-auto max-w-6xl">
         <div className="grid sm:grid-cols-3 gap-12 text-sm items-start">
           <div>
-            <img
-              src={brokerage.logos[site.logoVariant] || brokerage.logo}
-              alt={brokerage.name}
-              className="h-10 sm:h-12 w-auto mb-6"
-            />
+            <BrandLogo src={brokerage.logos[site.logoVariant] || brokerage.logo} name={brokerage.name} className="h-10 sm:h-12 w-auto mb-6" />
             <p className="text-[var(--as-on-dark)]/50">
               {brokerage.address.line1}, {brokerage.address.city}, {brokerage.address.state} {brokerage.address.zip}
             </p>

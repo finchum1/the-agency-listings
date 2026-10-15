@@ -1,3 +1,4 @@
+import { useOrg } from "../../context/OrgContext";
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import ImageUploadField from "./ImageUploadField";
@@ -23,6 +24,7 @@ const COLLAPSED_COUNT = 4;
 // instead of agent_site_areas (no agent_site_id: this is the one
 // office-wide list).
 export default function BrokerageAreasManager({ brokerageSiteId, areas, onChanged }) {
+  const { orgId } = useOrg();
   const [editingId, setEditingId] = useState(null); // null closed, "new" adding
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -82,7 +84,7 @@ export default function BrokerageAreasManager({ brokerageSiteId, areas, onChange
 
     const { error } =
       editingId === "new"
-        ? await supabase.from("brokerage_areas").insert({ ...payload, sort_order: areas.length })
+        ? await supabase.from("brokerage_areas").insert({ org_id: orgId, ...payload, sort_order: areas.length })
         : await supabase.from("brokerage_areas").update(payload).eq("id", editingId);
 
     setSaving(false);

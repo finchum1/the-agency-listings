@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useOrg } from "../context/OrgContext";
 
 // Office-wide list — unlike useListings.js, there's no additive public
 // read policy to work around here: upcoming_listings has exactly one
@@ -10,12 +11,19 @@ export function useUpcomingListings() {
   const [upcomingListings, setUpcomingListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { orgId, loading: orgLoading } = useOrg();
 
   const refresh = useCallback(async () => {
+    if (orgLoading) return;
+    if (!orgId) {
+      setLoading(false);
+      return;
+    }
     setError(null);
     const { data, error } = await supabase
       .from("upcoming_listings")
       .select("*, agent:profiles(id, full_name, email)")
+      .eq("org_id", orgId)
       .order("created_at", { ascending: false });
     if (error) {
       console.error("Failed to load upcoming listings:", error);
@@ -24,7 +32,7 @@ export function useUpcomingListings() {
       setUpcomingListings(data || []);
     }
     setLoading(false);
-  }, []);
+  }, [orgId, orgLoading]);
 
   useEffect(() => {
     refresh();

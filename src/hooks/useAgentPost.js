@@ -20,7 +20,7 @@ export function useAgentPost({ siteSlug, siteCustomDomain, postSlug }) {
     setNotFound(false);
 
     (async () => {
-      let siteQuery = supabase.from("agent_sites").select("*, agent:profiles(*)");
+      let siteQuery = supabase.from("agent_sites").select("*, agent:profiles(*), org:organizations(*)");
       siteQuery = siteSlug ? siteQuery.eq("slug", siteSlug) : siteQuery.ilike("custom_domain", siteCustomDomain);
       const { data: siteRow } = await siteQuery.maybeSingle();
 

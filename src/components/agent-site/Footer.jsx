@@ -1,5 +1,6 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import SiteLink from "./SiteLink";
+import BrandLogo from "../BrandLogo";
 
 // "Explore" column — only pages that actually exist today. label can read
 // the agent's first name for the About link. sectionKey mirrors
@@ -100,7 +101,7 @@ export default function Footer() {
       <div className="mx-auto max-w-6xl">
         <div className="grid sm:grid-cols-3 gap-12 text-sm items-start">
           <div>
-            <img src={brokerage.logo} alt={brokerage.name} className="h-10 sm:h-12 w-auto mb-6" />
+            <BrandLogo src={brokerage.logo} name={brokerage.name} className="h-10 sm:h-12 w-auto mb-6" />
             <div className="flex items-center gap-3 mb-2">
               {site.secondaryLogo && <img src={site.secondaryLogo} alt="" className="agent-secondary-logo h-8 w-auto" />}
               <p className="font-display text-2xl tracked-wide text-[var(--as-on-dark)]">{agent.name}</p>

@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabaseClient";
 export function useAuth() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export function useAuth() {
       setSession(newSession);
       if (!newSession) {
         setProfile(null);
+        setIsPlatformAdmin(false);
         setLoading(false);
       }
     });
@@ -37,17 +39,19 @@ export function useAuth() {
     if (!session?.user?.id) return;
     let active = true;
     setLoading(true);
-    supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", session.user.id)
-      .single()
-      .then(({ data, error }) => {
-        if (!active) return;
-        if (error) console.error("Failed to load profile:", error);
-        setProfile(data || null);
-        setLoading(false);
-      });
+    // Profile and "is this the platform owner?" load together so the UI never
+    // flashes the wrong role. is_platform_admin() only ever answers for the
+    // signed-in user, so it reveals nothing about anyone else.
+    Promise.all([
+      supabase.from("profiles").select("*").eq("id", session.user.id).single(),
+      supabase.rpc("is_platform_admin"),
+    ]).then(([{ data, error }, platform]) => {
+      if (!active) return;
+      if (error) console.error("Failed to load profile:", error);
+      setProfile(data || null);
+      setIsPlatformAdmin(platform.data === true);
+      setLoading(false);
+    });
     return () => {
       active = false;
     };
@@ -57,7 +61,10 @@ export function useAuth() {
     session,
     user: session?.user ?? null,
     profile,
-    isAdmin: profile?.role === "admin",
+    // "Can manage the organization I'm working in": an admin of my own
+    // organization, or the platform owner (who can work inside any of them).
+    isAdmin: profile?.role === "admin" || isPlatformAdmin,
+    isPlatformAdmin,
     loading,
   };
 }

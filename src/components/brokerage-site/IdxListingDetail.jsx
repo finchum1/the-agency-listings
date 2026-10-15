@@ -91,7 +91,7 @@ export default function IdxListingDetail({ mlsNumber: mlsNumberProp } = {}) {
           <div className="border border-[var(--as-text)]/10 bg-[var(--as-bg-alt)] p-8">
             <h3 className="font-display text-xl text-[var(--as-text)]">Interested In This Home?</h3>
             <p className="mt-3 text-sm leading-relaxed text-[var(--as-text)]/70">
-              Reach out to The Agency to schedule a private showing.
+              Reach out to {site.brokerage.name} to schedule a private showing.
             </p>
             <div className="mt-6 flex flex-col gap-3">
               {site.contact.phone && (

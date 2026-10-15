@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
+import { useOrg } from "../../context/OrgContext";
 import ImageUploadField from "./ImageUploadField";
 import AgentRow from "./AgentRow";
 
@@ -31,15 +32,22 @@ export default function AgentsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const { orgId, loading: orgLoading } = useOrg();
   const [enablingId, setEnablingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
 
   const refresh = (silent) => {
     if (silent !== true) setLoading(true);
+    if (!orgId) {
+      setAgents([]);
+      setLoading(false);
+      return;
+    }
     supabase
       .from("profiles")
       .select("*")
+      .eq("org_id", orgId)
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         setAgents(data || []);
@@ -48,8 +56,10 @@ export default function AgentsPage() {
   };
 
   useEffect(() => {
+    if (orgLoading) return;
     refresh();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgId, orgLoading]);
 
   const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
@@ -76,7 +86,7 @@ export default function AgentsPage() {
     setSuccess("");
     setSaving(true);
     try {
-      await authedFetch("/api/admin/agents", { action: "add", ...form });
+      await authedFetch("/api/admin/agents", { action: "add", org_id: orgId, ...form });
       setSuccess(
         form.sendInvite
           ? `Invited ${form.email} — they'll get an email to set their password.`

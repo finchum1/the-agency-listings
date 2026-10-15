@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
+import { OrgProvider } from "./context/OrgContext";
 import { isAppHost, isMarketingHost } from "./lib/appHosts";
 import useSwUpdateOnNavigate from "./hooks/useSwUpdateOnNavigate";
 import { isStandalone } from "./lib/pwa";
@@ -273,7 +274,9 @@ export default function App() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <OrgProvider>
+              <DashboardLayout />
+            </OrgProvider>
           </ProtectedRoute>
         }
       >

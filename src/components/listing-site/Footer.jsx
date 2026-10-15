@@ -1,4 +1,5 @@
 import { useListingContext } from "../../context/ListingContext";
+import BrandLogo from "../BrandLogo";
 
 export default function Footer() {
   const { listing } = useListingContext();
@@ -10,11 +11,7 @@ export default function Footer() {
       <div className="mx-auto max-w-6xl">
         <div className="grid sm:grid-cols-3 gap-10 text-sm items-start">
           <div>
-            <img
-              src={brokerage.logo}
-              alt={brokerage.name}
-              className="h-14 sm:h-16 w-auto mb-3"
-            />
+            <BrandLogo src={brokerage.logo} name={brokerage.name} className="h-14 sm:h-16 w-auto mb-3" />
             <p>{brokerage.address.line1}</p>
             <p>
               {brokerage.address.city}, {brokerage.address.state}{" "}

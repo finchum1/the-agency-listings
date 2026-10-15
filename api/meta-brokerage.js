@@ -26,7 +26,8 @@ import {
   SITE_ORIGIN,
 } from "../src/lib/seo.js";
 import { buildAgentSchema, buildBlogPostSchema, buildBreadcrumbSchema } from "../src/lib/structuredData.js";
-import brokerage from "../src/lib/brokerage.js";
+import defaultBrokerage from "../src/lib/brokerage.js";
+import { brandFromOrg, brokerageSiteQuery } from "../src/lib/brand.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
 
 const PAGE_LABELS = {
@@ -51,7 +52,11 @@ export default async function handler(req, res) {
   }
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  const { data: site } = await supabase.from("brokerage_site").select("*").maybeSingle();
+  // The Agency's brokerage site (the default organization) with its organization embedded; every child query below
+  // is filtered to that organization so another brokerage's pages can never appear here.
+  const { data: site } = await brokerageSiteQuery(supabase).maybeSingle();
+  const brokerage = brandFromOrg(site?.org);
+  const orgId = site?.org_id ?? "00000000-0000-0000-0000-000000000000";
   const homeUrl = `${SITE_ORIGIN}/brokerage`;
 
   if (req.query.post) {
@@ -90,17 +95,18 @@ export default async function handler(req, res) {
   // the description).
   let extraHtml = "";
   if (page === "agents") {
-    const { data: agents } = await supabase.from("brokerage_agents").select("name, title").order("sort_order");
+    const { data: agents } = await supabase.from("brokerage_agents").select("name, title").eq("org_id", orgId).order("sort_order");
     extraHtml = (agents || []).map((a) => `<li>${escapeHtml(a.name)}${a.title ? ` — ${escapeHtml(a.title)}` : ""}</li>`).join("");
     extraHtml = extraHtml ? `<ul>${extraHtml}</ul>` : "";
   } else if (page === "areas") {
-    const { data: areas } = await supabase.from("brokerage_areas").select("name, blurb").order("sort_order");
+    const { data: areas } = await supabase.from("brokerage_areas").select("name, blurb").eq("org_id", orgId).order("sort_order");
     extraHtml = (areas || []).map((a) => `<li>${escapeHtml(a.name)}${a.blurb ? ` — ${escapeHtml(a.blurb)}` : ""}</li>`).join("");
     extraHtml = extraHtml ? `<ul>${extraHtml}</ul>` : "";
   } else if (page === "blog") {
     const { data: posts } = await supabase
       .from("brokerage_posts")
       .select("slug, title, excerpt")
+      .eq("org_id", orgId)
       .or(publishedOrDueFilter())
       .order("post_date", { ascending: false });
     extraHtml = (posts || [])
@@ -172,12 +178,14 @@ ${extraHtml}
 }
 
 async function handlePost(req, res, supabase, site, homeUrl) {
+  const brokerage = brandFromOrg(site?.org);
   const postSlug = req.query.post;
   const url = `${homeUrl}/blog/${postSlug}`;
 
   const { data: post } = await supabase
     .from("brokerage_posts")
     .select("*")
+    .eq("org_id", site?.org_id ?? "00000000-0000-0000-0000-000000000000")
     .eq("slug", postSlug)
     .or(publishedOrDueFilter())
     .maybeSingle();
@@ -239,10 +247,11 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
 }
 
 async function handleAreaDetail(req, res, supabase, site, homeUrl) {
+  const brokerage = brandFromOrg(site?.org);
   const areaSlug = req.query.areaSlug;
   const url = `${homeUrl}/areas/${areaSlug}`;
 
-  const { data: area } = await supabase.from("brokerage_areas").select("*").eq("slug", areaSlug).maybeSingle();
+  const { data: area } = await supabase.from("brokerage_areas").select("*").eq("org_id", site?.org_id ?? "00000000-0000-0000-0000-000000000000").eq("slug", areaSlug).maybeSingle();
 
   if (!area) {
     res.status(404).send(

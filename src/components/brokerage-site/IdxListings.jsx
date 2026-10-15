@@ -115,7 +115,7 @@ export default function IdxListings({
     <section id={sectionId} className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
       <div className="mx-auto max-w-7xl">
         <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">
-          {eyebrowOverride || (officeOnly ? "The Agency's Listings" : "Home Search")}
+          {eyebrowOverride || (officeOnly ? `${brokerageSite?.site?.brokerage?.name || "Our"}'s Listings` : "Home Search")}
         </p>
         <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-10 text-[var(--as-text)]">
           {titleOverride ||

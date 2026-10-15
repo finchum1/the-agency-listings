@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useOrg } from "../context/OrgContext";
 
 // Dashboard list. RLS does NOT scope this to "my listings only" the way
 // the comment here used to claim — listings_public_read_published (status
@@ -19,13 +20,20 @@ export function useListings({ agentId, ready = true } = {}) {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { orgId, loading: orgLoading } = useOrg();
 
   const refresh = useCallback(async () => {
-    if (!ready) return;
+    if (!ready || orgLoading) return;
+    if (!orgId) {
+      setListings([]);
+      setLoading(false);
+      return;
+    }
     setError(null);
     let query = supabase
       .from("listings")
       .select("*, agent:profiles(id, full_name, email)")
+      .eq("org_id", orgId)
       .order("updated_at", { ascending: false });
     if (agentId) query = query.eq("agent_id", agentId);
     const { data, error } = await query;
@@ -36,7 +44,7 @@ export function useListings({ agentId, ready = true } = {}) {
       setListings(data || []);
     }
     setLoading(false);
-  }, [agentId, ready]);
+  }, [agentId, ready, orgId, orgLoading]);
 
   useEffect(() => {
     if (!ready) return;

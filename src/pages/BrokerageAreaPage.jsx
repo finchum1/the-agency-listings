@@ -108,7 +108,7 @@ export default function BrokerageAreaPage() {
           initialCity={area.name}
           previewCount={6}
           viewAllHref={null}
-          eyebrowOverride="The Agency's Listings"
+          eyebrowOverride={`${adapted.brokerage.name}'s Listings`}
           titleOverride={`Our Listings in ${area.name}`}
         />
 

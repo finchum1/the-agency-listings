@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useOrg } from "../context/OrgContext";
 
 // Every agent/admin profile, for an admin's "which agent is this for"
 // picker (UpcomingListingsSection.jsx, BuyerNeedsSection.jsx) — profiles is
@@ -7,12 +8,19 @@ import { supabase } from "../lib/supabaseClient";
 export function useAgents() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { orgId, loading: orgLoading } = useOrg();
 
   useEffect(() => {
+    if (orgLoading) return;
+    if (!orgId) {
+      setLoading(false);
+      return;
+    }
     let active = true;
     supabase
       .from("profiles")
       .select("id, full_name, email")
+      .eq("org_id", orgId)
       .order("full_name")
       .then(({ data, error }) => {
         if (!active) return;
@@ -23,7 +31,7 @@ export function useAgents() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [orgId, orgLoading]);
 
   return { agents, loading };
 }

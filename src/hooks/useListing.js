@@ -18,7 +18,7 @@ export function useListing({ slug, id, customDomain } = {}) {
     setLoading(true);
     setNotFound(false);
 
-    let query = supabase.from("listings").select("*, agent:profiles(*)");
+    let query = supabase.from("listings").select("*, agent:profiles(*), org:organizations(*)");
     if (slug) query = query.eq("slug", slug);
     else if (id) query = query.eq("id", id);
     else query = query.ilike("custom_domain", customDomain);

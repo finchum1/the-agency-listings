@@ -83,7 +83,7 @@ export default function HomeValuation({ isStandalonePage = false }) {
               required
               value={form.address}
               onChange={update("address")}
-              placeholder="123 Main St, Edmond, OK 73034"
+              placeholder={`123 Main St, ${site.brokerage.address.city || "Edmond"}, ${site.brokerage.address.state || "OK"} ${site.brokerage.address.zip || "73034"}`}
               className="w-full border border-[var(--as-text)]/10 bg-[var(--as-bg)] px-4 py-3 text-sm text-[var(--as-text)] placeholder:text-[var(--as-text)]/40 outline-none rounded-lg"
             />
           </div>

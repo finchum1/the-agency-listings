@@ -1,3 +1,4 @@
+import { useOrg } from "../../context/OrgContext";
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import ImageUploadField from "./ImageUploadField";
@@ -34,6 +35,7 @@ const COLLAPSED_COUNT = 4;
 // plain sort_order number field is enough for a list this size and
 // avoids pulling in a drag library for one screen.
 export default function BrokerageAgentsManager({ brokerageSiteId, agents, onChanged }) {
+  const { orgId } = useOrg();
   const [editingId, setEditingId] = useState(null); // null closed, "new" adding
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -102,7 +104,7 @@ export default function BrokerageAgentsManager({ brokerageSiteId, agents, onChan
 
     const { error } =
       editingId === "new"
-        ? await supabase.from("brokerage_agents").insert({ ...payload, sort_order: agents.length })
+        ? await supabase.from("brokerage_agents").insert({ org_id: orgId, ...payload, sort_order: agents.length })
         : await supabase.from("brokerage_agents").update(payload).eq("id", editingId);
 
     setSaving(false);

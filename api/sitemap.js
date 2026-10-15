@@ -19,6 +19,7 @@
 // under the app's own Search Console property, not a per-agent domain.
 import { createClient } from "@supabase/supabase-js";
 import { SITE_ORIGIN, publishedOrDueFilter } from "../src/lib/seo.js";
+import { DEFAULT_ORG_SLUG } from "../src/lib/brand.js";
 import { MARKETING_META } from "../src/lib/marketingMeta.js";
 import { SIGNATURE_HOST, bareHost, isAppHost, isMarketingHost } from "../src/lib/appHosts.js";
 
@@ -129,9 +130,10 @@ export default async function handler(req, res) {
       .select("slug, updated_at, agent_sites(slug)")
       .or(publishedOrDueFilter()),
     supabase.from("agent_site_areas").select("slug, agent_sites(slug)"),
-    supabase.from("brokerage_site").select("updated_at").eq("status", "published").maybeSingle(),
-    supabase.from("brokerage_posts").select("slug, updated_at").or(publishedOrDueFilter()),
-    supabase.from("brokerage_areas").select("slug"),
+    // The app host's brokerage pages are the default organization's (The Agency); other brokerages are on their own domains.
+    supabase.from("brokerage_site").select("updated_at, org:organizations!inner(slug)").eq("org.slug", DEFAULT_ORG_SLUG).eq("status", "published").maybeSingle(),
+    supabase.from("brokerage_posts").select("slug, updated_at, org:organizations!inner(slug)").eq("org.slug", DEFAULT_ORG_SLUG).or(publishedOrDueFilter()),
+    supabase.from("brokerage_areas").select("slug, org:organizations!inner(slug)").eq("org.slug", DEFAULT_ORG_SLUG),
   ]);
 
   const urls = [
@@ -200,13 +202,13 @@ async function buildCustomDomainSitemap(supabase, host, rawHost) {
 
   const { data: brokerageSite } = await supabase
     .from("brokerage_site")
-    .select("updated_at")
+    .select("updated_at, org_id")
     .ilike("custom_domain", host)
     .maybeSingle();
   if (brokerageSite) {
     const [{ data: posts }, { data: areas }] = await Promise.all([
-      supabase.from("brokerage_posts").select("slug, updated_at").or(publishedOrDueFilter()),
-      supabase.from("brokerage_areas").select("slug"),
+      supabase.from("brokerage_posts").select("slug, updated_at").eq("org_id", brokerageSite.org_id).or(publishedOrDueFilter()),
+      supabase.from("brokerage_areas").select("slug").eq("org_id", brokerageSite.org_id),
     ]);
     const urls = [
       { loc: `${origin}/`, lastmod: brokerageSite.updated_at },

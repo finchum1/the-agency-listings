@@ -1,3 +1,4 @@
+import { useOrg } from "../../context/OrgContext";
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import ImageUploadField from "./ImageUploadField";
@@ -55,6 +56,7 @@ const CATEGORIES = ["Market Update", "Neighborhood Guide", "New Listing Spotligh
 // agent_site_id/related_listing_id: these posts are brokerage-wide, not
 // tied to one agent or their listings.
 export default function BrokeragePostsManager({ brokerageSiteId, posts, onChanged }) {
+  const { orgId } = useOrg();
   const [editingId, setEditingId] = useState(null); // null closed, "new" adding
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -137,7 +139,7 @@ export default function BrokeragePostsManager({ brokerageSiteId, posts, onChange
 
     const { error } =
       editingId === "new"
-        ? await supabase.from("brokerage_posts").insert(payload)
+        ? await supabase.from("brokerage_posts").insert({ org_id: orgId, ...payload })
         : await supabase.from("brokerage_posts").update(payload).eq("id", editingId);
 
     setSaving(false);

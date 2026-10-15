@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { agentSiteHref } from "../../lib/agentSiteLinks";
 import SiteLink from "./SiteLink";
+import BrandLogo from "../BrandLogo";
 
 // sectionKey matches agent_sites.home_sections entries (see
 // HomeSections.jsx) — a page whose section an agent has turned off isn't
@@ -78,7 +79,7 @@ export default function Navbar() {
 
   const logo = (
     <SiteLink slug={site.slug} path="" className="flex items-center gap-3 min-w-0 shrink-0">
-      <img src={site.brokerage.logo} alt={site.brokerage.name} className="h-9 sm:h-11 w-auto" />
+      <BrandLogo src={site.brokerage.logo} name={site.brokerage.name} className="h-9 sm:h-11 w-auto" />
       {site.secondaryLogo && (
         <>
           <span className="h-8 w-px bg-[var(--as-on-dark)]/25 shrink-0" aria-hidden="true" />

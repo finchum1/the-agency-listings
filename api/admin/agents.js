@@ -81,23 +81,39 @@ export default async function handler(req, res) {
   } = await supabaseAsCaller.auth.getUser(token);
   if (userError || !user) return res.status(401).json({ error: "Invalid session." });
 
-  const { data: callerProfile } = await supabaseAsCaller
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  if (callerProfile?.role !== "admin") {
-    return res.status(403).json({ error: `Only admins can ${action} agents.` });
-  }
-
   const admin = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
+  const { data: callerProfile } = await supabaseAsCaller
+    .from("profiles")
+    .select("role, org_id")
+    .eq("id", user.id)
+    .single();
+  // The platform owner (Latchpoint) can work inside any organization; everyone else
+  // is limited to an organization they are an admin of, which is always their own.
+  const { data: platformRow } = await admin.from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  const isPlatform = !!platformRow;
+  if (!isPlatform && callerProfile?.role !== "admin") {
+    return res.status(403).json({ error: `Only admins can ${action} agents.` });
+  }
+
   if (action === "add") {
-    const { email, full_name, title, license, phone, photo_url, role, sendInvite, site_access, people_enabled } = req.body || {};
+    const { email, full_name, title, license, phone, photo_url, role, sendInvite, site_access, people_enabled, org_id } = req.body || {};
     if (!email || !full_name) {
       return res.status(400).json({ error: "Email and full name are required." });
+    }
+
+    // Which organization does the new account join? An organization admin always adds to their own.
+    // Only the platform owner may name a different one. An account with no organization can see nothing,
+    // so refuse rather than create one.
+    const targetOrgId = isPlatform && org_id ? org_id : callerProfile?.org_id;
+    if (!targetOrgId) {
+      return res.status(400).json({ error: "Your account isn't part of an organization yet, so it can't add agents." });
+    }
+    const { data: targetOrg } = await admin.from("organizations").select("id, status").eq("id", targetOrgId).maybeSingle();
+    if (!targetOrg || targetOrg.status !== "active") {
+      return res.status(400).json({ error: "That organization wasn't found or isn't active." });
     }
 
     // Only the name goes in the account's metadata. Role and login access are
@@ -142,6 +158,7 @@ export default async function handler(req, res) {
     const { error: updateError } = await admin
       .from("profiles")
       .update({
+        org_id: targetOrgId,
         role: role === "admin" ? "admin" : "agent",
         login_enabled: !!sendInvite,
         title,
@@ -180,7 +197,10 @@ export default async function handler(req, res) {
   if (action === "import-post") {
     const { agentSiteId, url } = req.body || {};
     if (!agentSiteId || !url) return res.status(400).json({ error: "agentSiteId and url are required." });
-    const { data: site } = await admin.from("agent_sites").select("id").eq("id", agentSiteId).maybeSingle();
+    const { data: site } = await admin.from("agent_sites").select("id, org_id").eq("id", agentSiteId).maybeSingle();
+    if (site && !isPlatform && site.org_id !== callerProfile?.org_id) {
+      return res.status(403).json({ error: "That agent site isn't in your organization." });
+    }
     if (!site) return res.status(404).json({ error: "That agent site wasn't found." });
     try {
       const result = await importPost({ admin, agentSiteId, url });
@@ -196,6 +216,12 @@ export default async function handler(req, res) {
 
   if (agentId === user.id) {
     return res.status(400).json({ error: "You can't delete your own account." });
+  }
+
+  const { data: target } = await admin.from("profiles").select("org_id").eq("id", agentId).maybeSingle();
+  if (!target) return res.status(404).json({ error: "That agent wasn't found." });
+  if (!isPlatform && target.org_id !== callerProfile?.org_id) {
+    return res.status(403).json({ error: "That agent isn't in your organization." });
   }
 
   const { count: listingCount, error: countError } = await admin

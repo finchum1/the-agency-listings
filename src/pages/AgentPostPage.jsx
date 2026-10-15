@@ -6,7 +6,7 @@ import { blocksToHtml } from "../lib/richTextFallback";
 import { buildAgentPostMeta, absoluteUrl, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta, applyStructuredData } from "../lib/pageMeta";
 import { buildBlogPostSchema, buildBreadcrumbSchema } from "../lib/structuredData";
-import brokerage from "../lib/brokerage";
+import { brandFromOrg } from "../lib/brand";
 import { trackView } from "../lib/trackView";
 import { isAgentSiteAppHost } from "../lib/agentSiteLinks";
 import { AgentSiteProvider } from "../context/AgentSiteContext";
@@ -48,8 +48,8 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
         datePublished: post.post_date,
         dateModified: post.updated_at,
         authorName: agent?.full_name,
-        publisherName: brokerage.name,
-        publisherLogo: absoluteUrl(brokerage.logo),
+        publisherName: brandFromOrg(site.org).name,
+        publisherLogo: absoluteUrl(brandFromOrg(site.org).logo),
       }),
       buildBreadcrumbSchema([
         { name: agent?.full_name || "Home", url: isAgentSiteAppHost() ? `${SITE_ORIGIN}/sites/${site.slug}` : `${window.location.origin}/` },

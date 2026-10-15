@@ -5,7 +5,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { useListing } from "../../hooks/useListing";
 import { supabase } from "../../lib/supabaseClient";
 import { formatPrice, formatNumber, STATUS_LABELS } from "../../lib/format";
-import brokerage from "../../lib/brokerage";
+import { brandFromOrg } from "../../lib/brand";
+import BrandLogo from "../BrandLogo";
 
 const STAT_ICONS = {
   beds: <path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 18v2M21 18v2M3 12V9a2 2 0 0 1 2-2h3v5M9 7h6" />,
@@ -49,6 +50,7 @@ export default function FlyerPage() {
   const { id } = useParams();
   const { user, isAdmin } = useAuth();
   const { listing, agent, photos, loading, notFound } = useListing({ id });
+  const brokerage = brandFromOrg(listing?.org);
   // Same reasoning as EditListingPage.jsx's noAccess guard — RLS lets
   // anyone read a published listing by id, so this blocks a non-owning
   // agent from opening another agent's flyer page directly by URL.
@@ -396,7 +398,7 @@ export default function FlyerPage() {
             <span className="text-2xl font-display font-semibold text-[#1c1a17]">
               {formatPrice(listing.price)}
             </span>
-            <img src={brokerage.logo} alt={brokerage.name} className="h-9 w-auto mx-auto" />
+            <BrandLogo src={brokerage.logo} name={brokerage.name} className="h-9 w-auto mx-auto" />
             {listing.mls_number && (
               <span className="text-[10px] tracking-wider-plus uppercase text-[#1c1a17]/40 justify-self-end">
                 MLS# {listing.mls_number}

@@ -25,7 +25,7 @@ export default function Hero() {
           the black photo overlay above, not on --as-dark itself, so it
           needs to stay white regardless of theme. */}
       <div className="relative z-10 flex h-full flex-col justify-end px-6 lg:px-10 pb-24 max-w-7xl mx-auto">
-        <p className="text-white/75 text-xs tracked-wide uppercase mb-4">Oklahoma</p>
+        <p className="text-white/75 text-xs tracked-wide uppercase mb-4">{site.brokerage.locationLabel}</p>
         <h1 className="text-white text-4xl sm:text-5xl lg:text-6xl font-display font-semibold leading-tight max-w-3xl">
           {site.brokerage.name}
         </h1>

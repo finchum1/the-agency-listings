@@ -22,7 +22,7 @@ export function useAgentSite({ slug, customDomain } = {}) {
     setLoading(true);
     setNotFound(false);
 
-    let query = supabase.from("agent_sites").select("*, agent:profiles(*)");
+    let query = supabase.from("agent_sites").select("*, agent:profiles(*), org:organizations(*)");
     query = slug ? query.eq("slug", slug) : query.ilike("custom_domain", customDomain);
     const { data: siteRow, error } = await query.maybeSingle();
 

@@ -9,7 +9,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { buildAgentSitePageMeta, buildAgentAreaMeta, escapeHtml, publishedOrDueFilter, SITE_ORIGIN } from "../src/lib/seo.js";
 import { buildAgentSchema, buildBreadcrumbSchema } from "../src/lib/structuredData.js";
-import brokerage from "../src/lib/brokerage.js";
+import { brandFromOrg } from "../src/lib/brand.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
 
 const PAGE_LABELS = { about: "About", listings: "Listings", areas: "Areas", blog: "Blog", contact: "Contact" };
@@ -34,9 +34,10 @@ export default async function handler(req, res) {
 
   const { data: site } = await supabase
     .from("agent_sites")
-    .select("*, agent:profiles(*)")
+    .select("*, agent:profiles(*), org:organizations(*)")
     .eq("slug", slug)
     .maybeSingle();
+  const brokerage = brandFromOrg(site?.org);
 
   const homeUrl = `${SITE_ORIGIN}/sites/${slug}`;
 
@@ -165,6 +166,7 @@ ${extraHtml}
 }
 
 async function handleAreaDetail(req, res, supabase, site, homeUrl) {
+  const brokerage = brandFromOrg(site?.org);
   const areaSlug = req.query.areaSlug;
   const url = `${homeUrl}/areas/${areaSlug}`;
 

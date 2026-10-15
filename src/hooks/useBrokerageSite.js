@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { brokerageSiteQuery } from "../lib/brand";
 
 // Fetches the public brokerage site — the one published brokerage_site
 // row, its published posts, and its full agent roster. RLS handles
@@ -24,9 +25,7 @@ export function useBrokerageSite({ customDomain } = {}) {
     setLoading(true);
     setNotFound(false);
 
-    let query = supabase.from("brokerage_site").select("*");
-    if (customDomain) query = query.ilike("custom_domain", customDomain);
-    const { data: siteRow, error } = await query.maybeSingle();
+    const { data: siteRow, error } = await brokerageSiteQuery(supabase, { customDomain }).maybeSingle();
     if (error) console.error("Failed to load brokerage site:", error);
 
     if (!siteRow) {
@@ -40,10 +39,11 @@ export function useBrokerageSite({ customDomain } = {}) {
       supabase
         .from("brokerage_posts")
         .select("*")
+        .eq("org_id", siteRow.org_id)
         .or(`status.eq.published,and(status.eq.scheduled,scheduled_at.lte.${new Date().toISOString()})`)
         .order("post_date", { ascending: false }),
-      supabase.from("brokerage_agents").select("*").order("sort_order"),
-      supabase.from("brokerage_areas").select("*").order("sort_order"),
+      supabase.from("brokerage_agents").select("*").eq("org_id", siteRow.org_id).order("sort_order"),
+      supabase.from("brokerage_areas").select("*").eq("org_id", siteRow.org_id).order("sort_order"),
     ]);
 
     setSite(siteRow);

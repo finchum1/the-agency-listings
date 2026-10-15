@@ -5,7 +5,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { buildAgentPostMeta, escapeHtml, absoluteUrl, publishedOrDueFilter, SITE_ORIGIN } from "../src/lib/seo.js";
 import { buildBlogPostSchema, buildBreadcrumbSchema } from "../src/lib/structuredData.js";
-import brokerage from "../src/lib/brokerage.js";
+import { brandFromOrg } from "../src/lib/brand.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
 
 export default async function handler(req, res) {
@@ -27,9 +27,10 @@ export default async function handler(req, res) {
 
   const { data: site } = await supabase
     .from("agent_sites")
-    .select("*, agent:profiles(*)")
+    .select("*, agent:profiles(*), org:organizations(*)")
     .eq("slug", slug)
     .maybeSingle();
+  const brokerage = brandFromOrg(site?.org);
 
   const url = `${SITE_ORIGIN}/sites/${slug}/blog/${postSlug}`;
 

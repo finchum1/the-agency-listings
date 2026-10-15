@@ -29,7 +29,7 @@ export default async function handler(req, res) {
 
   const { data: listing } = await supabase
     .from("listings")
-    .select("*, agent:profiles(*), listing_photos(url, is_hero)")
+    .select("*, agent:profiles(*), listing_photos(url, is_hero), org:organizations(*)")
     .eq("slug", slug)
     .maybeSingle();
 

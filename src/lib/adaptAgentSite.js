@@ -1,10 +1,11 @@
-import brokerage from "./brokerage";
+import { brandFromOrg } from "./brand";
 import { paragraphsToHtml } from "./richTextFallback";
 
 // Shapes a Supabase agent_sites row (+ profile + testimonials + areas +
 // posts + the agent's own listings) into one convenient object for the
 // public site components — same idea as adaptListing.js.
 export function adaptAgentSite({ site, agent, testimonials, areas, posts, listings }) {
+  const brokerage = brandFromOrg(site.org);
   return {
     brand: {
       name: agent?.full_name || "",

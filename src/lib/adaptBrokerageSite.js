@@ -1,4 +1,4 @@
-import brokerage from "./brokerage";
+import { brandFromOrg } from "./brand";
 
 // Shapes a Supabase brokerage_site row (+ agents + posts + areas) into
 // one convenient object for the public brokerage-site components — same
@@ -6,7 +6,7 @@ import brokerage from "./brokerage";
 // agent (no slug/custom-domain).
 export function adaptBrokerageSite({ site, agents, posts, areas }) {
   return {
-    brokerage,
+    brokerage: brandFromOrg(site.org),
     theme: site.theme || "dark",
     fontPairing: site.font_pairing || "playfair-jost",
     accentColor: site.accent_color || "",

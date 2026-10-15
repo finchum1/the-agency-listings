@@ -31,6 +31,8 @@
 // regardless of the VITE_ prefix, which only affects client bundling.)
 
 import { createClient } from "@supabase/supabase-js";
+import { brokerageSiteQuery } from "../src/lib/brand.js";
+import { bareHost, isAppHost } from "../src/lib/appHosts.js";
 import {
   checkRate,
   describePerson,
@@ -70,10 +72,12 @@ export default async function handler(req, res) {
   let recipientEmail, leadTargetType, leadTargetId, leadAgentId, subject, bodyLines, agentName, about;
 
   if (isValuation) {
-    const { data: site, error: siteError } = await supabase
-      .from("brokerage_site")
-      .select("id, contact_email")
-      .maybeSingle();
+    // Which brokerage is this form for? The one that owns the domain it was submitted from, or The Agency on the
+    // app host. (With more than one brokerage in the database, "the" brokerage site is no longer a single row.)
+    const host = bareHost(String(req.headers["x-forwarded-host"] || req.headers.host || ""));
+    const { data: site, error: siteError } = await brokerageSiteQuery(supabase, {
+      customDomain: host && !isAppHost(host) ? host : undefined,
+    }).maybeSingle();
     if (siteError || !site?.contact_email) {
       console.error("Valuation form: brokerage site lookup failed:", siteError);
       return res.status(500).json({ error: "This form isn't fully set up yet — no brokerage contact email on file." });

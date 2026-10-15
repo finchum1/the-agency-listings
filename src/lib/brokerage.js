@@ -16,6 +16,10 @@ const logos = {
 
 const brokerage = {
   name: "The Agency",
+  // Shown next to the logo in the dashboard and used in SEO text. For other organizations this comes from
+  // organizations.brand.location_label (see lib/brand.js); this constant is only the fallback.
+  locationLabel: "Oklahoma",
+  serviceArea: "Oklahoma City, Edmond, and the surrounding metro",
   logo: logos.red, // red mark + wordmark, used everywhere except agent sites
   logos,
   address: {

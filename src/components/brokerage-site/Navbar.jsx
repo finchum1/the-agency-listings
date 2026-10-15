@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
+import BrandLogo from "../BrandLogo";
 
 // sectionKey matches brokerage_site.home_sections entries (see
 // HomeSections.jsx) — a section turned off there isn't advertised in the
@@ -57,11 +58,7 @@ export default function Navbar() {
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-10 flex items-center justify-between py-4">
         <Link to="/brokerage" className="flex items-center gap-3 min-w-0">
-          <img
-            src={site.brokerage.logos[site.logoVariant] || site.brokerage.logo}
-            alt={site.brokerage.name}
-            className="h-9 sm:h-11 w-auto"
-          />
+          <BrandLogo src={site.brokerage.logos[site.logoVariant] || site.brokerage.logo} name={site.brokerage.name} className="h-9 sm:h-11 w-auto" />
         </Link>
 
         <nav className="hidden lg:flex items-center gap-6 xl:gap-8 shrink-0">

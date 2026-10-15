@@ -12,7 +12,7 @@
 // the Vercel serverless functions (api/meta-*.js), whose ESM resolver
 // requires the extension on relative imports.
 import { formatPrice, STATUS_LABELS } from "./format.js";
-import brokerage from "./brokerage.js";
+import { brandFromOrg } from "./brand.js";
 
 export const SITE_ORIGIN = "https://the-agency-listings.vercel.app";
 
@@ -64,6 +64,7 @@ function firstBlockText(html) {
 // listing: a raw `listings` row. agent: its `profiles` row (nullable).
 // heroPhotoUrl: resolved separately since it lives in `listing_photos`.
 export function buildListingMeta(listing, agent, heroPhotoUrl) {
+  const brokerage = brandFromOrg(listing.org);
   const title =
     listing.seo_title?.trim() ||
     `${listing.address_line1} | ${listing.city}, ${listing.state} — ${brokerage.name}`;
@@ -89,6 +90,7 @@ export function buildListingMeta(listing, agent, heroPhotoUrl) {
 
 // site: a raw `agent_sites` row. agent: its `profiles` row (nullable).
 export function buildAgentSiteMeta(site, agent) {
+  const brokerage = brandFromOrg(site.org);
   const title = site.seo_title?.trim() || `${agent?.full_name || "Agent"} | ${brokerage.name}`;
 
   const description =
@@ -110,11 +112,11 @@ export function buildAgentSiteMeta(site, agent) {
 // issue when Google (or anyone) compares pages within the same site.
 const AGENT_SITE_PAGE_LABELS = { about: "About", listings: "Listings", areas: "Areas", blog: "Blog", contact: "Contact" };
 const AGENT_SITE_PAGE_DESCRIPTIONS = {
-  about: (site, agent) =>
+  about: (site, agent, brokerage) =>
     `Learn about ${agent?.full_name || "this agent"}${
       site.region ? `, serving ${site.region}` : ""
     } — background, experience, and client testimonials at ${brokerage.name}.`,
-  listings: (site, agent) =>
+  listings: (site, agent, brokerage) =>
     `Browse current listings from ${agent?.full_name || "this agent"} at ${brokerage.name}${
       site.region ? ` in ${site.region}` : ""
     }.`,
@@ -122,9 +124,9 @@ const AGENT_SITE_PAGE_DESCRIPTIONS = {
     `Explore the neighborhoods and areas ${agent?.full_name || "this agent"} serves${
       site.region ? ` around ${site.region}` : ""
     }.`,
-  blog: (site, agent) =>
+  blog: (site, agent, brokerage) =>
     `Real estate insights, market updates, and local guides from ${agent?.full_name || "this agent"} at ${brokerage.name}.`,
-  contact: (site, agent) =>
+  contact: (site, agent, brokerage) =>
     `Get in touch with ${agent?.full_name || "this agent"} at ${brokerage.name} to buy, sell, or ask a question.`,
 };
 
@@ -140,19 +142,21 @@ export function buildAgentSitePageMeta(site, agent, page) {
   // still wins over our computed per-page default, same priority it
   // already has inside buildAgentSiteMeta.
   const description =
-    site.seo_description?.trim() || AGENT_SITE_PAGE_DESCRIPTIONS[page](site, agent) || base.description;
+    site.seo_description?.trim() || AGENT_SITE_PAGE_DESCRIPTIONS[page](site, agent, brandFromOrg(site.org)) || base.description;
 
   return { title: `${label} | ${base.title}`, description, image: base.image };
 }
 
 // site: a raw `brokerage_site` row.
 export function buildBrokerageSiteMeta(site) {
-  const title = site.seo_title?.trim() || `${brokerage.name} | Oklahoma`;
+  const brokerage = brandFromOrg(site.org);
+  const loc = brokerage.locationLabel;
+  const title = site.seo_title?.trim() || `${brokerage.name} | ${loc}`;
   const description =
     site.seo_description?.trim() ||
     site.tagline?.trim() ||
     firstBlockText(site.about_html) ||
-    `${brokerage.name}'s Oklahoma office — a boutique brokerage representing Oklahoma's most distinctive properties.`;
+    `${brokerage.name}'s ${loc} office — a boutique brokerage representing ${loc}'s most distinctive properties.`;
   const image = absoluteUrl(site.og_image_url || site.hero_photo_url || brokerage.logo);
   return { title, description, image };
 }
@@ -173,15 +177,15 @@ const BROKERAGE_PAGE_LABELS = {
   contact: "Contact",
 };
 const BROKERAGE_PAGE_DESCRIPTIONS = {
-  about: (site) =>
-    `Learn about ${brokerage.name}'s Oklahoma office — a boutique brokerage representing Oklahoma's most distinctive properties.`,
-  agents: () => `Meet the agents at ${brokerage.name}'s Oklahoma office.`,
-  areas: () => `Explore the neighborhoods and areas ${brokerage.name} serves across Oklahoma.`,
-  blog: () => `Real estate insights, market updates, and local guides from ${brokerage.name}.`,
-  listings: () => `Browse current listings from ${brokerage.name}'s Oklahoma office.`,
-  search: () => `Search every home for sale across the whole MLS with ${brokerage.name}.`,
-  "home-valuation": () => `Get an honest home valuation estimate from ${brokerage.name}.`,
-  contact: () => `Get in touch with ${brokerage.name}'s Oklahoma office to buy, sell, or ask a question.`,
+  about: (brokerage) =>
+    `Learn about ${brokerage.name}'s ${brokerage.locationLabel} office — a boutique brokerage representing ${brokerage.locationLabel}'s most distinctive properties.`,
+  agents: (brokerage) => `Meet the agents at ${brokerage.name}'s ${brokerage.locationLabel} office.`,
+  areas: (brokerage) => `Explore the neighborhoods and areas ${brokerage.name} serves across ${brokerage.locationLabel}.`,
+  blog: (brokerage) => `Real estate insights, market updates, and local guides from ${brokerage.name}.`,
+  listings: (brokerage) => `Browse current listings from ${brokerage.name}'s ${brokerage.locationLabel} office.`,
+  search: (brokerage) => `Search every home for sale across the whole MLS with ${brokerage.name}.`,
+  "home-valuation": (brokerage) => `Get an honest home valuation estimate from ${brokerage.name}.`,
+  contact: (brokerage) => `Get in touch with ${brokerage.name}'s ${brokerage.locationLabel} office to buy, sell, or ask a question.`,
 };
 
 // site: a raw `brokerage_site` row. page: one of BROKERAGE_PAGE_LABELS's
@@ -193,13 +197,14 @@ export function buildBrokerageSitePageMeta(site, page) {
   if (!label) return base;
 
   const description =
-    site.seo_description?.trim() || BROKERAGE_PAGE_DESCRIPTIONS[page](site) || base.description;
+    site.seo_description?.trim() || BROKERAGE_PAGE_DESCRIPTIONS[page](brandFromOrg(site.org)) || base.description;
 
   return { title: `${label} | ${base.title}`, description, image: base.image };
 }
 
 // post: a raw `brokerage_posts` row. site: the brokerage_site row.
 export function buildBrokeragePostMeta(post, site) {
+  const brokerage = brandFromOrg(site?.org);
   const title = `${post.title} | ${brokerage.name}`;
   const description = post.excerpt?.trim() || firstBlockText(post.body_html) || "";
   const image = absoluteUrl(post.image_url || site?.hero_photo_url || brokerage.logo);
@@ -208,6 +213,7 @@ export function buildBrokeragePostMeta(post, site) {
 
 // post: a raw `agent_site_posts` row. site/agent: the parent site + its agent.
 export function buildAgentPostMeta(post, site, agent) {
+  const brokerage = brandFromOrg(site?.org);
   const title = `${post.title} | ${agent?.full_name || brokerage.name}`;
   const description =
     post.excerpt?.trim() ||
@@ -219,6 +225,7 @@ export function buildAgentPostMeta(post, site, agent) {
 }
 
 export function buildAgentAreaMeta(area, site, agent) {
+  const brokerage = brandFromOrg(site?.org);
   const title = `${area.name} | ${agent?.full_name || brokerage.name}`;
   const description =
     area.blurb?.trim() ||
@@ -231,6 +238,7 @@ export function buildAgentAreaMeta(area, site, agent) {
 }
 
 export function buildBrokerageAreaMeta(area, site) {
+  const brokerage = brandFromOrg(site?.org);
   const title = `${area.name} | ${brokerage.name}`;
   const description =
     area.blurb?.trim() ||

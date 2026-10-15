@@ -29,8 +29,7 @@ export default function AgentRoster({ preview = false, isStandalonePage = false 
             Meet The Agents
           </Heading>
           <p className="mx-auto mt-4 max-w-xl text-[var(--as-text)]/60">
-            {site.agents.length} licensed agent{site.agents.length === 1 ? "" : "s"} serving Oklahoma City,
-            Edmond, and the surrounding metro.
+            {site.agents.length} licensed agent{site.agents.length === 1 ? "" : "s"} serving {site.brokerage.serviceArea || site.brokerage.locationLabel}.
           </p>
         </div>
 

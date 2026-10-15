@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useListingContext } from "../../context/ListingContext";
+import BrandLogo from "../BrandLogo";
 
 const links = [
   { href: "#overview", label: "Overview" },
@@ -29,11 +30,7 @@ export default function Navbar({ backLink }) {
       <div className="mx-auto max-w-7xl px-6 lg:px-10 flex items-center justify-between py-3">
         <div className="flex items-center gap-3 sm:gap-5 min-w-0">
           <a href="#overview" className="flex items-center min-w-0">
-            <img
-              src={listing.brokerage.logo}
-              alt={listing.brokerage.name}
-              className="h-14 sm:h-16 w-auto"
-            />
+            <BrandLogo src={listing.brokerage.logo} name={listing.brokerage.name} className="h-14 sm:h-16 w-auto" />
           </a>
           {backLink && (
             <a
