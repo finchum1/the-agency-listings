@@ -358,6 +358,11 @@ passed; the ZZ test lead, its People row and note were deleted (counts back to 3
 NO DMARC record; fix = allow-list that sender in the Agency's mail admin and add a DMARC TXT record `_dmarc.latchpointstudios.com`, p=none, at Vercel DNS: awaiting Terrence's OK);
 (2) on theagency.latchpointstudios.com the search-engine copy of the page is visible for ~0.3 s before the app loads (pre-existing, from commit 5b0e15a; fix = visually hide that block).
 
+**2026-10-15 (both walkthrough notes fixed).** (1) DMARC TXT record `_dmarc.latchpointstudios.com` = `v=DMARC1; p=none; rua=mailto:terrence@latchpointstudios.com` added at Vercel DNS
+(monitor only; resolves publicly; subdomains inherit it). Still recommended: allow-list `inquiries@theagency.latchpointstudios.com` in theagencyre.com's mail admin (agents' lead
+alerts may be going to spam until then). (2) Marketing-site flash fixed (commit ded306b, production deployment `dpl_BmXrprqqtqsCPscDLe5YdoqD52CV`): the search-engine copy of each
+marketing page is now visually hidden but still in the page; verified by an early-load screenshot (blank until the app renders), crawlers still get the text, all 19 public addresses unchanged.
+
 Still to do (post-cutover):
 1. Marketing pages stay Agency-branded on purpose (they are The Agency's showcase).
 2. (Rehearsal done, see above.) The production cutover, in this order: fresh backup, part A, deploy the API change,
