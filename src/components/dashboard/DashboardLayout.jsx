@@ -4,6 +4,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrg } from "../../context/OrgContext";
 import BrandLogo from "../BrandLogo";
+import { SITE_ORIGIN } from "../../lib/seo";
 
 // Plain top-level tabs. (Website is a collapsible group of its own —
 // see SITE_ITEMS below — and the /dashboard index route just redirects to
@@ -283,6 +284,35 @@ function OrgSwitcher({ flush = false }) {
           </option>
         ))}
       </select>
+      <CopyLoginLink org={org} />
     </div>
+  );
+}
+
+// The organization's personal sign-in link (see hooks/useAuthOrg.js): its logo on the login screen. Built on the platform's
+// own address (VITE_SITE_ORIGIN), whatever host the owner happens to be on.
+function CopyLoginLink({ org }) {
+  const [copied, setCopied] = useState(false);
+  if (!org?.slug) return null;
+  const link = `${SITE_ORIGIN}/login?org=${org.slug}`;
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      // clipboard blocked (older browser, insecure context): fall back to a prompt the owner can copy from
+      window.prompt("Copy this login link:", link);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={link}
+      className="mt-1.5 text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] transition-colors"
+    >
+      {copied ? "Copied!" : "Copy login link"}
+    </button>
   );
 }

@@ -330,7 +330,7 @@ database leak suite **106/106** (plus 3 new storage checks added since; run the 
 appears is decided only by what the visitor brings, never by what they type (typing an email must not reveal which organizations exist): (1) a brokerage's own
 dashboard domain, (2) a personal link `https://<app host>/login?org=<slug>`, (3) on the invite page, the organization of the person who followed the invite
 link, (4) the organization this browser last signed in to (logo only). Unknown slugs get the Latchpoint mark with no error. `hooks/useAuthOrg.js`; browser test
-`mt-login-link.js` (11 checks). Reads the public `organizations` rows (anon read of active organizations is existing design).
+`mt-login-link.js` (11 checks). The platform owner's organization switcher has a "Copy login link" button (built on `VITE_SITE_ORIGIN`). Reads the public `organizations` rows (anon read of active organizations is existing design).
 
 Still to do before production cutover:
 1. Marketing pages stay Agency-branded on purpose (they are The Agency's showcase).
