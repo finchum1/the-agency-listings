@@ -332,9 +332,19 @@ dashboard domain, (2) a personal link `https://<app host>/login?org=<slug>`, (3)
 link, (4) the organization this browser last signed in to (logo only). Unknown slugs get the Latchpoint mark with no error. `hooks/useAuthOrg.js`; browser test
 `mt-login-link.js` (11 checks). The platform owner's organization switcher has a "Copy login link" button (built on `VITE_SITE_ORIGIN`). Reads the public `organizations` rows (anon read of active organizations is existing design).
 
+**2026-10-14 (rehearsal): everything re-run from scratch on staging, all green.** Staging was wiped (tables, functions, policies, accounts, buckets),
+rebuilt from the Oct 14 backup (`schema-rebuild.sql`: 26 tables, 6 functions, 65 access rules, 4 buckets), loaded (`load-staging.js`: row counts match, 116 of 117
+files; the one 52.7 MB listing video is over staging's upload limit, production is unaffected), then parts A, B, C, D, E, F, G were applied **from the files in the
+branch, in cutover order, each as one transaction, with no errors** (A backfilled 5 profiles, 1 listing, 1,500 page views; E registered the 2 existing custom domains
+and the Search Console token). Results on that fresh copy: leak suite **109/109**, domain registry 17/17 (SQL: `DOMAIN REGISTRY failures: none`), brand choices
+(SQL) none, IDX settings (SQL) none; browser/API: dashboard 33/33, public pages 12/12, brokerage-domain 7/7, pickers 16/16, login link 11/11, agent API 8/8,
+middleware 11/11, IDX API 13/13. Notes for the cutover: the Supabase SQL tool has no `psql`, so the files are pasted in as-is; do not add a generic "run any SQL" helper
+function to the database (the safety checks rightly refuse it). A "wipe staging" step is blocked unless the owner explicitly allows it. The ZZB fixture organization is still on
+staging (remove with `mt-fixture.mjs ... down` and delete the `zzb-app.localhost` row in `org_domains` when finished).
+
 Still to do before production cutover:
 1. Marketing pages stay Agency-branded on purpose (they are The Agency's showcase).
-2. Re-run everything above on a fresh staging copy, then the production cutover in this order: fresh backup, part A, deploy the API change,
+2. (Rehearsal done, see above.) The production cutover, in this order: fresh backup, part A, deploy the API change,
    part B, part C, part D, part E, part F, part G (G needs each organization's `idx_config` filled in by SQL; The Agency keeps its environment variables), deploy the app, run the leak suite and the acceptance flows; `rollback-policies-and-functions.sql` ready.
 
 ## 6. Testing strategy
