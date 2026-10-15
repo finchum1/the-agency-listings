@@ -30,6 +30,49 @@ export default function MyProfilePage() {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
 
+  // Optional second address for lead alerts. Kept in a private table (never on the public profile row).
+  const [alertEmail, setAlertEmail] = useState("");
+  const [alertSaving, setAlertSaving] = useState(false);
+  const [alertError, setAlertError] = useState("");
+  const [alertSaved, setAlertSaved] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let active = true;
+    supabase
+      .from("agent_notification_settings")
+      .select("lead_alert_email")
+      .eq("agent_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active) setAlertEmail(data?.lead_alert_email || "");
+      });
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
+
+  const handleAlertSubmit = async (e) => {
+    e.preventDefault();
+    setAlertError("");
+    const value = alertEmail.trim();
+    if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      setAlertError("That doesn't look like an email address.");
+      return;
+    }
+    setAlertSaving(true);
+    const { error } = await supabase
+      .from("agent_notification_settings")
+      .upsert({ agent_id: user.id, lead_alert_email: value || null, updated_at: new Date().toISOString() });
+    setAlertSaving(false);
+    if (error) {
+      setAlertError(error.message);
+      return;
+    }
+    setAlertEmail(value);
+    setAlertSaved(true);
+  };
+
   useEffect(() => {
     if (profile) {
       setForm({
@@ -123,6 +166,48 @@ export default function MyProfilePage() {
           className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60"
         >
           {saving ? "Saving…" : "Save Changes"}
+        </button>
+      </form>
+
+      <form
+        onSubmit={handleAlertSubmit}
+        className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mt-6 space-y-4"
+      >
+        <div>
+          <h2 className="font-display text-lg font-semibold">Lead alerts</h2>
+          <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
+            New website inquiries are emailed to {profile.email}. If they land in spam, or you'd like them somewhere you check
+            more often, add a second address and every alert goes to both.
+          </p>
+        </div>
+        <div>
+          <label htmlFor="lead-alert-email" className={labelClass}>
+            Also send my lead alerts to (optional)
+          </label>
+          <input
+            id="lead-alert-email"
+            type="email"
+            value={alertEmail}
+            onChange={(e) => {
+              setAlertSaved(false);
+              setAlertEmail(e.target.value);
+            }}
+            className={inputClass}
+            placeholder="you@gmail.com"
+          />
+        </div>
+        {alertError && <p className="text-sm text-red-600 dark:text-red-400">{alertError}</p>}
+        {alertSaved && (
+          <p className="text-sm text-emerald-700 dark:text-emerald-400">
+            {alertEmail ? "Saved. Alerts will go to both addresses." : "Saved. Alerts go to your main address only."}
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={alertSaving}
+          className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60"
+        >
+          {alertSaving ? "Saving…" : "Save alert address"}
         </button>
       </form>
 

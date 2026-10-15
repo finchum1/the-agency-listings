@@ -20,7 +20,9 @@ import {
   checkRate,
   describePerson,
   findExistingPerson,
+  leadAlertContext,
   parseInquiry,
+  renderLeadEmailHtml,
   sendConfirmation,
   sendNotification,
 } from "./_lib/inquiry.js";
@@ -61,8 +63,9 @@ export default async function handler(req, res) {
   let confirmedRecently = false;
   let existingPerson = null;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  let supabaseAdmin = null;
   if (serviceKey) {
-    const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+    supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
     const rate = await checkRate(supabaseAdmin, { targetId: agentSiteId, email, message });
     if (rate.duplicate) return res.status(200).json({ ok: true });
@@ -98,19 +101,31 @@ export default async function handler(req, res) {
   const fromEmail = process.env.LEAD_FROM_EMAIL || "Site Inquiries <onboarding@resend.dev>";
 
   try {
+    const alert = await leadAlertContext(supabaseAdmin, site.agent_id, site.agent.email);
+    const notice = existingPerson ? `Already in your People: ${describePerson(existingPerson)}` : "";
     const sent = await sendNotification(apiKey, {
       from: fromEmail,
-      to: site.agent.email,
+      to: alert.to,
       replyTo: email,
       subject: `${existingPerson ? "Repeat website inquiry" : "New website inquiry"} from ${name}`,
       text: [
-        ...(existingPerson ? [`Already in your People: ${describePerson(existingPerson)}`, ""] : []),
+        ...(notice ? [notice, ""] : []),
         `Name: ${name}`,
         `Email: ${email}`,
         `Phone: ${phone || "—"}`,
         "",
         message || "(no message)",
+        "",
+        `Open in your dashboard: ${alert.dashboardUrl}`,
       ].join("\n"),
+      html: renderLeadEmailHtml({
+        heading: `${existingPerson ? "Repeat website inquiry" : "New website inquiry"} from ${name}`,
+        agentName: site.agent.full_name,
+        notice,
+        fields: [["Name", name], ["Email", email], ["Phone", phone || "—"]],
+        message,
+        dashboardUrl: alert.dashboardUrl,
+      }),
     });
     if (!sent) return res.status(502).json({ error: "Failed to send email." });
 

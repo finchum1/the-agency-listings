@@ -2,6 +2,8 @@
 // bot/rate-limit checks, the repeat-contact lookup, and the Resend calls.
 // (api/_lib files don't count toward Vercel's Hobby 12-function cap.)
 
+import { SITE_ORIGIN } from "../../src/lib/seo.js";
+
 const EMAIL_RE = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]{2,}$/;
 const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
 
@@ -95,9 +97,60 @@ async function resendSend(apiKey, payload) {
   return res.ok;
 }
 
-// The notification to the agent / brokerage.
-export const sendNotification = (apiKey, { from, to, replyTo, subject, text }) =>
-  resendSend(apiKey, { from, to, reply_to: replyTo, subject, text });
+// The notification to the agent / brokerage. `to` is one address or a list; `html` is the formatted version (the plain `text` is
+// always sent too, so every mail app has something to show and spam filters see a normal multipart message).
+export const sendNotification = (apiKey, { from, to, replyTo, subject, text, html }) =>
+  resendSend(apiKey, { from, to, reply_to: replyTo, subject, text, ...(html ? { html } : {}) });
+
+const escapeHtml = (v) =>
+  String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+// Who gets this agent's lead alert, and where the "open in your dashboard" button goes. The agent's optional second address lives in
+// a private table (agent_notification_settings): never on profiles, which are public for agents with a published site. Read with the
+// service role; without one (or on any failure) the alert simply goes to the agent's main address as before.
+export async function leadAlertContext(admin, agentId, primaryEmail) {
+  const to = [primaryEmail];
+  let peopleEnabled = false;
+  try {
+    if (admin && agentId) {
+      const [{ data: s }, { data: p }] = await Promise.all([
+        admin.from("agent_notification_settings").select("lead_alert_email").eq("agent_id", agentId).maybeSingle(),
+        admin.from("profiles").select("people_enabled").eq("id", agentId).maybeSingle(),
+      ]);
+      const extra = s?.lead_alert_email?.trim();
+      if (extra && extra.toLowerCase() !== String(primaryEmail || "").toLowerCase()) to.push(extra);
+      peopleEnabled = !!p?.people_enabled;
+    }
+  } catch (err) {
+    console.error("Lead alert settings lookup failed:", err);
+  }
+  return { to, dashboardUrl: `${SITE_ORIGIN}/dashboard${peopleEnabled ? "/people" : ""}` };
+}
+
+// The formatted lead alert. Everything the visitor typed is escaped.
+export function renderLeadEmailHtml({ heading, agentName, notice, about, fields, message, dashboardUrl }) {
+  const first = escapeHtml((agentName || "").split(" ")[0] || "there");
+  const rows = fields
+    .map(
+      ([label, value]) =>
+        `<tr><td style="padding:6px 16px 6px 0;color:#6b6762;font-size:13px;white-space:nowrap;vertical-align:top">${escapeHtml(label)}</td><td style="padding:6px 0;font-size:15px;color:#1c1a17">${escapeHtml(value)}</td></tr>`,
+    )
+    .join("");
+  return `<!doctype html><html><body style="margin:0;padding:24px;background:#f4f2ee;font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center">
+<table role="presentation" width="560" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid #e3dfd8;border-radius:12px">
+<tr><td style="padding:28px 28px 8px">
+<p style="margin:0 0 4px;font-size:13px;color:#6b6762">Hi ${first},</p>
+<h1 style="margin:0 0 4px;font-size:21px;line-height:1.3;color:#1c1a17">${escapeHtml(heading)}</h1>
+${about ? `<p style="margin:0;font-size:14px;color:#6b6762">${escapeHtml(about)}</p>` : ""}
+</td></tr>
+${notice ? `<tr><td style="padding:8px 28px 0"><div style="background:#fbf3e4;border:1px solid #efdcb4;border-radius:8px;padding:10px 12px;font-size:14px;color:#6a4b10">${escapeHtml(notice)}</div></td></tr>` : ""}
+<tr><td style="padding:12px 28px 0"><table role="presentation" cellspacing="0" cellpadding="0">${rows}</table></td></tr>
+<tr><td style="padding:12px 28px 4px"><div style="background:#f7f5f1;border-radius:8px;padding:14px 16px;font-size:15px;line-height:1.55;color:#1c1a17;white-space:pre-wrap">${escapeHtml(message || "(no message)")}</div></td></tr>
+<tr><td style="padding:20px 28px 8px"><a href="${escapeHtml(dashboardUrl)}" style="display:inline-block;background:#1c1a17;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:12px 22px;border-radius:99px">Open in your dashboard</a></td></tr>
+<tr><td style="padding:8px 28px 26px;font-size:13px;line-height:1.5;color:#6b6762">Just reply to this email to answer them directly.</td></tr>
+</table></td></tr></table></body></html>`;
+}
 
 // A short "we got it" note to the visitor. Never includes anything the
 // visitor typed except their first name, so the form can't be used to push

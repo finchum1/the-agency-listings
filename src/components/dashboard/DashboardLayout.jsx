@@ -280,7 +280,7 @@ function OrgSwitcher({ flush = false }) {
       >
         {orgs.map((o) => (
           <option key={o.id} value={o.id}>
-            {o.name}
+            {o.brand?.admin_name || o.name}
           </option>
         ))}
       </select>

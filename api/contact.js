@@ -37,7 +37,9 @@ import {
   checkRate,
   describePerson,
   findExistingPerson,
+  leadAlertContext,
   parseInquiry,
+  renderLeadEmailHtml,
   sendConfirmation,
   sendNotification,
 } from "./_lib/inquiry.js";
@@ -113,8 +115,9 @@ export default async function handler(req, res) {
   let confirmedRecently = false;
   let existingPerson = null;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  let supabaseAdmin = null;
   if (serviceKey) {
-    const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+    supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
     const rate = await checkRate(supabaseAdmin, { targetId: leadTargetId, email, message });
     if (rate.duplicate) return res.status(200).json({ ok: true });
@@ -150,12 +153,22 @@ export default async function handler(req, res) {
   const fromEmail = process.env.LEAD_FROM_EMAIL || "Listing Inquiries <onboarding@resend.dev>";
 
   try {
+    const finalSubject = existingPerson ? `Repeat ${subject.charAt(0).toLowerCase()}${subject.slice(1)}` : subject;
+    const alert = await leadAlertContext(isValuation ? null : supabaseAdmin, leadAgentId, recipientEmail);
     const sent = await sendNotification(apiKey, {
       from: fromEmail,
-      to: recipientEmail,
+      to: alert.to,
       replyTo: email,
-      subject: existingPerson ? `Repeat ${subject.charAt(0).toLowerCase()}${subject.slice(1)}` : subject,
-      text: bodyLines.join("\n"),
+      subject: finalSubject,
+      text: [...bodyLines, "", `Open in your dashboard: ${alert.dashboardUrl}`].join("\n"),
+      html: renderLeadEmailHtml({
+        heading: finalSubject,
+        agentName,
+        notice: existingPerson ? `Already in your People: ${describePerson(existingPerson)}` : "",
+        fields: [...(isValuation ? [["Property", address]] : []), ["Name", name], ["Email", email], ["Phone", phone || "—"]],
+        message,
+        dashboardUrl: alert.dashboardUrl,
+      }),
     });
     if (!sent) return res.status(502).json({ error: "Failed to send email." });
 
