@@ -381,6 +381,13 @@ untouched). Not testable from here without sending a real email; the first invit
 hosts (the VITE_APP_HOSTS ones) and a brokerage's own dashboard domain now send `/` to /login (or the dashboard when signed in); the older shared address keeps its landing page (commit 79ef8af).
 Verified live; all monitored addresses unchanged.
 
+**2026-10-15 (lead alerts, part H, and switcher name; commit 320e217).** Agents' lead alerts were landing in Gmail spam (new sender address; the Agency's mail admin can't allow-list it). Built: (B) an optional
+second address per agent in a PRIVATE table `agent_notification_settings` (`supabase/multi-tenant-1h-lead-alert-address.sql`; not on profiles because profiles are public for agents with a published site),
+set on My Profile > Lead alerts, read server-side with the service role, alert goes to both addresses (deduplicated); (C) alert emails are now multipart (HTML + text), visitor text escaped, with an
+"Open in your dashboard" button (People when enabled). Tests: SQL `lead-alert-address-test.sql` 11, `test-lead-alert.mjs` 11, `mt-profile-alert.js` 6; dashboard 33 and pickers 16 still pass. Applied to production
+(part H test clean; endpoints respond; all addresses unchanged). The organization switcher now shows "The Agency Oklahoma" via `organizations.brand.admin_name` (public name stays "The Agency": it appears
+in public page titles, footers and the legal disclaimer lines). Each existing agent still has to add their own second address.
+
 Still to do (post-cutover):
 1. Marketing pages stay Agency-branded on purpose (they are The Agency's showcase).
 2. (Rehearsal done, see above.) The production cutover, in this order: fresh backup, part A, deploy the API change,
