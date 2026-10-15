@@ -278,16 +278,29 @@ Test result on staging: **106 of 106 checks pass** (reads, writes, storage, priv
 organization-stamping, each deny paired with a control). A mutation check confirmed the suite fails when a rule is deliberately weakened.
 The current, unchanged app renders the same public pages against the migrated staging database.
 
-**Still to do for Phase 1 (app side, then production cutover):**
-1. `api/admin/agents.js`: set the new account's `org_id` (the caller's organization; platform owner passes one). **Required**, because a new
-   account with no organization sees nothing.
-2. Organization provider and `useBrand()`; replace the 15 `brokerage.js` imports and the hardcoded Agency text.
-3. `isAdmin` becomes "admin of my organization or platform owner"; add the platform owner's organization switcher.
-4. Every brokerage-site query filters by organization (hooks: useBrokerageSite, useBrokeragePost, useBrokerageArea, useBrokerageSiteEditor,
-   the Brokerage*Manager components, `api/sitemap.js`); brokerage uploads use the `{org_id}/` folder.
-5. DB-driven hosts (`appHosts.js`, `middleware.js`, `SITE_ORIGIN`).
-6. Production cutover order: part A, deploy the API change, part B, part C, deploy the app, run the leak test and the acceptance flows,
-   with a fresh backup right before and `rollback-policies-and-functions.sql` ready.
+**2026-10-14 (later): app side built on branch `multi-tenant-phase1`, running against STAGING** (not merged, not in production).
+Branch preview builds already point at staging (Vercel Preview env is staging-only).
+
+Done:
+- `OrgProvider` / `useOrg`, `brandFromOrg` (brand from the database), platform-owner organization switcher; `useAuth().isPlatformAdmin`.
+- Every dashboard list, picker and brokerage editor filters by the active organization (needed because published items of
+  other organizations are public by design); brokerage inserts carry the organization.
+- Public pages take brand from the organization on each row; a brand with no logo shows its name; The Agency-specific copy moved into brand data
+  (`organizations.brand`: location_label, service_area, logos).
+- `api/admin/agents.js` places new accounts in an organization server-side and refuses cross-organization delete/import; the valuation form,
+  sitemap and crawler snapshots resolve the right brokerage.
+- Storage rule for brokerage files understands the brokerage SITE folder (what the dashboard uploads use today) as well as an organization folder.
+
+Verified on staging with two brokerages present (scripts in the backups folder, `tools/multi-tenant-checks/`):
+dashboard as 4 roles with real logins **29/29**, public pages incl. a brokerage on its own domain **12/12**, agent-admin API **8/8**,
+database leak suite **106/106** (plus 3 new storage checks added since; run the whole suite again at cutover), hosted Preview build smoke test passes.
+
+Still to do before production cutover:
+1. Database-driven hosts (`appHosts.js`, `middleware.js`, `SITE_ORIGIN`, Google verification map) via `org_domains`.
+2. Brokerage-site logo variant picker (`BrokerageSiteForm`) still lists The Agency's three logos; the IDX map default center and Repliers key are
+   still single-organization; login, 404 and marketing pages use the default brand.
+3. Re-run everything above on a fresh staging copy, then the production cutover in this order: fresh backup, part A, deploy the API change,
+   part B, part C, part D, deploy the app, run the leak suite and the acceptance flows; `rollback-policies-and-functions.sql` ready.
 
 ## 6. Testing strategy
 
