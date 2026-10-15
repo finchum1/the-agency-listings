@@ -349,7 +349,16 @@ public addresses; baseline taken). Findings while preparing it: production's sch
 pages "not found") as soon as a second organization has a brokerage site row, so no second organization may be added before the new app is deployed; the SQL rollback
 file's 65 rules and 6 functions are identical to the statements that rebuilt staging, and it must be paired with a Vercel rollback of the app (app first, then SQL).
 
-Still to do before production cutover:
+**2026-10-15 (PRODUCTION CUTOVER DONE).** Window 11:02 to 11:20 AM Central (18 minutes). Fresh backup taken first (`latchpoint-backups/2026-10-15-pre-cutover`: 1,717 rows,
+117 files). Parts A to G applied on production from the branch files, each check matching the rehearsal; `main` fast-forwarded to 20dc866 and deployed (Vercel
+`dpl_EKDQUherLNmepJhQNkr274Vpbaxx`, previous production `dpl_9VKnJ2FC9zfV3wgPUgcKfkpUrWGw` kept as the one-click undo for 7+ days). On production: leak suite 109/109,
+domain/brand/IDX SQL tests clean, all 19 public addresses identical before/after, page views stamped to The Agency, no new runtime or API errors. Terrence's walkthrough
+passed; the ZZ test lead, its People row and note were deleted (counts back to 3 leads / 29 people / 27 notes). Two notes from the walkthrough, neither caused by the cutover:
+(1) the agent notification email for a new lead was delivered but landed in spam at theagencyre.com (sender inquiries@theagency.latchpointstudios.com has SPF and DKIM but
+NO DMARC record; fix = allow-list that sender in the Agency's mail admin and add a DMARC TXT record `_dmarc.latchpointstudios.com`, p=none, at Vercel DNS: awaiting Terrence's OK);
+(2) on theagency.latchpointstudios.com the search-engine copy of the page is visible for ~0.3 s before the app loads (pre-existing, from commit 5b0e15a; fix = visually hide that block).
+
+Still to do (post-cutover):
 1. Marketing pages stay Agency-branded on purpose (they are The Agency's showcase).
 2. (Rehearsal done, see above.) The production cutover, in this order: fresh backup, part A, deploy the API change,
    part B, part C, part D, part E, part F, part G (G needs each organization's `idx_config` filled in by SQL; The Agency keeps its environment variables), deploy the app, run the leak suite and the acceptance flows; `rollback-policies-and-functions.sql` ready.
