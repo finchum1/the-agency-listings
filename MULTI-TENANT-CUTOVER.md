@@ -1,5 +1,7 @@
 # Production cutover checklist: The Agency Listings becomes the multi-tenant platform
 
+> A clickable version with saved ticks, notes, a window timer and copy buttons for every SQL check is published as a private page: https://claude.ai/artifact/NRzsy5nnpuC87XRdCBvzaT (source: `cutover-checklist.html`). This file is the written reference.
+
 Prepared 2026-10-14 from a full from-scratch rehearsal on staging (see `MULTI-TENANT-PLAN.md`, "rehearsal"). Nothing in here has been run on production yet.
 
 **T** = Terrence does it. **C** = Claude does it (and reports the result before moving on).
@@ -19,7 +21,7 @@ Tick a box only when the expected result is seen. If a result is not what is wri
 
 | # | Decision | My recommendation |
 |---|---|---|
-| 1 | **Vercel Pro** upgrade done? | Required before cutover (you said later this week). The project is at exactly the 12-function Hobby limit. |
+| 1 | **Vercel Pro** upgrade done? | **Done** (confirmed 2026-10-14). The project is at exactly the 12-function Hobby limit. |
 | 2 | **The Agency Oklahoma agreement** (term sheet) agreed? | Business gate, not technical: the platform is only worth switching on once that is settled. |
 | 3 | **`VITE_SITE_ORIGIN` / `VITE_APP_HOSTS`:** set them at cutover? | **No.** Leave both unset. They are baked into the build and `VITE_SITE_ORIGIN` would move every Agency page's canonical address (an SEO change). Do `app.latchpointstudios.com` as its own step afterwards (section 6). Side effect: the "Copy login link" button copies `the-agency-listings.vercel.app/login?org=...` until then. |
 | 4 | **Production SQL access:** the session's safety check may ask you to approve each SQL step on production. | Approve them in the session as they come up; I will say exactly what each one is first. |
@@ -29,7 +31,7 @@ Tick a box only when the expected result is seen. If a result is not what is wri
 
 ## 1. Before the day (all must be ticked)
 
-- [ ] **T** Vercel Pro upgrade completed.
+- [x] **T** Vercel Pro upgrade completed (2026-10-14).
 - [ ] **T** The Agency Oklahoma agreement settled (or you consciously decide to cut over before it).
 - [ ] **T** Tell Stephen and the agents the window in advance: *during it, nobody invites agents, publishes, or edits in the dashboard.* After it, ask Stephen and one agent to sign in and report back (step 4.6).
 - [ ] **T** Supabase dashboard (project `hhzoahoaitnlotagpace`, **Database > Backups**): confirm daily backups are listed and note the latest restore point. This is the last-resort safety net (it also covers the private People/CRM tables, which my own file backup deliberately doesn't copy).

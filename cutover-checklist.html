@@ -1,0 +1,545 @@
+<title>Cutover Runbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout concept: an operations runbook. Sticky status bar with live progress, phase rail on the left (chips on a phone),
+   one column of steps. Every step is a tick box with an owner badge; the first open step is marked "Next". */
+:root {
+  --bg: #eef1f0;
+  --surface: #ffffff;
+  --surface-2: #f6f8f7;
+  --ink: #16201e;
+  --muted: #566460;
+  --line: #d3dbd8;
+  --accent: #0b5f8f;
+  --accent-ink: #ffffff;
+  --go: #17753f;
+  --warn: #a8530a;
+  --stop: #b3261e;
+  --code-bg: #101a19;
+  --code-ink: #dbe8e4;
+  --font-display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1514; --surface: #162120; --surface-2: #1b2928; --ink: #e5ece9; --muted: #9aaaa5; --line: #2b3a38;
+    --accent: #62b4e6; --accent-ink: #08202f; --go: #4cc388; --warn: #f0a54a; --stop: #ff8f86;
+    --code-bg: #0a1110; --code-ink: #cfe0db; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1514; --surface: #162120; --surface-2: #1b2928; --ink: #e5ece9; --muted: #9aaaa5; --line: #2b3a38;
+  --accent: #62b4e6; --accent-ink: #08202f; --go: #4cc388; --warn: #f0a54a; --stop: #ff8f86;
+  --code-bg: #0a1110; --code-ink: #cfe0db; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 15px/1.55 var(--font-body); padding-inline: 16px; margin: 0; }
+a { color: var(--accent); }
+code, .mono { font-family: var(--font-mono); font-size: 0.88em; overflow-wrap: anywhere; }
+.text, .callout, .expect, .blurb { overflow-wrap: anywhere; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: 0.01em; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- status bar */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); padding-block: 12px 10px; margin-inline: -16px; padding-inline: 16px; border-bottom: 1px solid var(--line); }
+.bar-in { max-width: 1120px; margin: 0 auto; display: grid; gap: 10px; }
+.bar-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; }
+.title { font-size: 26px; font-weight: 700; line-height: 1.1; }
+.title small { display: block; font: 500 12px/1.3 var(--font-mono); color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 3px; }
+.stats { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; font-variant-numeric: tabular-nums; }
+.stat { display: grid; line-height: 1.15; }
+.stat b { font: 600 20px var(--font-display); }
+.stat span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.meter { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: var(--go); transition: width .3s; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-weight: 500; font-size: 13px; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.danger { color: var(--stop); border-color: var(--stop); }
+.btn[disabled] { opacity: .45; cursor: default; }
+#problem-chip { display: none; color: var(--stop); font-weight: 600; text-decoration: none; border: 1px solid var(--stop); border-radius: 99px; padding: 3px 10px; font-size: 13px; }
+#problem-chip.on { display: inline-block; }
+#save-warn { display: none; background: color-mix(in srgb, var(--warn) 14%, var(--surface)); border: 1px solid var(--warn); color: var(--ink); border-radius: 8px; padding: 6px 10px; font-size: 13px; }
+#save-warn.on { display: block; }
+
+/* ---------- page grid */
+.page { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 28px; padding-block: 22px 80px; }
+.rail { position: sticky; top: 108px; align-self: start; display: grid; gap: 4px; }
+.rail a { display: flex; justify-content: space-between; gap: 8px; text-decoration: none; color: var(--ink); padding: 7px 10px; border-radius: 8px; font-size: 14px; border-left: 3px solid transparent; }
+.rail a:hover { background: var(--surface); }
+.rail a.active { background: var(--surface); border-left-color: var(--accent); font-weight: 600; }
+.rail a em { font: 500 12px var(--font-mono); color: var(--muted); font-style: normal; font-variant-numeric: tabular-nums; }
+.rail a.complete em { color: var(--go); }
+@media (max-width: 860px) {
+  .page { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .rail { position: static; display: flex; overflow-x: auto; gap: 6px; padding-bottom: 6px; }
+  .rail a { white-space: nowrap; border: 1px solid var(--line); background: var(--surface); }
+  .title { font-size: 22px; }
+}
+
+/* ---------- phases and steps */
+.phase { scroll-margin-top: 150px; margin-bottom: 38px; }
+.phase > header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin-bottom: 10px; }
+.phase h2 { font-size: 27px; }
+.phase .kick { font: 500 12px var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; }
+.phase .blurb { color: var(--muted); margin: 0 0 14px; max-width: 70ch; }
+ol.steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.step { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.step.next { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent); }
+.step.done { background: var(--surface-2); }
+.step.done .text { color: var(--muted); }
+.step.problem { border-color: var(--stop); background: color-mix(in srgb, var(--stop) 8%, var(--surface)); }
+.box { position: relative; width: 26px; height: 26px; margin-top: 1px; cursor: pointer; }
+.box input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.box .tick { position: absolute; inset: 0; border: 2px solid var(--muted); border-radius: 7px; background: var(--surface); display: grid; place-items: center; transition: background .15s, border-color .15s; }
+.box input:checked + .tick { background: var(--go); border-color: var(--go); }
+.box input:checked + .tick::after { content: ""; width: 6px; height: 12px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg) translate(-1px, -1px); }
+.box input:focus-visible + .tick { outline: 2px solid var(--accent); outline-offset: 2px; }
+.box input:disabled { cursor: not-allowed; }
+.head { display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
+.who { font: 600 11px var(--font-mono); border-radius: 5px; padding: 2px 6px; margin-top: 3px; letter-spacing: 0.04em; flex: none; }
+.who-T { background: var(--ink); color: var(--bg); }
+.who-C { background: var(--accent); color: var(--accent-ink); }
+.who-TC { background: var(--warn); color: #fff; }
+.text { flex: 1 1 260px; min-width: 0; }
+.text p { margin: 0 0 6px; }
+.next-tag { font: 600 11px var(--font-mono); color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; display: none; }
+.step.next .next-tag { display: inline-block; }
+.when { font: 400 12px var(--font-mono); color: var(--muted); margin-top: 4px; }
+.detail { margin-top: 8px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.step > div { min-width: 0; }
+.codewrap { min-width: 0; }
+.expect { border-left: 3px solid var(--go); padding: 4px 10px; background: var(--surface-2); border-radius: 0 6px 6px 0; font-size: 14px; }
+.expect b { font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--go); display: block; }
+.expect.stop { border-left-color: var(--stop); } .expect.stop b { color: var(--stop); }
+.codewrap { position: relative; }
+pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border-radius: 8px; padding: 10px 12px; overflow-x: auto; font: 400 12.5px/1.5 var(--font-mono); max-width: 100%; }
+.copy { position: absolute; top: 6px; right: 6px; font-size: 12px; padding: 2px 8px; border-radius: 6px; border: 1px solid #3a4b48; background: #1b2a28; color: #cfe0db; cursor: pointer; }
+.copy:hover { border-color: var(--accent); }
+.field { display: grid; gap: 3px; }
+.field label { font-size: 12px; color: var(--muted); }
+input[type=text], textarea { width: 100%; font: 400 14px var(--font-body); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; }
+input[type=text].mono { font-family: var(--font-mono); font-size: 13px; }
+textarea { resize: vertical; min-height: 56px; }
+.acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.mini { font-size: 12px; padding: 2px 9px; border-radius: 6px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+.mini:hover { color: var(--ink); border-color: var(--muted); }
+.mini.on { color: var(--stop); border-color: var(--stop); }
+.notebox { margin-top: 8px; display: none; }
+.notebox.on { display: block; }
+
+.callout { border: 1px solid var(--line); border-left: 4px solid var(--warn); background: var(--surface); border-radius: 8px; padding: 10px 14px; margin: 10px 0; }
+.callout.stop { border-left-color: var(--stop); }
+.callout b.k { font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--warn); display: block; margin-bottom: 2px; }
+.callout.stop b.k { color: var(--stop); }
+.callout p { margin: 0 0 6px; } .callout p:last-child { margin: 0; }
+
+.tablewrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); background: var(--surface-2); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.k { font-weight: 600; white-space: nowrap; }
+.timer { font: 500 14px var(--font-mono); font-variant-numeric: tabular-nums; }
+.theme { margin-left: auto; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="bar" id="bar">
+  <div class="bar-in">
+    <div class="bar-top">
+      <h1 class="title"><small>Latchpoint Real Estate &middot; production</small>Cutover runbook</h1>
+      <div class="stats">
+        <div class="stat"><b id="n-done">0</b><span id="n-of">of 0 ticked</span></div>
+        <div class="stat"><b class="timer" id="timer">--:--:--</b><span id="timer-label">window not open</span></div>
+        <a id="problem-chip" href="#p5">0 problems &middot; see rollback</a>
+      </div>
+    </div>
+    <div class="meter" aria-hidden="true"><i id="meter"></i></div>
+    <div class="btnrow">
+      <button class="btn primary" id="btn-next" type="button">Jump to next step</button>
+      <button class="btn" id="btn-open" type="button">Open the window</button>
+      <button class="btn" id="btn-close" type="button" disabled>Close the window</button>
+      <button class="btn theme" id="btn-theme" type="button" aria-label="Switch between light and dark">Light / dark</button>
+    </div>
+    <div id="save-warn" role="status">Changes are not being saved to the shared store. They are kept in this browser only until that works again.</div>
+  </div>
+</div>
+
+<div class="page">
+  <nav class="rail" id="rail" aria-label="Phases"></nav>
+  <main id="main"></main>
+</div>
+
+<script>
+/* ===================================================================== content */
+var T = "T", C = "C", TC = "TC";
+var HASH = "7cef4c92f00b11e48e7ded8ee2634a15b787751ac933160e0034961d3b4ffc26";
+var SQL = {
+  fingerprint:
+"select\n  (select count(*) from pg_tables where schemaname='public') tables,\n  (select count(*) from information_schema.columns where table_schema='public') columns,\n  (select count(*) from pg_policies where schemaname='public') public_policies,\n  (select count(*) from pg_policies where schemaname='storage' and tablename='objects') storage_policies,\n  (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public') functions,\n  (select count(*) from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace\n     where not t.tgisinternal and (n.nspname='public' or (n.nspname='auth' and c.relname='users'))) triggers,\n  (select count(*) from pg_constraint c join pg_namespace n on n.oid=c.connamespace\n     where n.nspname='public' and c.contype in ('p','u','c','f')) constraints,\n  to_regclass('public.organizations') is not null already_migrated;",
+  a:
+"select\n  (select count(*) from organizations) orgs,\n  (select count(*) from platform_admins) owners,\n  (select count(*) from profiles where org_id is null) profiles_unassigned,\n  (select count(*) from listings where org_id is null) listings_unassigned,\n  (select count(*) from agent_sites where org_id is null) sites_unassigned,\n  (select count(*) from leads where org_id is null) leads_unassigned,\n  (select count(*) from page_views where org_id is null) views_unassigned,\n  (select user_id from platform_admins limit 1) owner_id;",
+  b:
+"select\n  (select count(*) from pg_trigger where tgname='set_org_id') set_org_id_triggers,\n  (select count(*) from pg_constraint where conname='brokerage_site_org_key') org_key;",
+  c:
+"select\n  (select count(*) from pg_policies where schemaname='public') public_policies,\n  (select count(*) from pg_policies where schemaname='storage' and tablename='objects') storage_policies;",
+  d:
+"select brand->>'service_area' as service_area from organizations where slug='the-agency-oklahoma';",
+  e:
+"select\n  (select count(*) from org_domains) registry,\n  (select count(*) from agent_sites where nullif(btrim(custom_domain),'') is not null)\n  + (select count(*) from listings where nullif(btrim(custom_domain),'') is not null)\n  + (select count(*) from brokerage_site where nullif(btrim(custom_domain),'') is not null) site_domains,\n  (select count(*) from org_domains where google_site_verification is not null) search_console_tokens;",
+  f:
+"select count(*) as brand_triggers from pg_trigger where tgname='validate_brand_choices';",
+  g:
+"select\n  has_column_privilege('authenticated','public.org_settings','idx_config','select') idx_readable_by_users,\n  (select brand->'map_center' from organizations where slug='the-agency-oklahoma') map_center;",
+  pv:
+"select org_id, created_at from page_views order by created_at desc limit 1;"
+};
+function part(letter, name, file, expect, sql, extra) {
+  return [
+    { id: "p" + letter + "-run", who: C, text: "Apply <b>part " + letter + "</b> (" + name + "): paste <code>supabase/" + file + "</code> into the production SQL tool and run it.",
+      expectStop: "It must finish with no error. If it errors, nothing was changed (one transaction). Read the error, fix, run the same part again." },
+    { id: "p" + letter + "-chk", who: C, text: "Run the check for part " + letter + " and compare.", code: sql, expect: expect }
+  ].concat(extra || []);
+}
+
+var PHASES = [
+{ id: "p0", title: "Decisions", kick: "before we pick a date",
+  blurb: "Tick each one when it is settled. Nothing here touches production.",
+  items: [
+  { id: "d-pro", who: T, text: "<b>Vercel Pro</b> upgrade done. (The project sits at exactly the 12-function Hobby limit.)" },
+  { id: "d-agency", who: T, text: "<b>The Agency Oklahoma agreement</b> settled, or you decide on purpose to cut over before it. This is a business gate, not a technical one." },
+  { id: "d-vars", who: T, text: "<b>Leave <code>VITE_SITE_ORIGIN</code> and <code>VITE_APP_HOSTS</code> unset</b> at cutover. They are baked into the build, and <code>VITE_SITE_ORIGIN</code> would move every Agency page's canonical address (an SEO change). <code>app.latchpointstudios.com</code> comes afterwards as its own step. Until then the &ldquo;Copy login link&rdquo; button copies a <code>the-agency-listings.vercel.app</code> link." },
+  { id: "d-sql", who: T, text: "<b>Production SQL approvals.</b> The session's safety check may ask you to approve each SQL step on production. You will approve them as they come, and I say exactly what each one is first." },
+  { id: "d-push", who: T, text: "<b>Pushing to <code>main</code> publishes the new app.</b> I will not do it until you say &ldquo;go&rdquo; in chat at step 4.1." }
+]},
+{ id: "p1", title: "Before the day", kick: "all must be ticked",
+  blurb: "Each step has an owner. T is Terrence, C is Claude.",
+  items: [
+  { id: "b-stephen", who: T, text: "<b>Warn Stephen and the agents</b> about the window. During it nobody invites agents, publishes or edits in the dashboard. Also tell them the one visible change: the sign-in screen shows the Latchpoint Studios mark instead of The Agency's logo. After someone signs in once on a browser, that browser shows The Agency's logo again. A link ending <code>/login?org=the-agency-oklahoma</code> always shows it." },
+  { id: "b-backup", who: T, text: "<b>Supabase dashboard</b> (project <code>hhzoahoaitnlotagpace</code>) &gt; Database &gt; Backups: confirm daily backups are listed and note the latest restore point. This is the last-resort safety net and also covers the private People/CRM tables, which my file backup deliberately doesn't copy.",
+    field: { id: "f-restore", label: "Latest restore point", placeholder: "e.g. Oct 21, 3:02 AM" } },
+  { id: "b-env", who: T, text: "<b>Vercel</b> project <code>the-agency-dashboard</code> &gt; Settings &gt; Environment Variables, Production: confirm these exist (names only): <code>VITE_SUPABASE_URL</code>, <code>VITE_SUPABASE_ANON_KEY</code>, <code>SUPABASE_SERVICE_ROLE_KEY</code>, <code>RESEND_API_KEY</code>, <code>LEAD_FROM_EMAIL</code>, <code>BLOG_AUTOMATION_SECRET</code>. Optional for IDX: <code>REPLIERS_API_KEY</code>, <code>REPLIERS_BOARD_ID</code>, <code>REPLIERS_BROKERAGE_NAME</code>. Do <b>not</b> add <code>VITE_SITE_ORIGIN</code> or <code>VITE_APP_HOSTS</code>." },
+  { id: "b-ff", who: C, text: "<b>Branch is a clean fast-forward of <code>main</code>.</b> <code>git log origin/main..multi-tenant-phase1</code> shows only our commits; <code>git log multi-tenant-phase1..origin/main</code> is empty.",
+    expect: "Checked 2026-10-14: ahead, 0 behind. Re-check on the day: any push to main changes this." },
+  { id: "b-preview", who: C, text: "<b>Preview deploy</b> of the latest commit (it points at staging, never production) and run the hosted smoke test <code>preview-smoke.js</code>.", expect: "All green." },
+  { id: "b-suite", who: C, text: "<b>Re-run the whole staging suite</b> on the final commit: dashboard 33, public 12, brokerage-domain 7, pickers 16, login link 11, agent API 8, middleware 11, IDX API 13.", expect: "All green." },
+  { id: "b-prev", who: C, text: "<b>Record the current production deployment id</b> in Vercel. It is the undo button for the app.",
+    field: { id: "f-prevdeploy", label: "Previous production deployment id", placeholder: "dpl_...", mono: true } },
+  { id: "b-before", who: C, text: "<b>Take the &ldquo;before&rdquo; snapshot</b> of 19 public addresses (read-only). A baseline from 2026-10-14 exists; retake it on the day.",
+    code: "node tools/cutover/prod-smoke.mjs snapshot cutover-before.json" }
+]},
+{ id: "p2", title: "Go / no-go", kick: "30 minutes before",
+  blurb: "All yes, or we do not start.",
+  items: [
+  { id: "g-1", who: T, text: "Everything in <b>Before the day</b> is ticked." },
+  { id: "g-2", who: T, text: "Nobody is mid-edit in the dashboard (ask Stephen)." },
+  { id: "g-3", who: C, text: "No open Vercel or Supabase incident (status pages checked)." },
+  { id: "g-4", who: T, text: "You have an hour or two uninterrupted and a phone nearby for Stephen." },
+  { id: "g-5", who: C, text: "It is a quiet time: last 24 hours of <code>page_views</code> checked." }
+]},
+{ id: "p3", title: "The window: database", kick: "C runs, T watches",
+  blurb: "Each part is pasted into the production SQL tool and runs as one transaction: it fully applies or not at all. After each one I run the check and report the numbers. Do not continue until they match.",
+  items: [
+  { id: "w-freeze", who: T, text: "Tell Stephen: window open, hands off the dashboard. Then press <b>Open the window</b> at the top so the timer runs." },
+  { id: "w-fp", who: C, text: "<b>Schema is still what the backup describes</b> (read-only). Run on production:", code: SQL.fingerprint,
+    expect: "tables 26, columns 320, public_policies 53, storage_policies 12, functions 6, triggers 13, constraints 95, already_migrated false (verified on production 2026-10-14).",
+    expectStop: "Any other number means someone changed production since the backup. Stop and find out what." },
+  { id: "w-backup", who: C, text: "<b>Fresh file backup</b> of rows and stored files (read-only). The private People/CRM tables are counted, not copied.",
+    code: "node tools/cutover/backup-data.mjs <listings-app/.env> latchpoint-backups/<date>-pre-cutover <worktree>",
+    expect: "problems: none, row counts equal the live counts, about 117 files. (Tested on staging: 1,714 rows, 116 files.)" },
+  { id: "w-undo", who: C, text: "<b>Undo file ready.</b> The checksum must equal the value below, and the file stays open in a tab.", code: "shasum -a 256 rollback-policies-and-functions.sql\n# must equal " + HASH }
+  ].concat(
+    part("A", "adds the organization tables, makes The Agency organization #1, assigns every existing row to it", "multi-tenant-1a-additive.sql",
+      "orgs 1, owners 1, every *_unassigned 0, owner_id ecbf43ef-f68f-4164-8854-10171ff29c0d (Terrence; verified present on production).", SQL.a),
+    part("B", "required organization on every row, new triggers, per-organization uniqueness", "multi-tenant-1b-constraints-triggers.sql",
+      "set_org_id_triggers 10, org_key 1.", SQL.b),
+    part("C", "<b>the switch</b>: organization-aware access rules", "multi-tenant-1c-access-rules.sql",
+      "public_policies 57, storage_policies 12.", SQL.c),
+    part("D", "brand text", "multi-tenant-1d-brand-fields.sql", "service_area is not null.", SQL.d),
+    part("E", "domain registry", "multi-tenant-1e-domain-registry.sql",
+      "registry equals site_domains (expect 2: terrencefinchum.com and denitahenryhomes.com, plus any added since); search_console_tokens 1.", SQL.e),
+    part("F", "logo and accent rules per organization", "multi-tenant-1f-brand-choices.sql", "brand_triggers 3.", SQL.f),
+    part("G", "IDX settings closed to browsers", "multi-tenant-1g-idx-settings.sql",
+      "idx_readable_by_users false, map_center [35.4676, -97.5164].", SQL.g)
+  ),
+  after: "<div class=\"callout\"><b class=\"k\">Do not pause here</b><p>Between part C and the app deploy, the old app runs on the new rules. That works while The Agency is the only organization (tested 15 of 15). <b>Never create a second organization's brokerage site before the new app is live:</b> the old app expects exactly one brokerage-site row and shows &ldquo;Page not found&rdquo; with two. Go straight to step 4.1 after part G.</p></div>"
+},
+{ id: "p4", title: "Deploy and verify", kick: "straight after part G",
+  blurb: "The app goes live, then everything gets checked from the outside.",
+  items: [
+  { id: "v-go", who: T, text: "<b>Say &ldquo;go&rdquo; in chat.</b> This publishes the new app." },
+  { id: "v-merge", who: C, text: "Fast-forward <code>main</code> to <code>multi-tenant-phase1</code> and push. Vercel builds Production." },
+  { id: "v-build", who: C, text: "Build is <b>Ready</b> and is the Production target (about a minute).",
+    expectStop: "A failed build leaves the old app serving, which is safe. See the rollback section." },
+  { id: "v-leak", who: C, text: "Run <code>cross-tenant-leak-test.sql</code> on production (it rolls itself back).", expect: "LEAKTEST pass=109 fail=0" },
+  { id: "v-t2", who: C, text: "Run the other three SQL tests on production (all roll back): <code>domain-registry-test.sql</code>, <code>brand-choices-test.sql</code>, <code>idx-settings-test.sql</code>.", expect: "Each ends with: failures: none" },
+  { id: "v-smoke", who: C, text: "<b>Public addresses answer as before</b> (read-only).",
+    code: "node tools/cutover/prod-smoke.mjs snapshot cutover-after.json\nnode tools/cutover/prod-smoke.mjs compare cutover-before.json cutover-after.json",
+    expect: "All addresses answer exactly as before. The rebuilt app may change a hash; titles, redirects, canonicals, robots and sitemap URL counts must not." },
+  { id: "v-token", who: C, text: "The client sites still carry their Search Console tag (it is served from the registry now).", code: "curl -sA Googlebot https://www.terrencefinchum.com/ | grep google-site-verification", expect: "The tag is printed." },
+  { id: "v-pv", who: TC, text: "Open <code>https://denitahenryhomes.com/</code> in a browser (T), then C runs the query. A page view is still recorded and stamped.", code: SQL.pv, expect: "The newest row has The Agency's organization id and a time from the last minute." },
+  { id: "w-1", who: T, text: "<b>Sign in</b> at the-agency-listings.vercel.app/login (you will see the Latchpoint mark; that is expected). The sidebar shows The Agency's logo and &ldquo;Oklahoma&rdquo;; the <b>Working in</b> switcher lists The Agency only; <b>Copy login link</b> copies a <code>/login?org=the-agency-oklahoma</code> link." },
+  { id: "w-2", who: T, text: "<b>Listings, Agents, Agent Sites, Upcoming, Buyer needs, People</b> all load with the same rows as before." },
+  { id: "w-3", who: T, text: "<b>Brokerage Site</b> editor loads with the same content. The logo and accent pickers show The Agency's three logos and red/black." },
+  { id: "w-4", who: T, text: "<b>A write works.</b> Open your own agent site, change nothing, press Save. No error." },
+  { id: "w-5", who: T, text: "<b>Blog.</b> Create a draft post titled <code>ZZ cutover test</code>, publish it, see it on the live site, then delete it." },
+  { id: "w-6", who: TC, text: "<b>A lead arrives.</b> Submit the contact form on your own site as <code>ZZ Cutover Test</code> with an email you own. It appears under Leads, the notification email arrives, and People gets the entry. <b>Then C deletes that one lead and its People row by id</b> and nothing else." },
+  { id: "w-7", who: T, text: "The marketing site <code>theagency.latchpointstudios.com</code> and the sign-in page on your phone look right." },
+  { id: "v-log1", who: C, text: "Vercel runtime errors since the deploy.", expect: "None new." },
+  { id: "v-log2", who: C, text: "Supabase API and Postgres logs, 10 minutes.", expect: "No spike of 4xx/5xx, no &ldquo;permission denied&rdquo; or &ldquo;violates row-level security&rdquo;." },
+  { id: "v-stephen", who: T, text: "<b>Tell Stephen the window is closed</b> and ask him and one agent to sign in, open Listings and their site, and report anything odd. Then press <b>Close the window</b> at the top.",
+    field: { id: "f-stephen", label: "What Stephen and the agent reported", placeholder: "e.g. both fine" } },
+  { id: "v-docs", who: C, text: "Update <code>MULTI-TENANT-PLAN.md</code> and memory with the result and the time; commit." },
+  { id: "v-done", who: TC, text: "<b>Success.</b> Every box above ticked, and Stephen plus one agent confirm. Keep the backup folder and the previous deployment id for at least 7 days." }
+]},
+{ id: "p5", title: "If something goes wrong", kick: "read before you start", reference: true,
+  blurb: "A data-loss or privacy problem (someone sees another organization's data, or an Agency user cannot see their own) means roll back first and investigate second. A cosmetic problem means fix forward. Use the Problem button on any step to flag it and write what you saw.",
+  html:
+"<div class=\"tablewrap\"><table><thead><tr><th>Where it fails</th><th>What to do</th><th>Time</th></tr></thead><tbody>" +
+"<tr><td class=\"k\">Part A, B, D, E, F or G errors</td><td>Each part is one transaction, so nothing is half-applied. Read the error, fix, run the same part again. These parts change nothing agents see, so the app keeps working meanwhile.</td><td>minutes</td></tr>" +
+"<tr><td class=\"k\">Part C errors</td><td>Same: one transaction, nothing changed.</td><td>minutes</td></tr>" +
+"<tr><td class=\"k\">C applied but access looks wrong<br>(missing data or a leak)</td><td><b>1.</b> In Vercel, promote the previous production deployment (the id recorded earlier) so the old app serves.<br><b>2.</b> Run <code>rollback-policies-and-functions.sql</code> (restores the 65 saved access rules and 6 functions).<br><b>Order matters: app first, then SQL.</b> The SQL rollback removes the new <code>organizations</code> rules, which the new app needs.</td><td>~5 min</td></tr>" +
+"<tr><td class=\"k\">Build fails, or the app is broken but the database is fine</td><td>Vercel: promote the previous deployment. The old app is proven to run on the new rules. Leave the database alone.</td><td>~1 min</td></tr>" +
+"<tr><td class=\"k\">Leak suite fails on production</td><td>Treat it as a leak: do the part C rollback above. Do not reopen the dashboard until the suite shows 109/109.</td><td>~5 min</td></tr>" +
+"<tr><td class=\"k\">Catastrophe<br>(data lost or corrupted)</td><td>Last resort, your call: restore from the Supabase backup or point-in-time recovery, and top up from my file backup. This loses anything written since the restore point (the window is frozen so that should be nothing).</td><td>an hour or more</td></tr>" +
+"</tbody></table></div>" +
+"<div class=\"callout stop\"><b class=\"k\">After rolling back part C</b><p>The new triggers stay in place, and accounts created by the old invite flow have no organization, so their first listing would fail. Until we try again, if you must add an agent, tell me and I assign them to The Agency by SQL: <code>update profiles set org_id = &lt;The Agency id&gt; where org_id is null</code>.</p></div>"
+},
+{ id: "p6", title: "After the window", kick: "separate days", reference: true,
+  blurb: "Not part of the cutover.",
+  html:
+"<ol>" +
+"<li><b>Attach <code>app.latchpointstudios.com</code>.</b> Add the domain to the Vercel project (DNS is already at Vercel), add it to Supabase Auth's redirect list, set <code>VITE_APP_HOSTS=app.latchpointstudios.com</code> (and only if you want canonical addresses to move, <code>VITE_SITE_ORIGIN=https://app.latchpointstudios.com</code>), then redeploy. These are build-time variables. After that the Copy login link button uses the new address.</li>" +
+"<li><b>First non-Agency client.</b> There is no &ldquo;create organization&rdquo; screen yet (Phase 2). I create the organization, brand and logos, its admin and its login link by script, and set its feature switches and, if it has IDX, its Repliers key, board and exact office name by SQL.</li>" +
+"<li><b>Staging cleanup:</b> remove the test brokerage &ldquo;ZZB Realty&rdquo; and the <code>zzb-app.localhost</code> registry row when finished testing.</li>" +
+"<li><b>Optional hardening:</b> a scheduled leak canary that alerts if anything ever leaks.</li>" +
+"<li>The old <code>the-agency-oklahoma</code> Vercel project: ask me to check whether it is still used.</li>" +
+"</ol>"
+},
+{ id: "p7", title: "Reference", kick: "ids and files", reference: true,
+  blurb: "Nothing secret in here.",
+  html:
+"<div class=\"tablewrap\"><table><tbody>" +
+"<tr><td class=\"k\">Production Supabase</td><td><code>hhzoahoaitnlotagpace</code></td></tr>" +
+"<tr><td class=\"k\">Staging Supabase</td><td><code>ihslmbnakcfuswlmgckf</code> (rebuilt from the Oct 14 backup; holds the ZZB test brokerage)</td></tr>" +
+"<tr><td class=\"k\">Vercel</td><td>team <code>terrence-finchum</code>, project <code>the-agency-dashboard</code> (<code>prj_G2rswKgPZ9mKxLWt7yt9A5LWFj09</code>)</td></tr>" +
+"<tr><td class=\"k\">Production domains</td><td>the-agency-listings.vercel.app, www.terrencefinchum.com (the bare name redirects to it), denitahenryhomes.com (www redirects to it), theagency.latchpointstudios.com, emailsignature.latchpointstudios.com</td></tr>" +
+"<tr><td class=\"k\">Branch to ship</td><td><code>multi-tenant-phase1</code> (merge is a fast-forward)</td></tr>" +
+"<tr><td class=\"k\">SQL parts, in order</td><td><code>supabase/multi-tenant-1a</code> to <code>1g</code></td></tr>" +
+"<tr><td class=\"k\">SQL tests (all roll back)</td><td><code>supabase/tests/</code>: cross-tenant-leak-test, domain-registry-test, brand-choices-test, idx-settings-test</td></tr>" +
+"<tr><td class=\"k\">Undo for rules and functions</td><td><code>latchpoint-backups/2026-10-14-the-agency-listings/rollback-policies-and-functions.sql</code><br>sha256 <code>" + HASH + "</code></td></tr>" +
+"<tr><td class=\"k\">Backup and smoke tools</td><td><code>latchpoint-backups/tools/cutover/backup-data.mjs</code>, <code>prod-smoke.mjs</code>; baseline <code>cutover-baseline-2026-10-14.json</code></td></tr>" +
+"<tr><td class=\"k\">Rehearsal result</td><td>Staging rebuilt from the Oct 14 backup, parts A to G applied from these files with no errors, leak suite 109 of 109, every browser and API suite green.</td></tr>" +
+"<tr><td class=\"k\">Full written version</td><td><code>MULTI-TENANT-CUTOVER.md</code> on the branch</td></tr>" +
+"</tbody></table></div>" +
+"<div class=\"callout\"><b class=\"k\">Known limits at cutover (by design)</b><p>Marketing pages stay Agency-branded. A brokerage's own dashboard domain is not installable as an app yet. <code>app.latchpointstudios.com</code> and login links for other organizations come after the cutover. The per-organization IDX key is unused until an organization other than The Agency has one.</p></div>"
+}
+];
+
+/* ===================================================================== state layer */
+var state = { steps: {}, fields: {} };      // steps[id] = {done, at, note, problem}   fields[id] = {value}
+var db = null, savingOk = true, localKey = "cutover-runbook-v1";
+var els = {};                                // id -> {box, step, whenEl, noteEl, noteBtn, probBtn, noteWrap, fieldEl}
+var queue = {};                              // per-document write chain
+
+function esc(s) { var d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+function fmt(ts) { try { return new Date(ts).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); } catch (e) { return ""; } }
+
+function loadLocal() { try { var raw = localStorage.getItem(localKey); if (raw) { var o = JSON.parse(raw); state.steps = o.steps || {}; state.fields = o.fields || {}; } } catch (e) {} }
+function saveLocal() { try { localStorage.setItem(localKey, JSON.stringify(state)); } catch (e) {} }
+function warn(on) { savingOk = !on; document.getElementById("save-warn").classList.toggle("on", on); }
+
+function write(coll, id, data) {
+  // update local copy first so the page responds at once
+  var bucket = coll === "steps" ? state.steps : state.fields;
+  bucket[id] = data;
+  saveLocal();
+  paint();
+  if (!db) return;
+  var key = coll + "/" + id;
+  queue[key] = (queue[key] || Promise.resolve()).then(function () {
+    return db.doc(key).set(data).then(function () { if (!savingOk) warn(false); });
+  }).catch(function () { warn(true); });
+}
+function setStep(id, patch) {
+  var cur = state.steps[id] || {};
+  write("steps", id, Object.assign({}, cur, patch));
+}
+function setField(id, value) { write("fields", id, { value: value }); }
+
+/* ===================================================================== render */
+var main = document.getElementById("main"), rail = document.getElementById("rail");
+var allSteps = [];
+
+function copyBtn(text) {
+  var b = document.createElement("button"); b.type = "button"; b.className = "copy"; b.textContent = "Copy";
+  b.addEventListener("click", function () {
+    function ok() { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1400); }
+    function fallback() {
+      var ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); ok(); } catch (e) { b.textContent = "Select and copy"; } document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(ok, fallback); else fallback();
+  });
+  return b;
+}
+
+function buildStep(it) {
+  var li = document.createElement("li"); li.className = "step"; li.id = "s-" + it.id;
+  var lab = document.createElement("label"); lab.className = "box";
+  var cb = document.createElement("input"); cb.type = "checkbox"; cb.id = "cb-" + it.id;
+  cb.setAttribute("aria-label", "Done: " + it.text.replace(/<[^>]+>/g, "").slice(0, 80));
+  var tk = document.createElement("span"); tk.className = "tick";
+  lab.appendChild(cb); lab.appendChild(tk);
+  cb.addEventListener("change", function () { setStep(it.id, { done: cb.checked, at: cb.checked ? Date.now() : null }); });
+
+  var body = document.createElement("div");
+  var head = document.createElement("div"); head.className = "head";
+  head.innerHTML = '<span class="who who-' + it.who + '" title="' + (it.who === "T" ? "Terrence does this" : it.who === "C" ? "Claude does this" : "Terrence and Claude together") + '">' + (it.who === "TC" ? "T+C" : it.who) + '</span>' +
+    '<div class="text"><p>' + it.text + '</p><span class="next-tag">Next</span><div class="when"></div></div>';
+  body.appendChild(head);
+
+  var detail = document.createElement("div"); detail.className = "detail";
+  if (it.code) { var cw = document.createElement("div"); cw.className = "codewrap"; var pre = document.createElement("pre"); pre.textContent = it.code; cw.appendChild(pre); cw.appendChild(copyBtn(it.code)); detail.appendChild(cw); }
+  if (it.expect) { var ex = document.createElement("div"); ex.className = "expect"; ex.innerHTML = "<b>Expect</b>" + it.expect; detail.appendChild(ex); }
+  if (it.expectStop) { var es = document.createElement("div"); es.className = "expect stop"; es.innerHTML = "<b>If not</b>" + it.expectStop; detail.appendChild(es); }
+  var fieldEl = null;
+  if (it.field) {
+    var f = document.createElement("div"); f.className = "field";
+    f.innerHTML = '<label for="fi-' + it.field.id + '">' + it.field.label + '</label>';
+    fieldEl = document.createElement("input"); fieldEl.type = "text"; fieldEl.id = "fi-" + it.field.id; fieldEl.placeholder = it.field.placeholder || ""; if (it.field.mono) fieldEl.className = "mono";
+    var ft; fieldEl.addEventListener("input", function () { clearTimeout(ft); ft = setTimeout(function () { setField(it.field.id, fieldEl.value); }, 500); });
+    f.appendChild(fieldEl); detail.appendChild(f);
+  }
+  if (detail.children.length) body.appendChild(detail);
+
+  var acts = document.createElement("div"); acts.className = "acts";
+  var noteBtn = document.createElement("button"); noteBtn.type = "button"; noteBtn.className = "mini"; noteBtn.textContent = "Note";
+  var probBtn = document.createElement("button"); probBtn.type = "button"; probBtn.className = "mini"; probBtn.textContent = "Problem";
+  acts.appendChild(noteBtn); acts.appendChild(probBtn); body.appendChild(acts);
+  var nw = document.createElement("div"); nw.className = "notebox";
+  var ta = document.createElement("textarea"); ta.id = "nt-" + it.id; ta.placeholder = "What you saw, numbers, anything to remember"; ta.setAttribute("aria-label", "Note for this step");
+  var nt; ta.addEventListener("input", function () { clearTimeout(nt); nt = setTimeout(function () { setStep(it.id, { note: ta.value }); }, 600); });
+  nw.appendChild(ta); body.appendChild(nw);
+  noteBtn.addEventListener("click", function () { nw.classList.toggle("on"); if (nw.classList.contains("on")) ta.focus(); });
+  probBtn.addEventListener("click", function () { var cur = state.steps[it.id] || {}; var on = !cur.problem; setStep(it.id, { problem: on }); if (on) { nw.classList.add("on"); ta.focus(); } });
+
+  li.appendChild(lab); li.appendChild(body);
+  els[it.id] = { li: li, cb: cb, when: head.querySelector(".when"), ta: ta, nw: nw, noteBtn: noteBtn, probBtn: probBtn, field: fieldEl, fieldId: it.field && it.field.id };
+  allSteps.push(it.id);
+  return li;
+}
+
+PHASES.forEach(function (ph) {
+  var sec = document.createElement("section"); sec.className = "phase"; sec.id = ph.id; sec.setAttribute("aria-labelledby", ph.id + "-h");
+  var hd = document.createElement("header");
+  hd.innerHTML = '<h2 id="' + ph.id + '-h">' + ph.title + '</h2><span class="kick">' + ph.kick + '</span>';
+  sec.appendChild(hd);
+  var bl = document.createElement("p"); bl.className = "blurb"; bl.textContent = ph.blurb; sec.appendChild(bl);
+  if (ph.html) { var d = document.createElement("div"); d.innerHTML = ph.html; sec.appendChild(d); }
+  if (ph.items) {
+    var ol = document.createElement("ol"); ol.className = "steps";
+    ph.items.forEach(function (it) { ol.appendChild(buildStep(it)); });
+    sec.appendChild(ol);
+    if (ph.after) { var af = document.createElement("div"); af.innerHTML = ph.after; sec.appendChild(af); }
+  }
+  main.appendChild(sec);
+  var a = document.createElement("a"); a.href = "#" + ph.id; a.id = "r-" + ph.id; a.innerHTML = "<span>" + ph.title + "</span><em></em>";
+  rail.appendChild(a);
+});
+
+/* ===================================================================== paint (updates in place, never rebuilds) */
+function isOpenStep(id) { var s = state.steps[id]; return !(s && s.done); }
+function paint() {
+  var total = allSteps.length, done = 0, problems = 0, nextId = null;
+  allSteps.forEach(function (id) {
+    var e = els[id], s = state.steps[id] || {};
+    if (s.done) done++; else if (!nextId) nextId = id;
+    if (s.problem) problems++;
+    if (e.cb.checked !== !!s.done) e.cb.checked = !!s.done;
+    e.li.classList.toggle("done", !!s.done);
+    e.li.classList.toggle("problem", !!s.problem);
+    e.probBtn.classList.toggle("on", !!s.problem);
+    e.probBtn.textContent = s.problem ? "Problem flagged (tap to clear)" : "Problem";
+    e.when.textContent = s.done && s.at ? "Ticked " + fmt(s.at) : "";
+    if (document.activeElement !== e.ta && e.ta.value !== (s.note || "")) e.ta.value = s.note || "";
+    if (s.note) e.nw.classList.add("on");
+    e.noteBtn.textContent = s.note ? "Note (written)" : "Note";
+    if (e.field) { var fv = (state.fields[e.fieldId] || {}).value || ""; if (document.activeElement !== e.field && e.field.value !== fv) e.field.value = fv; }
+  });
+  allSteps.forEach(function (id) { els[id].li.classList.toggle("next", id === nextId); });
+  window.__nextId = nextId;
+  document.getElementById("n-done").textContent = done;
+  document.getElementById("n-of").textContent = "of " + total + " ticked";
+  document.getElementById("meter").style.width = (total ? Math.round(done / total * 100) : 0) + "%";
+  var chip = document.getElementById("problem-chip");
+  chip.classList.toggle("on", problems > 0);
+  chip.textContent = problems + (problems === 1 ? " problem" : " problems") + " flagged · see rollback";
+  PHASES.forEach(function (ph) {
+    if (!ph.items) { document.querySelector("#r-" + ph.id + " em").textContent = ""; return; }
+    var n = ph.items.length, d = ph.items.filter(function (it) { return (state.steps[it.id] || {}).done; }).length;
+    var a = document.getElementById("r-" + ph.id); a.querySelector("em").textContent = d + "/" + n; a.classList.toggle("complete", d === n);
+  });
+  paintTimer();
+}
+
+/* ===================================================================== window timer */
+function paintTimer() {
+  var st = (state.fields["window-start"] || {}).value, en = (state.fields["window-end"] || {}).value;
+  var t = document.getElementById("timer"), lab = document.getElementById("timer-label");
+  var bo = document.getElementById("btn-open"), bc = document.getElementById("btn-close");
+  if (!st) { t.textContent = "--:--:--"; lab.textContent = "window not open"; bo.disabled = false; bc.disabled = true; return; }
+  var end = en ? new Date(en).getTime() : Date.now(), secs = Math.max(0, Math.floor((end - new Date(st).getTime()) / 1000));
+  var h = Math.floor(secs / 3600), m = Math.floor(secs % 3600 / 60), s = secs % 60;
+  t.textContent = (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+  lab.textContent = en ? "window closed" : "window open since " + fmt(st);
+  bo.disabled = true; bc.disabled = !!en;
+}
+setInterval(paintTimer, 1000);
+document.getElementById("btn-open").addEventListener("click", function () { if (!(state.fields["window-start"] || {}).value) setField("window-start", new Date().toISOString()); });
+document.getElementById("btn-close").addEventListener("click", function () { if ((state.fields["window-start"] || {}).value && !(state.fields["window-end"] || {}).value) setField("window-end", new Date().toISOString()); });
+
+document.getElementById("btn-next").addEventListener("click", function () {
+  var id = window.__nextId; if (!id) return;
+  var el = els[id].li; el.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+  els[id].cb.focus({ preventScroll: true });
+});
+document.getElementById("btn-theme").addEventListener("click", function () {
+  var root = document.documentElement, cur = root.getAttribute("data-theme");
+  var dark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.setAttribute("data-theme", dark ? "light" : "dark");
+  try { localStorage.setItem("cutover-theme", dark ? "light" : "dark"); } catch (e) {}
+});
+try { var th = localStorage.getItem("cutover-theme"); if (th) document.documentElement.setAttribute("data-theme", th); } catch (e) {}
+
+/* rail highlight as you scroll */
+if ("IntersectionObserver" in window) {
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) { if (en.isIntersecting) { rail.querySelectorAll("a").forEach(function (a) { a.classList.toggle("active", a.getAttribute("href") === "#" + en.target.id); }); } });
+  }, { rootMargin: "-120px 0px -60% 0px" });
+  document.querySelectorAll(".phase").forEach(function (s) { io.observe(s); });
+}
+
+/* ===================================================================== boot */
+loadLocal(); paint();
+(function connect() {
+  if (!(window.claude && window.claude.use)) return;
+  window.claude.use("db").then(function (d) {
+    if (!d) return;
+    db = d;
+    var seenSteps = false, seenFields = false;
+    function merge(snap, bucket) {
+      var next = {};
+      snap.docs.forEach(function (doc) { next[doc.id] = doc.data(); });
+      return next;
+    }
+    d.collection("steps").onSnapshot(function (snap) { state.steps = merge(snap); seenSteps = true; saveLocal(); paint(); }, function () { warn(true); });
+    d.collection("fields").onSnapshot(function (snap) { state.fields = merge(snap); seenFields = true; saveLocal(); paint(); }, function () { warn(true); });
+  }, function () {});
+})();
+</script>
