@@ -37,6 +37,12 @@ export function bareHost(hostname) {
   return (hostname || "").replace(/^www\./i, "").toLowerCase();
 }
 
+// Hosts that exist only for the dashboard (the VITE_APP_HOSTS ones, such as app.latchpointstudios.com): their root address
+// is the sign-in, never the product marketing page that the older shared address still shows.
+export function isDashboardOnlyHost(hostname) {
+  return !!hostname && configuredAppHosts().includes(bareHost(hostname));
+}
+
 export function isAppHost(hostname) {
   if (!hostname) return true;
   const bare = bareHost(hostname);

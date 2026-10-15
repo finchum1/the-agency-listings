@@ -3,7 +3,7 @@ import { useAuth } from "./hooks/useAuth";
 import { OrgProvider } from "./context/OrgContext";
 import { useHostOrg } from "./hooks/useHostOrg";
 import { useHostBranding } from "./hooks/useHostBranding";
-import { isAppHost, isMarketingHost } from "./lib/appHosts";
+import { isAppHost, isDashboardOnlyHost, isMarketingHost } from "./lib/appHosts";
 import useSwUpdateOnNavigate from "./hooks/useSwUpdateOnNavigate";
 import { isStandalone } from "./lib/pwa";
 
@@ -61,13 +61,13 @@ import IdxListings from "./components/brokerage-site/IdxListings";
 import IdxListingDetail from "./components/brokerage-site/IdxListingDetail";
 import HomeValuation from "./components/brokerage-site/HomeValuation";
 
-function Root() {
+function Root({ dashboardOnly = false }) {
   const { session, loading } = useAuth();
   if (loading) return null;
   if (session) return <Navigate to="/dashboard" replace />;
-  // The installed home-screen app is for signing in and working, not for
-  // reading the marketing page — send it straight to the login screen.
-  if (isStandalone()) return <Navigate to="/login" replace />;
+  // The installed home-screen app, and a host that exists only for the dashboard (app.latchpointstudios.com, a
+  // brokerage's own dashboard domain), are for signing in and working, not for reading the marketing page.
+  if (isStandalone() || dashboardOnly) return <Navigate to="/login" replace />;
   return <LandingPage />;
 }
 
@@ -111,7 +111,7 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Root />} />
+      <Route path="/" element={<Root dashboardOnly={isDashboardOnlyHost(window.location.hostname) || hostOrg.isApp} />} />
       <Route path="/agent-websites" element={<AgentWebsitesPage />} />
       <Route path="/property-websites" element={<PropertyWebsitesPage />} />
       <Route path="/brokerage-website" element={<BrokerageWebsitePage />} />
