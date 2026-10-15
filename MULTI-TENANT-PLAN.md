@@ -377,6 +377,10 @@ Search Console tag; the only change across all 19 monitored addresses is the bro
 **2026-10-15 (Supabase redirect URL added).** Terrence added `https://app.latchpointstudios.com/**` to the production project's Auth redirect URLs (existing entries and the Site URL
 untouched). Not testable from here without sending a real email; the first invite sent from the app host should carry an app.latchpointstudios.com link.
 
+**2026-10-15 (root of the app host).** `app.latchpointstudios.com/` was showing the product marketing page to signed-out visitors (the root route's landing page, same as the older address). Dashboard-only
+hosts (the VITE_APP_HOSTS ones) and a brokerage's own dashboard domain now send `/` to /login (or the dashboard when signed in); the older shared address keeps its landing page (commit 79ef8af).
+Verified live; all monitored addresses unchanged.
+
 Still to do (post-cutover):
 1. Marketing pages stay Agency-branded on purpose (they are The Agency's showcase).
 2. (Rehearsal done, see above.) The production cutover, in this order: fresh backup, part A, deploy the API change,
