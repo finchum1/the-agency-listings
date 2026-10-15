@@ -54,7 +54,7 @@ const ADMIN_ITEMS = [
 export default function DashboardLayout() {
   const { profile, isAdmin, isPlatformAdmin } = useAuth();
   // The brand of the organization being worked in (the platform owner can switch between them).
-  const { brand: brokerage } = useOrg();
+  const { brand: brokerage, org } = useOrg();
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [siteOpen, setSiteOpen] = useState(location.pathname.startsWith("/dashboard/site"));
@@ -112,6 +112,10 @@ export default function DashboardLayout() {
     { to: "/dashboard/brand", label: "Brand" },
     ...(isPlatformAdmin ? [{ to: "/dashboard/organizations", label: "Organizations" }] : []),
   ];
+  // The platform owner working inside someone else's organization is there to run it (agents, brand, brokerage site), not
+  // to use the Website or People tools for themselves, so those two menus step aside. Agents and admins of that
+  // organization still get theirs, per their own switches.
+  const workingElsewhere = Boolean(isPlatformAdmin && org && profile?.org_id && org.id !== profile.org_id);
   const siteAccess = profile?.site_access || "full";
   const siteItems = siteAccess === "limited" ? SITE_ITEMS.filter((i) => i.to.endsWith("/blog")) : SITE_ITEMS;
 
@@ -154,8 +158,8 @@ export default function DashboardLayout() {
 
     return (
       <>
-        {siteAccess !== "none" && group("Website", siteOpen, setSiteOpen, siteItems)}
-        {profile?.people_enabled && group("People", peopleOpen, setPeopleOpen, PEOPLE_ITEMS)}
+        {!workingElsewhere && siteAccess !== "none" && group("Website", siteOpen, setSiteOpen, siteItems)}
+        {!workingElsewhere && profile?.people_enabled && group("People", peopleOpen, setPeopleOpen, PEOPLE_ITEMS)}
         <div className="mt-1 space-y-1">
           {NAV_ITEMS.map((item) => (
             <Link key={item.to} to={item.to} onClick={onNavigate} className={navLinkClass(item.activeWhen(location.pathname))}>
