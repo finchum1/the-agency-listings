@@ -369,6 +369,11 @@ set for Production; redeploy `dpl_HYkn9EqMvDfJZV3wgPUgcKfkpUrWGw` (commit 05d395
 sitemap answer; all 19 existing public addresses unchanged. Not yet done: Supabase Auth redirect URL `https://app.latchpointstudios.com/**` (Terrence, dashboard only: until then invites
 sent FROM the app host fall back to the Site URL) and the `VITE_SITE_ORIGIN` decision (moves canonical addresses and the Copy login link to the app host; still unset).
 
+**2026-10-15 (canonical address moved).** `VITE_SITE_ORIGIN=https://app.latchpointstudios.com` set for Production and redeployed (commit 7eda89f). Verified: the platform host's pages now
+declare `app.latchpointstudios.com` as canonical and its sitemap lists app-host URLs; the two client sites (terrencefinchum.com, denitahenryhomes.com) keep their own canonicals and the
+Search Console tag; the only change across all 19 monitored addresses is the brokerage page's canonical (vercel.app to app host). The "Copy login link" button now copies
+`https://app.latchpointstudios.com/login?org=<slug>` (origin confirmed baked into the app). Remaining: Supabase redirect URL for the app host (Terrence), first non-Agency organization.
+
 Still to do (post-cutover):
 1. Marketing pages stay Agency-branded on purpose (they are The Agency's showcase).
 2. (Rehearsal done, see above.) The production cutover, in this order: fresh backup, part A, deploy the API change,
