@@ -24,10 +24,12 @@ export default function AuthBrand({ org, loading = false, className = "" }) {
     );
   }
   return (
-    <div className={`flex items-center justify-center gap-3 font-geist text-(--lp-text) ${className}`}>
+    // Fixed dark colors, not the theme tokens: the sign-in and invite pages are always light (cream background, white
+    // card), so in dark mode the tokens would turn the mark pale and wash it out.
+    <div className={`flex items-center justify-center gap-3 font-geist text-[#16171a] ${className}`}>
       <LatchpointLogomark className="size-10" />
       <span className="text-2xl font-medium tracking-tight">
-        Latchpoint<span className="text-(--lp-text-muted)"> Studios</span>
+        Latchpoint<span className="text-[#55565e]"> Studios</span>
       </span>
     </div>
   );
