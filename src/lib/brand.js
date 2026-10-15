@@ -23,6 +23,9 @@ export function brandFromOrg(org) {
     name: org.name,
     logo,
     logos,
+    // Optional: a different logo for the dark-mode dashboard menu (brand.dark_nav_logo names one of `logos`).
+    darkLogo: logos[brand.dark_nav_logo] || "",
+    franchise: brand.franchise || "",
     address: { line1: org.address_line1 || "", city: org.city || "", state: org.state || "", zip: org.zip || "" },
     disclaimer: org.disclaimer || "",
     franchiseDisclaimer: org.franchise_disclaimer || "",

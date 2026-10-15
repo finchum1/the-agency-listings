@@ -386,6 +386,30 @@ Still to do (post-cutover):
 2. (Rehearsal done, see above.) The production cutover, in this order: fresh backup, part A, deploy the API change,
    part B, part C, part D, part E, part F, part G (G needs each organization's `idx_config` filled in by SQL; The Agency keeps its environment variables), deploy the app, run the leak suite and the acceptance flows; `rollback-policies-and-functions.sql` ready.
 
+## 5b. Phase 2 progress log: brand settings and "New organization"
+
+**Done 2026-10-15** (staging first, then production; leak test 106/107 on staging, the one miss is a real published post in staging's data copy):
+
+- **Brand settings page** (`/dashboard/brand`, any organization admin or the platform owner): name, location label, service area,
+  logos (main / white / black, uploaded into the organization's own `brokerage-site-photos/{org_id}/brand/` folder), brand colors,
+  address, footer disclaimer, and a live light/dark preview of the menu lockup. A white logo is also used as the dark-mode menu
+  logo (`brand.dark_nav_logo`).
+- **Organizations page** (`/dashboard/organizations`, platform owner only): list of every organization (open it, copy its sign-in
+  link) and a **New organization** form with three kinds:
+  - **The Agency office:** type only the location; the office gets The Agency's name, logos, red and black, the franchise
+    disclosure and `brand.franchise = "the-agency"`, so the menu reads "The Agency | TEXAS". Slug defaults to `the-agency-<location>`.
+  - **Another brokerage** and **Solo agent:** own name, optional location, logo upload, brand color.
+  - Optional first admin: sent an invite through `api/admin/agents.js` (`org_id`, role admin).
+- **Database rules** (`supabase/multi-tenant-1i-org-brand-editing.sql`, test `supabase/tests/org-brand-editing-test.sql`, 38 checks):
+  organization admins may update their own organization row; a trigger stops them changing slug / type / status / franchise
+  disclaimer, and (for a franchise organization) logos, default logo, colors and the franchise flag; brand JSON is validated for
+  everyone (logo addresses must start with `/` or `https://`, colors are 6-digit hex, text lengths); brand edits go to `audit_log`.
+- **Franchise lock:** an Agency office's admin edits only its location, address and footer disclaimer. Changing an office's logo or
+  franchise disclosure is done by the platform owner.
+
+**Not done yet:** per-organization area template packs, intake-to-site import, the HQ "Set up this client" button (Phase 2 / 4 items
+above); deleting an organization (archive it with status instead).
+
 ## 6. Testing strategy
 
 - **Policy tests in SQL:** for each table, run as user A of org 1, user B of org 2, an anonymous visitor, an

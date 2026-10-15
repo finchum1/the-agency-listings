@@ -52,7 +52,7 @@ const ADMIN_ITEMS = [
 // top bar. Collapses to a top bar + slide-down panel below `md`, same
 // shape the old mobile nav already used.
 export default function DashboardLayout() {
-  const { profile, isAdmin } = useAuth();
+  const { profile, isAdmin, isPlatformAdmin } = useAuth();
   // The brand of the organization being worked in (the platform owner can switch between them).
   const { brand: brokerage } = useOrg();
   const location = useLocation();
@@ -105,6 +105,13 @@ export default function DashboardLayout() {
     profile?.photo_url ||
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4' fill='%23e5e0d8'/%3E%3Cpath d='M4 20c0-4 4-6 8-6s8 2 8 6' fill='%23e5e0d8'/%3E%3C/svg%3E";
 
+  // Brand settings: an organization's own admins edit its logo and name. Organizations: the platform owner's list and
+  // "new organization" form.
+  const adminItems = [
+    ...ADMIN_ITEMS,
+    { to: "/dashboard/brand", label: "Brand" },
+    ...(isPlatformAdmin ? [{ to: "/dashboard/organizations", label: "Organizations" }] : []),
+  ];
   const siteAccess = profile?.site_access || "full";
   const siteItems = siteAccess === "limited" ? SITE_ITEMS.filter((i) => i.to.endsWith("/blog")) : SITE_ITEMS;
 
@@ -156,7 +163,7 @@ export default function DashboardLayout() {
             </Link>
           ))}
         </div>
-        {isAdmin && group("Admin", adminOpen, setAdminOpen, ADMIN_ITEMS)}
+        {isAdmin && group("Admin", adminOpen, setAdminOpen, adminItems)}
       </>
     );
   };
@@ -196,10 +203,10 @@ export default function DashboardLayout() {
           (display: none), so a printed page's height matches its real
           visible content. */}
       <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col md:h-screen md:sticky md:top-0 border-r border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] print:hidden">
-        <div className="flex items-center gap-3 px-6 py-6 shrink-0">
-          <BrandLogo src={brokerage.logo} name={brokerage.name} className="h-9 w-auto" />
+        <div className="flex items-center gap-3 px-6 py-6 shrink-0 min-w-0">
+          <BrandLogo src={brokerage.logo} darkSrc={brokerage.darkLogo} name={brokerage.name} className="h-9 w-auto" />
           <span className="h-6 w-px bg-black/10 dark:bg-white/15" aria-hidden="true" />
-          <span className="text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{brokerage.locationLabel}</span>
+          <span className="text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 dark:text-[#faf9f7]/50 shrink-0">{brokerage.locationLabel}</span>
         </div>
 
         <OrgSwitcher />
@@ -217,7 +224,7 @@ export default function DashboardLayout() {
       <header className="md:hidden border-b border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] print:hidden">
         <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <BrandLogo src={brokerage.logo} name={brokerage.name} className="h-8 w-auto shrink-0" />
+            <BrandLogo src={brokerage.logo} darkSrc={brokerage.darkLogo} name={brokerage.name} className="h-8 w-auto shrink-0" />
             <span className="h-5 w-px bg-black/10 dark:bg-white/15" aria-hidden="true" />
             <span className="text-[10px] font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{brokerage.locationLabel}</span>
           </div>

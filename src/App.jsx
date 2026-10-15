@@ -42,6 +42,8 @@ import PeopleGate from "./components/dashboard/people/PeopleGate";
 import PeopleBoard from "./components/dashboard/people/PeopleBoard";
 import PeopleOverview from "./components/dashboard/people/PeopleOverview";
 import SettingsPage from "./components/dashboard/people/SettingsPage";
+import BrandSettingsPage from "./components/dashboard/BrandSettingsPage";
+import OrganizationsPage from "./components/dashboard/OrganizationsPage";
 
 import HomeSections from "./components/agent-site/HomeSections";
 import Bio from "./components/agent-site/Bio";
@@ -319,6 +321,22 @@ export default function App() {
           element={
             <ProtectedRoute adminOnly>
               <AgentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="brand"
+          element={
+            <ProtectedRoute adminOnly>
+              <BrandSettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="organizations"
+          element={
+            <ProtectedRoute adminOnly platformOnly>
+              <OrganizationsPage />
             </ProtectedRoute>
           }
         />

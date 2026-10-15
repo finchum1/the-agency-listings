@@ -24,6 +24,7 @@ export function OrgProvider({ children }) {
   const [orgs, setOrgs] = useState([]);
   const [org, setOrg] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     if (authLoading || !profile) return;
@@ -48,7 +49,7 @@ export function OrgProvider({ children }) {
     return () => {
       active = false;
     };
-  }, [authLoading, profile, isPlatformAdmin]);
+  }, [authLoading, profile, isPlatformAdmin, reloadTick]);
 
   // Switching reloads the dashboard: lists, forms and realtime subscriptions all start clean for the new organization.
   const switchOrg = useCallback(
@@ -65,15 +66,18 @@ export function OrgProvider({ children }) {
     [isPlatformAdmin, org?.id, user?.id],
   );
 
+  // After the Brand settings page saves, reload the organization so the menu logo and every preview update at once.
+  const refreshOrg = useCallback(() => setReloadTick((t) => t + 1), []);
+
   const value = useMemo(
-    () => ({ org, orgId: org?.id ?? null, brand: brandFromOrg(org), orgs, isPlatformAdmin, switchOrg, loading }),
-    [org, orgs, isPlatformAdmin, switchOrg, loading],
+    () => ({ org, orgId: org?.id ?? null, brand: brandFromOrg(org), orgs, isPlatformAdmin, switchOrg, refreshOrg, loading }),
+    [org, orgs, isPlatformAdmin, switchOrg, refreshOrg, loading],
   );
   return <OrgContext.Provider value={value}>{children}</OrgContext.Provider>;
 }
 
 // Outside the provider (public pages, login) there is no active organization: lists get no filter and brand is the default.
-const NO_ORG = { org: null, orgId: null, brand: brandFromOrg(null), orgs: [], isPlatformAdmin: false, switchOrg: async () => {}, loading: false };
+const NO_ORG = { org: null, orgId: null, brand: brandFromOrg(null), orgs: [], isPlatformAdmin: false, switchOrg: async () => {}, refreshOrg: () => {}, loading: false };
 
 export function useOrg() {
   return useContext(OrgContext) || NO_ORG;

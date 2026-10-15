@@ -3,8 +3,8 @@ import { useAuth } from "../hooks/useAuth";
 
 // Real access control lives in Supabase RLS (see supabase/schema.sql) —
 // this is UX only, same philosophy as debt-tracker-app's route guards.
-export default function ProtectedRoute({ children, adminOnly = false }) {
-  const { session, isAdmin, loading } = useAuth();
+export default function ProtectedRoute({ children, adminOnly = false, platformOnly = false }) {
+  const { session, isAdmin, isPlatformAdmin, loading } = useAuth();
 
   if (loading) {
     return (
@@ -16,6 +16,7 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
 
   if (!session) return <Navigate to="/login" replace />;
   if (adminOnly && !isAdmin) return <Navigate to="/dashboard" replace />;
+  if (platformOnly && !isPlatformAdmin) return <Navigate to="/dashboard" replace />;
 
   return children;
 }
