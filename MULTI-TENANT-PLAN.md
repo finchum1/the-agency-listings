@@ -342,6 +342,13 @@ middleware 11/11, IDX API 13/13. Notes for the cutover: the Supabase SQL tool ha
 function to the database (the safety checks rightly refuse it). A "wipe staging" step is blocked unless the owner explicitly allows it. The ZZB fixture organization is still on
 staging (remove with `mt-fixture.mjs ... down` and delete the `zzb-app.localhost` row in `org_domains` when finished).
 
+**2026-10-14 (cutover checklist).** `MULTI-TENANT-CUTOVER.md` is the step-by-step runbook (who does what, expected numbers after every part, rollback by stage).
+New tools in `latchpoint-backups/tools/cutover/`: `backup-data.mjs` (fresh rows + files copy, tested on staging) and `prod-smoke.mjs` (read-only before/after check of 19
+public addresses; baseline taken). Findings while preparing it: production's schema still matches the Oct 14 backup exactly (26 tables, 320 columns, 53+12 rules,
+6 functions, 13 triggers, 95 constraints); the OLD app runs correctly on the NEW database rules while The Agency is the only organization (15/15) but breaks (brokerage
+pages "not found") as soon as a second organization has a brokerage site row, so no second organization may be added before the new app is deployed; the SQL rollback
+file's 65 rules and 6 functions are identical to the statements that rebuilt staging, and it must be paired with a Vercel rollback of the app (app first, then SQL).
+
 Still to do before production cutover:
 1. Marketing pages stay Agency-branded on purpose (they are The Agency's showcase).
 2. (Rehearsal done, see above.) The production cutover, in this order: fresh backup, part A, deploy the API change,
