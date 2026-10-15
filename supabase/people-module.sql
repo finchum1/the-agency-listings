@@ -432,3 +432,37 @@ alter table public.agent_sites
   add column if not exists button_style text not null default 'square';
 alter table public.agent_sites drop constraint if exists agent_sites_button_style_check;
 alter table public.agent_sites add constraint agent_sites_button_style_check check (button_style in ('square', 'pill'));
+
+-- 16. General tasks (dashboard home page): one-off and recurring to-dos with due dates. Strictly private to the agent
+--     who owns them, like People: no admin, organization or platform access (the owner-only policy below is the whole
+--     rule). A recurring task is one row: completing it moves due_date to the next occurrence (the app computes it from
+--     series_start, the date the repeat was set up on, so "monthly from the 31st" never drifts) and stamps
+--     last_done_at. A one-off task is marked done/done_at.
+create table if not exists public.agent_tasks (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  title text not null check (length(btrim(title)) between 1 and 300),
+  due_date date,
+  recurrence text not null default 'none'
+    check (recurrence in ('none', 'daily', 'weekdays', 'weekly', 'biweekly', 'monthly', 'quarterly', 'yearly')),
+  series_start date,
+  done boolean not null default false,
+  done_at timestamptz,
+  last_done_at timestamptz,
+  created_at timestamptz not null default now(),
+  constraint agent_tasks_recurring_needs_date check (recurrence = 'none' or due_date is not null)
+);
+create index if not exists agent_tasks_owner_idx on public.agent_tasks (owner_id, done, due_date);
+alter table public.agent_tasks enable row level security;
+revoke all on public.agent_tasks from anon;
+drop policy if exists agent_tasks_owner_all on public.agent_tasks;
+create policy agent_tasks_owner_all on public.agent_tasks
+  for all to authenticated
+  using (owner_id = auth.uid())
+  with check (owner_id = auth.uid());
+
+-- 17. A lead or pipeline contact can be a buyer, a seller, or both (shown as a tag on their board card). Transactions
+--     stay buyer or seller: a deal is one side, and the checklists are per side. The app clears "both" when someone
+--     is moved into Transactions, so they pick the side for that deal.
+alter table public.people drop constraint if exists people_side_check;
+alter table public.people add constraint people_side_check check (side in ('buyer', 'seller', 'both'));

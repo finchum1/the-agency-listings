@@ -3,7 +3,7 @@ import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS } from "../../../lib/peopleStages";
 import { usePeople } from "../../../hooks/usePeople";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
-import ContactButtons from "./ContactButtons";
+import { SIDE_TAGS } from "../../../lib/peopleSides";
 import ProgressRing from "./ProgressRing";
 import { useTransactionProgress } from "../../../hooks/useTransactionProgress";
 import PersonPanel from "./PersonPanel";
@@ -131,7 +131,7 @@ export default function PeopleBoard({ group }) {
 
   const [selectedId, setSelectedId] = useState(null);
   const [addingStage, setAddingStage] = useState(null);
-  const [newPerson, setNewPerson] = useState({ name: "", phone: "", email: "" });
+  const [newPerson, setNewPerson] = useState({ name: "", phone: "", email: "", side: "" });
   const [saving, setSaving] = useState(false);
   const [boardError, setBoardError] = useState("");
   const [dragOver, setDragOver] = useState(null);
@@ -166,6 +166,7 @@ export default function PeopleBoard({ group }) {
       stage_group: group,
       stage: addingStage,
       source: "Added manually",
+      ...(newPerson.side ? { side: newPerson.side } : {}),
     });
     setSaving(false);
     if (err) {
@@ -366,6 +367,19 @@ export default function PeopleBoard({ group }) {
                     placeholder="Email"
                     className={inputClass}
                   />
+                  {group !== "transaction" && (
+                    <select
+                      value={newPerson.side}
+                      onChange={(e) => setNewPerson((p) => ({ ...p, side: e.target.value }))}
+                      aria-label="Buyer, seller or both"
+                      className={inputClass}
+                    >
+                      <option value="">Buyer or seller…</option>
+                      <option value="buyer">Buyer</option>
+                      <option value="seller">Seller</option>
+                      <option value="both">Both</option>
+                    </select>
+                  )}
                   <div className="flex items-center gap-3">
                     <button
                       type="submit"
@@ -396,7 +410,12 @@ export default function PeopleBoard({ group }) {
                     onClick={() => setSelectedId(p.id)}
                     className="cursor-pointer bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl p-3 space-y-2 hover:shadow-sm transition-shadow"
                   >
-                    <p className="text-sm font-medium truncate">{p.name}</p>
+                    <div className="flex items-center justify-between gap-2 min-w-0">
+                      <p className="text-sm font-medium truncate">{p.name}</p>
+                      {group !== "transaction" && SIDE_TAGS[p.side] && (
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${SIDE_TAGS[p.side].className}`}>{SIDE_TAGS[p.side].label}</span>
+                      )}
+                    </div>
                     {group === "transaction" && (
                       <div className="space-y-0.5">
                         {p.property_address && (
@@ -429,7 +448,7 @@ export default function PeopleBoard({ group }) {
                         {overdue && " · overdue"}
                       </p>
                     )}
-                    {group === "transaction" ? (
+                    {group === "transaction" && (
                       <div className="flex items-center gap-3 pt-0.5">
                         {[
                           ["Tasks", progress[p.id]?.tasks],
@@ -444,8 +463,6 @@ export default function PeopleBoard({ group }) {
                           </div>
                         ))}
                       </div>
-                    ) : (
-                      <ContactButtons person={p} size="sm" />
                     )}
                   </div>
                 );

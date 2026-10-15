@@ -159,7 +159,9 @@ export default function PersonPanel({
 
   const handleMove = async () => {
     await flush();
-    if (await patch({ stage_group: board.next.group, stage: moveStage })) onClose();
+    // A deal is one side (the checklists are per side), so "both" is cleared on the way into Transactions.
+    const clearBoth = board.next.group === "transaction" && form.side === "both";
+    if (await patch({ stage_group: board.next.group, stage: moveStage, ...(clearBoth ? { side: null } : {}) })) onClose();
   };
 
   const handleMoveBack = async () => {
@@ -202,7 +204,7 @@ export default function PersonPanel({
         <div className="grid sm:grid-cols-2 gap-3">
           <div>
             <label className={labelClass}>Side</label>
-            <select value={form.side} onChange={setField("side", true)} className={inputClass}>
+            <select value={form.side === "both" ? "" : form.side} onChange={setField("side", true)} className={inputClass}>
               <option value="">Select…</option>
               <option value="buyer">Buyer</option>
               <option value="seller">Seller</option>
@@ -365,6 +367,17 @@ export default function PersonPanel({
               ))}
             </select>
           </div>
+          {!isTransaction && (
+            <div>
+              <label className={labelClass}>Buyer or seller</label>
+              <select value={form.side} onChange={setField("side", true)} className={inputClass}>
+                <option value="">Not set</option>
+                <option value="buyer">Buyer</option>
+                <option value="seller">Seller</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+          )}
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         </div>
 
@@ -413,7 +426,7 @@ export default function PersonPanel({
           <div className="min-w-0 lg:col-span-2">
             <TransactionModules
               person={person}
-              side={form.side}
+              side={form.side === "both" ? "" : form.side}
               dates={{
                 contract_date: form.contract_date,
                 inspection_date: form.inspection_date,
