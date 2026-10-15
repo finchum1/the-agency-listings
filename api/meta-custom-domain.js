@@ -44,13 +44,9 @@ import { renderMetaPage } from "./_lib/renderMetaPage.js";
 const APP_DEFAULT_TITLE = "The Agency Listings";
 const APP_DEFAULT_DESCRIPTION = "The Agency — property listing sites and agent dashboard";
 
-// Google Search Console site-verification tokens, keyed by bare custom
-// domain — see middleware.js's VERIFIED_HOSTS for how a request gets
-// routed here with ?verify=1 in the first place. Add a new domain by
-// adding it to both that Set and this map.
-const GOOGLE_SITE_VERIFICATION = {
-  "terrencefinchum.com": "e9f3EdK-JafciudKWSUna24_LF_kM-70yBL6jZsUi-Q",
-};
+// Google Search Console site-verification tokens now live on the domain's row in
+// org_domains (google_site_verification), and middleware.js routes a request here with
+// ?verify=1 only for a domain that has one. To verify a new domain, set that column.
 
 export default async function handler(req, res) {
   let brokerage = defaultBrokerage;
@@ -405,7 +401,17 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
 // tag gets spliced in does, and that's decided entirely by which domain
 // middleware.js routed here for.
 async function handleVerification(req, res, host) {
-  const token = GOOGLE_SITE_VERIFICATION[host];
+  let token = null;
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+  if (supabaseUrl && supabaseAnonKey) {
+    const { data } = await createClient(supabaseUrl, supabaseAnonKey)
+      .from("org_domains")
+      .select("google_site_verification")
+      .eq("domain", host)
+      .maybeSingle();
+    token = data?.google_site_verification || null;
+  }
   const origin = await fetch(`${SITE_ORIGIN}/index.html`);
   let html = await origin.text();
   if (token) {

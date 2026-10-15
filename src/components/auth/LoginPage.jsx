@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
-import brokerage from "../../lib/brokerage";
+import { brandFromOrg } from "../../lib/brand";
+import { useHostOrg } from "../../hooks/useHostOrg";
+import BrandLogo from "../BrandLogo";
 
 // Sign-in only — there's no public sign-up here. Accounts are created by an
 // admin inviting an agent (see AgentsPage.jsx), which emails an invite link
 // that lands on SetPasswordPage.jsx.
 export default function LoginPage() {
+  const { org } = useHostOrg();
+  const brokerage = brandFromOrg(org);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -30,10 +34,10 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#faf9f7] px-6">
       <div className="w-full max-w-sm">
         <div className="flex items-center justify-center gap-3 mb-8">
-          <img src={brokerage.logo} alt={brokerage.name} className="h-14 w-auto" />
+          <BrandLogo src={brokerage.logo} name={brokerage.name} className="h-14 w-auto" />
           <span className="h-9 w-px bg-black/10" aria-hidden="true" />
           <span className="text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50">
-            Oklahoma
+            {brokerage.locationLabel}
           </span>
         </div>
         <div className="bg-white border border-black/5 rounded-2xl p-8 shadow-sm">

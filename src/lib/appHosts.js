@@ -13,6 +13,19 @@ const KNOWN_APP_HOSTS = [
   // assumed to be a per-listing custom domain.
 ];
 
+// Extra platform app hosts, from the VITE_APP_HOSTS environment variable (comma-separated), so a new app address
+// (for example app.latchpointstudios.com) is a Vercel setting plus attaching the domain, not a code change. The same
+// variable is read in the browser bundle, the edge middleware and the API functions. A brokerage's OWN dashboard domain
+// is not listed here: those live in the org_domains table (kind "app"), see hooks/useHostOrg.js.
+function configuredAppHosts() {
+  const fromVite = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_APP_HOSTS : "";
+  const fromServer = typeof process !== "undefined" && process.env ? process.env.VITE_APP_HOSTS : "";
+  return String(fromVite || fromServer || "")
+    .split(",")
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 // Strips a leading "www." and lowercases, so "www.TerrenceFinchum.com" and
 // "terrencefinchum.com" are treated as the same host. custom_domain values
 // are saved bare (see lib/normalizeDomain.js, which never adds "www."), but
@@ -27,7 +40,7 @@ export function bareHost(hostname) {
 export function isAppHost(hostname) {
   if (!hostname) return true;
   const bare = bareHost(hostname);
-  if (KNOWN_APP_HOSTS.includes(bare)) return true;
+  if (KNOWN_APP_HOSTS.includes(bare) || configuredAppHosts().includes(bare)) return true;
   // Vercel preview deployments (the-agency-listings-<hash>-<team>.vercel.app)
   if (bare.endsWith(".vercel.app")) return true;
   return false;

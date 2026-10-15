@@ -17,7 +17,7 @@
 // host are still covered by vercel.json's rewrites, unaffected by this.
 import { rewrite, next } from "@vercel/functions";
 import { matchRedirect } from "./src/lib/redirectMatch.js";
-import { SIGNATURE_HOST } from "./src/lib/appHosts.js";
+import { SIGNATURE_HOST, isAppHost } from "./src/lib/appHosts.js";
 
 const BOT_UA_PATTERN =
   /(facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Googlebot|bingbot|Applebot|Pinterest|redditbot|SkypeUriPreview|vkShare|W3C_Validator|GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|Claude-User|Claude-SearchBot|anthropic-ai|PerplexityBot|Perplexity-User|DuckAssistBot|Amazonbot|CCBot|Meta-ExternalAgent|cohere-ai|MistralAI-User)/i;
@@ -35,7 +35,7 @@ const BOT_UA_PATTERN =
 // shared file across every agent/listing custom domain and the app host
 // itself, so injecting a verification tag unconditionally there would
 // falsely claim every other site too.
-const VERIFIED_HOSTS = new Set(["terrencefinchum.com"]);
+// (Which domains get a tag, and the token, now live on the domain's org_domains row: see loadDomain below.)
 
 // The marketing-only host (theagency.latchpointstudios.com — see
 // src/lib/appHosts.js) serves a handful of static product pages. For
@@ -83,8 +83,28 @@ async function loadRules(host) {
   }
 }
 
-function isDashboardHost(host) {
-  return host === "localhost" || host.endsWith(".vercel.app");
+// What the database knows about a host (org_domains): whether it is a brokerage's own dashboard domain, and its Google
+// Search Console token. Cached per host like the redirect rules; if the lookup fails the request simply carries on.
+const domainCache = new Map();
+
+async function loadDomain(host) {
+  const cached = domainCache.get(host);
+  if (cached && Date.now() - cached.at < RULES_TTL_MS) return cached.row;
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !anonKey) return null;
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/org_domains?select=kind,google_site_verification&domain=eq.${encodeURIComponent(host)}&limit=1`,
+      { headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` }, signal: AbortSignal.timeout(1500) },
+    );
+    if (!res.ok) throw new Error(`domain lookup ${res.status}`);
+    const row = (await res.json())[0] || null;
+    domainCache.set(host, { at: Date.now(), row });
+    return row;
+  } catch {
+    return cached?.row || null;
+  }
 }
 
 export default async function middleware(request) {
@@ -105,9 +125,14 @@ export default async function middleware(request) {
   }
 
   // The dashboard's own host has no redirects and no root special-casing.
-  if (isDashboardHost(hostname)) return next();
+  if (isAppHost(hostname)) return next();
 
-  // Anything else is an agent's own custom domain.
+  const domain = await loadDomain(hostname);
+
+  // A brokerage's own dashboard/login domain is the app too: no redirects, no crawler snapshots.
+  if (domain?.kind === "app") return next();
+
+  // Anything else is a client's own custom domain.
   const target = matchRedirect(pathname, await loadRules(hostname));
   if (target) {
     const destination = new URL(target, request.url);
@@ -122,7 +147,7 @@ export default async function middleware(request) {
   if (BOT_UA_PATTERN.test(userAgent)) {
     return rewrite(new URL("/api/meta-custom-domain", request.url));
   }
-  if (VERIFIED_HOSTS.has(hostname)) {
+  if (domain?.google_site_verification) {
     return rewrite(new URL("/api/meta-custom-domain?verify=1", request.url));
   }
   return next();

@@ -14,7 +14,15 @@
 import { formatPrice, STATUS_LABELS } from "./format.js";
 import { brandFromOrg } from "./brand.js";
 
-export const SITE_ORIGIN = "https://the-agency-listings.vercel.app";
+// The platform's primary app address, used for canonical URLs and sitemap entries. Set VITE_SITE_ORIGIN (no trailing
+// slash) to change it, for example when the app moves to app.latchpointstudios.com; the default is today's address.
+// Written so it works in the browser bundle (Vite replaces import.meta.env) and in Node (api functions).
+function configuredOrigin() {
+  const fromVite = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env.VITE_SITE_ORIGIN : "";
+  const fromServer = typeof process !== "undefined" && process.env ? process.env.VITE_SITE_ORIGIN : "";
+  return String(fromVite || fromServer || "").replace(/\/$/, "");
+}
+export const SITE_ORIGIN = configuredOrigin() || "https://the-agency-listings.vercel.app";
 
 export function absoluteUrl(url) {
   if (!url) return "";

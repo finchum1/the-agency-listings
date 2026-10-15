@@ -295,12 +295,24 @@ Verified on staging with two brokerages present (scripts in the backups folder, 
 dashboard as 4 roles with real logins **29/29**, public pages incl. a brokerage on its own domain **12/12**, agent-admin API **8/8**,
 database leak suite **106/106** (plus 3 new storage checks added since; run the whole suite again at cutover), hosted Preview build smoke test passes.
 
+**2026-10-14 (even later): hosts are database-driven (part E, `multi-tenant-1e-domain-registry.sql`).**
+- Every client website domain is mirrored automatically into `org_domains` (trigger on listings, agent_sites, brokerage_site). Its primary key
+  makes a domain claimable by ONE site in the whole database: this closes a cross-organization hijack (before, uniqueness was per table, and an
+  agent-site claim outranks a brokerage claim when a request is routed). Tests: `supabase/tests/domain-registry-test.sql`.
+- Google Search Console tokens live on the domain's registry row; `middleware.js` and `api/meta-custom-domain.js` read them (no hardcoded map).
+- A brokerage's own dashboard/login domain is an `org_domains` row of kind `app`: the SPA recognizes it (`hooks/useHostOrg.js`), serves the app
+  wearing that brokerage's brand (login, invite and 404 screens included), and the middleware treats it as the app (no crawler snapshot).
+- Platform app hosts and the canonical address are configuration, not code: `VITE_APP_HOSTS` (comma-separated, e.g. `app.latchpointstudios.com`) and
+  `VITE_SITE_ORIGIN` (e.g. `https://app.latchpointstudios.com`). Adding the platform host = set those two in Vercel, attach the domain, add the host to
+  Supabase Auth's redirect list. No deploy of new code.
+- Verified on staging: brokerage-domain browser test 7/7, middleware 11/11, registry SQL 17/17; the earlier suites still pass (dashboard 29/29, public 12/12, API 8/8).
+
 Still to do before production cutover:
-1. Database-driven hosts (`appHosts.js`, `middleware.js`, `SITE_ORIGIN`, Google verification map) via `org_domains`.
-2. Brokerage-site logo variant picker (`BrokerageSiteForm`) still lists The Agency's three logos; the IDX map default center and Repliers key are
-   still single-organization; login, 404 and marketing pages use the default brand.
-3. Re-run everything above on a fresh staging copy, then the production cutover in this order: fresh backup, part A, deploy the API change,
-   part B, part C, part D, deploy the app, run the leak suite and the acceptance flows; `rollback-policies-and-functions.sql` ready.
+1. Brokerage-site logo variant picker (`BrokerageSiteForm`) still lists The Agency's three logos; IDX map default center and the Repliers key are
+   single-organization; marketing pages stay Agency-branded on purpose (they are The Agency's showcase). `public/robots.txt` still names one host's sitemap.
+   A registered dashboard domain is not yet installable as a PWA (service worker registers only on platform hosts).
+2. Re-run everything above on a fresh staging copy, then the production cutover in this order: fresh backup, part A, deploy the API change,
+   part B, part C, part D, part E, deploy the app, run the leak suite and the acceptance flows; `rollback-policies-and-functions.sql` ready.
 
 ## 6. Testing strategy
 

@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import { OrgProvider } from "./context/OrgContext";
+import { useHostOrg } from "./hooks/useHostOrg";
 import { isAppHost, isMarketingHost } from "./lib/appHosts";
 import useSwUpdateOnNavigate from "./hooks/useSwUpdateOnNavigate";
 import { isStandalone } from "./lib/pwa";
@@ -75,6 +76,8 @@ export default function App() {
   // never registers a service worker there in the first place, so the
   // checker stays a no-op.
   useSwUpdateOnNavigate();
+  // A hostname that is not one of the platform's own may still be a brokerage's dashboard domain (org_domains).
+  const hostOrg = useHostOrg();
 
   // A request arriving on a marketing-only host (see appHosts.js) gets
   // just the standalone product-marketing pages — no login/dashboard,
@@ -99,7 +102,8 @@ export default function App() {
   // custom domain (e.g. 1645SaratogaWay.com, TerrenceFinchumRealty.com)
   // should just show that listing/site at "/", regardless of path — skip
   // the app's normal routing entirely for that case.
-  if (!isAppHost(window.location.hostname)) {
+  if (hostOrg.loading) return null; // unknown host: the registry is answering (a moment, once per page load)
+  if (!isAppHost(window.location.hostname) && !hostOrg.isApp) {
     return <CustomDomainSitePage />;
   }
 
