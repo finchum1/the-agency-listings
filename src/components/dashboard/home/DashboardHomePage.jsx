@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
 import { useHomeSummary } from "../../../hooks/useHomeSummary";
+import { usePostViewCounts } from "../../../hooks/usePostViewCounts";
 import { agoLabel, daysBetween, toKey } from "../../../lib/homeDates";
 import PeopleHighlights from "./PeopleHighlights";
 import { card, muted } from "./styles";
@@ -44,6 +45,8 @@ function BlogCard({ posts, hasSite, today }) {
   else nudge = "Your next post is scheduled.";
 
   const recent = posts.slice(0, 4);
+  // Page views for the posts shown here (same tally as the Blog Posts page): all-time and the last 30 days.
+  const views = usePostViewCounts("agent_post", recent.map((p) => p.id));
 
   return (
     <section className={`${card} lg:col-span-2 flex flex-col`}>
@@ -74,7 +77,20 @@ function BlogCard({ posts, hasSite, today }) {
                 <Link to={`/dashboard/site/blog?edit=${p.id}`} className="flex items-center gap-3 py-2.5 group">
                   <span className="min-w-0 flex-1 text-sm font-medium truncate group-hover:underline">{p.title || "Untitled"}</span>
                   <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${STATUS_LOOK[label] || STATUS_LOOK.draft}`}>{label}</span>
-                  <span className={`shrink-0 text-xs hidden sm:block w-24 text-right ${muted}`}>
+                  <span
+                    className={`shrink-0 text-xs text-right w-16 sm:w-28 ${muted}`}
+                    title={isLive(p) ? `${(views[p.id]?.last30 || 0).toLocaleString()} in the last 30 days` : "Views start once the post is live"}
+                  >
+                    {isLive(p) ? (
+                      <>
+                        <strong className="text-[#1c1a17] dark:text-[#faf9f7] font-semibold">{(views[p.id]?.total || 0).toLocaleString()}</strong> views
+                        <span className="hidden sm:block">{(views[p.id]?.last30 || 0).toLocaleString()} in 30 days</span>
+                      </>
+                    ) : (
+                      "No views yet"
+                    )}
+                  </span>
+                  <span className={`shrink-0 text-xs hidden md:block w-24 text-right ${muted}`}>
                     {new Date(`${p.post_date}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                   </span>
                 </Link>
