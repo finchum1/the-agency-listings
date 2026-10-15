@@ -59,9 +59,19 @@ export default function DashboardLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [siteOpen, setSiteOpen] = useState(location.pathname.startsWith("/dashboard/site"));
   const [peopleOpen, setPeopleOpen] = useState(location.pathname.startsWith("/dashboard/people"));
-  const [adminOpen, setAdminOpen] = useState(
-    ADMIN_ITEMS.some((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)),
-  );
+  const inAdminArea = (path) =>
+    [...ADMIN_ITEMS.map((i) => i.to), "/dashboard/brand", "/dashboard/organizations"].some((to) => path === to || path.startsWith(`${to}/`));
+  const [adminOpen, setAdminOpen] = useState(inAdminArea(location.pathname));
+
+  // Landing on a page from somewhere else (a link on the home page, a button inside a page, the browser's back button)
+  // opens the menu group that page belongs to, so the highlighted item is always visible. Groups never close by themselves.
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.startsWith("/dashboard/site")) setSiteOpen(true);
+    if (path.startsWith("/dashboard/people")) setPeopleOpen(true);
+    if (inAdminArea(path)) setAdminOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   // On recent iOS the installed app's status bar area is drawn by the
   // system, in the page's <body> background color (cached at launch).
