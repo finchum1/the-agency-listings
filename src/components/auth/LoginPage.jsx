@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
-import { useHostOrg } from "../../hooks/useHostOrg";
+import { useAuthOrg, rememberLoginOrg } from "../../hooks/useAuthOrg";
 import AuthBrand from "./AuthBrand";
 
 // Sign-in only — there's no public sign-up here. Accounts are created by an
 // admin inviting an agent (see AgentsPage.jsx), which emails an invite link
 // that lands on SetPasswordPage.jsx.
 export default function LoginPage() {
-  const { org } = useHostOrg();
+  const { org, loading: orgLoading } = useAuthOrg();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,19 +19,22 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setSubmitting(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setSubmitting(false);
     if (error) {
       setError(error.message);
       return;
     }
+    // Remember whose dashboard this browser signs in to, so the next visit shows their logo
+    const { data: mine } = await supabase.from("profiles").select("org:organizations(slug)").eq("id", data.user.id).maybeSingle();
+    rememberLoginOrg(mine?.org?.slug);
     navigate("/dashboard", { replace: true });
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#faf9f7] px-6">
       <div className="w-full max-w-sm">
-        <AuthBrand org={org} className="mb-8" />
+        <AuthBrand org={org} loading={orgLoading} className="mb-8" />
         <div className="bg-white border border-black/5 rounded-2xl p-8 shadow-sm">
           <h1 className="text-xl font-display font-semibold mb-1 text-center">
             Dashboard

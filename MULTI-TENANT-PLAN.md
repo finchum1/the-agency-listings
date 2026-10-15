@@ -326,9 +326,14 @@ database leak suite **106/106** (plus 3 new storage checks added since; run the 
 - Re-verified on staging after these changes: dashboard 29/29, public 12/12, hosts-in-browser 7/7, middleware 11/11, agent API 8/8.
   The full leak suite is re-run in the rehearsal.
 
+**2026-10-14 (login branding).** The sign-in and invite screens show the Latchpoint mark on platform hosts (`components/auth/AuthBrand.jsx`). Whose brand
+appears is decided only by what the visitor brings, never by what they type (typing an email must not reveal which organizations exist): (1) a brokerage's own
+dashboard domain, (2) a personal link `https://<app host>/login?org=<slug>`, (3) on the invite page, the organization of the person who followed the invite
+link, (4) the organization this browser last signed in to (logo only). Unknown slugs get the Latchpoint mark with no error. `hooks/useAuthOrg.js`; browser test
+`mt-login-link.js` (11 checks). Reads the public `organizations` rows (anon read of active organizations is existing design).
+
 Still to do before production cutover:
-1. Decide what the platform host's login looks like (today `app.latchpointstudios.com` would show The Agency's login brand, the default organization).
-   Marketing pages stay Agency-branded on purpose (they are The Agency's showcase).
+1. Marketing pages stay Agency-branded on purpose (they are The Agency's showcase).
 2. Re-run everything above on a fresh staging copy, then the production cutover in this order: fresh backup, part A, deploy the API change,
    part B, part C, part D, part E, part F, part G (G needs each organization's `idx_config` filled in by SQL; The Agency keeps its environment variables), deploy the app, run the leak suite and the acceptance flows; `rollback-policies-and-functions.sql` ready.
 

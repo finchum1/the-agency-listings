@@ -6,7 +6,9 @@ import { LatchpointLogomark } from "../marketing/LatchpointMarks";
 // this is, so on the platform's own hosts it is the platform's mark (Latchpoint). A brokerage's own dashboard domain
 // (org is set) wears that brokerage's brand instead. Colors come from the page's theme tokens, so the mark reads on the
 // cream background.
-export default function AuthBrand({ org, className = "" }) {
+export default function AuthBrand({ org, loading = false, className = "" }) {
+  // Waiting to learn whose brand this is: hold the space so the page doesn't jump or flash the wrong mark
+  if (loading) return <div className={`h-14 ${className}`} aria-hidden="true" />;
   if (org) {
     const brand = brandFromOrg(org);
     return (

@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
-import { useHostOrg } from "../../hooks/useHostOrg";
+import { useAuthOrg, rememberLoginOrg } from "../../hooks/useAuthOrg";
 import AuthBrand from "./AuthBrand";
 
 // Landing page for the invite-email link (Supabase's inviteUserByEmail
 // establishes a temporary session and redirects here). The agent sets
 // their real password, then we send them into the dashboard.
 export default function SetPasswordPage() {
-  const { org } = useHostOrg();
+  const { org, loading: orgLoading } = useAuthOrg({ useSession: true });
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -33,13 +33,14 @@ export default function SetPasswordPage() {
       setError(error.message);
       return;
     }
+    rememberLoginOrg(org?.slug);
     navigate("/dashboard", { replace: true });
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#faf9f7] px-6">
       <div className="w-full max-w-sm">
-        <AuthBrand org={org} className="mb-8" />
+        <AuthBrand org={org} loading={orgLoading} className="mb-8" />
         <div className="bg-white border border-black/5 rounded-2xl p-8 shadow-sm">
           <h1 className="text-xl font-display font-semibold mb-1 text-center">
             {org ? `Welcome to ${org.name}` : "Welcome"}
