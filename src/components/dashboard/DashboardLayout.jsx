@@ -158,6 +158,13 @@ export default function DashboardLayout() {
 
     return (
       <>
+        {!workingElsewhere && (
+          <div className="space-y-1">
+            <Link to="/dashboard" onClick={onNavigate} className={navLinkClass(location.pathname === "/dashboard" || location.pathname === "/dashboard/")}>
+              Home
+            </Link>
+          </div>
+        )}
         {!workingElsewhere && siteAccess !== "none" && group("Website", siteOpen, setSiteOpen, siteItems)}
         {!workingElsewhere && profile?.people_enabled && group("People", peopleOpen, setPeopleOpen, PEOPLE_ITEMS)}
         <div className="mt-1 space-y-1">

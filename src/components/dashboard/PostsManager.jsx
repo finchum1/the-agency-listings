@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import ImageUploadField from "./ImageUploadField";
 import RichTextEditor from "./RichTextEditor";
@@ -65,6 +66,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
   const [useOtherCategory, setUseOtherCategory] = useState(false);
   const [view, setView] = useState("list");
   const viewCounts = usePostViewCounts("agent_post", posts.map((p) => p.id));
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     if (!agentId) return;
@@ -106,6 +108,22 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
     setUseOtherCategory(!!post.category && !CATEGORIES.includes(post.category));
     setEditingId(post.id);
   };
+
+  // Deep links from the dashboard home page: ?new=1 opens a blank post, ?edit=<id> opens that post.
+  useEffect(() => {
+    const wantsNew = searchParams.get("new");
+    const editId = searchParams.get("edit");
+    if (!wantsNew && !editId) return;
+    if (editId) {
+      const post = posts.find((p) => p.id === editId);
+      if (!post) return; // posts may still be loading
+      startEdit(post);
+    } else {
+      startAdd();
+    }
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, posts]);
 
   const cancel = () => {
     setEditingId(null);
