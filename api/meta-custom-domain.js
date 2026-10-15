@@ -425,8 +425,10 @@ async function handleVerification(req, res, host) {
 // Marketing host (theagency.latchpointstudios.com): the same index.html
 // every visitor gets, with this page's own title/description/social tags
 // and a plain-text fallback inside #root. React's createRoot replaces
-// that fallback the moment the app boots, so people never see it — it
-// exists for crawlers that don't run JavaScript.
+// that fallback the moment the app boots. It exists for crawlers that don't
+// run JavaScript, so it is visually hidden (still in the page text): without
+// that, visitors saw it flash in the top-left corner for the ~0.3 s before the
+// app loaded.
 async function handleMarketing(req, res) {
   const { path, meta } = marketingMetaFor(String(req.query.marketing));
   const origin = `https://${req.headers.host}`;
@@ -468,7 +470,7 @@ async function handleMarketing(req, res) {
     .replace("</head>", `    ${tags}\n  </head>`)
     .replace(
       '<div id="root"></div>',
-      `<div id="root"><h1>${title}</h1><p>${description}</p><ul>${links}</ul></div>`,
+      `<div id="root"><div style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap"><h1>${title}</h1><p>${description}</p><ul>${links}</ul></div></div>`,
     );
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
