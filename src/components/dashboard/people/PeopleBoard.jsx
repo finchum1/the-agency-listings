@@ -4,6 +4,8 @@ import { BOARDS } from "../../../lib/peopleStages";
 import { usePeople } from "../../../hooks/usePeople";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
 import ContactButtons from "./ContactButtons";
+import ProgressRing from "./ProgressRing";
+import { useTransactionProgress } from "../../../hooks/useTransactionProgress";
 import PersonPanel from "./PersonPanel";
 
 const COLUMN_DRAG_TYPE = "application/x-people-column";
@@ -121,6 +123,7 @@ function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleCl
 export default function PeopleBoard({ group }) {
   const board = BOARDS[group];
   const { people, setPeople, loading, error, refresh } = usePeople();
+  const { progress, reload: reloadProgress } = useTransactionProgress(group === "transaction");
   const { stages: allStages, closedStage, renameStage, addStage, moveStage, removeStage, setClosedStage } = usePeopleStages();
   const stages = allStages[group];
   const nextStageNames = board.next ? allStages[board.next.group] : null;
@@ -426,7 +429,24 @@ export default function PeopleBoard({ group }) {
                         {overdue && " · overdue"}
                       </p>
                     )}
-                    <ContactButtons person={p} size="sm" />
+                    {group === "transaction" ? (
+                      <div className="flex items-center gap-3 pt-0.5">
+                        {[
+                          ["Tasks", progress[p.id]?.tasks],
+                          ["Docs", progress[p.id]?.docs],
+                        ].map(([label, v]) => (
+                          <div key={label} className="flex items-center gap-2 min-w-0" title={v?.total ? `${label}: ${v.done} of ${v.total} done` : `No ${label.toLowerCase()} yet`}>
+                            <ProgressRing done={v?.done || 0} total={v?.total || 0} size={34} stroke={4} textClass="text-[9px]" />
+                            <div className="leading-tight min-w-0">
+                              <p className="text-[11px] font-semibold">{label}</p>
+                              <p className="text-[11px] text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">{v?.total ? `${v.done} of ${v.total}` : "None"}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <ContactButtons person={p} size="sm" />
+                    )}
                   </div>
                 );
               })}
@@ -480,8 +500,14 @@ export default function PeopleBoard({ group }) {
           total={siblings.length}
           onPrev={siblingIdx > 0 ? () => setSelectedId(siblings[siblingIdx - 1].id) : undefined}
           onNext={siblingIdx >= 0 && siblingIdx < siblings.length - 1 ? () => setSelectedId(siblings[siblingIdx + 1].id) : undefined}
-          onClose={() => setSelectedId(null)}
-          onChanged={refresh}
+          onClose={() => {
+            setSelectedId(null);
+            reloadProgress();
+          }}
+          onChanged={() => {
+            refresh();
+            reloadProgress();
+          }}
         />
       )}
     </div>

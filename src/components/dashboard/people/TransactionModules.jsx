@@ -1,37 +1,7 @@
 import { useState } from "react";
 import TransactionChecklist from "./TransactionChecklist";
 import TransactionDocuments from "./TransactionDocuments";
-
-// Small circular progress indicator with the percentage in the middle; turns
-// green once everything is done.
-function ProgressRing({ done, total, size = 44 }) {
-  const stroke = 5;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const pct = total ? done / total : 0;
-  const complete = total > 0 && done === total;
-  return (
-    <div className="relative shrink-0" style={{ width: size, height: size }} role="img" aria-label={`${done} of ${total} complete`}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} className="stroke-black/10 dark:stroke-white/15" />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={c * (1 - pct)}
-          className={`transition-[stroke-dashoffset] duration-500 ${complete ? "stroke-emerald-500" : "stroke-[#ed2127] dark:stroke-[#f2454b]"}`}
-        />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-[11px] font-semibold tabular-nums">
-        {Math.round(pct * 100)}%
-      </span>
-    </div>
-  );
-}
+import ProgressRing from "./ProgressRing";
 
 // Clicking the header folds the whole card down to its title, count and
 // ring. The body stays mounted (just hidden) so the counts keep updating.
