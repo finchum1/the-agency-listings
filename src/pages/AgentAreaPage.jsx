@@ -115,6 +115,7 @@ export default function AgentAreaPage({ site, agent, area, loading, notFound }) 
         <IdxListings
           preview
           officeOnly
+          brand={adapted.brokerage}
           initialCity={area.name}
           previewCount={6}
           viewAllHref={null}
@@ -126,6 +127,7 @@ export default function AgentAreaPage({ site, agent, area, loading, notFound }) 
           <IdxListings
             isStandalonePage
             officeOnly={false}
+            brand={adapted.brokerage}
             initialCity={area.name}
             sectionId="area-search"
             eyebrowOverride="Home Search"

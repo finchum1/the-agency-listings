@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { idxParams } from "../lib/idxParams";
 
 // Client-side fetch against api/repliers.js (mlsNumber param selects the
 // single-listing branch) for one listing by MLS number. Parallel to
 // useRepliersListings.js.
-export function useRepliersListing(mlsNumber) {
+export function useRepliersListing(mlsNumber, org) {
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -16,7 +17,7 @@ export function useRepliersListing(mlsNumber) {
     setNotFound(false);
     setError("");
 
-    fetch(`/api/repliers?mlsNumber=${encodeURIComponent(mlsNumber)}`)
+    fetch(`/api/repliers?${idxParams(mlsNumber, org)}`)
       .then(async (res) => {
         if (res.status === 404) {
           if (!cancelled) setNotFound(true);

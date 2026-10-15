@@ -20,6 +20,7 @@ const brokerage = {
   // organizations.brand.location_label (see lib/brand.js); this constant is only the fallback.
   locationLabel: "Oklahoma",
   serviceArea: "Oklahoma City, Edmond, and the surrounding metro",
+  mapCenter: [35.4676, -97.5164], // Oklahoma City
   logo: logos.red, // red mark + wordmark, used everywhere except agent sites
   logos,
   address: {

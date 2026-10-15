@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import { OrgProvider } from "./context/OrgContext";
 import { useHostOrg } from "./hooks/useHostOrg";
+import { useHostBranding } from "./hooks/useHostBranding";
 import { isAppHost, isMarketingHost } from "./lib/appHosts";
 import useSwUpdateOnNavigate from "./hooks/useSwUpdateOnNavigate";
 import { isStandalone } from "./lib/pwa";
@@ -78,6 +79,7 @@ export default function App() {
   useSwUpdateOnNavigate();
   // A hostname that is not one of the platform's own may still be a brokerage's dashboard domain (org_domains).
   const hostOrg = useHostOrg();
+  useHostBranding(hostOrg.isApp ? hostOrg.org : null);
 
   // A request arriving on a marketing-only host (see appHosts.js) gets
   // just the standalone product-marketing pages — no login/dashboard,

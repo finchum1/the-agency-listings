@@ -10,7 +10,9 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet-draw/dist/leaflet.draw.css";
 import { formatPrice, formatCompactPrice } from "../../lib/format";
 
-const DEFAULT_CENTER = [35.4676, -97.5164]; // Oklahoma City — used only when no listing has coordinates
+// Neutral fallback (middle of the US) for an organization that hasn't set its own map center
+const FALLBACK_CENTER = [39.5, -98.35];
+const FALLBACK_ZOOM = 4;
 const DEFAULT_ZOOM = 11;
 
 // One popup's contents for a marker/cluster-leaf click — a mini version
@@ -210,12 +212,13 @@ function DrawControl({ onBoundaryChange, boundaryActive }) {
   );
 }
 
-export default function IdxMap({ listings, onBoundaryChange, boundaryActive }) {
+// center: the organization's own [lat, lng] (brand.mapCenter), used only when no listing has coordinates.
+export default function IdxMap({ listings, onBoundaryChange, boundaryActive, center }) {
   const hasLocated = listings.some((l) => l.lat && l.lng);
 
   return (
     <div className="relative h-full w-full">
-      <MapContainer center={DEFAULT_CENTER} zoom={DEFAULT_ZOOM} className="h-full w-full" scrollWheelZoom>
+      <MapContainer center={center || FALLBACK_CENTER} zoom={center ? DEFAULT_ZOOM : FALLBACK_ZOOM} className="h-full w-full" scrollWheelZoom>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

@@ -22,7 +22,7 @@ export function adaptListing({ listing, agent, photos }) {
     // own matching/near-matching background.
     brokerage: {
       ...brokerage,
-      logo: listing.theme === "red" ? brokerage.logos.white : brokerage.logos[listing.logo_variant] || brokerage.logo,
+      logo: listing.theme === "red" ? (brokerage.logos.white || brokerage.logo) : brokerage.logos[listing.logo_variant] || brokerage.logo,
     },
     siteTemplate: listing.site_template || "classic",
     theme: listing.theme || "classic",

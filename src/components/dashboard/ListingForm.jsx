@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { accentChoices, logoChoices, validLogoVariant } from "../../lib/brandChoices";
 import { useOrg } from "../../context/OrgContext";
 import { useAuth } from "../../hooks/useAuth";
 import { normalizeDomain } from "../../lib/normalizeDomain";
@@ -54,19 +55,19 @@ const THEMES = [
   {
     value: "sand",
     label: "Sand",
-    description: "Taupe ground, true black ink, and The Agency's red.",
+    description: "Taupe ground, true black ink, and the brand red.",
     swatches: ["#ddd0ba", "#0d0d0d", "#ed2127"],
   },
   {
     value: "red",
     label: "Red",
-    description: "The Agency's actual red for the hero & footer — white & black everywhere else.",
+    description: "The brand red for the hero & footer — white & black everywhere else.",
     swatches: ["#ffffff", "#ed2127", "#0d0d0d"],
   },
   {
     value: "linen",
     label: "Linen",
-    description: "All-white and soft cream throughout, even the header & footer — The Agency's red as the only pop of color.",
+    description: "All-white and soft cream throughout, even the header & footer — the brand red as the only pop of color.",
     swatches: ["#ffffff", "#f0ece4", "#ed2127"],
   },
 ];
@@ -77,7 +78,7 @@ const FONT_PAIRINGS = [
   {
     value: "playfair-jost",
     label: "Playfair Display + Lato",
-    tag: "The Agency's pairing",
+    tag: "Default pairing",
     display: "'Playfair Display', Georgia, serif",
     body: "'Lato', sans-serif",
   },
@@ -111,24 +112,6 @@ const FONT_PAIRINGS = [
     display: "'DM Serif Display', Georgia, serif",
     body: "'DM Sans', sans-serif",
   },
-];
-
-// Restricted to The Agency's own brand red and black — not a free-color
-// picker, same rule as SiteForm.jsx's ACCENT_OPTIONS. Enforced again at
-// the database level (listings_accent_color_check).
-const ACCENT_OPTIONS = [
-  { value: "", label: "Template default", swatch: null },
-  { value: "#ed2127", label: "Corporate Red", swatch: "#ed2127" },
-  { value: "#000000", label: "Black", swatch: "#000000" },
-];
-
-// Three official-color versions of the same mark — see SiteForm.jsx's
-// LOGO_VARIANTS (a fourth "square" option was tried there and removed;
-// don't reintroduce it here either — see DESIGN.md).
-const LOGO_VARIANTS = [
-  { value: "red", label: "Red", chipBg: "#ffffff", src: "/images/brokerage-logo.png" },
-  { value: "white", label: "White", chipBg: "#14130f", src: "/images/brokerage-logo-white.png" },
-  { value: "black", label: "Black", chipBg: "#f0eee9", src: "/images/brokerage-logo-black.png" },
 ];
 
 const emptyListing = {
@@ -165,7 +148,9 @@ const emptyListing = {
 // to/from the DB shapes (text[] / jsonb) on load and save.
 export default function ListingForm({ mode, listing, onSaved }) {
   const { user, isAdmin } = useAuth();
-  const { orgId } = useOrg();
+  const { orgId, brand } = useOrg();
+  const accentOptions = accentChoices(brand);
+  const logoOptions = logoChoices(brand);
   const [form, setForm] = useState(emptyListing);
   const [descriptionText, setDescriptionText] = useState("");
   const [features, setFeatures] = useState([]);
@@ -194,7 +179,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
         theme: listing.theme || "classic",
         font_pairing: listing.font_pairing || "playfair-jost",
         accent_color: listing.accent_color || "",
-        logo_variant: listing.logo_variant || "red",
+        logo_variant: validLogoVariant(brand, listing.logo_variant || "red"),
         mls_number: listing.mls_number || "",
         address_line1: listing.address_line1 || "",
         city: listing.city || "",
@@ -429,8 +414,8 @@ export default function ListingForm({ mode, listing, onSaved }) {
         <div>
           <h2 className="font-display text-lg font-semibold">Theme</h2>
           <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">
-            Changes how this listing's public site looks — every template still uses The
-            Agency's own brand red, only the background/text neutrals change.
+            Changes how this listing's public site looks — every template keeps your
+            brand red, only the background/text neutrals change.
           </p>
         </div>
         <div className="grid sm:grid-cols-3 gap-3">
@@ -461,11 +446,13 @@ export default function ListingForm({ mode, listing, onSaved }) {
         <div>
           <h2 className="font-display text-lg font-semibold">Accent color</h2>
           <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">
-            Kept to The Agency's own brand colors — not a free color picker.
+            {accentOptions.length > 1
+              ? `Kept to ${brand.name}'s brand colors — not a free color picker.`
+              : `${brand.name}'s brand colors haven't been set up yet, so the template default is used.`}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {ACCENT_OPTIONS.map((opt) => (
+          {accentOptions.map((opt) => (
             <button
               key={opt.value}
               type="button"
@@ -519,11 +506,11 @@ export default function ListingForm({ mode, listing, onSaved }) {
         <div>
           <h2 className="font-display text-lg font-semibold">Logo</h2>
           <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">
-            Same official mark, three colors — pick whichever reads best against your template.
+            Pick whichever version of the mark reads best against your template.
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          {LOGO_VARIANTS.map((v) => (
+          {logoOptions.map((v) => (
             <button
               key={v.value}
               type="button"
@@ -688,7 +675,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
             value={form.seo_title}
             onChange={update("seo_title")}
             className={inputClass}
-            placeholder={`${form.address_line1 || "1645 Saratoga Way"} | ${form.city || "Edmond"}, ${form.state || "OK"} — The Agency`}
+            placeholder={`${form.address_line1 || "1645 Saratoga Way"} | ${form.city || "Edmond"}, ${form.state || "OK"} — ${brand.name}`}
           />
         </div>
         <div>

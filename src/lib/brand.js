@@ -31,6 +31,8 @@ export function brandFromOrg(org) {
     // "Oklahoma City, Edmond, and the surrounding metro": the roster blurb; falls back to the location label
     serviceArea: brand.service_area || "",
     accentColors: brand.accent_colors || [],
+    // [lat, lng] the Home Search map opens on when no listing has coordinates yet
+    mapCenter: Array.isArray(brand.map_center) && brand.map_center.length === 2 ? brand.map_center : null,
   };
 }
 

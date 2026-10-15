@@ -63,8 +63,12 @@ export default function IdxListings({
   eyebrowOverride,
   titleOverride,
   sectionId = "listings",
+  brand: brandProp,
 }) {
   const brokerageSite = useContext(BrokerageSiteContext);
+  // Whose IDX account and map: the brokerage site's organization, or the one the caller passes (area pages)
+  const brand = brandProp || brokerageSite?.site?.brokerage;
+  const orgSlug = brand?.slug;
   const { favorites, toggleFavorite } = useFavorites();
   const [priceIdx, setPriceIdx] = useState(0);
   const [beds, setBeds] = useState("");
@@ -84,7 +88,7 @@ export default function IdxListings({
     usePinned
       ? null
       : preview
-        ? { resultsPerPage: previewCount, office: officeOnly, city: initialCity }
+        ? { resultsPerPage: previewCount, office: officeOnly, city: initialCity, org: orgSlug }
         : {
             minPrice: price.min,
             maxPrice: price.max,
@@ -95,9 +99,10 @@ export default function IdxListings({
             sortBy,
             map: boundary ? JSON.stringify(boundary) : "",
             resultsPerPage: 48,
+            org: orgSlug,
           },
   );
-  const pinned = useFeaturedRepliersListings(pinnedMlsNumbers);
+  const pinned = useFeaturedRepliersListings(pinnedMlsNumbers, orgSlug);
 
   const { listings, loading, error } = usePinned
     ? { listings: pinned.listings, loading: pinned.loading, error: "" }
@@ -237,7 +242,7 @@ export default function IdxListings({
                   ))}
                 </div>
                 <div className="h-[500px] md:h-[720px] md:sticky md:top-24 overflow-hidden rounded-2xl border border-[var(--as-text)]/10 order-1 md:order-2">
-                  <IdxMap listings={listings} onBoundaryChange={setBoundary} boundaryActive={!!boundary} />
+                  <IdxMap listings={listings} onBoundaryChange={setBoundary} boundaryActive={!!boundary} center={brand?.mapCenter} />
                 </div>
               </div>
             ) : (

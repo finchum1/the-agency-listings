@@ -17,7 +17,7 @@ export default function IdxListingDetail({ mlsNumber: mlsNumberProp } = {}) {
   const params = useParams();
   const mlsNumber = mlsNumberProp || params.mlsNumber;
   const { site } = useBrokerageSiteContext();
-  const { listing, loading, notFound, error } = useRepliersListing(mlsNumber);
+  const { listing, loading, notFound, error } = useRepliersListing(mlsNumber, site?.brokerage?.slug);
 
   if (loading) {
     return (

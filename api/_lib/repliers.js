@@ -3,8 +3,10 @@
 // must never reach the browser (see ADR-7/ADR-9 in the IDX roadmap: one
 // Repliers vendor relationship per board, billed per board not per site).
 //
-// Setup (Vercel dashboard > Project > Settings > Environment Variables):
-//   REPLIERS_API_KEY  — from repliers.com (required)
+// Which account to use is decided per request by api/_lib/idxConfig.js (each
+// organization has its own key, board and office name in org_settings.idx_config).
+// For The Agency, the REPLIERS_* Vercel environment variables are the fallback:
+//   REPLIERS_API_KEY  — from repliers.com
 //   REPLIERS_BOARD_ID — optional; only needed once the account has more
 //     than one MLS board licensed. Omit for a single-board (e.g. sandbox
 //     or MLSOK-only) account — Repliers defaults to whatever the account
@@ -13,24 +15,18 @@
 const BASE_URL = "https://api.repliers.io";
 const IMAGE_CDN = "https://cdn.repliers.io";
 
-function apiKey() {
-  const key = process.env.REPLIERS_API_KEY;
-  if (!key) throw new Error("REPLIERS_API_KEY is not configured.");
-  return key;
-}
-
-async function repliersFetch(path, searchParams) {
+async function repliersFetch(config, path, searchParams) {
   const url = new URL(path, BASE_URL);
   for (const [key, value] of Object.entries(searchParams || {})) {
     if (value === undefined || value === null || value === "") continue;
     url.searchParams.set(key, value);
   }
-  if (process.env.REPLIERS_BOARD_ID) {
-    url.searchParams.set("boardId", process.env.REPLIERS_BOARD_ID);
+  if (config.boardId) {
+    url.searchParams.set("boardId", config.boardId);
   }
 
   const res = await fetch(url, {
-    headers: { "REPLIERS-API-KEY": apiKey() },
+    headers: { "REPLIERS-API-KEY": config.apiKey },
   });
 
   if (!res.ok) {
@@ -43,12 +39,12 @@ async function repliersFetch(path, searchParams) {
   return res.json();
 }
 
-export function searchRepliersListings(params) {
-  return repliersFetch("/listings", params);
+export function searchRepliersListings(config, params) {
+  return repliersFetch(config, "/listings", params);
 }
 
-export function getRepliersListing(mlsNumber) {
-  return repliersFetch(`/listings/${encodeURIComponent(mlsNumber)}`);
+export function getRepliersListing(config, mlsNumber) {
+  return repliersFetch(config, `/listings/${encodeURIComponent(mlsNumber)}`);
 }
 
 // Repliers' `images` field is an array of CDN-relative paths (e.g.

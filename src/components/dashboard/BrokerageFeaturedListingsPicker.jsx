@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { formatPrice } from "../../lib/format";
+import { useOrg } from "../../context/OrgContext";
+import { idxParams } from "../../lib/idxParams";
 
 // Lets an admin hand-pick which live IDX/MLS listings show first on the
 // Brokerage Site's home page preview and standalone /brokerage/listings
@@ -13,6 +15,7 @@ import { formatPrice } from "../../lib/format";
 // typo or a listing that's since sold shows up as a clear error instead
 // of silently breaking the home page.
 export default function BrokerageFeaturedListingsPicker({ value, onChange }) {
+  const { brand } = useOrg();
   const [mlsInput, setMlsInput] = useState("");
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState("");
@@ -22,7 +25,7 @@ export default function BrokerageFeaturedListingsPicker({ value, onChange }) {
     value.forEach((mlsNumber) => {
       if (previews[mlsNumber]) return;
       setPreviews((p) => ({ ...p, [mlsNumber]: { loading: true } }));
-      fetch(`/api/repliers?mlsNumber=${encodeURIComponent(mlsNumber)}`)
+      fetch(`/api/repliers?${idxParams(mlsNumber, brand.slug)}`)
         .then(async (res) => {
           const body = await res.json();
           if (!res.ok) throw new Error(body.error || "Not found");
@@ -44,7 +47,7 @@ export default function BrokerageFeaturedListingsPicker({ value, onChange }) {
     setAdding(true);
     setAddError("");
     try {
-      const res = await fetch(`/api/repliers?mlsNumber=${encodeURIComponent(mlsNumber)}`);
+      const res = await fetch(`/api/repliers?${idxParams(mlsNumber, brand.slug)}`);
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || "Listing not found.");
       setPreviews((p) => ({ ...p, [mlsNumber]: { listing: body.listing } }));

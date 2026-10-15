@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { idxParams } from "../lib/idxParams";
 
 // Fetches a specific, ordered set of IDX listings by MLS number (see
 // BrokerageFeaturedListingsPicker.jsx for how the admin picks them) —
@@ -6,7 +7,7 @@ import { useEffect, useState } from "react";
 // pinned listings. A listing that's since sold/delisted is silently
 // dropped rather than breaking the page; the data itself always comes
 // live from Repliers, this hook just resolves the pinned MLS numbers.
-export function useFeaturedRepliersListings(mlsNumbers) {
+export function useFeaturedRepliersListings(mlsNumbers, org) {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(mlsNumbers.length > 0);
 
@@ -23,7 +24,7 @@ export function useFeaturedRepliersListings(mlsNumbers) {
 
     Promise.all(
       mlsNumbers.map((mlsNumber) =>
-        fetch(`/api/repliers?mlsNumber=${encodeURIComponent(mlsNumber)}`)
+        fetch(`/api/repliers?${idxParams(mlsNumber, org)}`)
           .then(async (res) => (res.ok ? (await res.json()).listing : null))
           .catch(() => null),
       ),

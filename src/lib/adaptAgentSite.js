@@ -20,7 +20,7 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     // near-matching background.
     brokerage: {
       ...brokerage,
-      logo: site.theme === "red" ? brokerage.logos.white : brokerage.logos[site.logo_variant] || brokerage.logo,
+      logo: site.theme === "red" ? (brokerage.logos.white || brokerage.logo) : brokerage.logos[site.logo_variant] || brokerage.logo,
     },
     logoVariant: site.logo_variant || "red",
     slug: site.slug,
