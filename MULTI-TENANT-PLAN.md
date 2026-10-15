@@ -363,6 +363,12 @@ NO DMARC record; fix = allow-list that sender in the Agency's mail admin and add
 alerts may be going to spam until then). (2) Marketing-site flash fixed (commit ded306b, production deployment `dpl_BmXrprqqtqsCPscDLe5YdoqD52CV`): the search-engine copy of each
 marketing page is now visually hidden but still in the page; verified by an early-load screenshot (blank until the app renders), crawlers still get the text, all 19 public addresses unchanged.
 
+**2026-10-15 (app.latchpointstudios.com is live).** Domain added to the Vercel project (verified; DNS was already at Vercel); `VITE_APP_HOSTS=app.latchpointstudios.com`
+set for Production; redeploy `dpl_HYkn9EqMvDfJZV3wgPUgcKfkpUrWGw` (commit 05d3955). Verified in a real browser: sign-in page (Latchpoint mark), personal link
+`/login?org=the-agency-oklahoma` (The Agency logo), `/dashboard` signed out goes to sign-in, `/brokerage` serves The Agency's site, no page errors or failed requests, TLS ok, robots and
+sitemap answer; all 19 existing public addresses unchanged. Not yet done: Supabase Auth redirect URL `https://app.latchpointstudios.com/**` (Terrence, dashboard only: until then invites
+sent FROM the app host fall back to the Site URL) and the `VITE_SITE_ORIGIN` decision (moves canonical addresses and the Copy login link to the app host; still unset).
+
 Still to do (post-cutover):
 1. Marketing pages stay Agency-branded on purpose (they are The Agency's showcase).
 2. (Rehearsal done, see above.) The production cutover, in this order: fresh backup, part A, deploy the API change,
