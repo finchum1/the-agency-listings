@@ -74,7 +74,7 @@ Files are in `supabase/` on the branch. Each is pasted into the Supabase SQL too
   ```
   (Verified against production on 2026-10-14: all matched.) **Any other number = someone changed production since the backup. Stop and find out what.**
 - [ ] **C** **Fresh file backup** (rows and stored files, read-only): `node tools/cutover/backup-data.mjs <listings-app/.env> latchpoint-backups/<date>-pre-cutover <worktree>`. Expect `problems: none`, row counts equal to the live counts, about 117 files. (Tested on staging 2026-10-14: 1,714 rows, 116 files, no problems.) Private People/CRM tables are counted but not copied, as before.
-- [ ] **C** Run `rollback-policies-and-functions.sql`'s preconditions: confirm the file is still byte-identical to `MANIFEST.json`'s checksum, and have it open in a tab.
+- [ ] **C** Have the undo file ready: `shasum -a 256 rollback-policies-and-functions.sql` must equal `7cef4c92f00b11e48e7ded8ee2634a15b787751ac933160e0034961d3b4ffc26` (recorded 2026-10-14; the file itself is unchanged since the Oct 14 backup), and keep it open in a tab.
 
 ### 3.2 The seven parts, in this order
 
