@@ -2,31 +2,24 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
 import { useHomeSummary } from "../../../hooks/useHomeSummary";
+import { useAgentTasks } from "../../../hooks/useAgentTasks";
 import { usePostViewCounts } from "../../../hooks/usePostViewCounts";
 import { agoLabel, daysBetween, toKey } from "../../../lib/homeDates";
 import PeopleHighlights from "./PeopleHighlights";
+import TasksCard from "./TasksCard";
 import { card, muted } from "./styles";
+
 const primaryBtn =
-  "inline-flex items-center justify-center rounded-full bg-[#ed2127] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-3 hover:opacity-90 transition-opacity";
-const ghostBtn =
-  "inline-flex items-center justify-center rounded-full border border-black/10 dark:border-white/15 text-sm font-semibold px-5 py-3 hover:bg-black/5 dark:hover:bg-white/10 transition-colors";
+  "flex w-full items-center justify-center rounded-full bg-[#ed2127] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-3 hover:opacity-90 transition-opacity";
 
-function Stat({ label, value }) {
-  return (
-    <div>
-      <p className="text-2xl font-semibold leading-none">{value}</p>
-      <p className={`text-xs mt-1.5 ${muted}`}>{label}</p>
-    </div>
-  );
-}
-
-const STATUS_LOOK = {
-  published: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-  scheduled: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
-  draft: "bg-black/5 dark:bg-white/10 text-[#1c1a17]/60 dark:text-[#faf9f7]/60",
+const STATUS_WORD = { published: "Published", scheduled: "Scheduled", draft: "Draft" };
+const STATUS_COLOR = {
+  published: "text-emerald-700 dark:text-emerald-400",
+  scheduled: "text-sky-700 dark:text-sky-400",
+  draft: "text-[#1c1a17]/50 dark:text-[#faf9f7]/50",
 };
 
-// The agent's blog at a glance, with the one button they come here for.
+// A compact blog tile: the one-click "write a post" button, a one-line status, and the latest few posts with their views.
 function BlogCard({ posts, hasSite, today }) {
   const now = Date.now();
   const isLive = (p) => p.status === "published" || (p.status === "scheduled" && p.scheduled_at && new Date(p.scheduled_at).getTime() <= now);
@@ -37,71 +30,55 @@ function BlogCard({ posts, hasSite, today }) {
   const daysSince = last ? daysBetween(last.post_date, today) : null;
 
   let nudge;
-  if (!hasSite && posts.length === 0) nudge = "Write your first post. Fresh content is one of the best ways to get found on Google.";
-  else if (posts.length === 0) nudge = "You haven't written a post yet. A short local update is a great place to start.";
+  if (posts.length === 0) nudge = hasSite ? "Write your first post. Fresh content helps you get found on Google." : "Write your first post to get started.";
   else if (drafts.length > 0) nudge = `${drafts.length} draft${drafts.length === 1 ? " is" : "s are"} waiting to be finished.`;
-  else if (daysSince !== null && daysSince >= 21) nudge = `It has been ${agoLabel(daysSince).replace(" ago", "")} since your last post. A quick update keeps your site fresh.`;
-  else if (last) nudge = `Your last post went live ${agoLabel(daysSince)}.`;
-  else nudge = "Your next post is scheduled.";
+  else if (daysSince !== null && daysSince >= 21) nudge = `It has been ${agoLabel(daysSince).replace(" ago", "")} since your last post.`;
+  else if (last) nudge = `Last post went live ${agoLabel(daysSince)}.`;
+  else nudge = "";
 
-  const recent = posts.slice(0, 4);
-  // Page views for the posts shown here (same tally as the Blog Posts page): all-time and the last 30 days.
+  const recent = posts.slice(0, 3);
   const views = usePostViewCounts("agent_post", recent.map((p) => p.id));
 
   return (
-    <section className={`${card} lg:col-span-2 flex flex-col`}>
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="min-w-0">
-          <h2 className="font-display text-lg font-semibold">Your blog</h2>
-          <p className={`text-sm mt-1 ${muted}`}>{nudge}</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Link to="/dashboard/site/blog?new=1" className={primaryBtn}>
-            + Write a new post
-          </Link>
-        </div>
-      </div>
+    <section className={`${card} flex flex-col`}>
+      <h2 className="font-display text-lg font-semibold">Your blog</h2>
+      <p className={`text-xs mt-1 ${muted}`}>
+        {published.length} published · {drafts.length} draft{drafts.length === 1 ? "" : "s"}
+        {scheduled.length > 0 && ` · ${scheduled.length} scheduled`}
+      </p>
+      {nudge && <p className="text-xs mt-1 text-[#1c1a17]/70 dark:text-[#faf9f7]/70">{nudge}</p>}
 
-      <div className="grid grid-cols-3 gap-4 mt-6 pb-6 border-b border-black/5 dark:border-white/10">
-        <Stat label="Published" value={published.length} />
-        <Stat label="Drafts" value={drafts.length} />
-        <Stat label="Scheduled" value={scheduled.length} />
-      </div>
+      <Link to="/dashboard/site/blog?new=1" className={`${primaryBtn} mt-4`}>
+        + Write a new post
+      </Link>
 
-      {recent.length > 0 ? (
-        <ul className="mt-4 divide-y divide-black/5 dark:divide-white/10">
+      {recent.length > 0 && (
+        <ul className="mt-3 divide-y divide-black/5 dark:divide-white/10">
           {recent.map((p) => {
-            const label = isLive(p) ? "published" : p.status;
+            const state = isLive(p) ? "published" : p.status;
+            const v = views[p.id];
             return (
               <li key={p.id}>
-                <Link to={`/dashboard/site/blog?edit=${p.id}`} className="flex items-center gap-3 py-2.5 group">
-                  <span className="min-w-0 flex-1 text-sm font-medium truncate group-hover:underline">{p.title || "Untitled"}</span>
-                  <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize ${STATUS_LOOK[label] || STATUS_LOOK.draft}`}>{label}</span>
-                  <span
-                    className={`shrink-0 text-xs text-right w-16 sm:w-28 ${muted}`}
-                    title={isLive(p) ? `${(views[p.id]?.last30 || 0).toLocaleString()} in the last 30 days` : "Views start once the post is live"}
-                  >
-                    {isLive(p) ? (
-                      <>
-                        <strong className="text-[#1c1a17] dark:text-[#faf9f7] font-semibold">{(views[p.id]?.total || 0).toLocaleString()}</strong> views
-                        <span className="hidden sm:block">{(views[p.id]?.last30 || 0).toLocaleString()} in 30 days</span>
-                      </>
-                    ) : (
-                      "No views yet"
+                <Link to={`/dashboard/site/blog?edit=${p.id}`} className="block py-2 group">
+                  <span className="block text-sm font-medium truncate group-hover:underline">{p.title || "Untitled"}</span>
+                  <span className="block text-[11px] mt-0.5 truncate">
+                    <span className={`font-semibold ${STATUS_COLOR[state] || STATUS_COLOR.draft}`}>{STATUS_WORD[state] || state}</span>
+                    {isLive(p) && (
+                      <span className={muted}>
+                        {" "}
+                        · {(v?.total || 0).toLocaleString()} views · {(v?.last30 || 0).toLocaleString()} in 30 days
+                      </span>
                     )}
-                  </span>
-                  <span className={`shrink-0 text-xs hidden md:block w-24 text-right ${muted}`}>
-                    {new Date(`${p.post_date}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
                   </span>
                 </Link>
               </li>
             );
           })}
         </ul>
-      ) : null}
+      )}
 
-      <div className="mt-auto pt-4">
-        <Link to="/dashboard/site/blog" className="text-sm font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+      <div className="mt-auto pt-2">
+        <Link to="/dashboard/site/blog" className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
           All blog posts →
         </Link>
       </div>
@@ -109,53 +86,30 @@ function BlogCard({ posts, hasSite, today }) {
   );
 }
 
-function ListingsCard({ listings, span }) {
-  const count = (s) => listings.filter((l) => l.status === s).length;
-  return (
-    <section className={`${card} flex flex-col ${span ? "lg:col-span-3" : ""}`}>
-      <div className="flex items-start justify-between gap-3">
-        <h2 className="font-display text-lg font-semibold">Your listings</h2>
-        <Link to="/dashboard/listings/new" className={ghostBtn.replace("px-5 py-3", "px-4 py-2")}>
-          + Add
-        </Link>
-      </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-5 mt-6">
-        <Stat label="For sale" value={count("for_sale")} />
-        <Stat label="Coming soon" value={count("coming_soon")} />
-        <Stat label="Pending" value={count("pending")} />
-        <Stat label="Drafts" value={count("draft")} />
-      </div>
-      <div className="mt-auto pt-5">
-        <Link to="/dashboard/listings" className="text-sm font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
-          All listings →
-        </Link>
-      </div>
-    </section>
-  );
-}
-
-// The page agents land on after signing in: a welcome, their blog (with a one-click "write a post"), what needs attention
-// in People, and their listings. Each part only appears for what that agent's account has switched on.
+// The page agents land on after signing in: a welcome, a compact blog tile, their own task list, and what needs
+// attention in People. Each part only appears for what that agent's account has switched on.
 export default function DashboardHomePage() {
   const { user, profile } = useAuth();
   const [peopleSummary, setPeopleSummary] = useState(null);
+  const tasksApi = useAgentTasks(user?.id);
 
   const wantsBlog = (profile?.site_access || "full") !== "none";
   const wantsPeople = !!profile?.people_enabled;
-  const { posts, hasSite, listings, loading } = useHomeSummary(user?.id, { wantsBlog, wantsListings: true });
+  const { posts, hasSite, loading } = useHomeSummary(user?.id, { wantsBlog, wantsListings: false });
 
   const first = (profile?.full_name || "").trim().split(/\s+/)[0];
   const now = new Date();
   const today = toKey(now);
   const dateLine = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 
-  let summary = "Here's what's going on.";
-  if (peopleSummary) {
-    const bits = [];
-    if (peopleSummary.dueNow > 0) bits.push(`${peopleSummary.dueNow} follow-up${peopleSummary.dueNow === 1 ? "" : "s"} due today or overdue`);
-    if (peopleSummary.overdueTasks > 0) bits.push(`${peopleSummary.overdueTasks} overdue task${peopleSummary.overdueTasks === 1 ? "" : "s"}`);
-    summary = bits.length ? `You have ${bits.join(" and ")}.` : "You're all caught up on follow-ups and tasks.";
-  }
+  const tasksDue = tasksApi.tasks.filter((t) => !t.done && t.due_date && t.due_date <= today).length;
+  const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+  const bits = [];
+  if (peopleSummary?.dueNow > 0) bits.push(`${plural(peopleSummary.dueNow, "follow-up")} due today or overdue`);
+  if (peopleSummary?.overdueTasks > 0) bits.push(`${plural(peopleSummary.overdueTasks, "overdue deal task")}`);
+  if (tasksDue > 0) bits.push(`${plural(tasksDue, "task")} on your list due today or overdue`);
+  const settled = !tasksApi.loading && (!wantsPeople || peopleSummary);
+  const summary = !settled ? "Here's what's going on." : bits.length ? `You have ${bits.join(" and ")}.` : "You're all caught up.";
 
   return (
     <div className="max-w-6xl min-w-0 space-y-6">
@@ -165,14 +119,10 @@ export default function DashboardHomePage() {
         <p className="text-sm mt-1.5 text-[#1c1a17]/60 dark:text-[#faf9f7]/60">{summary}</p>
       </header>
 
-      {loading ? (
-        <p className={`text-sm ${muted}`}>Loading…</p>
-      ) : (
-        <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-3">
-          {wantsBlog && <BlogCard posts={posts} hasSite={hasSite} today={today} />}
-          <ListingsCard listings={listings} span={!wantsBlog} />
-        </div>
-      )}
+      <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-3 items-start">
+        {wantsBlog && !loading && <BlogCard posts={posts} hasSite={hasSite} today={today} />}
+        <TasksCard tasksApi={tasksApi} span={!wantsBlog} />
+      </div>
 
       {wantsPeople && <PeopleHighlights onSummary={setPeopleSummary} />}
     </div>
