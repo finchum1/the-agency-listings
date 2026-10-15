@@ -264,11 +264,11 @@ export default function PeopleBoard({ group }) {
 
       {(error || boardError) && <p className="text-sm text-red-600 dark:text-red-400">{error || boardError}</p>}
 
-      {/* The scroll area is the full board height (not just as tall as the
-          shortest column), so the horizontal scrollbar stays pinned near
-          the bottom of the screen and empty space under a column still
-          scrolls sideways. */}
-      <div className="flex gap-3 overflow-x-auto overflow-y-auto h-[calc(100vh-14rem)] min-h-[26rem] -mx-1 px-1 pb-1">
+      {/* The board is a fixed-height strip: it scrolls sideways, and each
+          column scrolls up and down on its own. The strip is the full board
+          height (not just as tall as the shortest column), so the horizontal
+          scrollbar stays pinned near the bottom of the screen. */}
+      <div className="flex gap-3 overflow-x-auto overflow-y-hidden h-[calc(100vh-14rem)] min-h-[26rem] -mx-1 px-1 pb-1">
         {stages.map((stage, stageIndex) => {
           const col = sortCol(active.filter((p) => p.stage === stage));
           return (
@@ -290,11 +290,11 @@ export default function PeopleBoard({ group }) {
                 const id = e.dataTransfer.getData("text/plain");
                 if (id) moveToStage(id, stage);
               }}
-              className={`w-64 shrink-0 min-h-full rounded-2xl p-2.5 space-y-2 transition-colors ${
+              className={`w-64 shrink-0 h-full flex flex-col gap-2 rounded-2xl p-2.5 transition-colors ${
                 dragOver === stage ? "bg-[#ed2127]/10 dark:bg-[#f2454b]/15" : "bg-black/[0.03] dark:bg-white/[0.04]"
               }`}
             >
-              <div className="flex items-center justify-between gap-2 px-1.5 pt-1">
+              <div className="shrink-0 flex items-center justify-between gap-2 px-1.5 pt-1">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span
                     draggable
@@ -333,6 +333,9 @@ export default function PeopleBoard({ group }) {
                 </div>
               </div>
 
+              {/* Each column scrolls on its own, so a long list never spills past
+                  the bottom of the column or pushes the others around. */}
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-2 -mx-1 px-1 pb-1 [scrollbar-width:thin]">
               {addingStage === stage && (
                 <form
                   onSubmit={handleAdd}
@@ -430,6 +433,7 @@ export default function PeopleBoard({ group }) {
               {col.length === 0 && addingStage !== stage && (
                 <p className="text-xs text-[#1c1a17]/30 dark:text-[#faf9f7]/30 px-1.5 pb-2">Nobody here yet.</p>
               )}
+              </div>
             </div>
           );
         })}
