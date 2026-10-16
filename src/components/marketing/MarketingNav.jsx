@@ -18,6 +18,17 @@ const LINKS = [
   { path: "/upcoming", label: "Upcoming" },
 ];
 
+// The Latchpoint marketing host's header scrolls through the landing page's own sections (the same five anchors as
+// realestate.latchpointstudios.com) instead of opening the deep-dive pages, which stay linked from the landing page's
+// footer row. `/#...` also works from those pages.
+const ANCHOR_LINKS = [
+  { href: "/#home", label: "Your day" },
+  { href: "/#website", label: "Website" },
+  { href: "/#back-office", label: "Back office" },
+  { href: "/#who", label: "Who it's for" },
+  { href: "/#faq", label: "FAQ" },
+];
+
 // Flush, full-width sticky header for every marketing page (home + the
 // three product deep-dives) — not a detached/floating pill (that
 // treatment exists only as agent sites' opt-in "Floating" header style
@@ -78,8 +89,7 @@ export default function MarketingNav() {
   if (isMarketingHost(window.location.hostname)) {
     return (
       <LatchpointNav
-        links={LINKS}
-        pathname={location.pathname}
+        links={ANCHOR_LINKS}
         open={mobileNavOpen}
         onToggle={() => setMobileNavOpen((v) => !v)}
         onClose={() => setMobileNavOpen(false)}

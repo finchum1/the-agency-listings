@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import MarketingNav from "../components/marketing/MarketingNav";
@@ -90,6 +91,14 @@ export default function LandingPage() {
   const onMarketingHost = isMarketingHost(window.location.hostname);
   const cta = onMarketingHost ? "#early-access" : contactMailto("Interested in the dashboard");
 
+  // Arriving from another page with a #section address: the browser looked for it before the page had rendered.
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (!id) return;
+    const t = setTimeout(() => document.getElementById(id)?.scrollIntoView(), 350);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#faf9f7] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] overflow-x-clip">
       <MarketingNav />
@@ -109,7 +118,7 @@ export default function LandingPage() {
               <span className="italic text-[#ed2127]">in one place.</span>
             </h1>
             <p className="text-[17px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-8 max-w-md">
-              Your site, leads, pipeline, transactions, and calendar in one dashboard, already running at The Agency Oklahoma.
+              Your site, leads, pipeline, transactions, and calendar in one dashboard, already running at The Agency.
               We build it, move you over, and keep it running.
             </p>
             <div className="flex flex-wrap items-center gap-4">
@@ -335,7 +344,7 @@ export default function LandingPage() {
       </section>
 
       {/* Who it's for */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
+      <section id="who" className="scroll-mt-28 px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl">
           <Reveal className="max-w-2xl">
             <Eyebrow>Who it&rsquo;s for</Eyebrow>
@@ -380,7 +389,7 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="px-6 lg:px-10 pb-24 lg:pb-32">
+      <section id="faq" className="scroll-mt-28 px-6 lg:px-10 pb-24 lg:pb-32">
         <div className="mx-auto max-w-3xl">
           <Reveal>
             <Eyebrow>Questions</Eyebrow>

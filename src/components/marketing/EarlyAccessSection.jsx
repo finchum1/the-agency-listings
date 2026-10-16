@@ -134,7 +134,7 @@ export default function EarlyAccessSection() {
                       <label htmlFor="ea-company" className={label}>
                         Office or team <span className="font-normal text-[#1c1a17]/40 dark:text-[#faf9f7]/40">(optional)</span>
                       </label>
-                      <input id="ea-company" name="company" type="text" autoComplete="organization" className={input} placeholder="The Agency Oklahoma" />
+                      <input id="ea-company" name="company" type="text" autoComplete="organization" className={input} placeholder="Your office" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label htmlFor="ea-tools" className={label}>

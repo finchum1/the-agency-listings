@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { LatchpointWordmark } from "./LatchpointMarks";
 import ThemeToggle from "./MarketingThemeToggle";
@@ -21,7 +20,7 @@ function ArrowRight() {
   );
 }
 
-export default function LatchpointNav({ links, pathname, open, onToggle, onClose }) {
+export default function LatchpointNav({ links, open, onToggle, onClose }) {
   return (
     <>
       <div className="h-[92px] sm:h-[104px]" aria-hidden="true" />
@@ -33,25 +32,15 @@ export default function LatchpointNav({ links, pathname, open, onToggle, onClose
             </a>
 
             <nav className="hidden items-center gap-1 xl:flex">
-              {links.map((l) => {
-                const active = pathname === l.path;
-                return (
-                  <Link
-                    key={l.path}
-                    to={l.path}
-                    className={`group relative whitespace-nowrap px-3 py-1.5 font-geist text-sm transition-colors ${
-                      active ? "text-(--lp-text)" : "text-(--lp-text-muted) hover:text-(--lp-text)"
-                    }`}
-                  >
-                    {l.label}
-                    <span
-                      className={`absolute inset-x-3 -bottom-0.5 h-px origin-left bg-(--lp-ember) transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                        active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-100"
-                      }`}
-                    />
-                  </Link>
-                );
-              })}
+              {links.map((l) => (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  className="whitespace-nowrap px-3 py-1.5 font-geist text-sm text-(--lp-text-muted) transition-colors hover:text-(--lp-text)"
+                >
+                  {l.label}
+                </a>
+              ))}
             </nav>
 
             <div className="flex shrink-0 items-center gap-1">
@@ -93,24 +82,16 @@ export default function LatchpointNav({ links, pathname, open, onToggle, onClose
                 className="glass-pill glass-dense absolute inset-x-0 top-[calc(100%+0.5rem)] rounded-[20px] p-2 xl:hidden"
               >
                 <div className="flex flex-col gap-1">
-                  {links.map((l) => {
-                    const active = pathname === l.path;
-                    return (
-                      <Link
-                        key={l.path}
-                        to={l.path}
-                        onClick={onClose}
-                        className={`rounded-xl px-3 py-2.5 font-geist text-[15px] transition-colors hover:bg-black/5 dark:hover:bg-white/10 ${
-                          active ? "text-(--lp-text)" : "text-(--lp-text-muted)"
-                        }`}
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          {active && <span className="size-1.5 rounded-full bg-(--lp-ember)" />}
-                          {l.label}
-                        </span>
-                      </Link>
-                    );
-                  })}
+                  {links.map((l) => (
+                    <a
+                      key={l.href}
+                      href={l.href}
+                      onClick={onClose}
+                      className="rounded-xl px-3 py-2.5 font-geist text-[15px] text-(--lp-text-muted) transition-colors hover:bg-black/5 hover:text-(--lp-text) dark:hover:bg-white/10"
+                    >
+                      {l.label}
+                    </a>
+                  ))}
                   <a
                     href="/#early-access"
                     onClick={onClose}
