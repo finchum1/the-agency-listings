@@ -1,11 +1,10 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
 import { useHomeSummary } from "../../../hooks/useHomeSummary";
 import { useAgentTasks } from "../../../hooks/useAgentTasks";
+import { usePeopleSummary } from "../../../hooks/usePeopleSummary";
 import { usePostViewCounts } from "../../../hooks/usePostViewCounts";
 import { agoLabel, daysBetween, toKey } from "../../../lib/homeDates";
-import PeopleHighlights from "./PeopleHighlights";
 import TasksCard from "./TasksCard";
 import { card, muted } from "./styles";
 
@@ -90,11 +89,11 @@ function BlogCard({ posts, hasSite, today }) {
 // attention in People. Each part only appears for what that agent's account has switched on.
 export default function DashboardHomePage() {
   const { user, profile } = useAuth();
-  const [peopleSummary, setPeopleSummary] = useState(null);
   const tasksApi = useAgentTasks(user?.id);
 
   const wantsBlog = (profile?.site_access || "full") !== "none";
   const wantsPeople = !!profile?.people_enabled;
+  const peopleSummary = usePeopleSummary(wantsPeople);
   const { posts, hasSite, loading } = useHomeSummary(user?.id, { wantsBlog, wantsListings: false });
 
   const first = (profile?.full_name || "").trim().split(/\s+/)[0];
@@ -116,15 +115,23 @@ export default function DashboardHomePage() {
       <header>
         <p className={`text-xs font-semibold uppercase tracking-[0.14em] ${muted}`}>{dateLine}</p>
         <h1 className="text-3xl font-display font-semibold mt-1.5">{first ? `Welcome, ${first}` : "Welcome"}</h1>
-        <p className="text-sm mt-1.5 text-[#1c1a17]/60 dark:text-[#faf9f7]/60">{summary}</p>
+        <p className="text-sm mt-1.5 text-[#1c1a17]/60 dark:text-[#faf9f7]/60">
+          {summary}
+          {wantsPeople && (
+            <>
+              {" "}
+              <Link to="/dashboard/people/overview" className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                Open People overview →
+              </Link>
+            </>
+          )}
+        </p>
       </header>
 
       <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-3 items-start">
         {wantsBlog && !loading && <BlogCard posts={posts} hasSite={hasSite} today={today} />}
         <TasksCard tasksApi={tasksApi} span={!wantsBlog} />
       </div>
-
-      {wantsPeople && <PeopleHighlights onSummary={setPeopleSummary} />}
     </div>
   );
 }
