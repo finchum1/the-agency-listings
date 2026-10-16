@@ -9,20 +9,21 @@ import ThemeToggle from "./MarketingThemeToggle";
 // only. The pill is fixed, so a spacer in the normal flow holds the same
 // room the old in-flow header did and nothing on the page shifts.
 //
-// Links collapse into a menu below `lg` (the five product links plus the
-// wordmark and tag need the room); the tag stays visible at every size.
+// Links collapse into a menu below `xl` (the five product links, the wordmark and tag, the theme switch and the
+// early-access button need the room); the button shows from `lg`, the tag at every size. The theme switch sits
+// directly left of the button.
 export default function LatchpointNav({ links, pathname, open, onToggle, onClose }) {
   return (
     <>
       <div className="h-[92px] sm:h-[104px]" aria-hidden="true" />
       <header className="fixed inset-x-0 top-4 z-40 flex justify-center px-4 sm:top-6">
-        <div className="relative w-full max-w-5xl">
+        <div className="relative w-full max-w-6xl">
           <div className="glass-pill flex items-center justify-between gap-2 rounded-full py-2 pl-4 pr-2 sm:gap-4 sm:pl-5">
             <a href="https://latchpointstudios.com" className="flex shrink-0 items-center" aria-label="Latchpoint Studios, home">
               <LatchpointWordmark tag="The Agency" />
             </a>
 
-            <nav className="hidden items-center gap-1 lg:flex">
+            <nav className="hidden items-center gap-1 xl:flex">
               {links.map((l) => {
                 const active = pathname === l.path;
                 return (
@@ -45,19 +46,19 @@ export default function LatchpointNav({ links, pathname, open, onToggle, onClose
             </nav>
 
             <div className="flex shrink-0 items-center gap-1">
+              <ThemeToggle />
               <a
                 href="/#early-access"
-                className="mr-1 hidden whitespace-nowrap rounded-full bg-(--lp-ember) px-4 py-2 font-geist text-sm font-medium text-[#08090b] transition-colors hover:bg-[#f0714f] lg:inline-flex xl:px-5"
+                className="ml-1 hidden whitespace-nowrap rounded-full bg-(--lp-ember) px-5 py-2 font-geist text-sm font-medium text-[#08090b] transition-colors hover:bg-[#f0714f] lg:inline-flex"
               >
-                Request<span className="hidden xl:inline">&nbsp;early access</span>
+                Request early access
               </a>
-              <ThemeToggle />
               <button
                 type="button"
                 onClick={onToggle}
                 aria-label={open ? "Close menu" : "Open menu"}
                 aria-expanded={open}
-                className="flex size-9 shrink-0 items-center justify-center rounded-full text-(--lp-text) transition-colors hover:bg-black/5 dark:hover:bg-white/10 lg:hidden"
+                className="flex size-9 shrink-0 items-center justify-center rounded-full text-(--lp-text) transition-colors hover:bg-black/5 dark:hover:bg-white/10 xl:hidden"
               >
                 {open ? (
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -79,7 +80,7 @@ export default function LatchpointNav({ links, pathname, open, onToggle, onClose
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.98 }}
                 transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="glass-pill glass-dense absolute inset-x-0 top-[calc(100%+0.5rem)] rounded-[20px] p-2 lg:hidden"
+                className="glass-pill glass-dense absolute inset-x-0 top-[calc(100%+0.5rem)] rounded-[20px] p-2 xl:hidden"
               >
                 <div className="flex flex-col gap-1">
                   {links.map((l) => {
