@@ -167,6 +167,10 @@
             <input id="title" type="text" name="title" placeholder="Real Estate Advisor" maxlength="80" />
           </div>
           <div class="field">
+            <label for="credentials">Second line <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--muted)">(optional)</span></label>
+            <input id="credentials" type="text" name="credentials" placeholder="Credentials or a tagline, e.g. CRS, GRI, ABR" maxlength="100" />
+          </div>
+          <div class="field">
             <label for="phone">Phone</label>
             <input id="phone" type="tel" name="phone" placeholder="405-555-0123" maxlength="30" autocomplete="tel" />
           </div>
@@ -315,7 +319,7 @@
   var STORE_KEY = "agency-signature-v1";
 
   var SAMPLE = { name: "Your Name", title: "Real Estate Advisor", phone: "405-555-0123", website: "yourwebsite.com",
-                 instagram: "", facebook: "", linkedin: "", tiktok: "", x: "", youtube: "" };
+                 credentials: "", instagram: "", facebook: "", linkedin: "", tiktok: "", x: "", youtube: "" };
 
   var NETWORKS = [
     { key: "instagram", label: "Instagram", base: "https://instagram.com/" },
@@ -327,7 +331,7 @@
   ];
 
   var $ = function (id) { return document.getElementById(id); };
-  var fields = ["name", "title", "phone", "website"].concat(NETWORKS.map(function (n) { return n.key; }));
+  var fields = ["name", "title", "credentials", "phone", "website"].concat(NETWORKS.map(function (n) { return n.key; }));
 
   function esc(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -399,6 +403,7 @@
     h.push('    <td valign="middle" style="padding:0 0 0 20px;">');
     h.push('      <div style="font-size:17px;font-weight:bold;line-height:1.3;color:#1c1a17;">' + esc(v.name) + '</div>');
     if ((v.title || "").trim()) h.push('      <div style="font-size:13px;line-height:1.5;color:#ed2127;">' + esc(v.title.trim()) + '</div>');
+    if ((v.credentials || "").trim()) h.push('      <div style="font-size:12px;line-height:1.5;color:#6b6760;">' + esc(v.credentials.trim()) + '</div>');
     if (tel) h.push('      <div style="font-size:13px;line-height:1.6;padding-top:8px;"><a href="' + esc(tel) + '" style="color:#1c1a17;text-decoration:none;">' + esc(phoneShown(v.phone)) + '</a></div>');
     if (site) h.push('      <div style="font-size:13px;line-height:1.6;' + (tel ? '' : 'padding-top:8px;') + '"><a href="' + esc(site.href) + '" style="color:#ed2127;text-decoration:none;">' + esc(site.shown) + '</a></div>');
     if (icons.length) {
