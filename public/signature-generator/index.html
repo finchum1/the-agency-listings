@@ -82,6 +82,11 @@
     .btn.primary { background: var(--accent); color: var(--accent-ink); }
     .btn.secondary { background: transparent; color: var(--text); border-color: var(--line); }
     .btn.link { background: none; border: 0; color: var(--muted); padding: 6px 4px; font-size: 13px; text-decoration: underline; }
+    .support { margin: 28px 0 8px; padding: 22px 24px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: flex; align-items: center; justify-content: space-between; gap: 16px 28px; flex-wrap: wrap; }
+    .support[hidden] { display: none; }
+    .support h2 { font-size: 20px; margin: 0 0 4px; }
+    .support p { margin: 0; color: var(--muted); font-size: 15px; max-width: 58ch; }
+    .support a.btn { text-decoration: none; display: inline-block; white-space: nowrap; }
     .btn:disabled { opacity: 0.45; cursor: not-allowed; }
     .btn:not(:disabled):hover { filter: brightness(0.94); }
     .row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
@@ -278,6 +283,14 @@
       </div>
     </section>
 
+    <aside class="support" id="support" hidden aria-labelledby="supportTitle">
+      <div>
+        <h2 id="supportTitle">Free to use, built by one small studio</h2>
+        <p>If this saved you some time, you can chip in to help Latchpoint Studios keep building free tools like this one. Entirely optional, and thank you.</p>
+      </div>
+      <a class="btn primary" id="donate" href="#" target="_blank" rel="noopener noreferrer">Donate to Latchpoint Studios</a>
+    </aside>
+
     <footer>
       Everything you type stays in your browser. Nothing is sent or stored on a server. Built by Latchpoint Studios.
     </footer>
@@ -286,6 +299,14 @@
 <script>
 (function () {
   "use strict";
+
+  // Donations: the Stripe link for Latchpoint Studios. While this is empty the support box stays hidden,
+  // so the page never shows a button that goes nowhere.
+  var DONATE_URL = "";
+  (function () {
+    var box = document.getElementById("support"), link = document.getElementById("donate");
+    if (box && link && /^https:\/\//.test(DONATE_URL)) { link.href = DONATE_URL; box.hidden = false; }
+  })();
 
   // The copied signature points at images on this site, so the address
   // must stay put: changing it would break every signature already pasted.
