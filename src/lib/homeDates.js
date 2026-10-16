@@ -35,3 +35,20 @@ export function agoLabel(days) {
   if (days < 60) return `${Math.round(days / 7)} weeks ago`;
   return `${Math.round(days / 30)} months ago`;
 }
+
+/** The Sunday on or before a date. */
+export const startOfWeek = (d) => addDays(d, -d.getDay());
+
+/** The six-row (or five-row) grid of days a month calendar shows, Sunday first: [{ key, inMonth }]. */
+export function monthGrid(year, month) {
+  const first = new Date(year, month, 1);
+  const start = startOfWeek(first);
+  const last = new Date(year, month + 1, 0);
+  const weeks = Math.ceil((first.getDay() + last.getDate()) / 7);
+  return Array.from({ length: weeks * 7 }, (_, i) => {
+    const d = addDays(start, i);
+    return { key: toKey(d), inMonth: d.getMonth() === month };
+  });
+}
+
+export const timeLabel = (iso) => new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });

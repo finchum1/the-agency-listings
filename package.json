@@ -21,6 +21,7 @@
     "@vercel/functions": "^3.9.3",
     "dompurify": "^3.4.13",
     "framer-motion": "^13.1.0",
+    "ical.js": "^2.2.1",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
     "leaflet.markercluster": "^1.5.3",

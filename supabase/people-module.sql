@@ -466,3 +466,43 @@ create policy agent_tasks_owner_all on public.agent_tasks
 --     is moved into Transactions, so they pick the side for that deal.
 alter table public.people drop constraint if exists people_side_check;
 alter table public.people add constraint people_side_check check (side in ('buyer', 'seller', 'both'));
+
+-- 18. Dashboard home page: calendars and goals.
+--     agent_calendars: the calendars an agent has linked to their schedule, by each calendar's private iCal address
+--     (Google Calendar: Settings > Integrate calendar > "Secret address in iCal format"). The address is a credential,
+--     so the rows are strictly private to the agent (no admin, organization or platform access) and the dashboard only
+--     ever lists id/name/color; the server (api/calendar.js) reads the address as the signed-in agent to fetch events.
+--     people_settings.goals: the agent's yearly targets for the home page scorecard, { "2026": { commission, deals } }.
+create table if not exists public.agent_calendars (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  name text not null check (length(btrim(name)) between 1 and 80),
+  ics_url text not null check (ics_url ~ '^https://[^[:space:]]+$' and length(ics_url) <= 2000),
+  color text not null default '#ed2127' check (color ~* '^#[0-9a-f]{6}$'),
+  enabled boolean not null default true,
+  created_at timestamptz not null default now()
+);
+create index if not exists agent_calendars_owner_idx on public.agent_calendars (owner_id);
+alter table public.agent_calendars enable row level security;
+revoke all on public.agent_calendars from anon;
+drop policy if exists agent_calendars_owner_all on public.agent_calendars;
+create policy agent_calendars_owner_all on public.agent_calendars
+  for all to authenticated
+  using (owner_id = auth.uid())
+  with check (owner_id = auth.uid());
+
+create or replace function public.limit_agent_calendars() returns trigger
+language plpgsql security definer set search_path = public as
+$$
+begin
+  if (select count(*) from public.agent_calendars where owner_id = new.owner_id) >= 10 then
+    raise exception 'You can link up to 10 calendars' using errcode = 'check_violation';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists limit_agent_calendars on public.agent_calendars;
+create trigger limit_agent_calendars before insert on public.agent_calendars
+  for each row execute function public.limit_agent_calendars();
+
+alter table public.people_settings add column if not exists goals jsonb not null default '{}'::jsonb;
