@@ -22,7 +22,7 @@ const KEY_DATES = [
 
 const UPCOMING_DAYS = 14;
 const FOLLOW_UP_DAYS = 7;
-const FOLLOW_UP_SHOW = 5; // rows shown per follow-up group before "N more"
+const FOLLOW_UP_SHOW = 5; // rows shown per follow-up / checklist-task group before "N more"
 
 function toKey(d) {
   const pad = (n) => String(n).padStart(2, "0");
@@ -285,13 +285,18 @@ export default function PeopleOverview() {
               [`Next ${FOLLOW_UP_DAYS} days`, upcomingTasks],
             ]
               .filter(([, list]) => list.length > 0)
-              .map(([title, list]) => (
+              .map(([title, list]) => {
+                const stateKey = `tasks:${title}`;
+                const expanded = !!followExpanded[stateKey];
+                const shown = expanded ? list : list.slice(0, FOLLOW_UP_SHOW);
+                return (
                 <div key={title} className="space-y-1.5">
+
                   <p className="text-xs font-semibold uppercase tracking-wide text-[#1c1a17]/60 dark:text-[#faf9f7]/60">
                     {title} ({list.length})
                   </p>
                   <ul className="space-y-1.5">
-                    {list.map(({ task, person, due }) => (
+                    {shown.map(({ task, person, due }) => (
                       <li key={task.id} className="flex items-start gap-2.5 rounded-xl border border-black/10 dark:border-white/15 px-3 py-2.5">
                         <input
                           type="checkbox"
@@ -310,8 +315,18 @@ export default function PeopleOverview() {
                       </li>
                     ))}
                   </ul>
+                  {list.length > FOLLOW_UP_SHOW && (
+                    <button
+                      type="button"
+                      onClick={() => setFollowExpanded((x) => ({ ...x, [stateKey]: !expanded }))}
+                      className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline"
+                    >
+                      {expanded ? "Show fewer" : `${list.length - FOLLOW_UP_SHOW} more`}
+                    </button>
+                  )}
                 </div>
-              ))}
+                );
+              })}
           </div>
         )}
       </section>
