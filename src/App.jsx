@@ -28,6 +28,7 @@ import PublicAgentSitePage from "./pages/PublicAgentSitePage";
 import PublicAgentPostPage from "./pages/PublicAgentPostPage";
 import PublicAgentAreaPage from "./pages/PublicAgentAreaPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import { AboutPage, PrivacyPage, TermsPage } from "./pages/LegalPages";
 import LandingPage from "./pages/LandingPage";
 import AgentWebsitesPage from "./pages/AgentWebsitesPage";
 import PropertyWebsitesPage from "./pages/PropertyWebsitesPage";
@@ -97,6 +98,9 @@ export default function App() {
         <Route path="/brokerage-website" element={<BrokerageWebsitePage />} />
         <Route path="/upcoming" element={<UpcomingPage />} />
         <Route path="/people" element={<PeoplePage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     );
@@ -119,6 +123,9 @@ export default function App() {
       <Route path="/brokerage-website" element={<BrokerageWebsitePage />} />
       <Route path="/upcoming" element={<UpcomingPage />} />
         <Route path="/people" element={<PeoplePage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/accept-invite" element={<SetPasswordPage />} />
 
