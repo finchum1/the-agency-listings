@@ -3,11 +3,13 @@
 //   { action: "events", start, end, tz }  -> events from every enabled calendar the agent has linked, for that range
 //   { action: "check", url }               -> fetches one address (before it is saved) and reports whether it is a calendar
 //
-// Calendars are linked by their private iCal address, stored in agent_calendars (private to the agent: row-level
-// security means this function, which acts AS the signed-in agent, can only ever read their own). The address is never
-// sent back to the browser, and error messages never contain it.
-import { createClient } from "@supabase/supabase-js";
+// A linked calendar is either a private iCal address (read-only) or a calendar from a connected Google account (read live
+// from Google, and writable through api/google.js). Both live in agent_calendars, private to the agent: row-level security
+// means this function, which acts AS the signed-in agent, can only ever read their own. iCal addresses and Google tokens
+// are never sent back to the browser, and error messages never contain them.
+import { authenticate, serviceClient } from "./_lib/authUser.js";
 import { expandEvents, feedName, loadFeedText, normalizeIcsUrl } from "./_lib/calendarFeed.js";
+import { accessTokenFor, googleConfigured, listEvents } from "./_lib/googleCalendar.js";
 
 const MAX_RANGE_DAYS = 70;
 
@@ -27,18 +29,9 @@ export default async function handler(req, res) {
   }
   res.setHeader("Cache-Control", "no-store");
 
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !anonKey) return res.status(500).json({ error: "Server not configured." });
-
-  const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
-  if (!token) return res.status(401).json({ error: "Not signed in." });
-  const supabase = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: `Bearer ${token}` } } });
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser(token);
-  if (userError || !user) return res.status(401).json({ error: "Invalid session." });
+  const auth = await authenticate(req, res);
+  if (!auth) return;
+  const { supabase, user } = auth;
 
   const { action } = req.body || {};
 
@@ -62,13 +55,35 @@ export default async function handler(req, res) {
     const tz = validTimeZone(req.body?.tz);
 
     // As the signed-in agent: row-level security returns only their own calendars.
-    const { data: calendars, error } = await supabase.from("agent_calendars").select("id, name, color, ics_url").eq("enabled", true).order("created_at");
+    const { data: calendars, error } = await supabase
+      .from("agent_calendars")
+      .select("id, name, color, ics_url, source, connection_id, google_calendar_id, can_write")
+      .eq("enabled", true)
+      .order("created_at");
     if (error) return res.status(500).json({ error: "Couldn't load your calendars." });
+
+    // Google calendars: confirm each connection really is this agent's before using its token.
+    let admin = null;
+    const verified = new Map();
+    const connectionOk = async (id) => {
+      if (!verified.has(id)) {
+        admin = admin || serviceClient();
+        const { data } = await admin.from("google_connections").select("id").eq("id", id).eq("owner_id", user.id).maybeSingle();
+        verified.set(id, Boolean(data));
+      }
+      return verified.get(id);
+    };
 
     const results = await Promise.allSettled(
       (calendars || []).map(async (c) => {
+        if (c.source === "google") {
+          if (!googleConfigured()) throw new Error("Google sign-in isn't set up on this server yet.");
+          if (!(await connectionOk(c.connection_id))) throw new Error("That Google account isn't connected.");
+          const token = await accessTokenFor(admin, c.connection_id);
+          return listEvents(token, c.google_calendar_id, start, end, { rowId: c.id, canWrite: c.can_write });
+        }
         const text = await loadFeedText(c.ics_url);
-        return expandEvents(text, start, end, tz).map((e) => ({ ...e, calendarId: c.id }));
+        return expandEvents(text, start, end, tz).map((e) => ({ ...e, calendarId: c.id, source: "ics", canWrite: false }));
       }),
     );
     const events = [];

@@ -20,7 +20,7 @@ export default function DashboardHomePage() {
   const wantsBlog = (profile?.site_access || "full") !== "none";
   const wantsPeople = !!profile?.people_enabled;
   const peopleSummary = usePeopleSummary(wantsPeople);
-  const { alerts, loading: alertsLoading } = useLeadAlerts(user?.id, wantsPeople);
+  const { alerts, loading: alertsLoading, dismiss: dismissAlert } = useLeadAlerts(user?.id, wantsPeople);
 
   const first = (profile?.full_name || "").trim().split(/\s+/)[0];
   const now = new Date();
@@ -58,7 +58,7 @@ export default function DashboardHomePage() {
 
       <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-3 items-start">
         <ScheduleCard userId={user?.id} wantsPeople={wantsPeople} tasks={tasksApi.tasks} />
-        <LeadAlertsCard alerts={alerts} loading={alertsLoading} peopleEnabled={wantsPeople} />
+        <LeadAlertsCard alerts={alerts} loading={alertsLoading} peopleEnabled={wantsPeople} onDismiss={dismissAlert} />
       </div>
 
       <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-3 items-start">

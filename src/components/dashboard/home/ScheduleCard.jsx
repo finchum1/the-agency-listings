@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
-import { checkCalendarAddress, useCalendarEvents } from "../../../hooks/useCalendarEvents";
+import { useCalendarEvents } from "../../../hooks/useCalendarEvents";
 import { addDays, dayLabel, fromKey, monthGrid, startOfWeek, timeLabel, toKey } from "../../../lib/homeDates";
+import { CalendarsPanel, EventModal } from "./CalendarPanels";
 import { card, muted } from "./styles";
 
 const DEAL_COLOR = "#0f766e";
 const TASK_COLOR = "#b45309";
-const PALETTE = ["#ed2127", "#1a5fb4", "#1c7c4d", "#7c3aed", "#0e7490", "#be185d", "#525252"];
 const DEAL_DATES = [
   ["contract_date", "Contract"],
   ["inspection_date", "Inspection"],
@@ -15,9 +16,6 @@ const DEAL_DATES = [
   ["financing_deadline", "Financing deadline"],
   ["closing_date", "Closing"],
 ];
-const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
-
 // Open deals' key dates (contract, inspection, appraisal, financing deadline, closing) for the schedule. Only runs when
 // the agent has People on.
 function useDealDates(enabled) {
@@ -71,15 +69,26 @@ function step(view, cursorKey, dir) {
 
 const dot = (color) => <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ background: color }} aria-hidden="true" />;
 
-function ItemRow({ item }) {
-  return (
-    <li className="flex items-start gap-3 py-2">
+function ItemRow({ item, onOpen }) {
+  const body = (
+    <>
       <span className={`shrink-0 w-16 text-xs pt-0.5 ${muted}`}>{item.allDay ? "All day" : timeLabel(item.start)}</span>
       <span className="mt-1.5">{dot(item.color)}</span>
       <span className="min-w-0 flex-1">
         <span className="block text-sm font-medium leading-snug break-words">{item.title}</span>
         {item.sub && <span className={`block text-xs truncate ${muted}`}>{item.sub}</span>}
       </span>
+    </>
+  );
+  return (
+    <li>
+      {item.raw ? (
+        <button type="button" onClick={() => onOpen(item.raw)} className="w-full flex items-start gap-3 py-2 text-left rounded-lg hover:bg-black/[0.03] dark:hover:bg-white/[0.04]">
+          {body}
+        </button>
+      ) : (
+        <div className="flex items-start gap-3 py-2">{body}</div>
+      )}
     </li>
   );
 }
@@ -90,107 +99,6 @@ const sortItems = (a, b) => (a.allDay === b.allDay ? (a.start || "").localeCompa
 const KIND_RANK = { calendar: 0, deal: 1, task: 2 };
 const sortForMonth = (a, b) => KIND_RANK[a.kind] - KIND_RANK[b.kind] || sortItems(a, b);
 
-// ---- linking calendars ---------------------------------------------------------------------------------------------
-
-function CalendarsPanel({ cal, onClose }) {
-  const [address, setAddress] = useState("");
-  const [name, setName] = useState("");
-  const [color, setColor] = useState(PALETTE[(cal.calendars.length + 1) % PALETTE.length]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-
-  const add = async (e) => {
-    e.preventDefault();
-    if (!address.trim()) return;
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      const found = await checkCalendarAddress(address);
-      await cal.addCalendar({ name: name.trim() || found.name || "My calendar", address: found.address, color });
-      setNotice(`Linked. Found ${found.upcoming} event${found.upcoming === 1 ? "" : "s"} in the next 60 days.`);
-      setAddress("");
-      setName("");
-      setColor(PALETTE[(cal.calendars.length + 2) % PALETTE.length]);
-    } catch (err) {
-      setError(err.message);
-    }
-    setBusy(false);
-  };
-
-  return (
-    <div className="mt-4 rounded-xl border border-black/10 dark:border-white/15 p-4 space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold">Your calendars</h3>
-        <button type="button" onClick={onClose} className={`text-xs ${muted} hover:text-[#1c1a17] dark:hover:text-[#faf9f7]`}>
-          Close
-        </button>
-      </div>
-
-      {cal.calendars.length > 0 && (
-        <ul className="divide-y divide-black/5 dark:divide-white/10">
-          {cal.calendars.map((c) => (
-            <li key={c.id} className="flex items-center gap-3 py-2">
-              <input
-                type="checkbox"
-                checked={c.enabled}
-                onChange={(e) => cal.updateCalendar(c.id, { enabled: e.target.checked })}
-                aria-label={`Show ${c.name}`}
-                className="h-4 w-4 accent-[#ed2127]"
-              />
-              {dot(c.color)}
-              <span className="min-w-0 flex-1 text-sm truncate">{c.name}</span>
-              <button type="button" onClick={() => confirm(`Remove “${c.name}” from your schedule? Nothing changes in the calendar itself.`) && cal.removeCalendar(c.id)} className={`text-xs ${muted} hover:text-red-600 dark:hover:text-red-400`}>
-                Remove
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <form onSubmit={add} className="space-y-3">
-        <p className="text-sm font-semibold">Link a Google Calendar</p>
-        <ol className={`text-xs leading-relaxed list-decimal pl-4 space-y-0.5 ${muted}`}>
-          <li>
-            In Google Calendar on a computer, hover the calendar in the left list, click <strong>⋮</strong> → <strong>Settings and sharing</strong>.
-          </li>
-          <li>
-            Scroll to <strong>Integrate calendar</strong> and copy the <strong>Secret address in iCal format</strong>.
-          </li>
-          <li>Paste it below. This works for Outlook and Apple calendars too (their “subscribe” / “published” iCal address).</li>
-        </ol>
-        <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="https://calendar.google.com/calendar/ical/…/basic.ics" aria-label="Calendar address" className={inputClass} />
-        <div className="flex flex-wrap items-center gap-3">
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name (optional)" aria-label="Calendar name" maxLength={80} className={`${inputClass} !w-48`} />
-          <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Color">
-            {PALETTE.map((p) => (
-              <button
-                key={p}
-                type="button"
-                role="radio"
-                aria-checked={color === p}
-                aria-label={p}
-                onClick={() => setColor(p)}
-                className={`h-5 w-5 rounded-full border-2 ${color === p ? "border-[#1c1a17] dark:border-[#faf9f7]" : "border-transparent"}`}
-                style={{ background: p }}
-              />
-            ))}
-          </div>
-          <button type="submit" disabled={busy || !address.trim()} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-5 py-2 disabled:opacity-50">
-            {busy ? "Checking…" : "Link calendar"}
-          </button>
-        </div>
-        {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
-        {notice && <p className="text-xs text-emerald-700 dark:text-emerald-400">{notice}</p>}
-        <p className={`text-[11px] leading-snug ${muted}`}>
-          The address is private to you and only used to read events (the schedule can't change your calendar). Google refreshes these addresses every few hours, so a brand-new event can take a while to appear.
-        </p>
-      </form>
-    </div>
-  );
-}
-
 // ---- the schedule --------------------------------------------------------------------------------------------------
 
 // Day, Week and Month views of the agent's linked calendars (read-only, by private iCal address), plus the key dates on
@@ -200,10 +108,29 @@ export default function ScheduleCard({ userId, wantsPeople, tasks, span }) {
   const [cursor, setCursor] = useState(toKey(new Date()));
   const [show, setShow] = useState({ calendar: true, deals: true, tasks: true });
   const [managing, setManaging] = useState(false);
+  const [eventModal, setEventModal] = useState(null); // { event } to edit / view, or { event: null } to add
+  const [params, setParams] = useSearchParams();
+  const [googleNotice, setGoogleNotice] = useState({ message: "", connectionId: null });
   const today = toKey(new Date());
 
   const { start, end } = useMemo(() => rangeFor(view, cursor), [view, cursor]);
   const cal = useCalendarEvents(userId, start, end);
+
+  // Coming back from Google's sign-in: /dashboard?google=connected&connection=<id> (or error / cancelled).
+  useEffect(() => {
+    const g = params.get("google");
+    if (!g) return;
+    if (g === "connected") {
+      setGoogleNotice({ message: "Google account connected. Choose which of its calendars to show.", connectionId: params.get("connection") });
+      setManaging(true);
+      cal.refresh();
+    } else if (g === "error") {
+      setGoogleNotice({ message: params.get("message") || "Couldn't connect Google.", connectionId: null, error: true });
+      setManaging(true);
+    }
+    setParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const deals = useDealDates(wantsPeople);
 
   const byDay = useMemo(() => {
@@ -216,7 +143,7 @@ export default function ScheduleCard({ userId, wantsPeople, tasks, span }) {
     const names = Object.fromEntries(cal.calendars.map((c) => [c.id, c.name]));
     if (show.calendar) {
       for (const e of cal.events) {
-        const base = { id: `${e.calendarId}-${e.uid}-${e.start || e.startDate}`, kind: "calendar", title: e.title, sub: [e.location, names[e.calendarId]].filter(Boolean).join(" · "), color: colors[e.calendarId] || "#525252", allDay: e.allDay };
+        const base = { id: `${e.calendarId}-${e.uid}-${e.start || e.startDate}`, kind: "calendar", title: e.title, sub: [e.location, names[e.calendarId]].filter(Boolean).join(" · "), color: colors[e.calendarId] || "#525252", allDay: e.allDay, raw: e };
         if (e.allDay) {
           for (let d = fromKey(e.startDate), n = 0; toKey(d) < e.endDate && n < 31; d = addDays(d, 1), n++) add(toKey(d), { ...base, id: `${base.id}-${toKey(d)}` });
         } else add(toKey(new Date(e.start)), { ...base, start: e.start });
@@ -293,15 +220,21 @@ export default function ScheduleCard({ userId, wantsPeople, tasks, span }) {
           <button type="button" onClick={() => setManaging((m) => !m)} aria-expanded={managing} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
             Calendars
           </button>
+          {cal.calendars.some((c) => c.source === "google" && c.can_write) && (
+            <button type="button" onClick={() => setEventModal({ event: null })} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-3.5 py-1.5">
+              + Event
+            </button>
+          )}
         </div>
       </div>
 
-      {managing && <CalendarsPanel cal={cal} onClose={() => setManaging(false)} />}
+      {managing && <CalendarsPanel cal={cal} onClose={() => setManaging(false)} notice={googleNotice.error ? "" : googleNotice.message} openConnectionId={googleNotice.connectionId} />}
+      {googleNotice.error && <p className="mt-3 text-xs text-red-600 dark:text-red-400">{googleNotice.message}</p>}
       {noCalendars && !managing && (
         <p className={`mt-3 text-xs rounded-lg bg-black/[0.03] dark:bg-white/[0.05] px-3 py-2 ${muted}`}>
-          Link your Google Calendar to see your appointments here.{" "}
+          Connect your Google Calendar to see and add appointments here.{" "}
           <button type="button" onClick={() => setManaging(true)} className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
-            Link a calendar
+            Connect a calendar
           </button>
         </p>
       )}
@@ -319,7 +252,7 @@ export default function ScheduleCard({ userId, wantsPeople, tasks, span }) {
             ) : (
               <ul className="divide-y divide-black/5 dark:divide-white/10">
                 {itemsOn(cursor).map((it) => (
-                  <ItemRow key={it.id} item={it} />
+                  <ItemRow key={it.id} item={it} onOpen={(event) => setEventModal({ event })} />
                 ))}
               </ul>
             )}
@@ -341,12 +274,25 @@ export default function ScheduleCard({ userId, wantsPeople, tasks, span }) {
                   <ul className="mt-1.5 space-y-1.5">
                     {list.length === 0 && <li className={`text-[11px] ${muted}`}>—</li>}
                     {list.map((it) => (
-                      <li key={it.id} className="flex items-start gap-1.5 min-w-0" title={`${it.allDay ? "All day" : timeLabel(it.start)} · ${it.title}${it.sub ? ` · ${it.sub}` : ""}`}>
-                        <span className="mt-1.5">{dot(it.color)}</span>
-                        <span className="min-w-0 text-xs leading-snug">
-                          {!it.allDay && <span className={`block ${muted}`}>{timeLabel(it.start)}</span>}
-                          <span className="block font-medium break-words">{it.title}</span>
-                        </span>
+                      <li key={it.id} title={`${it.allDay ? "All day" : timeLabel(it.start)} · ${it.title}${it.sub ? ` · ${it.sub}` : ""}`}>
+                        {(() => {
+                          const inner = (
+                            <>
+                              <span className="mt-1.5">{dot(it.color)}</span>
+                              <span className="min-w-0 text-xs leading-snug">
+                                {!it.allDay && <span className={`block ${muted}`}>{timeLabel(it.start)}</span>}
+                                <span className="block font-medium break-words">{it.title}</span>
+                              </span>
+                            </>
+                          );
+                          return it.raw ? (
+                            <button type="button" onClick={() => setEventModal({ event: it.raw })} className="w-full flex items-start gap-1.5 min-w-0 text-left rounded hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
+                              {inner}
+                            </button>
+                          ) : (
+                            <div className="flex items-start gap-1.5 min-w-0">{inner}</div>
+                          );
+                        })()}
                       </li>
                     ))}
                   </ul>
@@ -405,6 +351,7 @@ export default function ScheduleCard({ userId, wantsPeople, tasks, span }) {
           </div>
         )}
       </div>
+      {eventModal && <EventModal key={eventModal.event?.eventId || "new"} cal={cal} event={eventModal.event} defaultDate={cursor} onClose={() => setEventModal(null)} />}
     </section>
   );
 }

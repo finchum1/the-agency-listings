@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 // The agent's most recent website inquiries (the `leads` table: listing "Send Inquiry" forms, the Get In Touch form,
@@ -15,6 +15,7 @@ export function useLeadAlerts(userId, peopleEnabled) {
         .from("leads")
         .select("id, name, email, phone, message, target_type, created_at")
         .eq("agent_id", userId)
+        .is("dismissed_at", null)
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(8);
@@ -24,12 +25,20 @@ export function useLeadAlerts(userId, peopleEnabled) {
         byLead = Object.fromEntries((people || []).map((p) => [p.lead_id, p]));
       }
       if (!active) return;
-      setState({ alerts: (leads || []).map((l) => ({ ...l, person: byLead[l.id] || null })), loading: false });
+      // Someone already filed away (archived) in People no longer needs an alert.
+      const alerts = (leads || []).map((l) => ({ ...l, person: byLead[l.id] || null })).filter((a) => !a.person?.archived);
+      setState({ alerts, loading: false });
     })();
     return () => {
       active = false;
     };
   }, [userId, peopleEnabled]);
 
-  return state;
+  // Clears one alert (the inquiry record itself is kept; see people-module.sql section 19).
+  const dismiss = useCallback(async (id) => {
+    setState((s) => ({ ...s, alerts: s.alerts.filter((a) => a.id !== id) }));
+    await supabase.rpc("dismiss_lead_alert", { p_lead: id });
+  }, []);
+
+  return { ...state, dismiss };
 }

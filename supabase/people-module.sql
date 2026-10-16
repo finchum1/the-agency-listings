@@ -506,3 +506,94 @@ create trigger limit_agent_calendars before insert on public.agent_calendars
   for each row execute function public.limit_agent_calendars();
 
 alter table public.people_settings add column if not exists goals jsonb not null default '{}'::jsonb;
+
+-- 19. Inquiry alerts on the home page. The `leads` row is the permanent record of a website inquiry (analytics count it),
+--     so it is never deleted along with the person it created in People. Instead a lead is "dismissed": automatically
+--     when that person is deleted, or by hand with the dismiss button (an agent can't update `leads` directly, so the
+--     function below does it, only for their own leads). Dismissed leads stop appearing on the home page and nowhere else.
+alter table public.leads add column if not exists dismissed_at timestamptz;
+
+create or replace function public.dismiss_lead_when_person_deleted() returns trigger
+language plpgsql security definer set search_path = public as
+$$
+begin
+  if old.lead_id is not null then
+    update public.leads set dismissed_at = coalesce(dismissed_at, now()) where id = old.lead_id;
+  end if;
+  return old;
+end;
+$$;
+drop trigger if exists dismiss_lead_when_person_deleted on public.people;
+create trigger dismiss_lead_when_person_deleted after delete on public.people
+  for each row execute function public.dismiss_lead_when_person_deleted();
+
+create or replace function public.dismiss_lead_alert(p_lead uuid) returns void
+language plpgsql security definer set search_path = public as
+$$
+begin
+  update public.leads set dismissed_at = coalesce(dismissed_at, now()) where id = p_lead and agent_id = auth.uid();
+end;
+$$;
+revoke all on function public.dismiss_lead_alert(uuid) from public, anon;
+grant execute on function public.dismiss_lead_alert(uuid) to authenticated;
+
+-- One-time cleanup: for agents who use People, an inquiry with no person behind it was deleted from People already.
+update public.leads l
+set dismissed_at = now()
+where l.dismissed_at is null
+  and l.agent_id in (select id from public.profiles where people_enabled)
+  and not exists (select 1 from public.people pe where pe.lead_id = l.id);
+
+-- 20. Google accounts for two-way calendar sync (dashboard home page).
+--     google_connections: which Google accounts an agent has connected (email + status only; the agent can read their
+--       own rows; only the server, with the service key, creates or changes them).
+--     google_tokens: the long-lived refresh tokens, ENCRYPTED by the server (AES-256-GCM). Nobody but the server can read
+--       this table: row-level security with no policy at all, and no privileges for the signed-in roles.
+--     agent_calendars gains a source: 'ics' (a private iCal address, read-only, as before) or 'google' (a calendar from a
+--       connected account: events are read live from Google and can be created, changed and deleted from the dashboard).
+create table if not exists public.google_connections (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references public.profiles(id) on delete cascade,
+  email text not null check (length(email) <= 320),
+  status text not null default 'active' check (status in ('active', 'needs_reconnect')),
+  created_at timestamptz not null default now(),
+  unique (owner_id, email)
+);
+alter table public.google_connections enable row level security;
+revoke all on public.google_connections from anon;
+revoke insert, update, delete on public.google_connections from authenticated;
+drop policy if exists google_connections_owner_read on public.google_connections;
+create policy google_connections_owner_read on public.google_connections for select to authenticated using (owner_id = auth.uid());
+
+create table if not exists public.google_tokens (
+  connection_id uuid primary key references public.google_connections(id) on delete cascade,
+  refresh_token_enc text not null,
+  scopes text not null default '',
+  updated_at timestamptz not null default now()
+);
+alter table public.google_tokens enable row level security;
+revoke all on public.google_tokens from anon, authenticated;
+
+alter table public.agent_calendars add column if not exists source text not null default 'ics' check (source in ('ics', 'google'));
+alter table public.agent_calendars add column if not exists connection_id uuid references public.google_connections(id) on delete cascade;
+alter table public.agent_calendars add column if not exists google_calendar_id text check (length(google_calendar_id) <= 500);
+alter table public.agent_calendars add column if not exists can_write boolean not null default false;
+alter table public.agent_calendars alter column ics_url drop not null;
+alter table public.agent_calendars drop constraint if exists agent_calendars_ics_url_check;
+alter table public.agent_calendars drop constraint if exists agent_calendars_source_check_rule;
+alter table public.agent_calendars add constraint agent_calendars_source_check_rule check (
+  (source = 'ics' and ics_url is not null and ics_url ~ '^https://[^[:space:]]+$' and length(ics_url) <= 2000 and connection_id is null)
+  or (source = 'google' and ics_url is null and connection_id is not null and google_calendar_id is not null)
+);
+create unique index if not exists agent_calendars_google_unique on public.agent_calendars (connection_id, google_calendar_id) where source = 'google';
+
+-- A calendar may only point at a Google connection its own agent owns (otherwise someone could ask the server to read
+-- another agent's calendar). The server checks this again before every Google call.
+drop policy if exists agent_calendars_owner_all on public.agent_calendars;
+create policy agent_calendars_owner_all on public.agent_calendars
+  for all to authenticated
+  using (owner_id = auth.uid())
+  with check (
+    owner_id = auth.uid()
+    and (connection_id is null or exists (select 1 from public.google_connections gc where gc.id = connection_id and gc.owner_id = auth.uid()))
+  );

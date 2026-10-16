@@ -15,7 +15,7 @@ function ago(iso) {
 }
 
 // New website inquiries, newest first, with a quick way to reach each person and a flag on the ones still waiting.
-export default function LeadAlertsCard({ alerts, loading, peopleEnabled }) {
+export default function LeadAlertsCard({ alerts, loading, peopleEnabled, onDismiss }) {
   return (
     <section className={`${card} flex flex-col`}>
       <div className="flex items-baseline justify-between gap-3">
@@ -41,13 +41,24 @@ export default function LeadAlertsCard({ alerts, loading, peopleEnabled }) {
                       {SOURCES[a.target_type] || "Inquiry"} · <span className={stale ? "text-red-600 dark:text-red-400 font-semibold" : ""}>{ago(a.created_at)}</span>
                     </p>
                   </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                      waiting ? "bg-amber-500/10 text-amber-700 dark:text-amber-400" : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                    }`}
-                  >
-                    {waiting ? "New" : a.person.stage}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        waiting ? "bg-amber-500/10 text-amber-700 dark:text-amber-400" : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                      }`}
+                    >
+                      {waiting ? "New" : a.person.stage}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onDismiss(a.id)}
+                      aria-label={`Dismiss ${a.name}`}
+                      title="Dismiss. The inquiry stays in your records."
+                      className="px-1 text-[#1c1a17]/30 dark:text-[#faf9f7]/30 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
                 {a.message && <p className="text-xs leading-snug text-[#1c1a17]/70 dark:text-[#faf9f7]/70 line-clamp-2">{a.message}</p>}
                 <ContactButtons person={{ name: a.name, phone: a.phone, email: a.email }} size="sm" />

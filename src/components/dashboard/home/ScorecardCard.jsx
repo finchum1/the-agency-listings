@@ -46,7 +46,7 @@ export default function ScorecardCard({ userId }) {
   const { closedStage } = usePeopleStages();
   const { goals, saveGoal } = usePeopleGoals(userId, true);
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState({ commission: "", deals: "" });
+  const [draft, setDraft] = useState({ commission: "", deals: "", priorDeals: "", priorVolume: "", priorCommission: "" });
   const [error, setError] = useState("");
 
   const now = new Date();
@@ -54,30 +54,45 @@ export default function ScorecardCard({ userId }) {
   const goal = goals[year] || {};
   const commissionGoal = Number(goal.commission) || 0;
   const dealsGoal = Number(goal.deals) || 0;
+  // Production from before the agent started tracking here this year (joined mid-year, or deals closed elsewhere).
+  const prior = { deals: Number(goal.prior?.deals) || 0, volume: Number(goal.prior?.volume) || 0, commission: Number(goal.prior?.commission) || 0 };
+  const hasPrior = prior.deals > 0 || prior.volume > 0 || prior.commission > 0;
 
   const transactions = people.filter((p) => !p.archived && p.stage_group === "transaction");
   const open = transactions.filter((p) => p.stage !== closedStage);
   const closedDate = (p) => p.closing_date || (p.updated_at || "").slice(0, 10);
   const closed = transactions.filter((p) => p.stage === closedStage && Number(closedDate(p).slice(0, 4)) === year);
   const sum = (list, key) => list.reduce((t, p) => t + (Number(p[key]) || 0), 0);
-  const earned = sum(closed, "commission");
+  const earned = sum(closed, "commission") + prior.commission;
+  const closedCount = closed.length + prior.deals;
+  const closedVolume = sum(closed, "price") + prior.volume;
   const monthly = Array.from({ length: 12 }, (_, m) => sum(closed.filter((p) => Number(closedDate(p).slice(5, 7)) - 1 === m), "commission"));
 
   // Pace: where the year-to-date total would be if the goal were spread evenly across the year.
   const dayOfYear = Math.floor((now - new Date(year, 0, 0)) / 864e5);
   const daysInYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0 ? 366 : 365;
   const target = commissionGoal * (dayOfYear / daysInYear);
-  const ringDone = commissionGoal ? earned : closed.length;
+  const ringDone = commissionGoal ? earned : closedCount;
   const ringTotal = commissionGoal || dealsGoal;
 
   const startEdit = () => {
-    setDraft({ commission: commissionGoal || "", deals: dealsGoal || "" });
+    setDraft({
+      commission: commissionGoal || "",
+      deals: dealsGoal || "",
+      priorDeals: prior.deals || "",
+      priorVolume: prior.volume || "",
+      priorCommission: prior.commission || "",
+    });
     setError("");
     setEditing(true);
   };
   const submit = async (e) => {
     e.preventDefault();
-    const message = await saveGoal(year, { commission: Number(draft.commission) || 0, deals: Number(draft.deals) || 0 });
+    const message = await saveGoal(year, {
+      commission: Number(draft.commission) || 0,
+      deals: Number(draft.deals) || 0,
+      prior: { deals: Number(draft.priorDeals) || 0, volume: Number(draft.priorVolume) || 0, commission: Number(draft.priorCommission) || 0 },
+    });
     if (message) setError(message);
     else setEditing(false);
   };
@@ -87,8 +102,8 @@ export default function ScorecardCard({ userId }) {
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-display text-lg font-semibold">Scorecard · {year}</h2>
         {!editing && (
-          <button type="button" onClick={startEdit} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
-            {ringTotal ? "Edit goal" : "Set a goal"}
+          <button type="button" onClick={startEdit} title="Edit your goal and past production" className="shrink-0 text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+            {ringTotal || hasPrior ? "Edit" : "Set a goal"}
           </button>
         )}
       </div>
@@ -107,10 +122,32 @@ export default function ScorecardCard({ userId }) {
                 <label className="block text-xs font-medium mb-1.5 text-[#1c1a17]/60 dark:text-[#faf9f7]/60">Closed deals goal (optional)</label>
                 <input type="number" min="0" step="1" inputMode="numeric" value={draft.deals} onChange={(e) => setDraft((d) => ({ ...d, deals: e.target.value }))} className={inputClass} />
               </div>
+              <div className="pt-3 border-t border-black/5 dark:border-white/10 space-y-3">
+                <div>
+                  <p className="text-xs font-semibold">Closed before you started tracking here</p>
+                  <p className={`text-[11px] mt-0.5 leading-snug ${muted}`}>
+                    Joined mid-year, or closed deals elsewhere? Add this year's earlier production and it counts toward your totals and goal. Deals you track here are added on top.
+                  </p>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5 text-[#1c1a17]/60 dark:text-[#faf9f7]/60">Units</label>
+                    <input type="number" min="0" step="1" inputMode="numeric" value={draft.priorDeals} onChange={(e) => setDraft((d) => ({ ...d, priorDeals: e.target.value }))} className={inputClass} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5 text-[#1c1a17]/60 dark:text-[#faf9f7]/60">Volume ($)</label>
+                    <input type="number" min="0" step="any" inputMode="decimal" value={draft.priorVolume} onChange={(e) => setDraft((d) => ({ ...d, priorVolume: e.target.value }))} className={inputClass} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5 text-[#1c1a17]/60 dark:text-[#faf9f7]/60">Commission ($)</label>
+                    <input type="number" min="0" step="any" inputMode="decimal" value={draft.priorCommission} onChange={(e) => setDraft((d) => ({ ...d, priorCommission: e.target.value }))} className={inputClass} />
+                  </div>
+                </div>
+              </div>
               {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
               <div className="flex items-center gap-3">
                 <button type="submit" className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-5 py-2">
-                  Save goal
+                  Save
                 </button>
                 <button type="button" onClick={() => setEditing(false)} className={`text-xs ${muted}`}>
                   Cancel
@@ -137,13 +174,13 @@ export default function ScorecardCard({ userId }) {
           <div className="grid grid-cols-3 gap-3 mt-5 pt-4 border-t border-black/5 dark:border-white/10">
             <div>
               <p className="text-xl font-semibold leading-none">
-                {closed.length}
+                {closedCount}
                 {dealsGoal > 0 && <span className={`text-xs font-medium ${muted}`}> / {dealsGoal}</span>}
               </p>
               <p className={`text-[11px] mt-1.5 ${muted}`}>Closed deals</p>
             </div>
             <div>
-              <p className="text-xl font-semibold leading-none">{compact.format(sum(closed, "price"))}</p>
+              <p className="text-xl font-semibold leading-none">{compact.format(closedVolume)}</p>
               <p className={`text-[11px] mt-1.5 ${muted}`}>Closed volume</p>
             </div>
             <div>
@@ -154,7 +191,12 @@ export default function ScorecardCard({ userId }) {
             </div>
           </div>
 
-          <div className="mt-4">
+          {hasPrior && (
+            <p className={`mt-3 text-[11px] leading-snug ${muted}`}>
+              Includes {prior.deals} deal{prior.deals === 1 ? "" : "s"}, {compact.format(prior.volume)} volume and {compact.format(prior.commission)} commission you added from before you started tracking here.
+            </p>
+          )}
+          <div className="mt-3">
             <MonthBars values={monthly} current={now.getMonth()} />
           </div>
         </>
