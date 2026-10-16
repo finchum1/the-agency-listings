@@ -37,7 +37,7 @@ export default function DashboardHomePage() {
   const summary = !settled ? "Here's what's going on." : bits.length ? `You have ${bits.join(" and ")}.` : "You're all caught up.";
 
   return (
-    <div className="max-w-6xl min-w-0 space-y-6">
+    <div className="min-w-0 space-y-6">
       <header>
         <p className={`text-xs font-semibold uppercase tracking-[0.14em] ${muted}`}>{dateLine}</p>
         <h1 className="text-3xl font-display font-semibold mt-1.5">{first ? `Welcome, ${first}` : "Welcome"}</h1>
@@ -57,12 +57,15 @@ export default function DashboardHomePage() {
       <Shortcuts wantsBlog={wantsBlog} wantsPeople={wantsPeople} />
 
       <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-3 items-start">
-        <ScheduleCard userId={user?.id} wantsPeople={wantsPeople} tasks={tasksApi.tasks} />
-        <LeadAlertsCard alerts={alerts} loading={alertsLoading} peopleEnabled={wantsPeople} onDismiss={dismissAlert} />
+        <ScheduleCard userId={user?.id} wantsPeople={wantsPeople} tasks={tasksApi.tasks} span />
       </div>
 
       <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-3 items-start">
-        <TasksCard tasksApi={tasksApi} span={!wantsPeople} />
+        <TasksCard tasksApi={tasksApi} span />
+      </div>
+
+      <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-2 items-start">
+        <LeadAlertsCard alerts={alerts} loading={alertsLoading} peopleEnabled={wantsPeople} onDismiss={dismissAlert} />
         {wantsPeople && <ScorecardCard userId={user?.id} />}
       </div>
     </div>
