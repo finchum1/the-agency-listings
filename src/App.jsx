@@ -64,13 +64,17 @@ import IdxListings from "./components/brokerage-site/IdxListings";
 import IdxListingDetail from "./components/brokerage-site/IdxListingDetail";
 import HomeValuation from "./components/brokerage-site/HomeValuation";
 
-function Root({ dashboardOnly = false }) {
+function Root({ dashboardOnly = false, productHome = false }) {
   const { session, loading } = useAuth();
   if (loading) return null;
   if (session) return <Navigate to="/dashboard" replace />;
-  // The installed home-screen app, and a host that exists only for the dashboard (app.latchpointstudios.com, a
-  // brokerage's own dashboard domain), are for signing in and working, not for reading the marketing page.
-  if (isStandalone() || dashboardOnly) return <Navigate to="/login" replace />;
+  // The installed home-screen app is for signing in and working, not for reading about the product.
+  if (isStandalone()) return <Navigate to="/login" replace />;
+  // The platform's own dashboard host (app.latchpointstudios.com) is also the product's public home page, the address
+  // Google's consent screen points to: signed-out visitors read about it there and sign in. A brokerage's own dashboard
+  // domain goes straight to sign-in.
+  if (productHome) return <AboutPage />;
+  if (dashboardOnly) return <Navigate to="/login" replace />;
   return <LandingPage />;
 }
 
@@ -117,7 +121,7 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Root dashboardOnly={isDashboardOnlyHost(window.location.hostname) || hostOrg.isApp} />} />
+      <Route path="/" element={<Root dashboardOnly={isDashboardOnlyHost(window.location.hostname) || hostOrg.isApp} productHome={isDashboardOnlyHost(window.location.hostname) && !hostOrg.isApp} />} />
       <Route path="/agent-websites" element={<AgentWebsitesPage />} />
       <Route path="/property-websites" element={<PropertyWebsitesPage />} />
       <Route path="/brokerage-website" element={<BrokerageWebsitePage />} />

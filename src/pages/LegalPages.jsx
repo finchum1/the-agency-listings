@@ -6,13 +6,13 @@ import { applyPageMeta } from "../lib/pageMeta";
 // service, all on the latchpointstudios.com domain (served at app.latchpointstudios.com/about, /privacy, /terms).
 // Plain on purpose: these are read by people deciding whether to connect a Google account, and by Google's reviewers.
 
-const APP = "The Agency Dashboard";
+const APP = "Latchpoint Real Estate";
 const OPERATOR = "Latchpoint Studios";
 const CONTACT = "terrence@latchpointstudios.com";
 const UPDATED = "October 15, 2026";
 
 const PAGES = [
-  { path: "/about", label: "About" },
+  { path: "/about", label: "Home" },
   { path: "/privacy", label: "Privacy Policy" },
   { path: "/terms", label: "Terms of Service" },
 ];
@@ -25,15 +25,18 @@ function Shell({ title, description, path, children }) {
     <div className="min-h-screen bg-[#faf9f7] text-[#1c1a17]">
       <header className="border-b border-[#1c1a17]/10 bg-white">
         <div className="mx-auto max-w-3xl px-6 py-4 flex flex-wrap items-center justify-between gap-3">
-          <Link to="/about" className="font-display text-lg font-semibold">
+          <Link to="/" className="font-display text-lg font-semibold">
             {APP}
           </Link>
-          <nav className="flex gap-5 text-sm">
+          <nav className="flex flex-wrap items-center gap-5 text-sm">
             {PAGES.map((p) => (
               <Link key={p.path} to={p.path} className={path === p.path ? "font-semibold underline underline-offset-4" : "text-[#1c1a17]/70 hover:text-[#1c1a17]"}>
                 {p.label}
               </Link>
             ))}
+            <Link to="/login" className="rounded-full bg-[#1c1a17] px-4 py-1.5 font-semibold text-white hover:bg-[#1c1a17]/90">
+              Sign in
+            </Link>
           </nav>
         </div>
       </header>
@@ -56,11 +59,17 @@ function Shell({ title, description, path, children }) {
 
 export function AboutPage() {
   return (
-    <Shell title="About" path="/about" description={`${APP} is a dashboard for real estate agents: websites, leads, pipeline, transactions, and a schedule that syncs with Google Calendar.`}>
+    <Shell title="Home" path="/about" description={`${APP} is the back office for real estate agents and brokerages: websites, leads, pipeline, transactions, and a schedule that syncs with Google Calendar.`}>
       <h1>{APP}</h1>
+      <p className="!text-xl">The website and back office for real estate agents and brokerages, in one dashboard.</p>
       <p>
-        {APP} is a web application for real estate brokerages and agents. It brings an agent's website and blog, leads, pipeline, transactions, tasks, and
-        daily schedule into one place, so an agent can start the day from a single page.
+        {APP} brings an agent's website and blog, leads, pipeline, transactions, tasks, and daily schedule into one place, so an agent can start the day from a
+        single page. A brokerage gets its own branded workspace for its office and its agents.
+      </p>
+      <p>
+        <Link to="/login" className="inline-block rounded-full bg-[#1c1a17] px-6 py-3 text-sm font-semibold !text-white no-underline hover:bg-[#1c1a17]/90">
+          Sign in
+        </Link>
       </p>
 
       <h2>What it does</h2>
@@ -83,8 +92,8 @@ export function AboutPage() {
 
       <h2>Who it is for</h2>
       <p>
-        {APP} is used by real estate professionals who have been given an account. Accounts are created by invitation from an administrator at the agent's
-        brokerage, and there is no public sign-up.
+        Real estate agents, teams, and brokerages. Accounts are created by invitation from an administrator at the agent's brokerage; there is no public
+        sign-up yet. To ask about {APP} for your office, email <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.
       </p>
 
       <h2>Contact</h2>
