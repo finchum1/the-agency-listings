@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuthOrg, rememberLoginOrg } from "../../hooks/useAuthOrg";
 import AuthBrand from "./AuthBrand";
@@ -14,6 +14,11 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const platform = !orgLoading && !org; // no organization's brand to wear: this is the product's own sign-in
+
+  useEffect(() => {
+    if (platform) document.title = "Sign in | Latchpoint Real Estate";
+  }, [platform]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,10 +42,10 @@ export default function LoginPage() {
         <AuthBrand org={org} loading={orgLoading} className="mb-8" />
         <div className="bg-white border border-black/5 rounded-2xl p-8 shadow-sm">
           <h1 className="text-xl font-display font-semibold mb-1 text-center">
-            Dashboard
+            {platform ? "Welcome back" : "Dashboard"}
           </h1>
           <p className="text-sm text-[#1c1a17]/60 text-center mb-6">
-            Sign in with your agent account
+            {platform ? "Sign in to Latchpoint Real Estate" : "Sign in with your agent account"}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -84,6 +89,11 @@ export default function LoginPage() {
         </div>
         <p className="text-xs text-center text-[#1c1a17]/40 mt-6">
           Don't have an account? Ask your admin to invite you.
+        </p>
+        <p className="text-xs text-center text-[#1c1a17]/40 mt-2">
+          <Link to="/privacy" className="hover:text-[#1c1a17]/70 underline underline-offset-2">Privacy</Link>
+          {" · "}
+          <Link to="/terms" className="hover:text-[#1c1a17]/70 underline underline-offset-2">Terms</Link>
         </p>
       </div>
     </div>
