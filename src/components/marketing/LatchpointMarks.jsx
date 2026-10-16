@@ -51,9 +51,9 @@ export function LatchpointLogomark({ className = "" }) {
   );
 }
 
-// The "Studios" word steps aside on very narrow screens (below 440px) so the
-// context tag next to it still fits inside the header pill.
-export function LatchpointWordmark({ tag, inverse = false }) {
+// With a context tag, the name ("Studios" by default) steps aside on very narrow screens (below 440px) so the
+// tag next to it still fits inside the header pill. Without a tag the name always shows.
+export function LatchpointWordmark({ tag, name = "Studios", inverse = false }) {
   const text = inverse ? "text-[#f5f5f4]" : "text-(--lp-text)";
   const muted = inverse ? "text-[#a4a5ac]" : "text-(--lp-text-muted)";
   return (
@@ -61,7 +61,7 @@ export function LatchpointWordmark({ tag, inverse = false }) {
       <LatchpointLogomark className={`size-6 ${text}`} />
       <span className={`font-medium tracking-tight ${text}`}>
         Latchpoint
-        <span className={`hidden min-[440px]:inline ${muted}`}> Studios</span>
+        <span className={`${tag ? "hidden min-[440px]:inline" : ""} ${muted}`}> {name}</span>
       </span>
       {tag && (
         <span

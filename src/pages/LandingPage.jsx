@@ -115,13 +115,16 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center gap-4">
               <a
                 href={cta}
-                className="text-sm font-semibold px-7 py-3.5 rounded-full bg-[#ed2127] text-white hover:bg-[#d41b21] transition-colors"
+                className="group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-[#ed2127] px-6 py-3 font-geist text-[15px] font-medium leading-none text-white transition-colors hover:bg-[#d41b21]"
               >
                 Request early access
+                <svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-0.5">
+                  <path d="M224.49,136.49l-72,72a12,12,0,0,1-17-17L187,140H40a12,12,0,0,1,0-24H187L135.51,64.48a12,12,0,0,1,17-17l72,72A12,12,0,0,1,224.49,136.49Z" />
+                </svg>
               </a>
               <a
                 href="#home"
-                className="text-sm font-semibold px-7 py-3.5 rounded-full border border-black/15 dark:border-white/20 hover:border-[#ed2127] hover:text-[#ed2127] transition-colors"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-black/15 px-6 py-3 font-geist text-[15px] font-medium leading-none transition-colors hover:border-[#ed2127] hover:text-[#ed2127] dark:border-white/20"
               >
                 See how it works
               </a>

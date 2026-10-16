@@ -12,6 +12,15 @@ import ThemeToggle from "./MarketingThemeToggle";
 // Links collapse into a menu below `xl` (the five product links, the wordmark and tag, the theme switch and the
 // early-access button need the room); the button shows from `lg`, the tag at every size. The theme switch sits
 // directly left of the button.
+// Same arrow as realestate.latchpointstudios.com's buttons, so the two pages' buttons are the same size.
+function ArrowRight() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-0.5">
+      <path d="M224.49,136.49l-72,72a12,12,0,0,1-17-17L187,140H40a12,12,0,0,1,0-24H187L135.51,64.48a12,12,0,0,1,17-17l72,72A12,12,0,0,1,224.49,136.49Z" />
+    </svg>
+  );
+}
+
 export default function LatchpointNav({ links, pathname, open, onToggle, onClose }) {
   return (
     <>
@@ -19,8 +28,8 @@ export default function LatchpointNav({ links, pathname, open, onToggle, onClose
       <header className="fixed inset-x-0 top-4 z-40 flex justify-center px-4 sm:top-6">
         <div className="relative w-full max-w-6xl">
           <div className="glass-pill flex items-center justify-between gap-2 rounded-full py-2 pl-4 pr-2 sm:gap-4 sm:pl-5">
-            <a href="https://latchpointstudios.com" className="flex shrink-0 items-center" aria-label="Latchpoint Studios, home">
-              <LatchpointWordmark tag="The Agency" />
+            <a href="/" className="flex shrink-0 items-center" aria-label="Latchpoint Real Estate, home">
+              <LatchpointWordmark name="Real Estate" />
             </a>
 
             <nav className="hidden items-center gap-1 xl:flex">
@@ -49,9 +58,10 @@ export default function LatchpointNav({ links, pathname, open, onToggle, onClose
               <ThemeToggle />
               <a
                 href="/#early-access"
-                className="ml-1 hidden whitespace-nowrap rounded-full bg-(--lp-ember) px-5 py-2 font-geist text-sm font-medium text-[#08090b] transition-colors hover:bg-[#f0714f] lg:inline-flex"
+                className="group ml-1 hidden items-center justify-center gap-2 whitespace-nowrap rounded-full bg-(--lp-ember) px-5 py-2 font-geist text-sm font-medium leading-none text-[#08090b] transition-colors hover:bg-[#f0714f] lg:inline-flex"
               >
                 Request early access
+                <ArrowRight />
               </a>
               <button
                 type="button"
