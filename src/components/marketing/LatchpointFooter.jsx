@@ -66,10 +66,27 @@ export default function LatchpointFooter() {
           </div>
         </div>
 
-        <div className="mt-14 border-t border-white/10 pt-8">
+        <div className="mt-14 flex flex-col gap-4 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-[#6c6e76]">
             &copy; {new Date().getFullYear()} Latchpoint Studios. Edmond, Oklahoma.
           </p>
+          <ul className="flex flex-wrap gap-x-6 gap-y-2 text-xs">
+            <li>
+              <Link to="/about" className={link}>
+                Google Calendar &amp; your data
+              </Link>
+            </li>
+            <li>
+              <Link to="/privacy" className={link}>
+                Privacy Policy
+              </Link>
+            </li>
+            <li>
+              <Link to="/terms" className={link}>
+                Terms of Service
+              </Link>
+            </li>
+          </ul>
         </div>
       </div>
     </footer>
