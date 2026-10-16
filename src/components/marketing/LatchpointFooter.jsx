@@ -30,7 +30,7 @@ export default function LatchpointFooter() {
         <div className="flex flex-col justify-between gap-12 lg:flex-row">
           <div className="max-w-sm">
             <a href="https://latchpointstudios.com" aria-label="Latchpoint Studios, home">
-              <LatchpointWordmark tag="The Agency" inverse />
+              <LatchpointWordmark inverse />
             </a>
             <p className="mt-4 text-sm leading-relaxed text-[#a4a5ac]">
               Designed and built by Latchpoint Studios, a small studio that builds websites, dashboards, and
