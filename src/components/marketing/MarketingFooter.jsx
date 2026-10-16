@@ -3,7 +3,7 @@ import brokerage from "../../lib/brokerage";
 import { isMarketingHost } from "../../lib/appHosts";
 import { LatchpointLogomark } from "./LatchpointMarks";
 import LatchpointFooter from "./LatchpointFooter";
-import StartProjectSection from "./StartProjectSection";
+import EarlyAccessSection from "./EarlyAccessSection";
 
 // Shared footer for every marketing page. Kept deliberately simple (no
 // social, no newsletter) — this is a product-marketing pitch page, not a
@@ -14,7 +14,7 @@ export default function MarketingFooter() {
   if (isMarketingHost(window.location.hostname)) {
     return (
       <>
-        <StartProjectSection />
+        <EarlyAccessSection />
         <LatchpointFooter />
       </>
     );

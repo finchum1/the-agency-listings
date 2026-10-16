@@ -2,309 +2,413 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import MarketingNav from "../components/marketing/MarketingNav";
 import MarketingFooter from "../components/marketing/MarketingFooter";
-import { BrowserFrame, BrowserWindow } from "../components/marketing/DeviceFrames";
-import { BoardMock, PIPELINE_COLUMNS } from "../components/marketing/PeopleMocks";
+import { BrowserFrame } from "../components/marketing/DeviceFrames";
 import { Reveal, variants, easeOut } from "../components/marketing/motion";
+import { isMarketingHost } from "../lib/appHosts";
+import { contactMailto } from "../lib/marketingContact";
+import brokerage from "../lib/brokerage";
 
 /*
-THESIS: One shared platform runs both halves of an agent's online
-  presence — the mechanism is the pitch, not a feature list.
-OWN-WORLD: The Agency's existing system — red mark, Playfair Display
-  headings, Inter body, cream/black/brand-red palette, pill buttons,
-  rounded-2xl cards — identical to the dashboard and every public site
-  this page is pitching.
-STORY: A visitor (agent or office leadership) lands on the dashboard's
-  own pitch, sees the real dashboard first (still the daily tool), then
-  meets both products it powers — property sites and agent sites — each
-  proven with a real, live screenshot, and clicks through to whichever
-  one they came to learn about.
-FIRST VIEWPORT: The existing dashboard-first hero, unchanged — headline +
-  subhead + Sign In CTA to its left, browser-framed Listings dashboard
-  screenshot to its right.
-FORM: Extension of the existing landing page (not a redesign) — two new
-  peer highlight sections replace the property-only deep content that
-  used to live here, which moved to its own page.
-FINISH: unreviewed and undocumented is unfinished; this build ends with
-  the finish review, the verdict, and DESIGN.md.
+THESIS: The Agency's agents get one dashboard that runs both halves of their
+  business, the website and the back office, on The Agency's own brand.
+OWN-WORLD: The Agency's existing system: red mark, Playfair Display headings,
+  Inter body, cream/black/brand-red palette, pill buttons, rounded-2xl cards.
+STORY: An Agency agent lands, sees the real dashboard (their day on one page),
+  learns the two halves, sees each feature proven with a real screen, and
+  requests early access. The flow mirrors realestate.latchpointstudios.com,
+  the same product's general page.
+FIRST VIEWPORT: Eyebrow with the Agency mark, headline, one sentence, Request
+  early access, and the real dashboard in a browser frame with a phone.
 */
 
+const SAMPLE = "Sample data. Every name, number, and address on these screens is invented.";
+
+function Check() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2" className="mt-1 shrink-0">
+      <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function Bullets({ items }) {
+  return (
+    <ul className="space-y-3 mt-6">
+      {items.map((item) => (
+        <li key={item} className="flex items-start gap-3 text-[15px] leading-relaxed text-[#1c1a17]/75 dark:text-[#faf9f7]/75">
+          <Check />
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Eyebrow({ children }) {
+  return <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">{children}</p>;
+}
+
+/** Copy on one side, a visual on the other; `flip` swaps them on large screens. */
+function Feature({ eyebrow, title, body, bullets, visual, caption, flip = false }) {
+  return (
+    <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <Reveal variant={flip ? "fromRight" : "fromLeft"} className={flip ? "lg:order-2" : ""}>
+        <Eyebrow>{eyebrow}</Eyebrow>
+        <h3 className="text-3xl sm:text-4xl font-display font-semibold leading-tight mb-5">{title}</h3>
+        <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed max-w-md">{body}</p>
+        <Bullets items={bullets} />
+      </Reveal>
+      <Reveal variant={flip ? "fromLeft" : "fromRight"} delay={0.1} className={`min-w-0 ${flip ? "lg:order-1" : ""}`}>
+        {visual}
+        {caption && <p className="text-[11px] text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-3 text-center">{caption}</p>}
+      </Reveal>
+    </div>
+  );
+}
+
+function GroupHeader({ id, title, body }) {
+  return (
+    <Reveal className="max-w-2xl">
+      <div id={id} className="scroll-mt-28" />
+      <Eyebrow>{title}</Eyebrow>
+      <h2 className="text-3xl sm:text-5xl font-display font-semibold leading-tight">{body}</h2>
+    </Reveal>
+  );
+}
+
+const FAQ = [
+  ["When can I get in?", "We're inviting people in a few at a time, by hand. Request early access and we'll email you to set up a short call when there's a spot."],
+  ["Will it look like The Agency?", "Yes. The Agency's logo and brand colors are built in, so your website, your property sites and your dashboard all stay on brand."],
+  ["Do I need to be technical?", "No. Editing a listing, writing a post, or updating a lead is a form. If you can use your email, you can run this."],
+  ["Does it work with Google Calendar?", "Yes. Connect your Google account, choose the calendars to show, and your schedule appears on the dashboard. Add or edit an appointment there and it updates in Google Calendar, and changes in Google show up in the dashboard. You can disconnect at any time."],
+  ["I already have a website and a blog. Can you move them?", "Yes. Posts can be imported from your current site, and old URLs are redirected to the new ones with permanent redirects, so links and search rankings carry over."],
+  ["Does it work on my phone?", "Yes. Your site is built phone-first, and the dashboard installs to your home screen like an app, so checking a lead between showings takes a tap."],
+  ["Can people on my team see different things?", "Yes. Each person can have full website access, blog-only access, or none, and the leads, pipeline, and transactions tools are switched on per agent."],
+];
+
 export default function LandingPage() {
+  const onMarketingHost = isMarketingHost(window.location.hostname);
+  const cta = onMarketingHost ? "#early-access" : contactMailto("Interested in the dashboard");
+
   return (
     <div className="min-h-screen bg-[#faf9f7] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] overflow-x-clip">
       <MarketingNav />
 
-      {/* Hero — dashboard-first */}
-      <section className="relative px-6 lg:px-10 pt-16 pb-16 lg:pt-24 lg:pb-36">
+      {/* Hero */}
+      <section className="relative px-6 lg:px-10 pt-16 pb-16 lg:pt-24 lg:pb-32">
         <div className="mx-auto max-w-7xl grid lg:grid-cols-[0.85fr_1.15fr] gap-16 items-center">
           <motion.div initial="hidden" animate="show" variants={variants.rise}>
-            <h1 className="text-5xl sm:text-6xl font-display font-semibold leading-[1.08] mb-6">
-              Everything the office runs on.
-              <br />
-              <span className="italic text-[#ed2127]">One dashboard.</span>
+            <div className="flex items-center gap-3 mb-6">
+              <img src={brokerage.logos.red} alt="The Agency" className="h-11 w-auto dark:hidden" />
+              <img src={brokerage.logos.white} alt="The Agency" className="h-11 w-auto hidden dark:block" />
+              <span className="h-7 w-px bg-black/15 dark:bg-white/20" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/55 dark:text-[#faf9f7]/55">For Agency agents</span>
+            </div>
+            <h1 className="text-5xl sm:text-[3.4rem] font-display font-semibold leading-[1.08] mb-6">
+              Your Agency website and back office,{" "}
+              <span className="italic text-[#ed2127]">in one place.</span>
             </h1>
             <p className="text-[17px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-8 max-w-md">
-              Property sites, agent sites, leads, pipeline and transactions, coming-soon
-              listings, and what your buyers want — all in the same place.
+              Your site, leads, pipeline, transactions, and calendar in one dashboard, already running at The Agency Oklahoma.
+              We build it, move you over, and keep it running.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <a
-                href="#products"
-                className="text-sm font-semibold px-7 py-3.5 rounded-full bg-[#1c1a17] text-white hover:bg-[#1c1a17]/90 dark:bg-white dark:text-[#1c1a17] dark:hover:bg-white/90 transition-colors inline-flex items-center gap-1.5"
+                href={cta}
+                className="text-sm font-semibold px-7 py-3.5 rounded-full bg-[#ed2127] text-white hover:bg-[#d41b21] transition-colors"
+              >
+                Request early access
+              </a>
+              <a
+                href="#home"
+                className="text-sm font-semibold px-7 py-3.5 rounded-full border border-black/15 dark:border-white/20 hover:border-[#ed2127] hover:text-[#ed2127] transition-colors"
               >
                 See how it works
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 5v14M6 13l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
               </a>
             </div>
           </motion.div>
 
-          <div className="relative">
+          <div className="relative min-w-0 pb-10">
             <motion.div
               initial={{ opacity: 0, scale: 0.96, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.9, ease: easeOut, delay: 0.15 }}
             >
-              <BrowserFrame
-                src="/images/landing/dashboard-overview.jpg"
-                alt="The Agency Listings dashboard — Listings, Agent Sites, Upcoming Listings, and Buyer Needs"
-              />
+              <BrowserFrame src="/images/landing/dash-home.jpg" alt="The dashboard home page: today's schedule, shortcuts, and tasks" />
             </motion.div>
+            <motion.figure
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: easeOut, delay: 0.35 }}
+              className="absolute -bottom-2 right-2 w-[92px] sm:w-[120px] lg:-right-4 lg:w-[140px] overflow-hidden rounded-[1.4rem] border-[4px] border-[#1c1a17] bg-[#1c1a17] shadow-xl shadow-black/25"
+            >
+              <div className="h-3.5 bg-white flex items-center justify-center"><span className="h-1 w-8 rounded-full bg-[#1c1a17]" /></div>
+              <img src="/images/landing/dash-home-mobile.jpg" alt="The dashboard on a phone" className="block w-full h-auto" />
+            </motion.figure>
+            <p className="text-[11px] text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-3 max-w-[60%]">{SAMPLE}</p>
           </div>
         </div>
       </section>
 
-      {/* Positioning strip — three capabilities, plain language, each
-          linking to its own deep-dive page. Replaced an earlier
-          "Before/Now/Always" version that leaned on "repo" and "deploy" —
-          jargon most visitors wouldn't recognize, and besides, this page
-          isn't about the old workflow anymore, it's about what the
-          dashboard does today. */}
+      {/* Running at The Agency */}
       <section className="border-y border-black/5 dark:border-white/10 bg-white dark:bg-[#161616]">
-        <div className="mx-auto max-w-6xl px-6 lg:px-10 py-12 grid sm:grid-cols-2 lg:grid-cols-5 gap-8 text-center">
-          {[
-            ["Brokerage Site", "The office's own front door — full MLS search, draw-a-boundary, and more.", "/brokerage-website"],
-            ["Agent Websites", "Every agent's own site — bio, listings, blog — on the same trusted brand.", "/agent-websites"],
-            ["Property Sites", "Every listing gets its own site automatically, live the moment you hit save.", "/property-websites"],
-            ["People", "Leads, pipeline and transactions on simple boards — with a checklist for every closing.", "/people"],
-            ["Upcoming", "Track a coming-soon listing, or what a buyer wants, before it's ever public.", "/upcoming"],
-          ].map(([word, copy, path], i) => (
-            <Reveal key={word} delay={i * 0.1} variant="scaleIn">
-              <Link to={path} className="group block">
-                <p className="text-lg leading-snug">
-                  <span className="font-display italic text-[#ed2127] group-hover:underline">{word}</span>{" "}
-                  <span className="text-[#1c1a17]/80 dark:text-[#faf9f7]/80">{copy}</span>
-                </p>
-              </Link>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      {/* Three products — peer highlights, each linking to its own
-          deep-dive page, ordered to match MarketingNav.jsx's own link
-          order: Brokerage Site, Agent Websites, Property Sites. Alternates
-          image-left/image-right (and the bg-white dark:bg-[#161616] band) by position for
-          rhythm down the page — keep that alternation if this order ever
-          changes again, not just the content. Home Search is the headline
-          capability for the Brokerage Site section (draw-a-boundary map
-          search), so it leads the screenshot even though Our Listings and
-          Home Valuation are part of the same deep-dive. */}
-      <section id="products" className="px-6 lg:px-10 py-24 lg:py-32">
-        <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
-          <Reveal variant="fromLeft">
-            <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
-              The office's own front door — searching the whole market.
-            </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
-              A real IDX home search across the whole board, draw-a-boundary map search, the
-              office's own listings, and an honest lead-capture valuation form — all one site.
-            </p>
-            <Link
-              to="/brokerage-website"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:text-[#ed2127] transition-colors"
-            >
-              See how it works
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-          </Reveal>
-          <Reveal variant="fromRight" delay={0.1}>
-            <BrowserFrame
-              src="/images/landing/brokerage-home-search.jpg"
-              alt="Home Search — full MLS map and list search on the brokerage site"
-            />
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
-        <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
-          <Reveal variant="fromLeft" className="order-2 lg:order-1">
-            <BrowserFrame src="/images/landing/agent-site-home.jpg" alt="Terrence Finchum's agent website" />
-          </Reveal>
-          <Reveal variant="fromRight" delay={0.1} className="order-1 lg:order-2">
-            <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
-              Every agent's own site, on the same trusted brand.
-            </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
-              Your own bio, your own listings, your own blog — styled the way you want it, built
-              on The Agency's brand. This one is live right now, and it took minutes to set up.
-            </p>
-            <Link
-              to="/agent-websites"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:text-[#ed2127] transition-colors"
-            >
-              See how it works
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="px-6 lg:px-10 py-24 lg:py-32">
-        <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
-          <Reveal variant="fromLeft">
-            <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
-              A premium site for every listing — instantly.
-            </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
-              Fill out a form and a full property site goes live: gallery, hero video, open
-              houses, a contact form that reaches you directly. Update status the moment a deal
-              changes — no redeploy, ever.
-            </p>
-            <Link
-              to="/property-websites"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:text-[#ed2127] transition-colors"
-            >
-              See how it works
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-          </Reveal>
-          <Reveal variant="fromRight" delay={0.1}>
-            <BrowserFrame
-              src="/images/landing/listing-home-fresh.jpg"
-              alt="1645 Saratoga Way public listing site"
-            />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* People — leads, pipeline, transactions. Sample-data rendering of
-          the real boards (the module is private, behind a login). */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
-        <div className="mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
-          <Reveal variant="fromLeft" className="order-2 lg:order-1">
-            <BrowserWindow>
-              <BoardMock title="Pipeline" columns={PIPELINE_COLUMNS.slice(2)} />
-            </BrowserWindow>
-            <p className="text-[11px] text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-3 text-center">Sample data</p>
-          </Reveal>
-          <Reveal variant="fromRight" delay={0.1} className="order-1 lg:order-2">
-            <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
-              Every lead, every deal — from first inquiry to closing.
-            </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
-              Website inquiries land on your Leads board automatically. Move people through your
-              pipeline, then into Transactions with their dates, parties, and a buyer or seller
-              checklist that builds itself.
-            </p>
-            <Link
-              to="/people"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:text-[#ed2127] transition-colors"
-            >
-              See how it works
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Dashboard experience — dark mode + installable app. Lighter
-          treatment (no browser-frame device pair, just one screenshot):
-          this is a quality-of-life improvement to the existing dashboard,
-          not a new product with its own deep-dive page. */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32">
-        <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-center">
-          <Reveal variant="fromLeft">
-            <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
-              Dark mode, and an app you can actually install.
-            </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6 max-w-md">
-              Switch the dashboard to light, dark, or match your device — set it once in Settings.
-              And it installs straight to your home screen like a real app, no App Store required.
-            </p>
-            <ul className="space-y-3">
-              {["Light, dark, or system — your call", "Installs to your home screen", "The same dashboard, just yours"].map(
-                (item) => (
-                  <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75 dark:text-[#faf9f7]/75">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2">
-                      <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    {item}
+        <div className="mx-auto max-w-7xl px-6 lg:px-10 py-8">
+          <Reveal>
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Running at The Agency today</p>
+              <ul className="grid grid-cols-1 sm:grid-cols-3 gap-x-10 gap-y-4">
+                {[
+                  ["Terrence Finchum", "Agent website", "https://terrencefinchum.com"],
+                  ["The Agency Oklahoma", "Brokerage website", "https://the-agency-oklahoma.vercel.app"],
+                  ["The dashboard", "In daily use", "https://app.latchpointstudios.com"],
+                ].map(([name, note, href]) => (
+                  <li key={name}>
+                    <a href={href} target="_blank" rel="noopener noreferrer" className="group block">
+                      <span className="block text-sm font-semibold group-hover:text-[#ed2127] transition-colors">{name} ↗</span>
+                      <span className="block text-xs text-[#1c1a17]/55 dark:text-[#faf9f7]/55">{note}</span>
+                    </a>
                   </li>
-                )
-              )}
-            </ul>
-          </Reveal>
-          <Reveal variant="fromRight" delay={0.1}>
-            <BrowserFrame src="/images/landing/dashboard-dark-mode.jpg" alt="The dashboard in dark mode" />
+                ))}
+              </ul>
+            </div>
           </Reveal>
         </div>
       </section>
 
-      {/* Two more tools, same dashboard — lighter treatment than the
-          products above (no browser-frame screenshot: neither has a public
-          page to show, both live inside the dashboard itself), styled off
-          AgentWebsitesPage.jsx's chip-grid pattern instead. */}
+      {/* Two halves */}
+      <section className="px-6 lg:px-10 py-24 lg:py-32">
+        <div className="mx-auto max-w-6xl">
+          <Reveal className="max-w-2xl">
+            <Eyebrow>The system</Eyebrow>
+            <h2 className="text-3xl sm:text-5xl font-display font-semibold leading-tight mb-5">Two halves, one login.</h2>
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed">
+              Most agents run a website in one place, leads in a second, and transactions in a spreadsheet. Here it&rsquo;s one
+              dashboard, and what you do in it shows up on your site.
+            </p>
+          </Reveal>
+          <div className="mt-12 grid md:grid-cols-2 gap-6">
+            {[
+              ["The website", ["Your own agent site on The Agency's brand, on your own domain", "A property site for every listing, from a form", "A blog with a post calendar, a publish checklist, and a formatting menu right on your text", "Areas, bios, and testimonials you edit yourself"]],
+              ["The back office", ["A home page for your day: schedule, new inquiries, tasks, and your goal", "Leads and a pipeline, tagged buyer, seller, or both", "Transactions with key dates, checklists, and progress rings", "Open houses, flyers, and upcoming listings"]],
+            ].map(([title, items], i) => (
+              <Reveal key={title} variant="scaleIn" delay={i * 0.1} className="rounded-2xl bg-white dark:bg-[#161616] border border-black/5 dark:border-white/10 shadow-xl shadow-black/5 p-8">
+                <h3 className="text-xl font-display font-semibold">{title}</h3>
+                <Bullets items={items} />
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Your day */}
+      <section className="px-6 lg:px-10 pb-24 lg:pb-32">
+        <div className="mx-auto max-w-6xl">
+          <GroupHeader id="home" title="Your day" body="Open one page and know what today looks like." />
+          <div className="mt-16">
+            <Feature
+              eyebrow="Home"
+              title="Your schedule, in sync with Google Calendar."
+              body="Connect your Google account and your calendars show up on the dashboard, in day, week, and month views. Add or change an appointment here and it changes in Google Calendar, and the other way around."
+              bullets={[
+                "Pick which calendars to show; calendars you can only view stay view-only",
+                "Your deal dates and tasks appear on the same schedule",
+                "New website inquiries are waiting right below, with call, text, and email buttons",
+                "Repeating tasks and a scorecard that tracks your year against your goal",
+              ]}
+              visual={
+                <div className="relative pb-6 sm:pr-24">
+                  <BrowserFrame src="/images/landing/dash-calendar.jpg" alt="The schedule with a connected Google account and the calendars shown on the dashboard" />
+                  <img
+                    src="/images/landing/dash-event.jpg"
+                    alt="Adding an appointment to Google Calendar from the dashboard"
+                    className="hidden sm:block absolute bottom-0 right-0 w-[200px] lg:w-[230px] rounded-xl border border-black/10 bg-white shadow-2xl shadow-black/25"
+                  />
+                </div>
+              }
+              caption={SAMPLE}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* The website */}
       <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl">
-          <Reveal className="max-w-2xl mb-10">
-            <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
-              Built for the whole office, not just one listing.
-            </h2>
-            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-6">
-              Two more tools live in the same dashboard, used quietly every day.
-            </p>
-            <Link
-              to="/upcoming"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:text-[#ed2127] transition-colors"
-            >
-              See how it works
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </Link>
-          </Reveal>
-
-          <div className="grid sm:grid-cols-2 gap-6">
-            <Reveal variant="scaleIn" className="bg-[#faf9f7] dark:bg-[#0d0d0d] rounded-2xl shadow-xl shadow-black/5 p-8">
-              <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">
-                Upcoming Listings
-              </p>
-              <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed">
-                Track a coming-soon property before it's ever public — beds, baths, an estimated
-                price, notes on the seller's timeline. The whole office sees it, not just the one
-                agent.
-              </p>
-            </Reveal>
-            <Reveal variant="scaleIn" delay={0.1} className="bg-[#faf9f7] dark:bg-[#0d0d0d] rounded-2xl shadow-xl shadow-black/5 p-8">
-              <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">
-                Buyer Needs
-              </p>
-              <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed">
-                List exactly what a buyer wants — budget, beds, baths, the areas they're
-                considering. When a colleague's off-market lead matches, everyone already knows.
-              </p>
-            </Reveal>
+          <GroupHeader id="website" title="The website" body="A site that looks like you, and keeps itself current." />
+          <div className="mt-16 flex flex-col gap-24">
+            <Feature
+              eyebrow="Listings"
+              title="A property site for every listing."
+              body="Fill out a form and the listing has its own site: hero photo, gallery, features, map, and a tour request. No new repo, no redeploy, no waiting on a developer."
+              bullets={["Change a listing's status and the live site updates the moment you do", "Open houses appear as a banner on the listing", "Printable flyers generated from the same listing"]}
+              visual={<BrowserFrame src="/images/landing/listing-home-fresh.jpg" alt="A listing's property website with hero photo, price, and key stats" />}
+            />
+            <Feature
+              flip
+              eyebrow="Agent sites"
+              title="Your own site, on The Agency's brand."
+              body="A bio, your areas of expertise, testimonials, your listings, and a blog, in a look you pick, with The Agency's logo and colors built in. It's built phone-first, because that's where your clients are."
+              bullets={["Six looks to start from, then your photos and square or rounded buttons", "Your own domain, with old URLs redirected so you keep your search rankings", "Inquiry forms that filter spam, confirm to the visitor, and land straight in your leads"]}
+              visual={
+                <div className="relative pb-6 sm:pr-16">
+                  <BrowserFrame src="/images/landing/agent-site-home.jpg" alt="An Agency agent's website home page" />
+                  <img
+                    src="/images/landing/agent-site-mobile.jpg"
+                    alt="The same agent website on a phone"
+                    className="hidden sm:block absolute -bottom-2 right-0 w-[124px] rounded-[1.4rem] border-[4px] border-[#1c1a17] shadow-xl shadow-black/25"
+                  />
+                </div>
+              }
+            />
+            <Feature
+              eyebrow="Blog"
+              title="A blog you'll actually keep up."
+              body="Neighborhood guides, local features, and market notes are how an agent gets found. The editor, the calendar, and the checklist are built to make a weekly post the easy thing to do."
+              bullets={["Select text and the formatting menu appears right above it", "Schedule posts ahead, with a calendar that shows the gaps", "A publish checklist: title, category, excerpt, cover photo, and a real length", "Post views, all-time and last 30 days, with your top post", "Moving over from another site? Your old posts can be imported"]}
+              visual={<BrowserFrame src="/images/landing/dash-blog-editor.jpg" alt="The blog editor with the formatting menu floating above selected text" />}
+              caption={SAMPLE}
+            />
           </div>
+        </div>
+      </section>
+
+      {/* The back office */}
+      <section className="px-6 lg:px-10 py-24 lg:py-32">
+        <div className="mx-auto max-w-6xl">
+          <GroupHeader id="back-office" title="The back office" body="Leads, pipeline, and transactions, laid out the way agents think." />
+          <div className="mt-16 flex flex-col gap-24">
+            <Feature
+              eyebrow="Overview"
+              title="Your whole book at a glance."
+              body="Leads, pipeline, and deals by stage, the key dates coming up in the next two weeks, and the follow-ups due today, on one page."
+              bullets={["Open deals, expected commission, and closed volume for the year", "Inspections, appraisals, and closings in date order", "Open anyone from a follow-up and call, text, or email in one tap"]}
+              visual={<BrowserFrame src="/images/landing/dash-overview.jpg" alt="The People overview with counts by stage, key dates, and follow-ups" />}
+              caption={SAMPLE}
+            />
+            <Feature
+              flip
+              eyebrow="Leads"
+              title="Every lead has a next step."
+              body="Website inquiries, open house sign-ins, and referrals land on a board. Each card carries a follow-up date, and anything overdue turns red, so the person you meant to call doesn't slip."
+              bullets={["Tag each person as a buyer, a seller, or both", "Call, text, or email from inside the card", "A second inquiry from the same person joins their existing card", "Columns you can rename, reorder, and add"]}
+              visual={<BrowserFrame src="/images/landing/dash-leads.jpg" alt="The Leads board with buyer and seller tags and follow-up dates" />}
+              caption={SAMPLE}
+            />
+            <Feature
+              eyebrow="Pipeline"
+              title="A pipeline that looks past this month."
+              body="Your sphere, your someday-buyers, and the sellers who'll list in spring, all in one place and sorted by how soon they're likely to move. The same board, the same follow-up dates, a longer horizon."
+              bullets={["Stages from 12+ months out to active, or whatever fits how you work", "Everyone you're nurturing, visible at a glance", "Move a card as the timeline changes"]}
+              visual={<BrowserFrame src="/images/landing/dash-pipeline.jpg" alt="The Pipeline board, from 12 months out to active" />}
+              caption={SAMPLE}
+            />
+            <Feature
+              flip
+              eyebrow="Transactions"
+              title="Under contract, nothing forgotten."
+              body="Each deal gets its key dates, the numbers, the title and lender, and buyer or seller checklists for tasks and documents, with deadlines counted from the contract date. Progress rings show how far along every deal is."
+              bullets={["Contract, inspection, appraisal, financing, and closing dates", "A task checklist and a document list, with seller and buyer versions you can edit", "Open deals, expected commission, and closed volume on your Overview"]}
+              visual={
+                <div className="relative pb-20 sm:pb-24">
+                  <BrowserFrame src="/images/landing/dash-transactions.jpg" alt="The Transactions board with task and document progress rings on every deal" />
+                  <img
+                    src="/images/landing/dash-checklists.jpg"
+                    alt="A deal's task and document checklists with progress rings"
+                    className="absolute -bottom-2 right-3 w-[62%] sm:w-[54%] rounded-xl border border-black/10 bg-white shadow-2xl shadow-black/25"
+                  />
+                </div>
+              }
+              caption={SAMPLE}
+            />
+            <Feature
+              eyebrow="Listings"
+              title="One place to manage every listing."
+              body="Status, price, photos, and open houses live in a single dashboard, and the whole office can see coming-soon listings and what buyers want before anything is public."
+              bullets={["Add photos, pick the hero shot, and schedule open houses", "Upcoming listings and buyer needs tracked before they hit the market", "A brokerage-wide view when you manage more than one agent"]}
+              visual={<BrowserFrame src="/images/landing/dashboard-overview.jpg" alt="The Listings dashboard" />}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Who it's for */}
+      <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
+        <div className="mx-auto max-w-6xl">
+          <Reveal className="max-w-2xl">
+            <Eyebrow>Who it&rsquo;s for</Eyebrow>
+            <h2 className="text-3xl sm:text-5xl font-display font-semibold leading-tight">Built for one agent, or a whole office.</h2>
+          </Reveal>
+          <div className="mt-12 grid md:grid-cols-3 gap-6">
+            {[
+              ["Agents", "Your own site and blog, plus a lead and pipeline board you'll actually open. Everything an independent agent needs, with nothing you don't."],
+              ["Teams", "Give each person the access that fits: full website editing, blog only, or none, and switch the leads and pipeline tools on per agent."],
+              ["Offices", "A brokerage site with an agent roster, areas, and a blog, and a dashboard for every listing and every agent. Each office gets its own location and look."],
+            ].map(([title, body], i) => (
+              <Reveal key={title} variant="scaleIn" delay={i * 0.1} className="rounded-2xl bg-[#faf9f7] dark:bg-[#0d0d0d] p-8">
+                <h3 className="text-lg font-display font-semibold">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-[#1c1a17]/70 dark:text-[#faf9f7]/70">{body}</p>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="px-6 lg:px-10 py-24 lg:py-32">
+        <div className="mx-auto max-w-6xl">
+          <Reveal className="max-w-2xl">
+            <Eyebrow>How it works</Eyebrow>
+            <h2 className="text-3xl sm:text-5xl font-display font-semibold leading-tight">We build it around how you already work.</h2>
+          </Reveal>
+          <div className="mt-12 grid md:grid-cols-3 gap-10">
+            {[
+              ["01", "We talk through your day", "Where leads come from, what stages your pipeline has, what happens between contract and closing. The back office gets shaped to that, not the other way around."],
+              ["02", "We build and move you over", "Your site, your dashboard, and your old blog posts. Old URLs are redirected to the new ones so the search ranking you've earned comes with you."],
+              ["03", "You run it, we keep it healthy", "Edits are forms, not code. And when you want something added later, you have a studio to call instead of a ticket queue."],
+            ].map(([n, title, body], i) => (
+              <Reveal key={n} delay={i * 0.1}>
+                <p className="font-display italic text-2xl text-[#ed2127]">{n}</p>
+                <h3 className="mt-2 text-lg font-display font-semibold">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-[#1c1a17]/70 dark:text-[#faf9f7]/70">{body}</p>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="px-6 lg:px-10 pb-24 lg:pb-32">
+        <div className="mx-auto max-w-3xl">
+          <Reveal>
+            <Eyebrow>Questions</Eyebrow>
+            <h2 className="text-3xl sm:text-5xl font-display font-semibold leading-tight">Things agents ask first.</h2>
+          </Reveal>
+          <Reveal delay={0.1} className="mt-10 divide-y divide-black/10 dark:divide-white/10 border-y border-black/10 dark:border-white/10">
+            {FAQ.map(([q, a]) => (
+              <details key={q} className="group py-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-left text-base font-semibold [&::-webkit-details-marker]:hidden">
+                  {q}
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-black/20 dark:border-white/25 transition-transform duration-300 group-open:rotate-45">
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                      <path d="M5 1v8M1 5h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                </summary>
+                <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-[#1c1a17]/70 dark:text-[#faf9f7]/70">{a}</p>
+              </details>
+            ))}
+          </Reveal>
+          <p className="mt-8 text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
+            <Link to="/agent-websites" className="hover:text-[#ed2127]">Agent websites</Link>
+            {" · "}
+            <Link to="/brokerage-website" className="hover:text-[#ed2127]">Brokerage site</Link>
+            {" · "}
+            <Link to="/property-websites" className="hover:text-[#ed2127]">Property sites</Link>
+            {" · "}
+            <Link to="/people" className="hover:text-[#ed2127]">People</Link>
+            {" · "}
+            <Link to="/upcoming" className="hover:text-[#ed2127]">Upcoming</Link>
+          </p>
         </div>
       </section>
 

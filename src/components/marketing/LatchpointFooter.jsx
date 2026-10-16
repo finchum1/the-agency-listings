@@ -13,7 +13,7 @@ const STUDIO = [
   { href: "https://realestate.latchpointstudios.com", label: "Real estate" },
   { href: "https://latchpointstudios.com/work", label: "Our work" },
   { href: "https://latchpointstudios.com/about", label: "About" },
-  { href: "#start", label: "Start a project" },
+  { href: "/#early-access", label: "Request early access" },
   { href: "mailto:hello@latchpointstudios.com", label: "Email us" },
 ];
 

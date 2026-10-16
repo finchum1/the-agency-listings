@@ -46,10 +46,10 @@ export default function LatchpointNav({ links, pathname, open, onToggle, onClose
 
             <div className="flex shrink-0 items-center gap-1">
               <a
-                href="#start"
+                href="/#early-access"
                 className="mr-1 hidden whitespace-nowrap rounded-full bg-(--lp-ember) px-4 py-2 font-geist text-sm font-medium text-[#08090b] transition-colors hover:bg-[#f0714f] lg:inline-flex xl:px-5"
               >
-                Start<span className="hidden xl:inline">&nbsp;a project</span>
+                Request<span className="hidden xl:inline">&nbsp;early access</span>
               </a>
               <ThemeToggle />
               <button
@@ -101,11 +101,11 @@ export default function LatchpointNav({ links, pathname, open, onToggle, onClose
                     );
                   })}
                   <a
-                    href="#start"
+                    href="/#early-access"
                     onClick={onClose}
                     className="mt-1 rounded-full bg-(--lp-ember) px-5 py-3 text-center font-geist text-[15px] font-medium text-[#08090b]"
                   >
-                    Start a project
+                    Request early access
                   </a>
                 </div>
               </motion.div>

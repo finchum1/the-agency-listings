@@ -7,9 +7,9 @@
 // ~160 so search results don't truncate them.
 export const MARKETING_META = {
   "/": {
-    title: "The Agency — One Dashboard for Real Estate Websites & Deals",
+    title: "Your Agency Website & Back Office, in One Place | The Agency",
     description:
-      "Brokerage and agent websites, property sites, leads, pipeline and transactions — everything an Oklahoma real estate office runs on, in one dashboard.",
+      "For Agency agents: your website, blog, leads, pipeline, transactions, and Google Calendar schedule in one dashboard, built and maintained for you. Request early access.",
   },
   "/brokerage-website": {
     title: "Brokerage Website with Full MLS Home Search | The Agency",
