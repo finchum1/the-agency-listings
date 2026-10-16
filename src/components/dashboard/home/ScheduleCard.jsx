@@ -56,8 +56,9 @@ function titleFor(view, cursorKey) {
   const e = addDays(s, 6);
   const sameMonth = s.getMonth() === e.getMonth();
   const a = s.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  const b = e.toLocaleDateString(undefined, sameMonth ? { day: "numeric", year: "numeric" } : { month: "short", day: "numeric", year: "numeric" });
-  return `${a} – ${b}`;
+  // A day-and-year-only format renders as "2026 (day: 17)" in some browsers, so the day is formatted on its own.
+  const b = sameMonth ? String(e.getDate()) : e.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return `${a} – ${b}, ${e.getFullYear()}`;
 }
 
 function step(view, cursorKey, dir) {
