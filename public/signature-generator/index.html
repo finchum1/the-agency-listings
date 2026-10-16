@@ -148,7 +148,7 @@
         <span>Latchpoint<span class="studios"> Studios</span></span>
       </a>
       <span class="sep" aria-hidden="true"></span>
-      <span class="brand">The Agency &middot; Oklahoma</span>
+      <span class="brand">The Agency</span>
     </header>
 
     <h1>Your animated email signature, ready in two minutes.</h1>
@@ -178,6 +178,11 @@
             <label for="website">Website</label>
             <input id="website" type="text" name="website" placeholder="janesmithhomes.com" maxlength="120" inputmode="url" />
           </div>
+          <div class="field">
+            <label for="location">Office location</label>
+            <input id="location" type="text" name="location" value="Oklahoma" placeholder="Oklahoma" maxlength="20" autocomplete="off" />
+            <p class="hint">Shown under The Agency logo, for example Oklahoma, Texas or Kansas City.</p>
+          </div>
 
           <p class="sub">Social links <span style="text-transform:none;letter-spacing:0;font-weight:400">(optional)</span></p>
           <div class="social"><img src="/signature-generator/assets/instagram.png" alt="" /><div><label class="sr" for="instagram">Instagram</label><input id="instagram" type="text" name="instagram" placeholder="Instagram: @username" maxlength="150" /></div></div>
@@ -188,7 +193,7 @@
           <div class="social"><img src="/signature-generator/assets/youtube.png" alt="" /><div><label class="sr" for="youtube">YouTube</label><input id="youtube" type="text" name="youtube" placeholder="YouTube: @channel or link" maxlength="150" /></div></div>
           <p class="hint" style="font-size:12px;color:var(--muted);margin:2px 0 0">A username or a full link both work. Leave a box empty and its icon is left out.</p>
 
-          <p class="fixed-note">The logo, &ldquo;Oklahoma&rdquo; and the franchise disclosure line are added automatically and can&rsquo;t be edited.</p>
+          <p class="fixed-note">The logo and the franchise disclosure line are added automatically and can&rsquo;t be edited.</p>
           <div class="row"><button type="button" id="reset" class="btn link">Clear form</button></div>
         </form>
       </section>
@@ -319,7 +324,7 @@
   var STORE_KEY = "agency-signature-v1";
 
   var SAMPLE = { name: "Your Name", title: "Real Estate Advisor", phone: "405-555-0123", website: "yourwebsite.com",
-                 credentials: "", instagram: "", facebook: "", linkedin: "", tiktok: "", x: "", youtube: "" };
+                 credentials: "", location: "Oklahoma", instagram: "", facebook: "", linkedin: "", tiktok: "", x: "", youtube: "" };
 
   var NETWORKS = [
     { key: "instagram", label: "Instagram", base: "https://instagram.com/" },
@@ -331,7 +336,7 @@
   ];
 
   var $ = function (id) { return document.getElementById(id); };
-  var fields = ["name", "title", "credentials", "phone", "website"].concat(NETWORKS.map(function (n) { return n.key; }));
+  var fields = ["name", "title", "credentials", "phone", "website", "location"].concat(NETWORKS.map(function (n) { return n.key; }));
 
   function esc(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -393,12 +398,19 @@
     h.push('  <tr>');
     h.push('    <td valign="middle" style="padding:0 20px 0 0;border-right:1px solid #e4e0d8;">');
     h.push('      <img src="' + base + 'logo-v1.gif" width="180" height="79" alt="The Agency" style="display:block;border:0;width:180px;height:79px;" />');
-    h.push('      <table cellpadding="0" cellspacing="0" border="0" width="180" style="border-collapse:collapse;width:180px;">');
-    h.push('        <tr>');
-    h.push('          <td width="36" style="width:36px;font-size:1px;line-height:1px;">&nbsp;</td>');
-    h.push('          <td width="141" align="center" style="width:141px;padding:6px 0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:14px;letter-spacing:4px;color:#6b6760;text-align:center;">OKLAHOMA</td>');
-    h.push('        </tr>');
-    h.push('      </table>');
+    var loc = (v.location || "").trim().toUpperCase();
+    if (loc) {
+      // Longer places get tighter letter-spacing (and then a smaller size) so they stay inside the logo's width.
+      var n = loc.length, ls = 4, fs = 11;
+      if (n > 9) ls = Math.max(1, Math.floor((141 / n - 7.5) * 2) / 2);
+      if (n > 14) { ls = 1; fs = 9; }
+      h.push('      <table cellpadding="0" cellspacing="0" border="0" width="180" style="border-collapse:collapse;width:180px;">');
+      h.push('        <tr>');
+      h.push('          <td width="36" style="width:36px;font-size:1px;line-height:1px;">&nbsp;</td>');
+      h.push('          <td width="141" align="center" style="width:141px;padding:6px 0 0 ' + ls + 'px;font-family:Arial,Helvetica,sans-serif;font-size:' + fs + 'px;line-height:14px;letter-spacing:' + ls + 'px;color:#6b6760;text-align:center;">' + esc(loc) + '</td>');
+      h.push('        </tr>');
+      h.push('      </table>');
+    }
     h.push('    </td>');
     h.push('    <td valign="middle" style="padding:0 0 0 20px;">');
     h.push('      <div style="font-size:17px;font-weight:bold;line-height:1.3;color:#1c1a17;">' + esc(v.name) + '</div>');
@@ -503,7 +515,7 @@
   });
 
   $("reset").addEventListener("click", function () {
-    fields.forEach(function (k) { $(k).value = ""; });
+    fields.forEach(function (k) { $(k).value = k === "location" ? "Oklahoma" : ""; });
     render();
   });
 
