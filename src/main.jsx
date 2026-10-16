@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
 import StandaloneStatusBar from './components/StandaloneStatusBar.jsx'
+import ScrollToTop from './components/ScrollToTop.jsx'
 import { isAppHost } from './lib/appHosts.js'
 import { setSwUpdateChecker } from './lib/swUpdate.js'
 
@@ -11,6 +12,7 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <StandaloneStatusBar />
+      <ScrollToTop />
       <App />
     </BrowserRouter>
   </StrictMode>,
