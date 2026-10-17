@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS } from "../../../lib/peopleStages";
 import { usePeople } from "../../../hooks/usePeople";
@@ -24,13 +25,92 @@ function followUpLabel(dateStr) {
   return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-const sortCol = (list) =>
-  [...list].sort((a, b) => {
-    if (a.next_follow_up && b.next_follow_up) return a.next_follow_up.localeCompare(b.next_follow_up);
-    if (a.next_follow_up) return -1;
-    if (b.next_follow_up) return 1;
-    return 0;
-  });
+// Cards in a column are ordered by follow-up date (soonest first, undated last), so where a card lands is decided by its date.
+const compareFollowUp = (a, b) => {
+  if (a.next_follow_up && b.next_follow_up) return a.next_follow_up.localeCompare(b.next_follow_up);
+  if (a.next_follow_up) return -1;
+  if (b.next_follow_up) return 1;
+  return 0;
+};
+const sortCol = (list) => [...list].sort(compareFollowUp);
+// Where `person` would sit among `sortedOthers` (already sorted, not including them): after anyone with the same date.
+const insertIndex = (sortedOthers, person) => {
+  const i = sortedOthers.findIndex((x) => compareFollowUp(person, x) < 0);
+  return i === -1 ? sortedOthers.length : i;
+};
+
+const TILT_DEG = 3;
+const DRAG_START_PX = 5;
+const LONG_PRESS_MS = 350;
+const COLLAPSED_KEY = (group) => `peopleCollapsedColumns:${group}`;
+
+// What's inside a person's card: the same markup is used for the card in its column and for the card floating under
+// the pointer while it is being dragged.
+function PersonCardBody({ p, group, progress, today }) {
+  const overdue = p.next_follow_up && p.next_follow_up < today;
+  const dueToday = p.next_follow_up === today;
+  return (
+    <>
+      <div className="flex items-center justify-between gap-2 min-w-0">
+        <p className="text-sm font-medium truncate">{p.name}</p>
+        {group !== "transaction" && SIDE_TAGS[p.side] && (
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${SIDE_TAGS[p.side].className}`}>{SIDE_TAGS[p.side].label}</span>
+        )}
+      </div>
+      {group === "transaction" && (
+        <div className="space-y-0.5">
+          {p.property_address && (
+            <p className="text-xs text-[#1c1a17]/70 dark:text-[#faf9f7]/70 truncate">{p.property_address}</p>
+          )}
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">
+            {[p.side === "buyer" ? "Buyer" : p.side === "seller" ? "Seller" : "", p.price ? `$${Number(p.price).toLocaleString()}` : ""]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+          {p.closing_date && (
+            <p className="text-xs font-medium text-[#1c1a17]/70 dark:text-[#faf9f7]/70">Closes {followUpLabel(p.closing_date)}</p>
+          )}
+        </div>
+      )}
+      {group !== "transaction" && (p.phone || p.email) && (
+        <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">{p.phone || p.email}</p>
+      )}
+      {p.next_follow_up && (
+        <p
+          className={`text-xs font-medium ${
+            overdue
+              ? "text-red-600 dark:text-red-400"
+              : dueToday
+                ? "text-amber-700 dark:text-amber-400"
+                : "text-[#1c1a17]/50 dark:text-[#faf9f7]/50"
+          }`}
+        >
+          Follow up {dueToday ? "today" : followUpLabel(p.next_follow_up)}
+          {overdue && " · overdue"}
+        </p>
+      )}
+      {group === "transaction" && (
+        <div className="flex items-center gap-3 pt-0.5">
+          {[
+            ["Tasks", progress[p.id]?.tasks],
+            ["Docs", progress[p.id]?.docs],
+          ].map(([label, v]) => (
+            <div key={label} className="flex items-center gap-2 min-w-0" title={v?.total ? `${label}: ${v.done} of ${v.total} done` : `No ${label.toLowerCase()} yet`}>
+              <ProgressRing done={v?.done || 0} total={v?.total || 0} size={34} stroke={4} textClass="text-[9px]" />
+              <div className="leading-tight min-w-0">
+                <p className="text-[11px] font-semibold">{label}</p>
+                <p className="text-[11px] text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">{v?.total ? `${v.done} of ${v.total}` : "None"}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+const CARD_CLASS =
+  "bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl p-3 space-y-2 select-none";
 
 function ColumnTitle({ name, onRename }) {
   const [editing, setEditing] = useState(false);
@@ -74,6 +154,19 @@ function ColumnTitle({ name, onRename }) {
     </button>
   );
 }
+
+const iconProps = { width: 14, height: 14, viewBox: "0 0 16 16", fill: "none", stroke: "currentColor", strokeWidth: 1.6, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true };
+// Two chevrons pointing in: fold the column up into a strip. Pointing out: open it again.
+const CollapseIcon = () => (
+  <svg {...iconProps}>
+    <path d="M2.5 4.5L6 8l-3.5 3.5M13.5 4.5L10 8l3.5 3.5" />
+  </svg>
+);
+const ExpandIcon = () => (
+  <svg {...iconProps}>
+    <path d="M6 4.5L2.5 8 6 11.5M10 4.5l3.5 3.5-3.5 3.5" />
+  </svg>
+);
 
 const menuItem =
   "w-full text-left px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40 disabled:hover:bg-transparent";
@@ -139,6 +232,182 @@ export default function PeopleBoard({ group }) {
   const [addingColumn, setAddingColumn] = useState(false);
   const [newColumnName, setNewColumnName] = useState("");
 
+  // ---- Dragging a card ------------------------------------------------------------------------------------------
+  // Cards are dragged with the pointer rather than the browser's built-in drag and drop, so the card under the cursor can
+  // lift off the board (shadow, tilted a few degrees) and the spot it will land in can show as a placeholder exactly as
+  // tall as the card. Order inside a column follows the follow-up date, so the placeholder sits where that date puts it.
+  const [drag, setDrag] = useState(null); // { id, origin, hoverStage, w, h, ox, oy } while a card is lifted
+  const dragRef = useRef(null); // the live pointer state (moves every frame, so it doesn't live in React state)
+  const floatRef = useRef(null);
+  const boardRef = useRef(null);
+  const suppressClickRef = useRef(false);
+  const latest = useRef({});
+
+  // Which columns are collapsed to a thin strip. Remembered per board in this browser.
+  const [collapsed, setCollapsed] = useState([]);
+  useEffect(() => {
+    try {
+      setCollapsed(JSON.parse(localStorage.getItem(COLLAPSED_KEY(group)) || "[]"));
+    } catch {
+      setCollapsed([]);
+    }
+  }, [group]);
+  const toggleCollapsed = (stage) => {
+    setCollapsed((cur) => {
+      const next = cur.includes(stage) ? cur.filter((s) => s !== stage) : [...cur, stage];
+      try {
+        localStorage.setItem(COLLAPSED_KEY(group), JSON.stringify(next));
+      } catch {
+        /* storage blocked: it just won't be remembered */
+      }
+      return next;
+    });
+  };
+
+  const floatTransform = (d) => `translate3d(${d.cx - d.ox}px, ${d.cy - d.oy}px, 0) rotate(${TILT_DEG}deg)`;
+
+  const updateHover = useCallback(() => {
+    const d = dragRef.current;
+    if (!d || !d.started) return;
+    const els = document.elementsFromPoint(d.cx, d.cy);
+    const col = els.find((el) => el.dataset && el.dataset.stage !== undefined);
+    const next = col ? col.dataset.stage : d.origin; // let go outside the board: it goes back where it was
+    if (next !== d.hoverStage) {
+      d.hoverStage = next;
+      setDrag((cur) => (cur ? { ...cur, hoverStage: next } : cur));
+    }
+  }, []);
+
+  const onCardPointerDown = (e, p) => {
+    if (dragRef.current) return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const d = {
+      id: p.id,
+      origin: p.stage,
+      hoverStage: p.stage,
+      pointerId: e.pointerId,
+      touch: e.pointerType === "touch",
+      sx: e.clientX,
+      sy: e.clientY,
+      cx: e.clientX,
+      cy: e.clientY,
+      ox: e.clientX - rect.left,
+      oy: e.clientY - rect.top,
+      w: rect.width,
+      h: rect.height,
+      started: false,
+      cancelled: false,
+    };
+    dragRef.current = d;
+    let timer = 0;
+    let raf = 0;
+
+    const stopTouchScroll = (ev) => {
+      if (d.started) ev.preventDefault();
+    };
+
+    // Scrolls the board sideways, or the column under the pointer up and down, when the card is held near an edge.
+    const autoScroll = () => {
+      const strip = boardRef.current;
+      const speed = (past) => Math.min(20, 4 + past / 4);
+      if (strip) {
+        const r = strip.getBoundingClientRect();
+        const edge = 64;
+        if (d.cx < r.left + edge) strip.scrollLeft -= speed(r.left + edge - d.cx);
+        else if (d.cx > r.right - edge) strip.scrollLeft += speed(d.cx - (r.right - edge));
+      }
+      const list = document.elementsFromPoint(d.cx, d.cy).find((el) => el.dataset && el.dataset.stageList !== undefined);
+      if (list) {
+        const r = list.getBoundingClientRect();
+        const edge = 56;
+        if (d.cy < r.top + edge) list.scrollTop -= speed(r.top + edge - d.cy);
+        else if (d.cy > r.bottom - edge) list.scrollTop += speed(d.cy - (r.bottom - edge));
+      }
+    };
+
+    const loop = () => {
+      autoScroll();
+      updateHover();
+      raf = requestAnimationFrame(loop);
+    };
+
+    const begin = () => {
+      if (d.started) return;
+      d.started = true;
+      clearTimeout(timer);
+      suppressClickRef.current = true;
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = "grabbing";
+      window.addEventListener("touchmove", stopTouchScroll, { passive: false });
+      setDrag({ id: d.id, origin: d.origin, hoverStage: d.origin, w: d.w, h: d.h, ox: d.ox, oy: d.oy });
+      raf = requestAnimationFrame(loop);
+    };
+
+    const cleanup = () => {
+      clearTimeout(timer);
+      cancelAnimationFrame(raf);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("touchmove", stopTouchScroll);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+      if (d.started) setTimeout(() => (suppressClickRef.current = false), 0);
+      dragRef.current = null;
+      setDrag(null);
+    };
+
+    function onMove(ev) {
+      if (ev.pointerId !== d.pointerId) return;
+      d.cx = ev.clientX;
+      d.cy = ev.clientY;
+      if (!d.started) {
+        const dist = Math.hypot(d.cx - d.sx, d.cy - d.sy);
+        if (d.touch) {
+          if (dist > 10) cleanup(); // they are scrolling, not dragging
+        } else if (dist > DRAG_START_PX) begin();
+        return;
+      }
+      if (floatRef.current) floatRef.current.style.transform = floatTransform(d);
+      updateHover();
+    }
+    function onUp(ev) {
+      if (ev.pointerId !== d.pointerId) return;
+      const { moveToStage } = latest.current;
+      const drop = d.started && !d.cancelled && d.hoverStage !== d.origin ? d.hoverStage : null;
+      const id = d.id;
+      cleanup();
+      if (drop !== null) moveToStage(id, drop);
+    }
+    function onCancel(ev) {
+      if (ev.pointerId === d.pointerId) cleanup();
+    }
+    function onKey(ev) {
+      if (ev.key === "Escape") {
+        d.cancelled = true;
+        cleanup();
+      }
+    }
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onCancel);
+    window.addEventListener("keydown", onKey);
+    // A finger has to rest on the card for a moment first, so scrolling the board still works.
+    if (d.touch) timer = setTimeout(begin, LONG_PRESS_MS);
+  };
+
+  useEffect(
+    () => () => {
+      // Leaving the page mid-drag: put the page back the way it was.
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    },
+    [],
+  );
+
   const inGroup = people.filter((p) => p.stage_group === group);
   const active = inGroup.filter((p) => !p.archived);
   const archived = inGroup.filter((p) => p.archived);
@@ -184,6 +453,8 @@ export default function PeopleBoard({ group }) {
     const { error: err } = await supabase.from("people").update({ stage }).eq("id", personId);
     if (err) refresh();
   };
+
+  latest.current = { moveToStage };
 
   const handleRename = async (oldName, newName) => {
     setBoardError("");
@@ -272,12 +543,21 @@ export default function PeopleBoard({ group }) {
           column scrolls up and down on its own. The strip is the full board
           height (not just as tall as the shortest column), so the horizontal
           scrollbar stays pinned near the bottom of the screen. */}
-      <div className="flex gap-3 overflow-x-auto overflow-y-hidden h-[calc(100vh-14rem)] min-h-[26rem] -mx-1 px-1 pb-1">
+      <div ref={boardRef} className="flex gap-3 overflow-x-auto overflow-y-hidden h-[calc(100vh-14rem)] min-h-[26rem] -mx-1 px-1 pb-1">
         {stages.map((stage, stageIndex) => {
           const col = sortCol(active.filter((p) => p.stage === stage));
+          const isCollapsed = collapsed.includes(stage);
+          // While a card is lifted it leaves its column; the column it would land in shows a placeholder as tall as the card.
+          const lifted = drag ? people.find((x) => x.id === drag.id) : null;
+          const others = lifted ? col.filter((x) => x.id !== lifted.id) : col;
+          const showPlaceholder = !!(drag && lifted && drag.hoverStage === stage);
+          const placeholderAt = showPlaceholder ? insertIndex(others, lifted) : -1;
+          const shownCount = others.length + (showPlaceholder ? 1 : 0);
+          const dropTarget = !!drag && drag.hoverStage === stage && drag.hoverStage !== drag.origin;
           return (
             <div
               key={stage}
+              data-stage={stage}
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragOver(stage);
@@ -291,13 +571,28 @@ export default function PeopleBoard({ group }) {
                   runStageChange(() => moveStage(group, columnName, stageIndex));
                   return;
                 }
-                const id = e.dataTransfer.getData("text/plain");
-                if (id) moveToStage(id, stage);
               }}
-              className={`w-64 shrink-0 h-full flex flex-col gap-2 rounded-2xl p-2.5 transition-colors ${
-                dragOver === stage ? "bg-[#ed2127]/10 dark:bg-[#f2454b]/15" : "bg-black/[0.03] dark:bg-white/[0.04]"
+              className={`${isCollapsed ? "w-11 p-1.5" : "w-64 p-2.5"} shrink-0 h-full flex flex-col gap-2 rounded-2xl transition-colors ${
+                dragOver === stage || dropTarget ? "bg-[#ed2127]/10 dark:bg-[#f2454b]/15" : "bg-black/[0.03] dark:bg-white/[0.04]"
               }`}
             >
+              {isCollapsed ? (
+                <button
+                  type="button"
+                  onClick={() => toggleCollapsed(stage)}
+                  aria-label={`Expand ${stage}`}
+                  title={`Expand ${stage}`}
+                  className="flex h-full w-full flex-col items-center gap-3 rounded-xl pt-1 text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+                >
+                  <ExpandIcon />
+                  <span className="[writing-mode:vertical-rl] whitespace-nowrap text-xs font-semibold uppercase tracking-wide">
+                    {stage}
+                    <span className="mx-1.5 opacity-40">·</span>
+                    {shownCount}
+                  </span>
+                </button>
+              ) : (
+              <>
               <div className="shrink-0 flex items-center justify-between gap-2 px-1.5 pt-1">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span
@@ -315,7 +610,7 @@ export default function PeopleBoard({ group }) {
                   <ColumnTitle name={stage} onRename={(n) => handleRename(stage, n)} />
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <span className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mr-1">{col.length}</span>
+                  <span className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mr-1">{shownCount}</span>
                   <button
                     type="button"
                     onClick={() => startAdd(stage)}
@@ -324,6 +619,15 @@ export default function PeopleBoard({ group }) {
                     className="h-6 w-6 flex items-center justify-center rounded-full text-base leading-none text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/10 dark:hover:bg-white/15"
                   >
                     +
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleCollapsed(stage)}
+                    aria-label={`Collapse ${stage}`}
+                    title="Collapse this column"
+                    className="h-6 w-6 flex items-center justify-center rounded-full text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/10 dark:hover:bg-white/15"
+                  >
+                    <CollapseIcon />
                   </button>
                   <ColumnMenu
                     index={stageIndex}
@@ -339,7 +643,7 @@ export default function PeopleBoard({ group }) {
 
               {/* Each column scrolls on its own, so a long list never spills past
                   the bottom of the column or pushes the others around. */}
-              <div className="flex-1 min-h-0 overflow-y-auto space-y-2 -mx-1 px-1 pb-1 [scrollbar-width:thin]">
+              <div data-stage-list="" className="flex-1 min-h-0 overflow-y-auto space-y-2 -mx-1 px-1 pb-1 [scrollbar-width:thin]">
               {addingStage === stage && (
                 <form
                   onSubmit={handleAdd}
@@ -399,82 +703,71 @@ export default function PeopleBoard({ group }) {
                 </form>
               )}
 
-              {col.map((p) => {
-                const overdue = p.next_follow_up && p.next_follow_up < today;
-                const dueToday = p.next_follow_up === today;
-                return (
+              {(() => {
+                const out = [];
+                let shownIndex = 0;
+                let placed = false;
+                const placeholder = (
                   <div
-                    key={p.id}
-                    draggable
-                    onDragStart={(e) => e.dataTransfer.setData("text/plain", p.id)}
-                    onClick={() => setSelectedId(p.id)}
-                    className="cursor-pointer bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl p-3 space-y-2 hover:shadow-sm transition-shadow"
-                  >
-                    <div className="flex items-center justify-between gap-2 min-w-0">
-                      <p className="text-sm font-medium truncate">{p.name}</p>
-                      {group !== "transaction" && SIDE_TAGS[p.side] && (
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${SIDE_TAGS[p.side].className}`}>{SIDE_TAGS[p.side].label}</span>
-                      )}
-                    </div>
-                    {group === "transaction" && (
-                      <div className="space-y-0.5">
-                        {p.property_address && (
-                          <p className="text-xs text-[#1c1a17]/70 dark:text-[#faf9f7]/70 truncate">{p.property_address}</p>
-                        )}
-                        <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">
-                          {[p.side === "buyer" ? "Buyer" : p.side === "seller" ? "Seller" : "", p.price ? `$${Number(p.price).toLocaleString()}` : ""]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </p>
-                        {p.closing_date && (
-                          <p className="text-xs font-medium text-[#1c1a17]/70 dark:text-[#faf9f7]/70">Closes {followUpLabel(p.closing_date)}</p>
-                        )}
-                      </div>
-                    )}
-                    {group !== "transaction" && (p.phone || p.email) && (
-                      <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">{p.phone || p.email}</p>
-                    )}
-                    {p.next_follow_up && (
-                      <p
-                        className={`text-xs font-medium ${
-                          overdue
-                            ? "text-red-600 dark:text-red-400"
-                            : dueToday
-                              ? "text-amber-700 dark:text-amber-400"
-                              : "text-[#1c1a17]/50 dark:text-[#faf9f7]/50"
-                        }`}
-                      >
-                        Follow up {dueToday ? "today" : followUpLabel(p.next_follow_up)}
-                        {overdue && " · overdue"}
-                      </p>
-                    )}
-                    {group === "transaction" && (
-                      <div className="flex items-center gap-3 pt-0.5">
-                        {[
-                          ["Tasks", progress[p.id]?.tasks],
-                          ["Docs", progress[p.id]?.docs],
-                        ].map(([label, v]) => (
-                          <div key={label} className="flex items-center gap-2 min-w-0" title={v?.total ? `${label}: ${v.done} of ${v.total} done` : `No ${label.toLowerCase()} yet`}>
-                            <ProgressRing done={v?.done || 0} total={v?.total || 0} size={34} stroke={4} textClass="text-[9px]" />
-                            <div className="leading-tight min-w-0">
-                              <p className="text-[11px] font-semibold">{label}</p>
-                              <p className="text-[11px] text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">{v?.total ? `${v.done} of ${v.total}` : "None"}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                    key="drop-placeholder"
+                    aria-hidden="true"
+                    style={{ height: drag?.h }}
+                    className="rounded-xl border-2 border-dashed border-[#ed2127]/40 dark:border-[#f2454b]/50 bg-[#ed2127]/[0.06] dark:bg-[#f2454b]/10"
+                  />
                 );
-              })}
-              {col.length === 0 && addingStage !== stage && (
+                for (const p of col) {
+                  const isLifted = drag?.id === p.id;
+                  if (!isLifted) {
+                    if (showPlaceholder && !placed && shownIndex === placeholderAt) {
+                      out.push(placeholder);
+                      placed = true;
+                    }
+                    shownIndex++;
+                  }
+                  out.push(
+                    <div
+                      key={p.id}
+                      hidden={isLifted}
+                      onPointerDown={(e) => onCardPointerDown(e, p)}
+                      onClick={() => {
+                        if (!suppressClickRef.current) setSelectedId(p.id);
+                      }}
+                      className={`${CARD_CLASS} cursor-grab hover:shadow-sm transition-shadow`}
+                    >
+                      <PersonCardBody p={p} group={group} progress={progress} today={today} />
+                    </div>,
+                  );
+                }
+                if (showPlaceholder && !placed) out.push(placeholder);
+                return out;
+              })()}
+              {shownCount === 0 && addingStage !== stage && (
                 <p className="text-xs text-[#1c1a17]/30 dark:text-[#faf9f7]/30 px-1.5 pb-2">Nobody here yet.</p>
               )}
               </div>
+              </>
+              )}
             </div>
           );
         })}
       </div>
+
+      {drag && inGroup.some((x) => x.id === drag.id) &&
+        createPortal(
+          <div
+            ref={floatRef}
+            aria-hidden="true"
+            className={`${CARD_CLASS} fixed left-0 top-0 z-[70] pointer-events-none shadow-[0_24px_48px_-12px_rgba(0,0,0,0.4),0_10px_20px_-8px_rgba(0,0,0,0.25)] dark:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.8),0_10px_20px_-8px_rgba(0,0,0,0.6)]`}
+            style={{
+              width: drag.w,
+              transformOrigin: `${drag.ox}px ${drag.oy}px`,
+              transform: dragRef.current ? floatTransform(dragRef.current) : undefined,
+            }}
+          >
+            <PersonCardBody p={people.find((x) => x.id === drag.id)} group={group} progress={progress} today={today} />
+          </div>,
+          document.body,
+        )}
 
       {archived.length > 0 && (
         <div>
