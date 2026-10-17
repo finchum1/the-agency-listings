@@ -597,3 +597,59 @@ create policy agent_calendars_owner_all on public.agent_calendars
     owner_id = auth.uid()
     and (connection_id is null or exists (select 1 from public.google_connections gc where gc.id = connection_id and gc.owner_id = auth.uid()))
   );
+
+-- 21. Board order. Cards used to sort by follow-up date only; an agent can now drag a card anywhere in a column.
+--     board_position is the card's place in its column (1, 2, 3...). A card with none yet (new, or never ordered) shows at
+--     the top of its column by follow-up date, so new people are seen first. move_person() saves a whole column's order
+--     in one call. A person who changes column any other way (the card panel, "Move to Pipeline", archiving) loses their
+--     old position, which meant a place in a different column.
+alter table public.people add column if not exists board_position integer check (board_position is null or board_position between 1 and 100000);
+
+create or replace function public.reset_board_position()
+returns trigger language plpgsql as $$
+begin
+  if (new.stage is distinct from old.stage or new.stage_group is distinct from old.stage_group)
+     and coalesce(current_setting('app.keep_board_position', true), '') <> 'on' then
+    new.board_position := null;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists reset_board_position on public.people;
+create trigger reset_board_position before update on public.people
+  for each row execute function public.reset_board_position();
+
+-- Moves one person into a column and saves that column's order: p_ordered is every person in the column, top to bottom,
+-- including the one being moved. Runs as the caller, so the usual rules apply (only their own people).
+create or replace function public.move_person(p_person uuid, p_stage text, p_ordered uuid[])
+returns void language plpgsql security invoker set search_path = public as $$
+declare
+  grp text;
+  n int;
+begin
+  if p_person is null or p_stage is null or btrim(p_stage) = '' or p_ordered is null
+     or not (p_person = any (p_ordered)) or array_length(p_ordered, 1) > 2000 then
+    raise exception 'move_person: invalid arguments';
+  end if;
+  select stage_group into grp from public.people where id = p_person and not archived;
+  if grp is null then
+    raise exception 'move_person: person not found';
+  end if;
+  -- everyone listed must be the person being moved, or already in the target column of the same board
+  select count(*) into n from public.people
+   where id = any (p_ordered) and not archived
+     and (id = p_person or (stage = p_stage and stage_group = grp));
+  if n <> array_length(p_ordered, 1) or (select count(distinct x) from unnest(p_ordered) x) <> array_length(p_ordered, 1) then
+    raise exception 'move_person: those people are not all in this column';
+  end if;
+  perform set_config('app.keep_board_position', 'on', true);
+  update public.people p
+     set stage = case when p.id = p_person then p_stage else p.stage end,
+         board_position = o.ord::int
+    from unnest(p_ordered) with ordinality as o(id, ord)
+   where p.id = o.id;
+  perform set_config('app.keep_board_position', '', true);
+end;
+$$;
+revoke all on function public.move_person(uuid, text, uuid[]) from public, anon;
+grant execute on function public.move_person(uuid, text, uuid[]) to authenticated;

@@ -25,19 +25,23 @@ function followUpLabel(dateStr) {
   return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-// Cards in a column are ordered by follow-up date (soonest first, undated last), so where a card lands is decided by its date.
+// Cards sit in the order the agent dragged them into (board_position). A card with no position yet (a new person, or a
+// column nobody has ordered) goes above the ordered ones, soonest follow-up first, so new people are seen first.
 const compareFollowUp = (a, b) => {
   if (a.next_follow_up && b.next_follow_up) return a.next_follow_up.localeCompare(b.next_follow_up);
   if (a.next_follow_up) return -1;
   if (b.next_follow_up) return 1;
   return 0;
 };
-const sortCol = (list) => [...list].sort(compareFollowUp);
-// Where `person` would sit among `sortedOthers` (already sorted, not including them): after anyone with the same date.
-const insertIndex = (sortedOthers, person) => {
-  const i = sortedOthers.findIndex((x) => compareFollowUp(person, x) < 0);
-  return i === -1 ? sortedOthers.length : i;
+const compareCards = (a, b) => {
+  const pa = a.board_position;
+  const pb = b.board_position;
+  if (pa != null && pb != null) return pa - pb;
+  if (pa != null) return 1;
+  if (pb != null) return -1;
+  return compareFollowUp(a, b);
 };
+const sortCol = (list) => [...list].sort(compareCards);
 
 const TILT_DEG = 3;
 const DRAG_START_PX = 5;
@@ -236,7 +240,7 @@ export default function PeopleBoard({ group }) {
   // Cards are dragged with the pointer rather than the browser's built-in drag and drop, so the card under the cursor can
   // lift off the board (shadow, tilted a few degrees) and the spot it will land in can show as a placeholder exactly as
   // tall as the card. Order inside a column follows the follow-up date, so the placeholder sits where that date puts it.
-  const [drag, setDrag] = useState(null); // { id, origin, hoverStage, w, h, ox, oy } while a card is lifted
+  const [drag, setDrag] = useState(null); // { id, origin, hoverStage, hoverIndex, w, h, ox, oy } while a card is lifted
   const dragRef = useRef(null); // the live pointer state (moves every frame, so it doesn't live in React state)
   const floatRef = useRef(null);
   const boardRef = useRef(null);
@@ -270,11 +274,34 @@ export default function PeopleBoard({ group }) {
     const d = dragRef.current;
     if (!d || !d.started) return;
     const els = document.elementsFromPoint(d.cx, d.cy);
-    const col = els.find((el) => el.dataset && el.dataset.stage !== undefined);
-    const next = col ? col.dataset.stage : d.origin; // let go outside the board: it goes back where it was
-    if (next !== d.hoverStage) {
-      d.hoverStage = next;
-      setDrag((cur) => (cur ? { ...cur, hoverStage: next } : cur));
+    const colEl = els.find((el) => el.dataset && el.dataset.stage !== undefined);
+    const stage = colEl ? colEl.dataset.stage : d.origin; // let go outside the board: it goes back where it was
+    let index;
+    if (!colEl) {
+      index = d.originIndex;
+    } else {
+      // Where in the column: above the first card (or the placeholder) whose middle is below the pointer. Counting the
+      // placeholder as it stands keeps it from jumping back and forth while the pointer rests on a boundary.
+      const list = colEl.querySelector("[data-stage-list]");
+      let cardsBefore = 0;
+      index = null;
+      for (const child of list ? list.children : []) {
+        if (child.hidden) continue;
+        const isPlaceholder = child.dataset.placeholder !== undefined;
+        if (!isPlaceholder && child.dataset.personId === undefined) continue;
+        const r = child.getBoundingClientRect();
+        if (d.cy < r.top + r.height / 2) {
+          index = cardsBefore;
+          break;
+        }
+        if (!isPlaceholder) cardsBefore++;
+      }
+      if (index === null) index = cardsBefore; // below the last card (or a collapsed/empty column): the end
+    }
+    if (stage !== d.hoverStage || index !== d.hoverIndex) {
+      d.hoverStage = stage;
+      d.hoverIndex = index;
+      setDrag((cur) => (cur ? { ...cur, hoverStage: stage, hoverIndex: index } : cur));
     }
   }, []);
 
@@ -285,7 +312,9 @@ export default function PeopleBoard({ group }) {
     const d = {
       id: p.id,
       origin: p.stage,
+      originIndex: sortCol(active.filter((x) => x.stage === p.stage)).findIndex((x) => x.id === p.id),
       hoverStage: p.stage,
+      hoverIndex: 0,
       pointerId: e.pointerId,
       touch: e.pointerType === "touch",
       sx: e.clientX,
@@ -299,6 +328,7 @@ export default function PeopleBoard({ group }) {
       started: false,
       cancelled: false,
     };
+    d.hoverIndex = d.originIndex;
     dragRef.current = d;
     let timer = 0;
     let raf = 0;
@@ -340,7 +370,7 @@ export default function PeopleBoard({ group }) {
       document.body.style.userSelect = "none";
       document.body.style.cursor = "grabbing";
       window.addEventListener("touchmove", stopTouchScroll, { passive: false });
-      setDrag({ id: d.id, origin: d.origin, hoverStage: d.origin, w: d.w, h: d.h, ox: d.ox, oy: d.oy });
+      setDrag({ id: d.id, origin: d.origin, hoverStage: d.origin, hoverIndex: d.originIndex, w: d.w, h: d.h, ox: d.ox, oy: d.oy });
       raf = requestAnimationFrame(loop);
     };
 
@@ -375,11 +405,11 @@ export default function PeopleBoard({ group }) {
     }
     function onUp(ev) {
       if (ev.pointerId !== d.pointerId) return;
-      const { moveToStage } = latest.current;
-      const drop = d.started && !d.cancelled && d.hoverStage !== d.origin ? d.hoverStage : null;
-      const id = d.id;
+      const { moveCard } = latest.current;
+      const moved = d.started && !d.cancelled && (d.hoverStage !== d.origin || d.hoverIndex !== d.originIndex);
+      const { id, hoverStage, hoverIndex } = d;
       cleanup();
-      if (drop !== null) moveToStage(id, drop);
+      if (moved) moveCard(id, hoverStage, hoverIndex);
     }
     function onCancel(ev) {
       if (ev.pointerId === d.pointerId) cleanup();
@@ -446,15 +476,25 @@ export default function PeopleBoard({ group }) {
     refresh();
   };
 
-  const moveToStage = async (personId, stage) => {
+  // Puts a person at `index` in a column (counting the column without them) and saves the whole column's order.
+  const moveCard = async (personId, stage, index) => {
     const person = people.find((p) => p.id === personId);
-    if (!person || person.stage === stage) return;
-    setPeople((list) => list.map((p) => (p.id === personId ? { ...p, stage } : p)));
-    const { error: err } = await supabase.from("people").update({ stage }).eq("id", personId);
-    if (err) refresh();
+    if (!person) return;
+    const target = sortCol(active.filter((p) => p.stage === stage && p.id !== personId));
+    const at = Math.max(0, Math.min(index, target.length));
+    const ordered = [...target.slice(0, at), person, ...target.slice(at)];
+    const place = new Map(ordered.map((p, i) => [p.id, i + 1]));
+    setPeople((list) =>
+      list.map((p) => (place.has(p.id) ? { ...p, stage: p.id === personId ? stage : p.stage, board_position: place.get(p.id) } : p)),
+    );
+    const { error: err } = await supabase.rpc("move_person", { p_person: personId, p_stage: stage, p_ordered: ordered.map((p) => p.id) });
+    if (err) {
+      setBoardError(err.message);
+      refresh();
+    }
   };
 
-  latest.current = { moveToStage };
+  latest.current = { moveCard };
 
   const handleRename = async (oldName, newName) => {
     setBoardError("");
@@ -551,7 +591,7 @@ export default function PeopleBoard({ group }) {
           const lifted = drag ? people.find((x) => x.id === drag.id) : null;
           const others = lifted ? col.filter((x) => x.id !== lifted.id) : col;
           const showPlaceholder = !!(drag && lifted && drag.hoverStage === stage);
-          const placeholderAt = showPlaceholder ? insertIndex(others, lifted) : -1;
+          const placeholderAt = showPlaceholder ? Math.min(drag.hoverIndex, others.length) : -1;
           const shownCount = others.length + (showPlaceholder ? 1 : 0);
           const dropTarget = !!drag && drag.hoverStage === stage && drag.hoverStage !== drag.origin;
           return (
@@ -710,6 +750,7 @@ export default function PeopleBoard({ group }) {
                 const placeholder = (
                   <div
                     key="drop-placeholder"
+                    data-placeholder=""
                     aria-hidden="true"
                     style={{ height: drag?.h }}
                     className="rounded-xl border-2 border-dashed border-[#ed2127]/40 dark:border-[#f2454b]/50 bg-[#ed2127]/[0.06] dark:bg-[#f2454b]/10"
@@ -727,6 +768,7 @@ export default function PeopleBoard({ group }) {
                   out.push(
                     <div
                       key={p.id}
+                      data-person-id={p.id}
                       hidden={isLifted}
                       onPointerDown={(e) => onCardPointerDown(e, p)}
                       onClick={() => {
