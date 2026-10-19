@@ -37,13 +37,21 @@ export function useAgentTasks(userId) {
     }
   };
 
-  const add = async ({ title, due_date, recurrence }) => {
+  const add = async ({ title, due_date, recurrence, start_time, duration_min }) => {
     const rule = recurrence || "none";
     // A repeating task needs a date to repeat from: default to today.
     const due = due_date || (rule !== "none" ? toKey(new Date()) : null);
     const { data, error: err } = await supabase
       .from("agent_tasks")
-      .insert({ title: title.trim(), due_date: due, recurrence: rule, series_start: rule !== "none" ? due : null })
+      .insert({
+        title: title.trim(),
+        due_date: due,
+        recurrence: rule,
+        series_start: rule !== "none" ? due : null,
+        // A time block needs a date; without one it is just a to-do.
+        start_time: due && start_time ? start_time : null,
+        duration_min: due && start_time ? duration_min || 60 : null,
+      })
       .select()
       .single();
     if (err) {
@@ -59,6 +67,11 @@ export function useAgentTasks(userId) {
   const update = (task, changes) => {
     const next = { ...task, ...changes };
     const extra = {};
+    // Taking the date away takes the time block with it.
+    if ("due_date" in changes && !changes.due_date && next.recurrence === "none") {
+      extra.start_time = null;
+      extra.duration_min = null;
+    }
     if ("due_date" in changes || "recurrence" in changes) {
       if (next.recurrence !== "none" && !next.due_date) {
         next.due_date = toKey(new Date());

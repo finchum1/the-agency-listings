@@ -237,14 +237,14 @@ const localTime = (iso) => `${pad(new Date(iso).getHours())}:${pad(new Date(iso)
 const plusHour = (hhmm) => `${pad(Math.min(23, Number(hhmm.slice(0, 2)) + 1))}:${hhmm.slice(3)}`;
 
 // Add or edit an event on a connected Google calendar, or look at one that can't be changed.
-export function EventModal({ cal, event, defaultDate, onClose }) {
+export function EventModal({ cal, event, defaultDate, defaults, onClose }) {
   const writable = cal.calendars.filter((c) => c.source === "google" && c.can_write);
   const editing = Boolean(event);
   const canEdit = !editing || event.canWrite;
   const calendarFor = (id) => cal.calendars.find((c) => c.id === id);
 
   const [f, setF] = useState(() => {
-    if (!event) return { title: "", allDay: false, startDate: defaultDate, endDate: defaultDate, start: "09:00", end: "10:00", location: "", description: "", calendarRowId: writable[0]?.id || "" };
+    if (!event) return { title: "", allDay: false, startDate: defaults?.date || defaultDate, endDate: defaults?.date || defaultDate, start: defaults?.start || "09:00", end: defaults?.end || "10:00", location: "", description: "", calendarRowId: writable[0]?.id || "" };
     if (event.allDay) {
       const last = new Date(`${event.endDate}T00:00:00`);
       last.setDate(last.getDate() - 1); // Google's all-day end is the day after the last day

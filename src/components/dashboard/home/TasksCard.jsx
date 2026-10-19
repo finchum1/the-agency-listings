@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { agoLabel, dayLabel, daysBetween, toKey } from "../../../lib/homeDates";
 import { RECURRENCES } from "../../../lib/taskRecurrence";
+import { rangeLabel, toMin } from "../../../lib/timeGrid";
 import { card, muted } from "./styles";
 
 const SHOW = 8;
@@ -66,6 +67,11 @@ function TaskRow({ task, today, onComplete, onUpdate, onRemove }) {
               </option>
             ))}
           </select>
+          {task.start_time && task.due_date && (
+            <span className={`text-[11px] ${muted}`}>
+              ◷ {rangeLabel(toMin(task.start_time), toMin(task.start_time) + (task.duration_min || 60))}
+            </span>
+          )}
           {task.recurrence !== "none" && task.last_done_at && (
             <span className={`text-[11px] ${muted}`}>
               Last done {agoLabel(daysBetween(toKey(new Date(task.last_done_at)), today))}

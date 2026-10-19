@@ -57,7 +57,7 @@ export default function DashboardHomePage() {
       <Shortcuts wantsBlog={wantsBlog} wantsPeople={wantsPeople} />
 
       <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-3 items-start">
-        <ScheduleCard userId={user?.id} wantsPeople={wantsPeople} tasks={tasksApi.tasks} span />
+        <ScheduleCard userId={user?.id} wantsPeople={wantsPeople} tasksApi={tasksApi} span />
       </div>
 
       <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-3 items-start">

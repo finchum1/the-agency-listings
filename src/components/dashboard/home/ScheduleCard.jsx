@@ -2,9 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
-import { useCalendarEvents } from "../../../hooks/useCalendarEvents";
+import { browserTimeZone, useCalendarEvents } from "../../../hooks/useCalendarEvents";
 import { addDays, dayLabel, fromKey, monthGrid, startOfWeek, timeLabel, toKey } from "../../../lib/homeDates";
+import { DAY_MIN, fromMin, toMin } from "../../../lib/timeGrid";
 import { CalendarsPanel, EventModal } from "./CalendarPanels";
+import TimeBlockModal from "./TimeBlockModal";
+import TimeGrid from "./TimeGrid";
 import { card, muted } from "./styles";
 
 const DEAL_COLOR = "#0f766e";
@@ -70,30 +73,6 @@ function step(view, cursorKey, dir) {
 
 const dot = (color) => <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ background: color }} aria-hidden="true" />;
 
-function ItemRow({ item, onOpen }) {
-  const body = (
-    <>
-      <span className={`shrink-0 w-16 text-xs pt-0.5 ${muted}`}>{item.allDay ? "All day" : timeLabel(item.start)}</span>
-      <span className="mt-1.5">{dot(item.color)}</span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-medium leading-snug break-words">{item.title}</span>
-        {item.sub && <span className={`block text-xs truncate ${muted}`}>{item.sub}</span>}
-      </span>
-    </>
-  );
-  return (
-    <li>
-      {item.raw ? (
-        <button type="button" onClick={() => onOpen(item.raw)} className="w-full flex items-start gap-3 py-2 text-left rounded-lg hover:bg-black/[0.03] dark:hover:bg-white/[0.04]">
-          {body}
-        </button>
-      ) : (
-        <div className="flex items-start gap-3 py-2">{body}</div>
-      )}
-    </li>
-  );
-}
-
 const sortItems = (a, b) => (a.allDay === b.allDay ? (a.start || "").localeCompare(b.start || "") || a.title.localeCompare(b.title) : a.allDay ? -1 : 1);
 
 // Month cells have room for three lines, so appointments come before deal dates and tasks there.
@@ -104,12 +83,16 @@ const sortForMonth = (a, b) => KIND_RANK[a.kind] - KIND_RANK[b.kind] || sortItem
 
 // Day, Week and Month views of the agent's linked calendars (read-only, by private iCal address), plus the key dates on
 // their open deals and their own tasks, each switchable.
-export default function ScheduleCard({ userId, wantsPeople, tasks, span }) {
+export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
+  const tasks = tasksApi.tasks;
   const [view, setView] = useState("day");
   const [cursor, setCursor] = useState(toKey(new Date()));
   const [show, setShow] = useState({ calendar: true, deals: true, tasks: true });
   const [managing, setManaging] = useState(false);
-  const [eventModal, setEventModal] = useState(null); // { event } to edit / view, or { event: null } to add
+  const [eventModal, setEventModal] = useState(null); // { event } to edit / view, or { event: null, defaults? } to add
+  const [block, setBlock] = useState(null); // { range } to block time for a new task, { task } to schedule or edit one
+  const [moved, setMoved] = useState({}); // Google events dragged to a new time, shown there until Google's answer arrives
+  const [moveError, setMoveError] = useState("");
   const [params, setParams] = useSearchParams();
   const [googleNotice, setGoogleNotice] = useState({ message: "", connectionId: null });
   const today = toKey(new Date());
@@ -147,7 +130,23 @@ export default function ScheduleCard({ userId, wantsPeople, tasks, span }) {
         const base = { id: `${e.calendarId}-${e.uid}-${e.start || e.startDate}`, kind: "calendar", title: e.title, sub: [e.location, names[e.calendarId]].filter(Boolean).join(" · "), color: colors[e.calendarId] || "#525252", allDay: e.allDay, raw: e };
         if (e.allDay) {
           for (let d = fromKey(e.startDate), n = 0; toKey(d) < e.endDate && n < 31; d = addDays(d, 1), n++) add(toKey(d), { ...base, id: `${base.id}-${toKey(d)}` });
-        } else add(toKey(new Date(e.start)), { ...base, start: e.start });
+        } else {
+          // A timed event becomes one block per day it touches (most are one).
+          const s = new Date(e.start);
+          const en = new Date(e.end || e.start);
+          const first = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+          const single = en <= addDays(first, 1);
+          for (let d = first, n = 0; n < 8; d = addDays(d, 1), n++) {
+            if (n > 0 && en <= d) break;
+            const key = toKey(d);
+            const startMin = n === 0 ? s.getHours() * 60 + s.getMinutes() : 0;
+            const endMin = en >= addDays(d, 1) ? DAY_MIN : en.getHours() * 60 + en.getMinutes();
+            const item = { ...base, id: `${base.id}-${key}`, start: n === 0 ? e.start : d.toISOString(), date: key, startMin, endMin: Math.max(endMin, startMin + 15), editable: Boolean(e.canWrite) && single };
+            const ov = moved[item.id];
+            if (ov) add(ov.date, { ...item, date: ov.date, startMin: ov.startMin, endMin: ov.endMin });
+            else add(key, item);
+          }
+        }
       }
     }
     if (show.deals) {
@@ -159,14 +158,65 @@ export default function ScheduleCard({ userId, wantsPeople, tasks, span }) {
     }
     if (show.tasks) {
       for (const t of tasks) {
-        if (!t.done && t.due_date) add(t.due_date, { id: `task-${t.id}`, kind: "task", title: t.title, sub: "Task", color: TASK_COLOR, allDay: true });
+        if (t.done || !t.due_date) continue;
+        const base = { id: `task-${t.id}`, kind: "task", title: t.title, sub: "Task", color: TASK_COLOR, task: t, date: t.due_date };
+        if (t.start_time) {
+          const startMin = toMin(t.start_time);
+          add(t.due_date, { ...base, allDay: false, start: new Date(`${t.due_date}T${t.start_time.slice(0, 5)}:00`).toISOString(), startMin, endMin: Math.min(DAY_MIN, startMin + (t.duration_min || 60)), editable: true });
+        } else add(t.due_date, { ...base, allDay: true });
       }
     }
     for (const list of map.values()) list.sort(sortItems);
     return map;
-  }, [cal.events, cal.calendars, deals, tasks, show]);
+  }, [cal.events, cal.calendars, deals, tasks, show, moved]);
+
+  // Google answered (or the range changed): the events on screen are the real ones again.
+  useEffect(() => setMoved({}), [cal.events]);
 
   const itemsOn = (key) => byDay.get(key) || [];
+  const itemsFor = (key) => {
+    const list = itemsOn(key);
+    return { allDay: list.filter((i) => i.allDay), timed: list.filter((i) => !i.allDay) };
+  };
+  const canAddEvent = cal.calendars.some((c) => c.source === "google" && c.can_write);
+  const untimed = tasks.filter((t) => !t.done && !(t.start_time && t.due_date));
+  const tray = untimed
+    .sort((a, b) => (a.due_date || "9999").localeCompare(b.due_date || "9999") || a.created_at.localeCompare(b.created_at))
+    .map((t) => ({ ...t, dueLabel: t.due_date ? dayLabel(t.due_date, today) : "No date", overdue: Boolean(t.due_date && t.due_date < today) }));
+
+  const openItem = (item) => {
+    if (item.raw) setEventModal({ event: item.raw });
+    else if (item.task) setBlock({ task: item.task });
+  };
+  const toLocalIso = (date, min) => (min >= DAY_MIN ? `${toKey(addDays(fromKey(date), 1))}T00:00:00` : `${date}T${fromMin(min)}:00`);
+  const moveItem = async (item, p) => {
+    setMoveError("");
+    if (item.kind === "task") {
+      const t = item.task;
+      const changes = { start_time: fromMin(p.startMin), duration_min: Math.max(5, p.endMin - p.startMin) };
+      if (p.date !== t.due_date) changes.due_date = p.date;
+      tasksApi.update(t, changes);
+      return;
+    }
+    const e = item.raw;
+    setMoved((m) => ({ ...m, [item.id]: p }));
+    try {
+      await cal.saveEvent({
+        calendarRowId: e.calendarId,
+        eventId: e.eventId,
+        event: { title: e.title, start: toLocalIso(p.date, p.startMin), end: toLocalIso(p.date, p.endMin), timeZone: browserTimeZone(), location: e.location || "", description: e.description || "" },
+      });
+    } catch (err) {
+      setMoved({});
+      setMoveError(`Couldn't move “${e.title}”: ${err.message}`);
+    }
+  };
+  const nextSlot = () => {
+    const n = new Date();
+    const key = cursor === today ? today : cursor;
+    const start = cursor === today ? Math.min(DAY_MIN - 60, Math.ceil((n.getHours() * 60 + n.getMinutes()) / 30) * 30) : 9 * 60;
+    return { date: key, startMin: start, endMin: start + 60 };
+  };
   const noCalendars = !cal.loading && cal.calendars.length === 0;
   const grid = view === "month" ? monthGrid(fromKey(cursor).getFullYear(), fromKey(cursor).getMonth()) : [];
   const weekDays = view === "week" ? Array.from({ length: 7 }, (_, i) => toKey(addDays(start, i))) : [];
@@ -221,7 +271,12 @@ export default function ScheduleCard({ userId, wantsPeople, tasks, span }) {
           <button type="button" onClick={() => setManaging((m) => !m)} aria-expanded={managing} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
             Calendars
           </button>
-          {cal.calendars.some((c) => c.source === "google" && c.can_write) && (
+          {view !== "month" && (
+            <button type="button" onClick={() => setBlock({ range: nextSlot() })} className="rounded-full border border-black/10 dark:border-white/15 text-xs font-semibold px-3.5 py-1.5 hover:bg-black/5 dark:hover:bg-white/10">
+              + Block time
+            </button>
+          )}
+          {canAddEvent && (
             <button type="button" onClick={() => setEventModal({ event: null })} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-3.5 py-1.5">
               + Event
             </button>
@@ -246,61 +301,23 @@ export default function ScheduleCard({ userId, wantsPeople, tasks, span }) {
       ))}
 
       <div className={`mt-4 ${cal.loading ? "opacity-60 transition-opacity" : ""}`}>
-        {view === "day" && (
-          <div>
-            {itemsOn(cursor).length === 0 ? (
-              <p className={`text-sm py-6 text-center ${muted}`}>Nothing scheduled{cursor === today ? " today" : ""}.</p>
-            ) : (
-              <ul className="divide-y divide-black/5 dark:divide-white/10">
-                {itemsOn(cursor).map((it) => (
-                  <ItemRow key={it.id} item={it} onOpen={(event) => setEventModal({ event })} />
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-
-        {view === "week" && (
-          <div className="grid gap-3 grid-cols-[minmax(0,1fr)] lg:grid-cols-7">
-            {weekDays.map((key) => {
-              const list = itemsOn(key);
-              const isToday = key === today;
-              return (
-                <div key={key} className={`rounded-xl border p-2.5 min-w-0 ${isToday ? "border-[#ed2127]/40 dark:border-[#f2454b]/50 bg-[#ed2127]/[0.03]" : "border-black/10 dark:border-white/15"}`}>
-                  <button type="button" onClick={() => { setCursor(key); setView("day"); }} className="block w-full text-left">
-                    <span className={`block text-[11px] font-semibold uppercase tracking-wide ${isToday ? "text-[#ed2127] dark:text-[#f2454b]" : muted}`}>
-                      {fromKey(key).toLocaleDateString(undefined, { weekday: "short" })} {fromKey(key).getDate()}
-                    </span>
-                  </button>
-                  <ul className="mt-1.5 space-y-1.5">
-                    {list.length === 0 && <li className={`text-[11px] ${muted}`}>—</li>}
-                    {list.map((it) => (
-                      <li key={it.id} title={`${it.allDay ? "All day" : timeLabel(it.start)} · ${it.title}${it.sub ? ` · ${it.sub}` : ""}`}>
-                        {(() => {
-                          const inner = (
-                            <>
-                              <span className="mt-1.5">{dot(it.color)}</span>
-                              <span className="min-w-0 text-xs leading-snug">
-                                {!it.allDay && <span className={`block ${muted}`}>{timeLabel(it.start)}</span>}
-                                <span className="block font-medium break-words">{it.title}</span>
-                              </span>
-                            </>
-                          );
-                          return it.raw ? (
-                            <button type="button" onClick={() => setEventModal({ event: it.raw })} className="w-full flex items-start gap-1.5 min-w-0 text-left rounded hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
-                              {inner}
-                            </button>
-                          ) : (
-                            <div className="flex items-start gap-1.5 min-w-0">{inner}</div>
-                          );
-                        })()}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
+        {(view === "day" || view === "week") && (
+          <TimeGrid
+            days={view === "day" ? [cursor] : weekDays}
+            today={today}
+            itemsFor={itemsFor}
+            tray={tray}
+            onOpen={openItem}
+            onCreate={(range) => setBlock({ range })}
+            onMove={moveItem}
+            onToggleTask={tasksApi.complete}
+            onPickTask={(task) => setBlock({ task })}
+            onScheduleTask={(task, p) => tasksApi.update(task, { ...(p.date !== task.due_date ? { due_date: p.date } : {}), start_time: fromMin(p.startMin), duration_min: p.endMin - p.startMin })}
+            onDayClick={(key) => {
+              setCursor(key);
+              setView("day");
+            }}
+          />
         )}
 
         {view === "month" && (
@@ -352,7 +369,24 @@ export default function ScheduleCard({ userId, wantsPeople, tasks, span }) {
           </div>
         )}
       </div>
-      {eventModal && <EventModal key={eventModal.event?.eventId || "new"} cal={cal} event={eventModal.event} defaultDate={cursor} onClose={() => setEventModal(null)} />}
+      {moveError && <p className="mt-3 text-xs text-red-600 dark:text-red-400">{moveError}</p>}
+      {eventModal && <EventModal key={eventModal.event?.eventId || "new"} cal={cal} event={eventModal.event} defaultDate={cursor} defaults={eventModal.defaults} onClose={() => setEventModal(null)} />}
+      {block && (
+        <TimeBlockModal
+          key={block.task?.id || "new"}
+          range={block.range}
+          task={block.task}
+          openTasks={untimed}
+          canAddEvent={canAddEvent}
+          tasksApi={tasksApi}
+          fallbackDate={cursor}
+          onEvent={(r) => {
+            setBlock(null);
+            setEventModal({ event: null, defaults: { date: r.date, start: fromMin(r.startMin), end: fromMin(r.endMin) } });
+          }}
+          onClose={() => setBlock(null)}
+        />
+      )}
     </section>
   );
 }

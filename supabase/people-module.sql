@@ -653,3 +653,11 @@ end;
 $$;
 revoke all on function public.move_person(uuid, text, uuid[]) from public, anon;
 grant execute on function public.move_person(uuid, text, uuid[]) to authenticated;
+
+-- 22. Time blocking. A task with a date can also have a start time and a length, which puts it on the hourly schedule
+--     as a block. Both stay null for an ordinary to-do. Repeating tasks keep their time when they roll to the next date.
+alter table public.agent_tasks add column if not exists start_time time;
+alter table public.agent_tasks add column if not exists duration_min integer;
+alter table public.agent_tasks drop constraint if exists agent_tasks_duration_check;
+alter table public.agent_tasks add constraint agent_tasks_duration_check
+  check (duration_min is null or duration_min between 5 and 1440);
