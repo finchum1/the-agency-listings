@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
@@ -6,12 +6,68 @@ import { useOrg } from "../../context/OrgContext";
 import BrandLogo from "../BrandLogo";
 import { SITE_ORIGIN } from "../../lib/seo";
 
+// The sidebar is a drawer. Open it is a menu with labels, anywhere from 224px to 360px wide (drag its right edge); closed it
+// is a 64px rail of icons that stays on the left of the screen. A quick flick, or dragging it narrow enough, closes it.
+const RAIL_PX = 64;
+const MIN_OPEN_PX = 224;
+const MAX_OPEN_PX = 360;
+const DEFAULT_OPEN_PX = 256;
+const NAV_KEY = "dashboardNav";
+const clampOpen = (n) => Math.max(MIN_OPEN_PX, Math.min(MAX_OPEN_PX, Math.round(n)));
+function readNav() {
+  try {
+    const v = JSON.parse(localStorage.getItem(NAV_KEY) || "null");
+    if (v && typeof v.open === "boolean") return { open: v.open, px: clampOpen(Number(v.px) || DEFAULT_OPEN_PX) };
+  } catch {
+    /* storage blocked: use the default */
+  }
+  return { open: true, px: DEFAULT_OPEN_PX };
+}
+
+const ICON_PATHS = {
+  home: <path d="M4 11l8-7 8 7v8.5a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19.5z" />,
+  website: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M3.5 12h17M12 3.5c2.4 2.4 3.5 5.3 3.5 8.5s-1.1 6.1-3.5 8.5c-2.4-2.4-3.5-5.3-3.5-8.5S9.6 5.9 12 3.5z" />
+    </>
+  ),
+  people: (
+    <>
+      <circle cx="9" cy="8.5" r="3.2" />
+      <path d="M3 20c.4-3.5 3-5.5 6-5.5s5.6 2 6 5.5" />
+      <path d="M16 5.6a3.2 3.2 0 0 1 0 5.8M18 14.8c1.8.7 3 2.3 3.2 5.2" />
+    </>
+  ),
+  listings: (
+    <>
+      <path d="M3.5 20.5h17M6 20.5V6.5L12 3l6 3.5v14" />
+      <path d="M9.5 10h1.5M13 10h1.5M9.5 13.5h1.5M13 13.5h1.5M10.5 20.5v-3.5h3v3.5" />
+    </>
+  ),
+  upcoming: (
+    <>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+      <path d="M8 3v4M16 3v4M3.5 10h17" />
+    </>
+  ),
+  admin: <path d="M12 3l7.5 3v5.5c0 4.6-3.1 8.2-7.5 9.5-4.4-1.3-7.5-4.9-7.5-9.5V6z" />,
+  signout: <path d="M10 4.5H6.5A1.5 1.5 0 0 0 5 6v12a1.5 1.5 0 0 0 1.5 1.5H10M15 8l4 4-4 4M19 12H9.5" />,
+};
+function NavIcon({ name, className = "" }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 ${className}`} aria-hidden="true">
+      {ICON_PATHS[name]}
+    </svg>
+  );
+}
+
 // Plain top-level tabs. (Website is a collapsible group of its own —
 // see SITE_ITEMS below — and the /dashboard index route just redirects to
 // the right first page for each agent, see DashboardHome.jsx.)
 const NAV_ITEMS = [
-  { to: "/dashboard/listings", label: "Listings", activeWhen: (p) => p === "/dashboard/listings" || p.startsWith("/dashboard/listings/") },
-  { to: "/dashboard/upcoming", label: "Upcoming", activeWhen: (p) => p === "/dashboard/upcoming" },
+  { to: "/dashboard/listings", label: "Listings", icon: "listings", activeWhen: (p) => p === "/dashboard/listings" || p.startsWith("/dashboard/listings/") },
+  { to: "/dashboard/upcoming", label: "Upcoming", icon: "upcoming", activeWhen: (p) => p === "/dashboard/upcoming" },
 ];
 
 // Website is a collapsible group, one page per section. profiles.site_access
@@ -57,6 +113,120 @@ export default function DashboardLayout() {
   const { brand: brokerage, org } = useOrg();
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [nav, setNav] = useState(readNav); // the desktop drawer: open or closed, and how wide it is when open
+  const [navLive, setNavLive] = useState(null); // its width while the edge is being dragged
+  const navDrag = useRef(null);
+  const [mobDx, setMobDx] = useState(0); // how far the phone drawer has been dragged shut
+  const mobDragging = useRef(false);
+  const navWidth = navLive ?? (nav.open ? nav.px : RAIL_PX);
+  const showRail = navWidth < 140;
+
+  const saveNav = (next) => {
+    setNav(next);
+    try {
+      localStorage.setItem(NAV_KEY, JSON.stringify(next));
+    } catch {
+      /* storage blocked: it just won't be remembered */
+    }
+  };
+  const toggleNav = () => saveNav({ ...nav, open: !nav.open });
+
+  // Drag the sidebar's right edge: any width from the icon rail to the widest the open menu goes. Let go and it settles:
+  // narrower than ~150px closes to the rail, anything else opens (never narrower than the open minimum). A quick flick
+  // left closes it, a quick flick right opens it.
+  const edgeHandlers = {
+    onPointerDown: (e) => {
+      if (e.button > 0) return;
+      navDrag.current = { x: e.clientX, w: navWidth, moved: false, samples: [{ x: e.clientX, t: performance.now() }] };
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    onPointerMove: (e) => {
+      const d = navDrag.current;
+      if (!d || (!d.moved && Math.abs(e.clientX - d.x) < 4)) return;
+      d.moved = true;
+      d.samples.push({ x: e.clientX, t: performance.now() });
+      if (d.samples.length > 8) d.samples.shift();
+      setNavLive(Math.max(RAIL_PX, Math.min(MAX_OPEN_PX, d.w + (e.clientX - d.x))));
+    },
+    onPointerUp: (e) => {
+      const d = navDrag.current;
+      navDrag.current = null;
+      if (!d || !d.moved) return;
+      const width = Math.max(RAIL_PX, Math.min(MAX_OPEN_PX, d.w + (e.clientX - d.x)));
+      const last = d.samples[d.samples.length - 1];
+      const from = d.samples.find((p) => last.t - p.t <= 120) || last;
+      const v = performance.now() - last.t > 90 || last.t === from.t ? 0 : (last.x - from.x) / (last.t - from.t); // px per ms, right is positive
+      setNavLive(null);
+      if (v < -0.8) saveNav({ ...nav, open: false });
+      else if (v > 0.8) saveNav({ open: true, px: clampOpen(Math.max(width, nav.px)) });
+      else if (width < 150) saveNav({ ...nav, open: false });
+      else saveNav({ open: true, px: clampOpen(width) });
+    },
+    onPointerCancel: () => {
+      navDrag.current = null;
+      setNavLive(null);
+    },
+    onDoubleClick: toggleNav,
+  };
+
+  // Phone: the menu is a drawer from the left. Swiping it back to the left (or a quick flick) closes it.
+  const closeMobile = () => {
+    setMobileNavOpen(false);
+    setMobDx(0);
+  };
+  const onMobileDrawerDown = (e) => {
+    if (!mobileNavOpen || e.button > 0 || e.target.closest("input, select, textarea")) return;
+    const g = { id: e.pointerId, x: e.clientX, y: e.clientY, active: false, dead: false, samples: [{ x: e.clientX, t: performance.now() }] };
+    const drawerW = e.currentTarget.getBoundingClientRect().width;
+    const finish = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
+      mobDragging.current = false;
+    };
+    function onMove(ev) {
+      if (ev.pointerId !== g.id || g.dead) return;
+      const dx = ev.clientX - g.x;
+      const dy = ev.clientY - g.y;
+      if (!g.active) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        if (Math.abs(dy) > Math.abs(dx) || dx > 0) {
+          g.dead = true; // scrolling the menu, or pulling the wrong way: leave it alone
+          return;
+        }
+        g.active = true;
+        mobDragging.current = true;
+      }
+      g.samples.push({ x: ev.clientX, t: performance.now() });
+      if (g.samples.length > 8) g.samples.shift();
+      setMobDx(Math.min(0, dx));
+    }
+    function onUp(ev) {
+      if (ev.pointerId !== g.id) return;
+      finish();
+      if (!g.active) return;
+      const dx = Math.min(0, ev.clientX - g.x);
+      const last = g.samples[g.samples.length - 1];
+      const from = g.samples.find((p) => last.t - p.t <= 120) || last;
+      const v = performance.now() - last.t > 90 || last.t === from.t ? 0 : (last.x - from.x) / (last.t - from.t);
+      if (v < -0.6 || dx < -drawerW * 0.35) closeMobile();
+      else setMobDx(0);
+    }
+    function onCancel(ev) {
+      if (ev.pointerId !== g.id) return;
+      finish();
+      setMobDx(0);
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onCancel);
+  };
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const onKey = (e) => e.key === "Escape" && closeMobile();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileNavOpen]);
   const [siteOpen, setSiteOpen] = useState(location.pathname.startsWith("/dashboard/site"));
   const [peopleOpen, setPeopleOpen] = useState(location.pathname.startsWith("/dashboard/people"));
   const inAdminArea = (path) =>
@@ -104,6 +274,7 @@ export default function DashboardLayout() {
   // Never leave the mobile menu open behind a new page after a nav tap.
   useEffect(() => {
     setMobileNavOpen(false);
+    setMobDx(0);
   }, [location.pathname]);
 
   const navLinkClass = (isActive) =>
@@ -129,8 +300,42 @@ export default function DashboardLayout() {
   const siteAccess = profile?.site_access || "full";
   const siteItems = siteAccess === "limited" ? SITE_ITEMS.filter((i) => i.to.endsWith("/blog")) : SITE_ITEMS;
 
-  const NavList = ({ onNavigate }) => {
-    const group = (label, open, setOpen, items) => (
+  const NavList = ({ onNavigate, rail = false }) => {
+    const path = location.pathname;
+    const inSite = path.startsWith("/dashboard/site");
+    const inPeople = path.startsWith("/dashboard/people");
+
+    // Closed drawer: one icon per main item. A group's icon goes to the first page in that group.
+    if (rail) {
+      const railLink = (to, label, icon, active) => (
+        <Link
+          key={label}
+          to={to}
+          onClick={onNavigate}
+          title={label}
+          aria-label={label}
+          aria-current={active ? "page" : undefined}
+          className={`mx-auto flex h-11 w-11 items-center justify-center rounded-xl transition-colors ${
+            active
+              ? "bg-[#1c1a17]/10 dark:bg-[#faf9f7]/10 text-[#1c1a17] dark:text-[#faf9f7]"
+              : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+          }`}
+        >
+          <NavIcon name={icon} />
+        </Link>
+      );
+      return (
+        <div className="flex flex-col gap-1.5">
+          {!workingElsewhere && railLink("/dashboard", "Home", "home", path === "/dashboard" || path === "/dashboard/")}
+          {!workingElsewhere && siteAccess !== "none" && railLink(siteItems[0].to, "Website", "website", inSite)}
+          {!workingElsewhere && profile?.people_enabled && railLink(PEOPLE_ITEMS[0].to, "People", "people", inPeople)}
+          {NAV_ITEMS.map((item) => railLink(item.to, item.label, item.icon, item.activeWhen(path)))}
+          {isAdmin && railLink(adminItems[0].to, "Admin", "admin", inAdminArea(path))}
+        </div>
+      );
+    }
+
+    const group = (label, icon, open, setOpen, items) => (
       <div className="mt-1 space-y-1">
         <button
           type="button"
@@ -138,13 +343,16 @@ export default function DashboardLayout() {
           aria-expanded={open}
           className={`${navLinkClass(false)} w-full flex items-center justify-between text-left`}
         >
-          <span>{label}</span>
+          <span className="flex items-center gap-3 min-w-0">
+            <NavIcon name={icon} />
+            <span className="truncate">{label}</span>
+          </span>
           <svg
             width="14"
             height="14"
             viewBox="0 0 24 24"
             fill="none"
-            className={`transition-transform ${open ? "rotate-90" : ""}`}
+            className={`shrink-0 transition-transform ${open ? "rotate-90" : ""}`}
           >
             <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -170,21 +378,23 @@ export default function DashboardLayout() {
       <>
         {!workingElsewhere && (
           <div className="space-y-1">
-            <Link to="/dashboard" onClick={onNavigate} className={navLinkClass(location.pathname === "/dashboard" || location.pathname === "/dashboard/")}>
+            <Link to="/dashboard" onClick={onNavigate} className={`${navLinkClass(path === "/dashboard" || path === "/dashboard/")} flex items-center gap-3`}>
+              <NavIcon name="home" />
               Home
             </Link>
           </div>
         )}
-        {!workingElsewhere && siteAccess !== "none" && group("Website", siteOpen, setSiteOpen, siteItems)}
-        {!workingElsewhere && profile?.people_enabled && group("People", peopleOpen, setPeopleOpen, PEOPLE_ITEMS)}
+        {!workingElsewhere && siteAccess !== "none" && group("Website", "website", siteOpen, setSiteOpen, siteItems)}
+        {!workingElsewhere && profile?.people_enabled && group("People", "people", peopleOpen, setPeopleOpen, PEOPLE_ITEMS)}
         <div className="mt-1 space-y-1">
           {NAV_ITEMS.map((item) => (
-            <Link key={item.to} to={item.to} onClick={onNavigate} className={navLinkClass(item.activeWhen(location.pathname))}>
+            <Link key={item.to} to={item.to} onClick={onNavigate} className={`${navLinkClass(item.activeWhen(path))} flex items-center gap-3`}>
+              <NavIcon name={item.icon} />
               {item.label}
             </Link>
           ))}
         </div>
-        {isAdmin && group("Admin", adminOpen, setAdminOpen, adminItems)}
+        {isAdmin && group("Admin", "admin", adminOpen, setAdminOpen, adminItems)}
       </>
     );
   };
@@ -223,25 +433,79 @@ export default function DashboardLayout() {
           photo ended up. print:hidden actually removes this from layout
           (display: none), so a printed page's height matches its real
           visible content. */}
-      <aside className="hidden md:flex md:w-64 md:shrink-0 md:flex-col md:h-screen md:sticky md:top-0 border-r border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] print:hidden">
-        <div className="flex items-center gap-3 px-6 py-6 shrink-0 min-w-0">
-          <BrandLogo src={brokerage.logo} darkSrc={brokerage.darkLogo} name={brokerage.name} className="h-9 w-auto" />
-          <span className="h-6 w-px bg-black/10 dark:bg-white/15" aria-hidden="true" />
-          <span className="text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 dark:text-[#faf9f7]/50 shrink-0">{brokerage.locationLabel}</span>
-        </div>
+      <aside
+        style={{ width: navWidth }}
+        className={`hidden md:flex md:shrink-0 md:flex-col md:h-screen md:sticky md:top-0 relative border-r border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] print:hidden ${
+          navLive === null ? "transition-[width] duration-200 ease-out motion-reduce:transition-none" : ""
+        }`}
+      >
+        {showRail ? (
+          <>
+            <div className="h-[4.75rem] shrink-0" aria-hidden="true" />
+            <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2" aria-label="Main">
+              <NavList rail />
+            </nav>
+            <div className="shrink-0 border-t border-black/5 dark:border-white/10 py-4 flex flex-col items-center gap-3">
+              <Link to="/dashboard/profile" title={profile?.full_name || "Your profile"} aria-label="Your profile">
+                <img src={avatarSrc} alt="" className="h-9 w-9 rounded-full object-cover bg-black/5 dark:bg-white/10" />
+              </Link>
+              <button
+                type="button"
+                onClick={() => supabase.auth.signOut()}
+                aria-label="Sign out"
+                title="Sign out"
+                className="flex h-9 w-9 items-center justify-center rounded-xl text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+              >
+                <NavIcon name="signout" />
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-3 px-6 py-6 shrink-0 min-w-0">
+              <BrandLogo src={brokerage.logo} darkSrc={brokerage.darkLogo} name={brokerage.name} className="h-9 w-auto" />
+              <span className="h-6 w-px bg-black/10 dark:bg-white/15" aria-hidden="true" />
+              <span className="min-w-0 truncate text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{brokerage.locationLabel}</span>
+            </div>
 
-        <OrgSwitcher />
+            <OrgSwitcher />
 
-        <nav className="flex-1 overflow-y-auto px-4">
-          <NavList />
-        </nav>
+            <nav className="flex-1 overflow-y-auto overflow-x-hidden px-4" aria-label="Main">
+              <NavList />
+            </nav>
 
-        <div className="px-4 py-5 border-t border-black/5 dark:border-white/10 shrink-0">
-          <ProfileBlock />
+            <div className="px-4 py-5 border-t border-black/5 dark:border-white/10 shrink-0 overflow-hidden">
+              <ProfileBlock />
+            </div>
+          </>
+        )}
+
+        <button
+          type="button"
+          onClick={toggleNav}
+          aria-label={showRail ? "Open the menu" : "Close the menu to icons"}
+          title={showRail ? "Open the menu" : "Close the menu to icons"}
+          className="absolute -right-3 top-7 z-20 flex h-6 w-6 items-center justify-center rounded-full border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] text-[#1c1a17]/60 dark:text-[#faf9f7]/60 shadow-sm hover:text-[#1c1a17] dark:hover:text-[#faf9f7] hover:border-black/25 dark:hover:border-white/30 print:hidden"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true" className={showRail ? "" : "rotate-180"}>
+            <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
+        {/* Grab the right edge to make the menu wider or narrower, or to close it to the icon rail. */}
+        <div
+          {...edgeHandlers}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Drag to resize the menu"
+          title="Drag to resize"
+          className="group absolute inset-y-0 -right-1.5 z-10 w-3 cursor-col-resize touch-none"
+        >
+          <span className={`absolute inset-y-0 left-[5px] w-0.5 transition-colors ${navLive !== null ? "bg-[#ed2127]/70 dark:bg-[#f2454b]/70" : "bg-transparent group-hover:bg-[#ed2127]/40 dark:group-hover:bg-[#f2454b]/40"}`} />
         </div>
       </aside>
 
-      {/* Mobile top bar */}
+      {/* Mobile top bar: the menu button opens the drawer below. */}
       <header className="md:hidden border-b border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] print:hidden">
         <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
@@ -251,33 +515,65 @@ export default function DashboardLayout() {
           </div>
           <button
             type="button"
-            onClick={() => setMobileNavOpen((v) => !v)}
-            aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+            onClick={() => setMobileNavOpen(true)}
+            aria-label="Open menu"
             aria-expanded={mobileNavOpen}
             className="p-2 -mr-1.5 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
           >
-            {mobileNavOpen ? (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <div className={`md:hidden print:hidden fixed inset-0 z-50 ${mobileNavOpen ? "" : "pointer-events-none"}`} aria-hidden={!mobileNavOpen}>
+        <button
+          type="button"
+          tabIndex={mobileNavOpen ? 0 : -1}
+          aria-label="Close menu"
+          onClick={closeMobile}
+          style={{ opacity: mobileNavOpen ? Math.max(0, 1 + mobDx / 320) : 0 }}
+          className="absolute inset-0 bg-black/40 transition-opacity duration-300"
+        />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu"
+          onPointerDown={onMobileDrawerDown}
+          style={{
+            transform: mobileNavOpen ? `translateX(${mobDx}px)` : "translateX(-100%)",
+            transition: mobDx !== 0 && mobDragging.current ? "none" : "transform 300ms cubic-bezier(0.16, 1, 0.3, 1)",
+            touchAction: "pan-y",
+          }}
+          className="absolute inset-y-0 left-0 flex w-[84vw] max-w-[320px] flex-col bg-white dark:bg-[#1a1a1a] shadow-2xl motion-reduce:!transition-none"
+        >
+          <div className="flex items-center gap-3 px-5 pt-[calc(1rem+env(safe-area-inset-top))] pb-4 shrink-0 min-w-0">
+            <BrandLogo src={brokerage.logo} darkSrc={brokerage.darkLogo} name={brokerage.name} className="h-8 w-auto shrink-0" />
+            <span className="h-5 w-px bg-black/10 dark:bg-white/15" aria-hidden="true" />
+            <span className="min-w-0 truncate text-[10px] font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{brokerage.locationLabel}</span>
+            <button
+              type="button"
+              onClick={closeMobile}
+              aria-label="Close menu"
+              className="ml-auto p-2 -mr-2 text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+            >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                 <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
-            ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            )}
-          </button>
-        </div>
-
-        {mobileNavOpen && (
-          <nav className="px-4 pb-4 border-t border-black/5 dark:border-white/10 pt-3">
+            </button>
+          </div>
+          <div className="px-4 shrink-0">
             <OrgSwitcher flush />
-            <NavList onNavigate={() => setMobileNavOpen(false)} />
-            <div className="mt-5 pt-4 border-t border-black/5 dark:border-white/10">
-              <ProfileBlock onNavigate={() => setMobileNavOpen(false)} />
-            </div>
+          </div>
+          <nav className="flex-1 overflow-y-auto overscroll-contain px-4" aria-label="Main">
+            <NavList onNavigate={closeMobile} />
           </nav>
-        )}
-      </header>
+          <div className="shrink-0 border-t border-black/5 dark:border-white/10 px-4 pt-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+            <ProfileBlock onNavigate={closeMobile} />
+          </div>
+        </div>
+      </div>
 
       <main className="flex-1 min-w-0">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-10 print:p-0 print:max-w-none print:mx-0">
