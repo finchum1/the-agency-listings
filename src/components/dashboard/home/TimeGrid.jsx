@@ -33,7 +33,10 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
     return () => clearInterval(t);
   }, []);
 
+  // Only re-render when the dragged block actually lands somewhere new (pointer moves fire far more often than that).
   const setPrev = (p) => {
+    const c = previewRef.current;
+    if (c === p || (c && p && c.id === p.id && c.kind === p.kind && c.date === p.date && c.startMin === p.startMin && c.endMin === p.endMin)) return;
     previewRef.current = p;
     setPreview(p);
   };
@@ -127,11 +130,18 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
       window.removeEventListener("pointerup", up);
       window.removeEventListener("pointercancel", cancel);
       window.removeEventListener("touchmove", blockTouchScroll);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
       setGhost(null);
       setPrev(null);
     };
+    const dragStyle = () => {
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = g.kind === "resize" ? "ns-resize" : "grabbing";
+    };
     const activate = () => {
       st.active = true;
+      dragStyle();
       try {
         navigator.vibrate?.(8);
       } catch {
@@ -151,6 +161,7 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
         }
         if (dist < 4) return;
         st.active = true;
+        dragStyle();
       }
       update(ev);
     };
@@ -184,7 +195,10 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
     window.addEventListener("pointercancel", cancel);
     window.addEventListener("touchmove", blockTouchScroll, { passive: false });
     if (touch && (g.kind === "move" || g.kind === "tray")) timer = setTimeout(activate, 320);
-    else if (touch && g.kind === "resize") st.active = true;
+    else if (touch && g.kind === "resize") {
+      st.active = true;
+      dragStyle();
+    }
   };
 
   const startOnEmpty = (e, key) => {
@@ -273,17 +287,18 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
             </div>
             {days.map((key) => {
               const { timed } = itemsFor(key);
-              // While a block is dragged, show it in its new place (and leave the old column without it).
-              const shown = [];
-              for (const it of timed) {
-                if (preview && preview.id === it.id && preview.kind !== "create") continue;
-                shown.push(it);
+              // The side-by-side layout is worked out from where blocks are, not where one is being dragged, so the
+              // others hold still while a block passes over them. The dragged block floats at its new place.
+              const lanes = layoutDay(timed);
+              const dragId = preview && (preview.kind === "move" || preview.kind === "resize") ? preview.id : null;
+              const shown = timed.filter((it) => it.id !== dragId);
+              if (dragId && preview.date === key) {
+                const src = days.map((k) => itemsFor(k).timed.find((t) => t.id === dragId)).find(Boolean);
+                if (src) {
+                  const own = lanes.get(src.id);
+                  shown.push({ ...src, date: key, startMin: preview.startMin, endMin: preview.endMin, dragging: true, floatLane: src.date === key ? own : null });
+                }
               }
-              if (preview && preview.date === key && preview.kind !== "create" && preview.kind !== "tray") {
-                const src = days.map((k) => itemsFor(k).timed.find((t) => t.id === preview.id)).find(Boolean);
-                if (src) shown.push({ ...src, date: key, startMin: preview.startMin, endMin: preview.endMin, dragging: true });
-              }
-              const lanes = layoutDay(shown);
               return (
                 <div
                   key={key}
@@ -294,7 +309,7 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
                   style={{ backgroundImage: `linear-gradient(to bottom, ${hairline} 1px, transparent 1px)`, backgroundSize: `100% ${HOUR_PX}px` }}
                 >
                   {shown.map((it) => {
-                    const lane = lanes.get(it.id) || { lane: 0, lanes: 1 };
+                    const lane = (it.dragging ? it.floatLane : lanes.get(it.id)) || { lane: 0, lanes: 1 };
                     const h = Math.max(((it.endMin - it.startMin) / 60) * HOUR_PX, 18);
                     const tall = h >= 40;
                     return (

@@ -300,7 +300,7 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
         </p>
       ))}
 
-      <div className={`mt-4 ${cal.loading ? "opacity-60 transition-opacity" : ""}`}>
+      <div className={`mt-4 ${cal.loading && view === "month" ? "opacity-60 transition-opacity" : ""}`}>
         {(view === "day" || view === "week") && (
           <TimeGrid
             days={view === "day" ? [cursor] : weekDays}
