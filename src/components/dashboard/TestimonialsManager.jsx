@@ -12,6 +12,10 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
   const [form, setForm] = useState({ quote: "", author: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [draft, setDraft] = useState({ quote: "", author: "" });
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState("");
 
   const inputClass =
     "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -47,6 +51,38 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
     onChanged?.();
   };
 
+  const startEdit = (t) => {
+    setEditingId(t.id);
+    setDraft({ quote: t.quote || "", author: t.author || "" });
+    setEditError("");
+  };
+
+  const saveEdit = async (e) => {
+    e.preventDefault();
+    if (isBlankHtml(draft.quote) || !draft.author.trim()) {
+      setEditError("A testimonial needs both a quote and a name.");
+      return;
+    }
+    setSavingEdit(true);
+    setEditError("");
+    const { data, error } = await supabase
+      .from("agent_site_testimonials")
+      .update({ quote: draft.quote, author: draft.author.trim() })
+      .eq("id", editingId)
+      .select("id");
+    setSavingEdit(false);
+    if (error) {
+      setEditError(error.message);
+      return;
+    }
+    if (!data?.length) {
+      setEditError("That change wasn't saved. You may not have permission to edit this testimonial.");
+      return;
+    }
+    setEditingId(null);
+    onChanged?.();
+  };
+
   const remove = async (t) => {
     if (!confirm("Delete this testimonial?")) return;
     await supabase.from("agent_site_testimonials").delete().eq("id", t.id);
@@ -61,7 +97,40 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
         <p className="text-sm text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No testimonials yet.</p>
       ) : (
         <div className="space-y-3">
-          {testimonials.map((t, i) => (
+          {testimonials.map((t, i) =>
+            editingId === t.id ? (
+              <form key={t.id} onSubmit={saveEdit} className="border border-black/20 dark:border-white/25 rounded-xl p-4 space-y-2">
+                <RichTextEditor
+                  value={draft.quote}
+                  onChange={(html) => setDraft((d) => ({ ...d, quote: html }))}
+                  placeholder="Quote"
+                  minHeight="4rem"
+                />
+                <input
+                  value={draft.author}
+                  onChange={(e) => setDraft((d) => ({ ...d, author: e.target.value }))}
+                  className={inputClass}
+                  placeholder="Client name"
+                />
+                <div className="flex items-center gap-2">
+                  <button
+                    type="submit"
+                    disabled={savingEdit}
+                    className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60"
+                  >
+                    {savingEdit ? "Saving…" : "Save"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingId(null)}
+                    className="rounded-full border border-black/10 dark:border-white/15 text-sm px-5 py-2 hover:bg-black/5 dark:hover:bg-white/10"
+                  >
+                    Cancel
+                  </button>
+                  {editError && <p className="text-sm text-red-600 dark:text-red-400">{editError}</p>}
+                </div>
+              </form>
+            ) : (
             <div key={t.id} className="border border-black/10 dark:border-white/15 rounded-xl p-4 flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="text-sm text-[#1c1a17]/80 dark:text-[#faf9f7]/80 italic">
@@ -93,6 +162,14 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
                 </button>
                 <button
                   type="button"
+                  onClick={() => startEdit(t)}
+                  aria-label="Edit testimonial"
+                  className="px-1 text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
                   onClick={() => remove(t)}
                   className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400"
                 >
@@ -100,7 +177,8 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
                 </button>
               </div>
             </div>
-          ))}
+            ),
+          )}
         </div>
       )}
 
