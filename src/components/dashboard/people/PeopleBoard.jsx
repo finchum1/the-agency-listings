@@ -537,10 +537,10 @@ export default function PeopleBoard({ group }) {
   const peekOpen = !!selected;
   return (
     <div
-      className="space-y-4 transition-[margin,padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+      className={`space-y-4 transition-[margin,padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${peek.resizing ? "!transition-none" : ""}`}
       style={{
         marginRight: peekOpen && isDesktop ? peek.css : undefined,
-        paddingBottom: peekOpen && !isDesktop ? "45dvh" : undefined,
+        paddingBottom: peekOpen && !isDesktop ? "14rem" : undefined,
       }}
     >
       <div className="flex items-start justify-between gap-4 flex-wrap">

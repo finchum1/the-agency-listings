@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS, ARCHIVE_REASONS, SOURCES } from "../../../lib/peopleStages";
 import ContactButtons from "./ContactButtons";
@@ -268,11 +268,15 @@ export default function PersonPanel({
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const sheet = !isDesktop;
   const [entered, setEntered] = useState(false);
-  const [snap, setSnap] = useState("peek"); // "peek" | "full" (phone)
+  const [snap, setSnap] = useState("peek"); // "peek" (name + call/text/email) | "full" (phone)
+  const [peekPx, setPeekPx] = useState(190); // how much of the sheet the peek shows: measured from its own content
   const [dragTy, setDragTy] = useState(null); // px the sheet is being dragged to, or null
   const [, setViewportTick] = useState(0);
+  const asideRef = useRef(null);
+  const grabRef = useRef(null);
   const grab = useRef(null);
   const dragTyRef = useRef(null);
+  const justDragged = useRef(false); // the click that can follow a drag must not also toggle the handle
 
   useEffect(() => {
     const t = setTimeout(() => setEntered(true), 16);
@@ -291,53 +295,112 @@ export default function PersonPanel({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  // Desktop: pressing anywhere outside the side peek closes it. Another card on the board is the exception: that swaps
+  // the peek to that person instead of closing and reopening it.
+  useEffect(() => {
+    if (!isDesktop) return;
+    const onDown = (e) => {
+      if (e.button !== 0 || !(e.target instanceof Element)) return;
+      if (asideRef.current?.contains(e.target) || e.target.closest("[data-person-id]")) return;
+      onClose();
+    };
+    document.addEventListener("pointerdown", onDown, true);
+    return () => document.removeEventListener("pointerdown", onDown, true);
+  }, [isDesktop, onClose]);
+
+  // The peek is exactly as tall as the handle, the name and the contact buttons, whatever the phone's size.
+  useLayoutEffect(() => {
+    if (sheet && snap === "peek" && grabRef.current) setPeekPx(grabRef.current.offsetHeight);
+  }, [sheet, snap, form.name, person.stage, person.archived]);
+
   const vh = typeof window === "undefined" ? 800 : window.innerHeight;
   const sheetH = Math.round(vh * 0.92);
-  const visibleFor = { peek: Math.round(vh * 0.42), full: sheetH };
+  const visibleFor = { peek: peekPx, full: sheetH };
   const restTy = sheetH - visibleFor[snap];
   const sheetTy = !entered ? sheetH : dragTy ?? restTy;
 
+  // Dragging the sheet by its handle or header. The drag only starts once the finger has moved a few pixels, so taps on
+  // Call, Text and Email still work; once it has started the sheet follows the finger, and on release a quick flick down
+  // closes it completely while a slower drag settles on the nearest of closed, peek and full.
   const grabHandlers = {
     onPointerDown: (e) => {
-      if (isDesktop || e.target.closest("button, input, select, textarea, a")) return;
-      grab.current = { id: e.pointerId, y: e.clientY, ty: restTy, lastY: e.clientY, lastT: performance.now(), v: 0, moved: 0 };
+      if (isDesktop || e.button > 0 || grab.current || e.target.closest("input, select, textarea")) return;
+      const g = { id: e.pointerId, y: e.clientY, ty: restTy, active: false, samples: [{ y: e.clientY, t: performance.now() }] };
+      grab.current = g;
+
+      // Follow the pointer on the whole window, so a fast drag that gets ahead of the sheet isn't lost.
+      const finish = () => {
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+        window.removeEventListener("pointercancel", onCancel);
+        grab.current = null;
+        dragTyRef.current = null;
+        setDragTy(null);
+      };
+      function onMove(ev) {
+        if (ev.pointerId !== g.id) return;
+        const dy = ev.clientY - g.y;
+        if (!g.active && Math.abs(dy) < 6) return;
+        g.active = true;
+        g.samples.push({ y: ev.clientY, t: performance.now() });
+        if (g.samples.length > 8) g.samples.shift();
+        const ty = Math.min(sheetH, Math.max(0, g.ty + dy));
+        dragTyRef.current = ty;
+        setDragTy(ty);
+      }
+      function onUp(ev) {
+        if (ev.pointerId !== g.id) return;
+        const active = g.active;
+        const ty = dragTyRef.current ?? g.ty;
+        finish();
+        if (active) {
+          justDragged.current = true;
+          setTimeout(() => (justDragged.current = false), 0);
+        }
+        if (!active) return; // a tap: the buttons and the handle deal with it themselves
+        const last = g.samples[g.samples.length - 1];
+        const from = g.samples.find((p) => last.t - p.t <= 120) || last;
+        // px per ms, down is positive; a finger that stopped before lifting is not a flick
+        const v = performance.now() - last.t > 90 || last.t === from.t ? 0 : (last.y - from.y) / (last.t - from.t);
+        const shown = sheetH - ty;
+        let target;
+        if (v > 0.8) target = "close";
+        else if (v < -0.6) target = "full";
+        else if (shown < visibleFor.peek * 0.55) target = "close";
+        else target = Math.abs(shown - visibleFor.peek) < Math.abs(shown - visibleFor.full) ? "peek" : "full";
+        if (target === "close") onClose();
+        else setSnap(target);
+      }
+      function onCancel(ev) {
+        if (ev.pointerId === g.id) finish();
+      }
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onCancel);
+    },
+  };
+
+  // Desktop: the side peek's left edge can be dragged to any width.
+  const resize = useRef(null);
+  const resizeHandlers = {
+    onPointerDown: (e) => {
+      if (e.button > 0) return;
+      resize.current = { x: e.clientX, w: asideRef.current.getBoundingClientRect().width };
       e.currentTarget.setPointerCapture(e.pointerId);
+      peek.setResizing(true);
     },
     onPointerMove: (e) => {
-      const g = grab.current;
-      if (!g || e.pointerId !== g.id) return;
-      const now = performance.now();
-      const dt = Math.max(1, now - g.lastT);
-      g.v = (e.clientY - g.lastY) / dt; // px per ms, down is positive
-      g.lastY = e.clientY;
-      g.lastT = now;
-      g.moved = Math.max(g.moved, Math.abs(e.clientY - g.y));
-      const ty = Math.min(sheetH, Math.max(0, g.ty + (e.clientY - g.y)));
-      dragTyRef.current = ty;
-      setDragTy(ty);
+      if (resize.current) peek.setPx(resize.current.w + (resize.current.x - e.clientX));
     },
     onPointerUp: (e) => {
-      const g = grab.current;
-      if (!g || e.pointerId !== g.id) return;
-      grab.current = null;
-      const ty = dragTyRef.current ?? g.ty;
-      dragTyRef.current = null;
-      setDragTy(null);
-      if (g.moved < 6) return; // a tap, not a drag
-      const shown = sheetH - ty;
-      let target;
-      if (Math.abs(g.v) > 0.5) target = g.v > 0 ? (snap === "full" ? "peek" : "close") : "full";
-      else {
-        const opts = [["close", 0], ["peek", visibleFor.peek], ["full", visibleFor.full]];
-        target = opts.reduce((best, o) => (Math.abs(o[1] - shown) < Math.abs(best[1] - shown) ? o : best))[0];
-      }
-      if (target === "close") onClose();
-      else setSnap(target);
+      if (!resize.current) return;
+      peek.commit(resize.current.w + (resize.current.x - e.clientX));
+      resize.current = null;
+      peek.setResizing(false);
     },
     onPointerCancel: () => {
-      grab.current = null;
-      dragTyRef.current = null;
-      setDragTy(null);
+      resize.current = null;
+      peek.setResizing(false);
     },
   };
 
@@ -366,7 +429,7 @@ export default function PersonPanel({
                   <button
                     key={key}
                     type="button"
-                    onClick={() => peek.set(key)}
+                    onClick={() => peek.preset(key)}
                     aria-pressed={peek.choice === key}
                     aria-label={`${w.label} width`}
                     title={`${w.label} width`}
@@ -403,8 +466,26 @@ export default function PersonPanel({
       </div>
   );
 
+  const compactHeader = (
+    <div className="px-5 pt-1 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="font-display text-xl font-semibold truncate">{form.name || person.name}</h2>
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5">
+            {board.title} · {person.stage}
+            {person.archived && " · Archived"}
+          </p>
+        </div>
+        <button type="button" onClick={onClose} className="p-1 -mr-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]" aria-label="Close panel">
+          ✕
+        </button>
+      </div>
+      <ContactButtons person={{ ...person, phone: form.phone, email: form.email }} />
+    </div>
+  );
+
   const panelBody = (
-      <div className={`@container flex-1 min-h-0 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] overscroll-contain ${sheet && snap === "peek" ? "overflow-hidden touch-none" : "overflow-y-auto"}`} {...(sheet && snap === "peek" ? grabHandlers : {})} onFocusCapture={() => sheet && snap === "peek" && setSnap("full")}>
+      <div className={`@container flex-1 min-h-0 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] overscroll-contain ${sheet && snap === "peek" ? "overflow-hidden" : "overflow-y-auto"}`} onFocusCapture={() => sheet && snap === "peek" && setSnap("full")}>
       <div className={`grid gap-y-6 ${isTransaction ? "@3xl:grid-cols-2 @3xl:gap-x-8" : ""}`}>
         <div className="min-w-0 space-y-6">
         <div className="space-y-3">
@@ -623,12 +704,24 @@ export default function PersonPanel({
   if (isDesktop) {
     return (
       <aside
+        ref={asideRef}
         role="dialog"
         aria-modal="false"
         aria-label={`${person.name}'s card`}
         style={{ width: peek ? peek.css : "min(600px, calc(100vw - 8rem))", transform: entered ? "translateX(0)" : "translateX(100%)" }}
-        className={`fixed inset-y-0 right-0 z-50 flex flex-col border-l border-black/10 dark:border-white/10 shadow-[-16px_0_48px_-12px_rgba(0,0,0,0.18)] transition-[transform,width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${surface}`}
+        className={`fixed inset-y-0 right-0 z-50 flex flex-col border-l border-black/10 dark:border-white/10 shadow-[-16px_0_48px_-12px_rgba(0,0,0,0.18)] transition-[transform,width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${peek?.resizing ? "!transition-none" : ""} ${surface}`}
       >
+        {/* Grab the left edge to make the panel wider or narrower. */}
+        <div
+          {...resizeHandlers}
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Drag to resize the panel"
+          title="Drag to resize"
+          className="group absolute inset-y-0 -left-1.5 z-10 w-3 cursor-col-resize touch-none"
+        >
+          <span className={`absolute inset-y-0 left-[5px] w-0.5 transition-colors ${peek?.resizing ? "bg-[#ed2127]/70 dark:bg-[#f2454b]/70" : "bg-transparent group-hover:bg-[#ed2127]/40 dark:group-hover:bg-[#f2454b]/40"}`} />
+        </div>
         {panelHeader}
         {panelBody}
       </aside>
@@ -651,16 +744,25 @@ export default function PersonPanel({
         }}
         className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl shadow-[0_-12px_40px_-8px_rgba(0,0,0,0.3)] motion-reduce:!transition-none ${surface}`}
       >
-        <div {...grabHandlers} className="touch-none shrink-0 cursor-grab">
-          <button
-            type="button"
+        <div ref={grabRef} {...grabHandlers} onDragStart={(e) => e.preventDefault()} className="touch-none shrink-0 select-none">
+          <div
+            role="button"
+            tabIndex={0}
             aria-label={snap === "peek" ? "Show everything" : "Shrink to the preview"}
-            onClick={() => setSnap((s) => (s === "peek" ? "full" : "peek"))}
-            className="flex w-full justify-center pt-2.5 pb-1"
+            onClick={() => {
+              if (!justDragged.current) setSnap((v) => (v === "peek" ? "full" : "peek"));
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setSnap((v) => (v === "peek" ? "full" : "peek"));
+              }
+            }}
+            className="flex w-full cursor-grab justify-center pt-3.5 pb-3 active:cursor-grabbing"
           >
-            <span className="h-1.5 w-10 rounded-full bg-black/20 dark:bg-white/25" />
-          </button>
-          {panelHeader}
+            <span className="h-1.5 w-12 rounded-full bg-black/25 dark:bg-white/30" />
+          </div>
+          {snap === "peek" ? compactHeader : panelHeader}
         </div>
         {panelBody}
       </div>
