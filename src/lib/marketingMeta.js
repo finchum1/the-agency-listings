@@ -9,7 +9,7 @@ export const MARKETING_META = {
   "/": {
     title: "Your Agency Website & Back Office, in One Place | The Agency",
     description:
-      "For Agency agents: your website, blog, leads, pipeline, transactions, and Google Calendar schedule in one dashboard, built and maintained for you. Request early access.",
+      "For Agency agents: your website, blog, leads, pipeline, transactions, and Google Calendar schedule in one dashboard, built and maintained for you. $500 to set up, then $200 a month, no contracts. Request early access.",
   },
   "/brokerage-website": {
     title: "Brokerage Website with Full MLS Home Search | The Agency",

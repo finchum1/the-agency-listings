@@ -25,7 +25,7 @@ const ANCHOR_LINKS = [
   { href: "/#home", label: "Your day" },
   { href: "/#website", label: "Website" },
   { href: "/#back-office", label: "Back office" },
-  { href: "/#who", label: "Who it's for" },
+  { href: "/#pricing", label: "Pricing" },
   { href: "/#faq", label: "FAQ" },
 ];
 

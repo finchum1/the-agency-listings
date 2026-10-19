@@ -6,6 +6,7 @@ const PRODUCT = [
   { href: "/#home", label: "Your day" },
   { href: "/#website", label: "Website" },
   { href: "/#back-office", label: "Back office" },
+  { href: "/#pricing", label: "Pricing" },
   { href: "/#who", label: "Who it's for" },
   { href: "/#faq", label: "FAQ" },
   { href: "/#early-access", label: "Request early access" },

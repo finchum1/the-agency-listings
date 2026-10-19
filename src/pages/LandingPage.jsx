@@ -78,6 +78,7 @@ function GroupHeader({ id, title, body }) {
 }
 
 const FAQ = [
+  ["What does it cost?", "$500 to set up, then $200 a month. There are no contracts, so you pay month to month."],
   ["When can I get in?", "We're inviting people in a few at a time, by hand. Request early access and we'll email you to set up a short call when there's a spot."],
   ["Will it look like The Agency?", "Yes. The Agency's logo and brand colors are built in, so your website, your property sites and your dashboard all stay on brand."],
   ["Do I need to be technical?", "No. Editing a listing, writing a post, or updating a lead is a form. If you can use your email, you can run this."],
@@ -138,6 +139,10 @@ export default function LandingPage() {
                 See how it works
               </a>
             </div>
+            <p className="mt-5 text-sm text-[#1c1a17]/55 dark:text-[#faf9f7]/55">
+              $500 to set up, then $200 a month. No contracts.{" "}
+              <a href="#pricing" className="underline underline-offset-4 hover:text-[#ed2127]">What&rsquo;s included</a>
+            </p>
           </motion.div>
 
           <div className="relative min-w-0 pb-10">
@@ -343,8 +348,34 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <section id="pricing" className="scroll-mt-28 px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
+        <div className="mx-auto max-w-6xl">
+          <Reveal className="max-w-2xl">
+            <Eyebrow>Pricing</Eyebrow>
+            <h2 className="text-3xl sm:text-5xl font-display font-semibold leading-tight mb-5">A setup fee, then one monthly price.</h2>
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed">
+              No contracts. You pay month to month, and the setup fee is paid once.
+            </p>
+          </Reveal>
+          <div className="mt-12 grid md:grid-cols-2 gap-6">
+            {[
+              ["$500", "to set up", ["Your website built and live on your own domain", "Your blog posts and old URLs moved over, so you keep your search rankings", "Your dashboard set up with your logo and colors"]],
+              ["$200", "a month", ["Hosting, upkeep, and updates for your site and dashboard", "New features as they ship", "A studio to call when you want something changed"]],
+            ].map(([price, unit, items], i) => (
+              <Reveal key={price} variant="scaleIn" delay={i * 0.1} className="rounded-2xl bg-[#faf9f7] dark:bg-[#0d0d0d] p-8">
+                <p className="text-5xl font-display font-semibold">
+                  {price} <span className="text-base font-sans font-normal text-[#1c1a17]/60 dark:text-[#faf9f7]/60">{unit}</span>
+                </p>
+                <Bullets items={items} />
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Who it's for */}
-      <section id="who" className="scroll-mt-28 px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
+      <section id="who" className="scroll-mt-28 px-6 lg:px-10 py-24 lg:py-32">
         <div className="mx-auto max-w-6xl">
           <Reveal className="max-w-2xl">
             <Eyebrow>Who it&rsquo;s for</Eyebrow>
@@ -356,7 +387,7 @@ export default function LandingPage() {
               ["Teams", "Give each person the access that fits: full website editing, blog only, or none, and switch the leads and pipeline tools on per agent."],
               ["Offices", "A brokerage site with an agent roster, areas, and a blog, and a dashboard for every listing and every agent. Each office gets its own location and look."],
             ].map(([title, body], i) => (
-              <Reveal key={title} variant="scaleIn" delay={i * 0.1} className="rounded-2xl bg-[#faf9f7] dark:bg-[#0d0d0d] p-8">
+              <Reveal key={title} variant="scaleIn" delay={i * 0.1} className="rounded-2xl bg-white dark:bg-[#161616] border border-black/5 dark:border-white/10 shadow-xl shadow-black/5 p-8">
                 <h3 className="text-lg font-display font-semibold">{title}</h3>
                 <p className="mt-3 text-sm leading-relaxed text-[#1c1a17]/70 dark:text-[#faf9f7]/70">{body}</p>
               </Reveal>
@@ -366,7 +397,7 @@ export default function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="px-6 lg:px-10 py-24 lg:py-32">
+      <section id="process" className="scroll-mt-28 px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl">
           <Reveal className="max-w-2xl">
             <Eyebrow>How it works</Eyebrow>
@@ -389,7 +420,7 @@ export default function LandingPage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="scroll-mt-28 px-6 lg:px-10 pb-24 lg:pb-32">
+      <section id="faq" className="scroll-mt-28 px-6 lg:px-10 py-24 lg:py-32">
         <div className="mx-auto max-w-3xl">
           <Reveal>
             <Eyebrow>Questions</Eyebrow>
