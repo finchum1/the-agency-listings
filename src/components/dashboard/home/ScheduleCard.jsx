@@ -193,7 +193,7 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
     setMoveError("");
     if (item.kind === "task") {
       const t = item.task;
-      const changes = { start_time: fromMin(p.startMin), duration_min: Math.max(5, p.endMin - p.startMin) };
+      const changes = p.allDay ? { start_time: null, duration_min: null } : { start_time: fromMin(p.startMin), duration_min: Math.max(5, p.endMin - p.startMin) };
       if (p.date !== t.due_date) changes.due_date = p.date;
       tasksApi.update(t, changes);
       return;
@@ -311,8 +311,8 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
             onCreate={(range) => setBlock({ range })}
             onMove={moveItem}
             onToggleTask={tasksApi.complete}
-            onPickTask={(task) => setBlock({ task })}
-            onScheduleTask={(task, p) => tasksApi.update(task, { ...(p.date !== task.due_date ? { due_date: p.date } : {}), start_time: fromMin(p.startMin), duration_min: p.endMin - p.startMin })}
+            onPickTask={(task) => setBlock({ task, pick: true })}
+            onScheduleTask={(task, p) => tasksApi.update(task, { ...(p.date !== task.due_date ? { due_date: p.date } : {}), ...(p.allDay ? { start_time: null, duration_min: null } : { start_time: fromMin(p.startMin), duration_min: p.endMin - p.startMin }) })}
             onDayClick={(key) => {
               setCursor(key);
               setView("day");
@@ -373,16 +373,17 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
       {eventModal && <EventModal key={eventModal.event?.eventId || "new"} cal={cal} event={eventModal.event} defaultDate={cursor} defaults={eventModal.defaults} onClose={() => setEventModal(null)} />}
       {block && (
         <TimeBlockModal
-          key={block.task?.id || "new"}
+          key={`${block.task?.id || "new"}-${block.range?.date || ""}-${block.range?.allDay ? "d" : ""}`}
           range={block.range}
           task={block.task}
+          pick={block.pick}
           openTasks={untimed}
           canAddEvent={canAddEvent}
           tasksApi={tasksApi}
           fallbackDate={cursor}
           onEvent={(r) => {
             setBlock(null);
-            setEventModal({ event: null, defaults: { date: r.date, start: fromMin(r.startMin), end: fromMin(r.endMin) } });
+            setEventModal({ event: null, defaults: { date: r.date, allDay: r.allDay, start: fromMin(r.startMin ?? 9 * 60), end: fromMin(r.endMin ?? 10 * 60) } });
           }}
           onClose={() => setBlock(null)}
         />

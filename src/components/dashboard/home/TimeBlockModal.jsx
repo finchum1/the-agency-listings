@@ -17,15 +17,18 @@ const tabClass = (on, disabled) =>
 //   openTasks: tasks without a time yet, offered as "existing task" when making a new block
 //   canAddEvent: whether a Google event can be created instead (a writable Google calendar is connected)
 //   onEvent(range): switches to the Google event form with the same day and times
-export default function TimeBlockModal({ range, task, openTasks, canAddEvent, tasksApi, fallbackDate, onEvent, onClose }) {
-  const editing = Boolean(task && task.start_time && task.due_date);
+export default function TimeBlockModal({ range, task, openTasks, canAddEvent, tasksApi, fallbackDate, pick, onEvent, onClose }) {
+  // Opening a task that is already on the calendar (a timed block or an all-day chip) edits it; opening one from the
+  // "To schedule" list picks a time for it.
+  const editing = Boolean(task && !pick && task.due_date);
+  const hadTime = Boolean(task && task.start_time);
   const initial = (() => {
-    if (editing) {
+    if (editing && hadTime) {
       const s = toMin(task.start_time);
-      return { date: task.due_date, start: fromMin(s), end: fromMin(Math.min(DAY_MIN - 1, s + (task.duration_min || 60))) };
+      return { date: task.due_date, start: fromMin(s), end: fromMin(Math.min(DAY_MIN - 1, s + (task.duration_min || 60))), allDay: false };
     }
-    if (task) return { date: task.due_date || fallbackDate || toKey(new Date()), start: "09:00", end: "10:00" };
-    return { date: range.date, start: fromMin(range.startMin), end: fromMin(range.endMin) };
+    if (task) return { date: task.due_date || fallbackDate || toKey(new Date()), start: "09:00", end: "10:00", allDay: editing };
+    return { date: range.date, start: fromMin(range.startMin ?? 9 * 60), end: fromMin(range.endMin ?? 10 * 60), allDay: Boolean(range.allDay) };
   })();
   const [taskId, setTaskId] = useState(task ? task.id : "");
   const [title, setTitle] = useState(task ? task.title : "");
@@ -50,17 +53,17 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
     }
     const startMin = toMin(f.start);
     const endMin = toMin(f.end);
-    if (endMin <= startMin) {
+    if (!f.allDay && endMin <= startMin) {
       setError("The end has to be after the start.");
       return;
     }
     setBusy(true);
     setError("");
-    const block = { start_time: f.start, duration_min: Math.min(1440, endMin - startMin) };
+    const block = f.allDay ? { start_time: null, duration_min: null } : { start_time: f.start, duration_min: Math.min(1440, endMin - startMin) };
     if (chosen) {
       const changes = { ...block };
       if (f.date !== chosen.due_date) changes.due_date = f.date;
-      if (!editing || name !== chosen.title) changes.title = name;
+      if (name !== chosen.title) changes.title = name;
       await tasksApi.update(chosen, changes);
       onClose();
     } else {
@@ -85,7 +88,7 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
     onClose();
   };
 
-  const heading = editing ? "Time block" : task ? "Schedule task" : "Block time";
+  const heading = editing ? (hadTime ? "Time block" : "Task") : task ? "Schedule task" : f.allDay ? "All-day task" : "Block time";
   const dateLabel = fromKey(f.date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 
   return (
@@ -109,7 +112,7 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
               aria-pressed="false"
               disabled={!canAddEvent}
               title={canAddEvent ? "" : "Connect a Google calendar (Calendars) to add events"}
-              onClick={() => onEvent({ date: f.date, startMin: toMin(f.start), endMin: toMin(f.end) })}
+              onClick={() => onEvent({ date: f.date, allDay: f.allDay, startMin: toMin(f.start), endMin: toMin(f.end) })}
               className={tabClass(false, !canAddEvent)}
             >
               Google event
@@ -145,11 +148,17 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
           />
         </div>
 
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={f.allDay} onChange={(e) => set({ allDay: e.target.checked })} className="h-4 w-4 accent-[#ed2127]" aria-label="All day" />
+          All day (no set time)
+        </label>
+
         <div className="grid grid-cols-3 gap-3">
           <div className="col-span-3 sm:col-span-1">
             <label className={labelClass}>Day</label>
             <input type="date" required value={f.date} onChange={(e) => set({ date: e.target.value })} className={inputClass} aria-label="Day" />
           </div>
+          {!f.allDay && (
           <div className="col-span-3 sm:col-span-1 grid grid-cols-2 sm:contents gap-3">
             <div>
               <label className={labelClass}>Start</label>
@@ -171,6 +180,7 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
               <input type="time" step={300} required value={f.end} onChange={(e) => set({ end: e.target.value })} className={inputClass} aria-label="End time" />
             </div>
           </div>
+          )}
         </div>
         <p className={`text-xs ${muted}`}>{dateLabel}</p>
         {task && task.recurrence !== "none" && <p className={`text-xs ${muted}`}>This task repeats, and its time block repeats with it. Changing the day restarts the repeat from that day.</p>}
@@ -178,7 +188,7 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1">
           <button type="submit" disabled={busy} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-2.5 disabled:opacity-60">
-            {busy ? "Saving…" : editing ? "Save changes" : "Add to schedule"}
+            {busy ? "Saving…" : editing ? "Save changes" : f.allDay ? "Add task" : "Add to schedule"}
           </button>
           <button type="button" onClick={onClose} className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
             Cancel
@@ -188,9 +198,11 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
               <button type="button" onClick={finish} className="hover:underline">
                 Mark done
               </button>
-              <button type="button" onClick={unschedule} className="hover:underline">
-                Remove time
-              </button>
+              {hadTime && (
+                <button type="button" onClick={unschedule} className="hover:underline">
+                  Remove time
+                </button>
+              )}
               <button type="button" onClick={del} className="text-red-600 dark:text-red-400 hover:underline">
                 Delete
               </button>

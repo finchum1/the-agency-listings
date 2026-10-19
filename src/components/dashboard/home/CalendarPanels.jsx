@@ -244,7 +244,7 @@ export function EventModal({ cal, event, defaultDate, defaults, onClose }) {
   const calendarFor = (id) => cal.calendars.find((c) => c.id === id);
 
   const [f, setF] = useState(() => {
-    if (!event) return { title: "", allDay: false, startDate: defaults?.date || defaultDate, endDate: defaults?.date || defaultDate, start: defaults?.start || "09:00", end: defaults?.end || "10:00", location: "", description: "", calendarRowId: writable[0]?.id || "" };
+    if (!event) return { title: "", allDay: Boolean(defaults?.allDay), startDate: defaults?.date || defaultDate, endDate: defaults?.date || defaultDate, start: defaults?.start || "09:00", end: defaults?.end || "10:00", location: "", description: "", calendarRowId: writable[0]?.id || "" };
     if (event.allDay) {
       const last = new Date(`${event.endDate}T00:00:00`);
       last.setDate(last.getDate() - 1); // Google's all-day end is the day after the last day

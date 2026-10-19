@@ -21,6 +21,7 @@ const hex2rgba = (hex, a) => {
 export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate, onMove, onToggleTask, onPickTask, onScheduleTask, onDayClick }) {
   const scrollRef = useRef(null);
   const colRefs = useRef({});
+  const headRef = useRef(null);
   const [preview, setPreview] = useState(null); // { id, date, startMin, endMin, kind } while something is being dragged
   const previewRef = useRef(null);
   const [ghost, setGhost] = useState(null); // { label, x, y } follows the pointer while a "To schedule" task is dragged
@@ -85,16 +86,28 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
     let last = e;
     const scroller = scrollRef.current;
 
+    // The day names and the all-day strip are one sticky block; a point inside it means "all day".
+    const overHead = (ev) => {
+      const r = headRef.current?.getBoundingClientRect();
+      const sr = scroller.getBoundingClientRect();
+      return Boolean(r && ev.clientY >= sr.top && ev.clientY <= r.bottom && ev.clientX >= sr.left && ev.clientX <= sr.right);
+    };
+
     const update = (ev) => {
       const sr = scroller.getBoundingClientRect();
-      // Near the top or bottom edge of the grid, keep scrolling so a block can be dragged to an hour that's off screen.
+      const headBottom = headRef.current?.getBoundingClientRect().bottom ?? sr.top;
+      // Near the top or bottom edge of the hours, keep scrolling so a block can be dragged to an hour that's off screen.
       if (g.kind !== "tray" || (ev.clientX >= sr.left && ev.clientX <= sr.right)) {
-        if (ev.clientY < sr.top + 36) scroller.scrollTop -= 12;
+        if (ev.clientY > headBottom && ev.clientY < headBottom + 36) scroller.scrollTop -= 12;
         else if (ev.clientY > sr.bottom - 36) scroller.scrollTop += 12;
       }
       if (g.kind === "move") {
         const p = hit(ev.clientX, ev.clientY);
         if (!p) return;
+        if (g.item.kind === "task" && overHead(ev)) {
+          setPrev({ id: g.item.id, kind: "allday", date: p.key, label: g.item.title });
+          return;
+        }
         const dur = g.item.endMin - g.item.startMin;
         const startMin = clamp(snapMin(p.min - g.grab), 0, DAY_MIN - dur);
         setPrev({ id: g.item.id, kind: "move", date: p.key, startMin, endMin: startMin + dur });
@@ -110,13 +123,15 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
         const b = clamp(snapMin(Math.max(g.anchor, p.min), SNAP), a + MIN_BLOCK, DAY_MIN);
         setPrev({ id: "new", kind: "create", date: g.date, startMin: a, endMin: b });
       } else if (g.kind === "tray") {
+        // A task from the "To schedule" list or an all-day chip: drop on the grid for a time, or on the strip for a day.
         setGhost({ label: g.task.title, x: ev.clientX, y: ev.clientY });
-        const sr2 = scroller.getBoundingClientRect();
-        const p = ev.clientY >= sr2.top && ev.clientY <= sr2.bottom ? hit(ev.clientX, ev.clientY) : null;
-        if (!p || ev.clientX < sr2.left || ev.clientX > sr2.right) setPrev(null);
+        const inside = ev.clientY >= sr.top && ev.clientY <= sr.bottom && ev.clientX >= sr.left && ev.clientX <= sr.right;
+        const p = inside ? hit(ev.clientX, ev.clientY) : null;
+        if (!p) setPrev(null);
+        else if (overHead(ev)) setPrev({ id: "tray", srcId: g.srcId, kind: "allday", date: p.key, label: g.task.title });
         else {
           const startMin = clamp(snapMin(p.min - 15), 0, DAY_MIN - 60);
-          setPrev({ id: "tray", kind: "tray", date: p.key, startMin, endMin: startMin + 60 });
+          setPrev({ id: "tray", srcId: g.srcId, kind: "tray", date: p.key, startMin, endMin: startMin + 60 });
         }
       }
     };
@@ -172,7 +187,7 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
       cleanup();
       const cb = callbacks.current;
       if (g.kind === "move") {
-        if (wasActive && p) cb.onMove(g.item, { date: p.date, startMin: p.startMin, endMin: p.endMin });
+        if (wasActive && p) cb.onMove(g.item, p.kind === "allday" ? { date: p.date, allDay: true } : { date: p.date, startMin: p.startMin, endMin: p.endMin });
         else if (!wasActive) cb.onOpen(g.item);
       } else if (g.kind === "resize") {
         if (wasActive && p) cb.onMove(g.item, { date: p.date, startMin: p.startMin, endMin: p.endMin });
@@ -183,7 +198,8 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
           cb.onCreate({ date: g.date, startMin, endMin: startMin + 60 });
         }
       } else if (g.kind === "tray") {
-        if (wasActive && p) cb.onScheduleTask(g.task, { date: p.date, startMin: p.startMin, endMin: p.endMin });
+        if (wasActive && p) cb.onScheduleTask(g.task, p.kind === "allday" ? { date: p.date, allDay: true } : { date: p.date, startMin: p.startMin, endMin: p.endMin });
+        else if (!wasActive) g.onClick?.();
       }
     };
     const cancel = (ev) => {
@@ -227,7 +243,7 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
       >
         <div style={{ minWidth: cols > 1 ? GUTTER + cols * 112 : undefined }}>
           {/* day names and the all-day strip stay put while the hours scroll */}
-          <div className="sticky top-0 z-30 bg-white dark:bg-[#1a1a1a] border-b border-black/10 dark:border-white/15">
+          <div ref={headRef} className="sticky top-0 z-30 bg-white dark:bg-[#1a1a1a] border-b border-black/10 dark:border-white/15">
             <div className="grid" style={{ gridTemplateColumns: `${GUTTER}px repeat(${cols}, minmax(0, 1fr))` }}>
               <div />
               {days.map((key) => {
@@ -250,18 +266,46 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
                 );
               })}
             </div>
-            {days.some((k) => itemsFor(k).allDay.length) && (
-              <div className="grid border-t border-black/5 dark:border-white/10" style={{ gridTemplateColumns: `${GUTTER}px repeat(${cols}, minmax(0, 1fr))` }}>
-                <div className={`text-[10px] pt-1.5 pr-1.5 text-right ${muted}`}>all day</div>
-                {days.map((key) => (
-                  <div key={key} className="min-w-0 p-0.5 space-y-0.5 border-l border-black/5 dark:border-white/10">
+            <div className="grid border-t border-black/5 dark:border-white/10" style={{ gridTemplateColumns: `${GUTTER}px repeat(${cols}, minmax(0, 1fr))` }} data-allday-strip>
+              <div className={`text-[10px] pt-2 pr-1.5 text-right ${muted}`}>all day</div>
+              {days.map((key) => {
+                const over = preview && preview.kind === "allday" && preview.date === key;
+                return (
+                  <div
+                    key={key}
+                    data-allday={key}
+                    onClick={(e) => e.target === e.currentTarget && onCreate({ date: key, allDay: true })}
+                    title="Click to add an all-day task"
+                    className={`min-w-0 min-h-[30px] p-0.5 space-y-0.5 border-l border-black/5 dark:border-white/10 cursor-cell ${over ? "bg-[#ed2127]/10 ring-2 ring-inset ring-[#ed2127]/60 dark:ring-[#f2454b]/60" : ""}`}
+                  >
                     {itemsFor(key).allDay.map((it) => {
                       const chip = (
                         <span className="block truncate rounded px-1.5 py-0.5 text-[11px] font-medium leading-tight text-left" style={{ background: hex2rgba(it.color, 0.16), color: it.color, filter: "brightness(0.85)" }}>
                           {it.title}
                         </span>
                       );
-                      return it.raw || it.task ? (
+                      const dimmed = preview && preview.srcId === it.id ? "opacity-40" : "";
+                      if (it.task) {
+                        return (
+                          <div
+                            key={it.id}
+                            data-allday-task={it.task.id}
+                            role="button"
+                            tabIndex={0}
+                            title={it.title}
+                            onPointerDown={(e) => {
+                              e.stopPropagation();
+                              begin(e, { kind: "tray", task: it.task, srcId: it.id, onClick: () => onOpen(it) });
+                            }}
+                            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen(it))}
+                            className={`block w-full min-w-0 cursor-grab active:cursor-grabbing select-none ${dimmed}`}
+                            style={{ touchAction: "manipulation" }}
+                          >
+                            {chip}
+                          </div>
+                        );
+                      }
+                      return it.raw ? (
                         <button key={it.id} type="button" onClick={() => onOpen(it)} title={it.title} className="block w-full min-w-0 text-left">
                           {chip}
                         </button>
@@ -271,10 +315,15 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
                         </div>
                       );
                     })}
+                    {over && (
+                      <span className="block truncate rounded px-1.5 py-0.5 text-[11px] font-medium leading-tight border border-dashed border-[#ed2127] dark:border-[#f2454b] text-[#ed2127] dark:text-[#f2454b]">
+                        {preview.label}
+                      </span>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
           </div>
 
           <div className="relative grid" style={{ gridTemplateColumns: `${GUTTER}px repeat(${cols}, minmax(0, 1fr))`, height: 24 * HOUR_PX }}>
@@ -290,9 +339,9 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
               // The side-by-side layout is worked out from where blocks are, not where one is being dragged, so the
               // others hold still while a block passes over them. The dragged block floats at its new place.
               const lanes = layoutDay(timed);
-              const dragId = preview && (preview.kind === "move" || preview.kind === "resize") ? preview.id : null;
+              const dragId = preview && (preview.kind === "move" || preview.kind === "resize" || (preview.kind === "allday" && !preview.srcId)) ? preview.id : null;
               const shown = timed.filter((it) => it.id !== dragId);
-              if (dragId && preview.date === key) {
+              if (dragId && preview.date === key && preview.kind !== "allday") {
                 const src = days.map((k) => itemsFor(k).timed.find((t) => t.id === dragId)).find(Boolean);
                 if (src) {
                   const own = lanes.get(src.id);
