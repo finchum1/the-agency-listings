@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { nextDue } from "../lib/taskRecurrence";
 import { toKey } from "../lib/homeDates";
+import { cleanList, cleanSteps } from "../lib/taskLists";
 
 // The signed-in agent's own to-do list (agent_tasks; private to them). Changes show instantly and are saved behind the
 // scenes, reloading from the database only if a save fails.
@@ -37,7 +38,7 @@ export function useAgentTasks(userId) {
     }
   };
 
-  const add = async ({ title, due_date, recurrence, start_time, duration_min }) => {
+  const add = async ({ title, due_date, recurrence, start_time, duration_min, list, checklist }) => {
     const rule = recurrence || "none";
     // A repeating task needs a date to repeat from: default to today.
     const due = due_date || (rule !== "none" ? toKey(new Date()) : null);
@@ -51,6 +52,8 @@ export function useAgentTasks(userId) {
         // A time block needs a date; without one it is just a to-do.
         start_time: due && start_time ? start_time : null,
         duration_min: due && start_time ? duration_min || 60 : null,
+        list: cleanList(list),
+        checklist: cleanSteps(checklist),
       })
       .select()
       .single();
@@ -87,7 +90,9 @@ export function useAgentTasks(userId) {
     const now = new Date().toISOString();
     if (task.recurrence === "none") return save(task.id, { done: true, done_at: now });
     const due = nextDue(task.recurrence, task.series_start, task.due_date, toKey(new Date()));
-    return save(task.id, { due_date: due, last_done_at: now });
+    // The next one starts with its steps unticked.
+    const steps = Array.isArray(task.checklist) ? task.checklist : [];
+    return save(task.id, { due_date: due, last_done_at: now, ...(steps.some((x) => x.done) ? { checklist: steps.map((x) => ({ ...x, done: false })) } : {}) });
   };
 
   const reopen = (task) => save(task.id, { done: false, done_at: null });

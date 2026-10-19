@@ -4,6 +4,7 @@ import { supabase } from "../../../lib/supabaseClient";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
 import { browserTimeZone, useCalendarEvents } from "../../../hooks/useCalendarEvents";
 import { addDays, dayLabel, daysBetween, fromKey, monthGrid, startOfWeek, timeLabel, toKey } from "../../../lib/homeDates";
+import { stepProgress } from "../../../lib/taskLists";
 import { DAY_MIN, fromMin, toMin } from "../../../lib/timeGrid";
 import { CalendarsPanel, EventModal } from "./CalendarPanels";
 import TimeBlockModal from "./TimeBlockModal";
@@ -167,7 +168,8 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
     if (show.tasks) {
       for (const t of tasks) {
         if (t.done || !t.due_date) continue;
-        const base = { id: `task-${t.id}`, kind: "task", title: t.title, sub: "Task", color: TASK_COLOR, task: t, date: t.due_date };
+        const prog = stepProgress(t);
+        const base = { id: `task-${t.id}`, kind: "task", title: t.title, sub: [t.list || "Task", prog ? `${prog.done}/${prog.total}` : ""].filter(Boolean).join(" · "), color: TASK_COLOR, task: t, date: t.due_date };
         if (t.start_time) {
           const startMin = toMin(t.start_time);
           add(t.due_date, { ...base, allDay: false, start: new Date(`${t.due_date}T${t.start_time.slice(0, 5)}:00`).toISOString(), startMin, endMin: Math.min(DAY_MIN, startMin + (t.duration_min || 60)), editable: true });

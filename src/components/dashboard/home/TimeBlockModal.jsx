@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fromKey, toKey } from "../../../lib/homeDates";
 import { DAY_MIN, fromMin, toMin } from "../../../lib/timeGrid";
 import { RECURRENCES } from "../../../lib/taskRecurrence";
+import { LIST_SUGGESTIONS, MAX_STEPS, cleanList, cleanSteps, listsOf, newStepId } from "../../../lib/taskLists";
 import { muted } from "./styles";
 
 const inputClass =
@@ -35,6 +36,10 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
   const [title, setTitle] = useState(task ? task.title : "");
   const [f, setF] = useState(initial);
   const [repeat, setRepeat] = useState(task ? task.recurrence || "none" : "none");
+  const [list, setList] = useState(task?.list || "");
+  const [steps, setSteps] = useState(() => (task?.checklist || []).map((x) => ({ ...x })));
+  const [newStep, setNewStep] = useState("");
+  const listChoices = [...new Set([...listsOf(tasksApi.tasks), ...LIST_SUGGESTIONS])];
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const set = (patch) => setF((p) => ({ ...p, ...patch }));
@@ -45,6 +50,14 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  // A step typed but not yet added with Enter still counts when you save.
+  const withPending = (list0) => (newStep.trim() ? [...list0, { id: newStepId(), text: newStep, done: false }] : list0);
+  const addStep = () => {
+    if (!newStep.trim() || steps.length >= MAX_STEPS) return;
+    setSteps((l) => [...l, { id: newStepId(), text: newStep.trim(), done: false }]);
+    setNewStep("");
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -67,10 +80,13 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
       if (f.date !== chosen.due_date) changes.due_date = f.date;
       if (name !== chosen.title) changes.title = name;
       if (repeat !== (chosen.recurrence || "none")) changes.recurrence = repeat;
+      if (cleanList(list) !== (chosen.list || null)) changes.list = cleanList(list);
+      const nextSteps = cleanSteps(withPending(steps));
+      if (JSON.stringify(nextSteps) !== JSON.stringify(chosen.checklist || [])) changes.checklist = nextSteps;
       await tasksApi.update(chosen, changes);
       onClose();
     } else {
-      const ok = await tasksApi.add({ title: name, due_date: f.date, recurrence: repeat, ...block });
+      const ok = await tasksApi.add({ title: name, due_date: f.date, recurrence: repeat, list, checklist: withPending(steps), ...block });
       setBusy(false);
       if (ok) onClose();
       else setError("Couldn't save that. Try again.");
@@ -126,7 +142,7 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
         {!task && openTasks.length > 0 && (
           <div>
             <label className={labelClass}>Use a task from your list</label>
-            <select value={taskId} onChange={(e) => { setTaskId(e.target.value); setRepeat(openTasks.find((t) => t.id === e.target.value)?.recurrence || "none"); }} className={inputClass} aria-label="Existing task">
+            <select value={taskId} onChange={(e) => { setTaskId(e.target.value); const t = openTasks.find((x) => x.id === e.target.value); setRepeat(t?.recurrence || "none"); setList(t?.list || ""); setSteps((t?.checklist || []).map((x) => ({ ...x }))); }} className={inputClass} aria-label="Existing task">
               <option value="">A new task</option>
               {openTasks.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -197,6 +213,54 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
             ))}
           </select>
         </div>
+        <div>
+          <label className={labelClass}>List</label>
+          <input list="task-list-choices" value={list} onChange={(e) => setList(e.target.value)} maxLength={40} placeholder="Optional, e.g. Clients" className={inputClass} aria-label="List" />
+          <datalist id="task-list-choices">
+            {listChoices.map((l) => (
+              <option key={l} value={l} />
+            ))}
+          </datalist>
+        </div>
+
+        <div>
+          <label className={labelClass}>Checklist</label>
+          {steps.length > 0 && (
+            <ul className="mb-2 space-y-1.5">
+              {steps.map((st) => (
+                <li key={st.id} className="flex items-center gap-2">
+                  <input type="checkbox" checked={st.done} onChange={(e) => setSteps((l) => l.map((x) => (x.id === st.id ? { ...x, done: e.target.checked } : x)))} aria-label={`Done: ${st.text}`} className="h-4 w-4 shrink-0 accent-[#ed2127]" />
+                  <input
+                    value={st.text}
+                    maxLength={200}
+                    onChange={(e) => setSteps((l) => l.map((x) => (x.id === st.id ? { ...x, text: e.target.value } : x)))}
+                    onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+                    aria-label="Step"
+                    className={`flex-1 min-w-0 bg-transparent text-sm px-1 py-0.5 rounded focus:outline-none focus:bg-black/[0.04] dark:focus:bg-white/[0.06] ${st.done ? "line-through opacity-50" : ""}`}
+                  />
+                  <button type="button" onClick={() => setSteps((l) => l.filter((x) => x.id !== st.id))} aria-label="Remove step" className="shrink-0 px-1 text-[#1c1a17]/30 dark:text-[#faf9f7]/30 hover:text-red-600 dark:hover:text-red-400">
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <input
+            value={newStep}
+            onChange={(e) => setNewStep(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addStep();
+              }
+            }}
+            maxLength={200}
+            placeholder="Add a step, then press Enter"
+            className={inputClass}
+            aria-label="New step"
+          />
+        </div>
+
         {repeat !== "none" && (
           <p className={`text-xs ${muted}`}>
             It comes back on its own after you tick it off{f.allDay ? "" : ", at the same time"}. Changing the day or the repeat restarts the series from that day.

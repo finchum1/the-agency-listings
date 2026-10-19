@@ -661,3 +661,14 @@ alter table public.agent_tasks add column if not exists duration_min integer;
 alter table public.agent_tasks drop constraint if exists agent_tasks_duration_check;
 alter table public.agent_tasks add constraint agent_tasks_duration_check
   check (duration_min is null or duration_min between 5 and 1440);
+
+-- 23. Task lists and checklists. `list` is a flat label an agent types in ("Clients", "Listings"...); the home page can
+--     filter by it. `checklist` is the steps inside one task: [{ id, text, done }]. A repeating task's steps are unticked
+--     again when it rolls to its next date (done in the app).
+alter table public.agent_tasks add column if not exists list text;
+alter table public.agent_tasks add column if not exists checklist jsonb not null default '[]'::jsonb;
+alter table public.agent_tasks drop constraint if exists agent_tasks_list_check;
+alter table public.agent_tasks add constraint agent_tasks_list_check check (list is null or length(btrim(list)) between 1 and 40);
+alter table public.agent_tasks drop constraint if exists agent_tasks_checklist_check;
+alter table public.agent_tasks add constraint agent_tasks_checklist_check
+  check (jsonb_typeof(checklist) = 'array' and jsonb_array_length(checklist) <= 50);

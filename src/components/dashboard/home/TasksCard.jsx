@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { addDays, dayLabel, fromKey, toKey } from "../../../lib/homeDates";
 import { RECURRENCES } from "../../../lib/taskRecurrence";
+import { listsOf, stepProgress } from "../../../lib/taskLists";
 import { minLabel, toMin } from "../../../lib/timeGrid";
 import { card, muted } from "./styles";
 
@@ -19,6 +20,8 @@ const openPicker = (e) => {
 // A compact row: tick it off, rename it in place, and see when it's due, at what time and how often it repeats.
 // "Edit" opens the full form (day, time, repeat).
 function TaskRow({ task, today, showDay, onComplete, onUpdate, onRemove, onEdit }) {
+  const [stepsOpen, setStepsOpen] = useState(false);
+  const progress = stepProgress(task);
   const repeat = RECURRENCES.find((r) => r.value === task.recurrence);
   const start = task.start_time && task.due_date ? toMin(task.start_time) : null;
   const meta = [
@@ -27,38 +30,62 @@ function TaskRow({ task, today, showDay, onComplete, onUpdate, onRemove, onEdit 
     task.recurrence !== "none" && repeat ? `↻ ${repeat.short}` : null,
   ].filter(Boolean);
   return (
-    <li className="flex items-center gap-3 py-2">
-      <input
-        type="checkbox"
-        checked={false}
-        onChange={() => onComplete(task)}
-        aria-label={task.recurrence === "none" ? "Mark done" : "Mark done and schedule the next one"}
-        className="h-4 w-4 shrink-0 accent-[#ed2127] cursor-pointer"
-      />
-      <input
-        defaultValue={task.title}
-        maxLength={300}
-        aria-label="Task"
-        onBlur={(e) => {
-          const v = e.target.value.trim();
-          if (!v) e.target.value = task.title;
-          else if (v !== task.title) onUpdate(task, { title: v });
-        }}
-        onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-        className="min-w-0 flex-1 bg-transparent text-sm font-medium leading-snug rounded focus:outline-none focus:bg-black/[0.03] dark:focus:bg-white/[0.05] px-1 -mx-1 py-0.5"
-      />
-      {meta.length > 0 && <span className={`hidden sm:block shrink-0 text-[11px] ${muted}`}>{meta.join("  ·  ")}</span>}
-      <button type="button" onClick={() => onEdit(task)} className="shrink-0 text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
-        Edit
-      </button>
-      <button
-        type="button"
-        onClick={() => onRemove(task.id)}
-        aria-label="Delete task"
-        className="shrink-0 px-1 text-[#1c1a17]/30 dark:text-[#faf9f7]/30 hover:text-red-600 dark:hover:text-red-400"
-      >
-        ✕
-      </button>
+    <li className="py-2">
+      <div className="flex items-center gap-3">
+        <input
+          type="checkbox"
+          checked={false}
+          onChange={() => onComplete(task)}
+          aria-label={task.recurrence === "none" ? "Mark done" : "Mark done and schedule the next one"}
+          className="h-4 w-4 shrink-0 accent-[#ed2127] cursor-pointer"
+        />
+        <input
+          defaultValue={task.title}
+          maxLength={300}
+          aria-label="Task"
+          onBlur={(e) => {
+            const v = e.target.value.trim();
+            if (!v) e.target.value = task.title;
+            else if (v !== task.title) onUpdate(task, { title: v });
+          }}
+          onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+          className="min-w-0 flex-1 bg-transparent text-sm font-medium leading-snug rounded focus:outline-none focus:bg-black/[0.03] dark:focus:bg-white/[0.05] px-1 -mx-1 py-0.5"
+        />
+        {task.list && <span className="hidden sm:inline-block shrink-0 rounded-full bg-black/[0.05] dark:bg-white/10 px-2 py-0.5 text-[10px] font-semibold">{task.list}</span>}
+        {progress && (
+          <button type="button" onClick={() => setStepsOpen((v) => !v)} aria-expanded={stepsOpen} aria-label="Show checklist" className={`shrink-0 text-[11px] font-medium hover:text-[#1c1a17] dark:hover:text-[#faf9f7] ${progress.done === progress.total ? "text-emerald-600 dark:text-emerald-400" : muted}`}>
+            {stepsOpen ? "▾" : "▸"} {progress.done}/{progress.total}
+          </button>
+        )}
+        {meta.length > 0 && <span className={`hidden sm:block shrink-0 text-[11px] ${muted}`}>{meta.join("  ·  ")}</span>}
+        <button type="button" onClick={() => onEdit(task)} className="shrink-0 text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => onRemove(task.id)}
+          aria-label="Delete task"
+          className="shrink-0 px-1 text-[#1c1a17]/30 dark:text-[#faf9f7]/30 hover:text-red-600 dark:hover:text-red-400"
+        >
+          ✕
+        </button>
+      </div>
+      {progress && stepsOpen && (
+        <ul className="mt-1.5 ml-7 space-y-1">
+          {task.checklist.map((st) => (
+            <li key={st.id} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={st.done}
+                onChange={() => onUpdate(task, { checklist: task.checklist.map((x) => (x.id === st.id ? { ...x, done: !x.done } : x)) })}
+                aria-label={st.text}
+                className="h-3.5 w-3.5 shrink-0 accent-[#ed2127] cursor-pointer"
+              />
+              <span className={`text-xs ${st.done ? "line-through opacity-50" : ""}`}>{st.text}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </li>
   );
 }
@@ -87,10 +114,15 @@ export default function TasksCard({ tasksApi, span, onEdit }) {
   const [repeat, setRepeat] = useState("none");
   const [adding, setAdding] = useState(false);
   const [expanded, setExpanded] = useState({});
+  const [listFilter, setListFilter] = useState(null); // null = every task, "" = tasks with no list, otherwise a list name
   const [showDone, setShowDone] = useState(false);
   const today = toKey(new Date());
 
-  const open = tasks.filter((t) => !t.done);
+  const allOpen = tasks.filter((t) => !t.done);
+  const lists = listsOf(allOpen);
+  // A filter that has no tasks left (the last one was ticked off or moved) quietly goes back to showing everything.
+  const filter = listFilter !== null && (listFilter === "" ? allOpen.some((t) => !t.list) : lists.includes(listFilter)) ? listFilter : null;
+  const open = filter === null ? allOpen : allOpen.filter((t) => (t.list || "") === filter);
   const done = tasks
     .filter((t) => t.done)
     .sort((a, b) => (b.done_at || "").localeCompare(a.done_at || ""))
@@ -102,7 +134,7 @@ export default function TasksCard({ tasksApi, span, onEdit }) {
     e.preventDefault();
     if (!title.trim() || adding) return;
     setAdding(true);
-    const ok = await add({ title, due_date: due, recurrence: repeat });
+    const ok = await add({ title, due_date: due, recurrence: repeat, list: filter || null });
     setAdding(false);
     if (ok) {
       setTitle("");
@@ -146,6 +178,26 @@ export default function TasksCard({ tasksApi, span, onEdit }) {
         </button>
       </form>
       {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
+
+      {lists.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by list">
+          {[
+            { key: null, label: "All", n: allOpen.length },
+            ...lists.map((l) => ({ key: l, label: l, n: allOpen.filter((t) => t.list === l).length })),
+            ...(allOpen.some((t) => !t.list) ? [{ key: "", label: "No list", n: allOpen.filter((t) => !t.list).length }] : []),
+          ].map((c) => (
+            <button
+              key={String(c.key)}
+              type="button"
+              onClick={() => setListFilter(c.key)}
+              aria-pressed={filter === c.key}
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${filter === c.key ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "border border-black/10 dark:border-white/15 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10"}`}
+            >
+              {c.label} <span className="opacity-60 font-medium">{c.n}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <p className={`text-sm mt-4 ${muted}`}>Loading…</p>
