@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
@@ -118,6 +119,11 @@ export default function DashboardLayout() {
   const navDrag = useRef(null);
   const [mobDx, setMobDx] = useState(0); // how far the phone drawer has been dragged shut
   const mobDragging = useRef(false);
+  // NavList and ProfileBlock are called as plain functions (not rendered as <NavList />): they are redefined on every render, so
+  // as components they would be torn down and rebuilt whenever any state changes, which broke hovers and open menus.
+  // Closed rail: a name tag on hover, and a small menu beside the icon for the groups that have pages inside them.
+  const [railTip, setRailTip] = useState(null); // { label, x, y }
+  const [railMenu, setRailMenu] = useState(null); // { label, items, x, y }
   const navWidth = navLive ?? (nav.open ? nav.px : RAIL_PX);
   const showRail = navWidth < 140;
 
@@ -168,6 +174,33 @@ export default function DashboardLayout() {
     },
     onDoubleClick: toggleNav,
   };
+
+  useEffect(() => {
+    setRailMenu(null);
+    setRailTip(null);
+  }, [location.pathname]);
+  useEffect(() => {
+    if (!railMenu) return;
+    const onDown = (e) => {
+      if (e.target instanceof Element && e.target.closest("[data-rail-menu], [data-rail-trigger]")) return;
+      setRailMenu(null);
+    };
+    const onKey = (e) => e.key === "Escape" && setRailMenu(null);
+    document.addEventListener("pointerdown", onDown, true);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown, true);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [railMenu]);
+  useEffect(() => {
+    // Opening the drawer (or widening it past the rail) leaves no rail to hang a tag or menu from.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!showRail) {
+      setRailMenu(null);
+      setRailTip(null);
+    }
+  }, [showRail]);
 
   // Phone: the menu is a drawer from the left. Swiping it back to the left (or a quick flick) closes it.
   const closeMobile = () => {
@@ -307,30 +340,55 @@ export default function DashboardLayout() {
 
     // Closed drawer: one icon per main item. A group's icon goes to the first page in that group.
     if (rail) {
-      const railLink = (to, label, icon, active) => (
-        <Link
-          key={label}
-          to={to}
-          onClick={onNavigate}
-          title={label}
-          aria-label={label}
-          aria-current={active ? "page" : undefined}
-          className={`mx-auto flex h-11 w-11 items-center justify-center rounded-xl transition-colors ${
-            active
-              ? "bg-[#1c1a17]/10 dark:bg-[#faf9f7]/10 text-[#1c1a17] dark:text-[#faf9f7]"
-              : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
-          }`}
-        >
-          <NavIcon name={icon} />
-        </Link>
-      );
+      const itemClass = (active, menuOpen) =>
+        `mx-auto flex h-11 w-11 items-center justify-center rounded-xl transition-colors ${
+          active || menuOpen
+            ? "bg-[#1c1a17]/10 dark:bg-[#faf9f7]/10 text-[#1c1a17] dark:text-[#faf9f7]"
+            : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+        }`;
+      const tipOn = (label) => (e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        setRailTip({ label, x: r.right + 10, y: r.top + r.height / 2 });
+      };
+      const tipOff = () => setRailTip(null);
+      // An icon with nothing inside it goes straight to its page; one with pages inside opens a small menu of them.
+      const railItem = (label, icon, active, { to, items }) => {
+        const handlers = { onMouseEnter: tipOn(label), onMouseLeave: tipOff, onFocus: tipOn(label), onBlur: tipOff };
+        if (!items) {
+          return (
+            <Link key={label} to={to} onClick={onNavigate} aria-label={label} aria-current={active ? "page" : undefined} className={itemClass(active, false)} {...handlers}>
+              <NavIcon name={icon} />
+            </Link>
+          );
+        }
+        const menuOpen = railMenu?.label === label;
+        return (
+          <button
+            key={label}
+            type="button"
+            data-rail-trigger=""
+            aria-label={label}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={(e) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              setRailTip(null);
+              setRailMenu((cur) => (cur?.label === label ? null : { label, items, x: r.right + 10, y: r.top }));
+            }}
+            className={itemClass(active, menuOpen)}
+            {...handlers}
+          >
+            <NavIcon name={icon} />
+          </button>
+        );
+      };
       return (
         <div className="flex flex-col gap-1.5">
-          {!workingElsewhere && railLink("/dashboard", "Home", "home", path === "/dashboard" || path === "/dashboard/")}
-          {!workingElsewhere && siteAccess !== "none" && railLink(siteItems[0].to, "Website", "website", inSite)}
-          {!workingElsewhere && profile?.people_enabled && railLink(PEOPLE_ITEMS[0].to, "People", "people", inPeople)}
-          {NAV_ITEMS.map((item) => railLink(item.to, item.label, item.icon, item.activeWhen(path)))}
-          {isAdmin && railLink(adminItems[0].to, "Admin", "admin", inAdminArea(path))}
+          {!workingElsewhere && railItem("Home", "home", path === "/dashboard" || path === "/dashboard/", { to: "/dashboard" })}
+          {!workingElsewhere && siteAccess !== "none" && railItem("Website", "website", inSite, { items: siteItems })}
+          {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { items: PEOPLE_ITEMS })}
+          {NAV_ITEMS.map((item) => railItem(item.label, item.icon, item.activeWhen(path), { to: item.to }))}
+          {isAdmin && railItem("Admin", "admin", inAdminArea(path), { items: adminItems })}
         </div>
       );
     }
@@ -443,7 +501,7 @@ export default function DashboardLayout() {
           <>
             <div className="h-[4.75rem] shrink-0" aria-hidden="true" />
             <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2" aria-label="Main">
-              <NavList rail />
+              {NavList({ rail: true })}
             </nav>
             <div className="shrink-0 border-t border-black/5 dark:border-white/10 py-4 flex flex-col items-center gap-3">
               <Link to="/dashboard/profile" title={profile?.full_name || "Your profile"} aria-label="Your profile">
@@ -471,11 +529,11 @@ export default function DashboardLayout() {
             <OrgSwitcher />
 
             <nav className="flex-1 overflow-y-auto overflow-x-hidden px-4" aria-label="Main">
-              <NavList />
+              {NavList({})}
             </nav>
 
             <div className="px-4 py-5 border-t border-black/5 dark:border-white/10 shrink-0 overflow-hidden">
-              <ProfileBlock />
+              {ProfileBlock({})}
             </div>
           </>
         )}
@@ -567,13 +625,49 @@ export default function DashboardLayout() {
             <OrgSwitcher flush />
           </div>
           <nav className="flex-1 overflow-y-auto overscroll-contain px-4" aria-label="Main">
-            <NavList onNavigate={closeMobile} />
+            {NavList({ onNavigate: closeMobile })}
           </nav>
           <div className="shrink-0 border-t border-black/5 dark:border-white/10 px-4 pt-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
-            <ProfileBlock onNavigate={closeMobile} />
+            {ProfileBlock({ onNavigate: closeMobile })}
           </div>
         </div>
       </div>
+
+      {showRail && railTip && !railMenu &&
+        createPortal(
+          <div
+            role="tooltip"
+            style={{ left: railTip.x, top: railTip.y }}
+            className="pointer-events-none fixed z-[60] -translate-y-1/2 whitespace-nowrap rounded-lg bg-[#1c1a17] dark:bg-[#faf9f7] px-2.5 py-1.5 text-xs font-medium text-white dark:text-[#1c1a17] shadow-lg print:hidden"
+          >
+            {railTip.label}
+          </div>,
+          document.body,
+        )}
+      {showRail && railMenu &&
+        createPortal(
+          <div
+            data-rail-menu=""
+            role="menu"
+            aria-label={railMenu.label}
+            style={{ left: railMenu.x, top: Math.max(8, Math.min(railMenu.y, window.innerHeight - (railMenu.items.length * 40 + 52))) }}
+            className="fixed z-[60] min-w-[200px] rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] p-1.5 shadow-xl print:hidden"
+          >
+            <p className="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/40 dark:text-[#faf9f7]/40">{railMenu.label}</p>
+            {railMenu.items.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                role="menuitem"
+                onClick={() => setRailMenu(null)}
+                className={navLinkClass(location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>,
+          document.body,
+        )}
 
       <main className="flex-1 min-w-0">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-10 print:p-0 print:max-w-none print:mx-0">
