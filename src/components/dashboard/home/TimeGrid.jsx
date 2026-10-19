@@ -104,7 +104,7 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
       if (g.kind === "move") {
         const p = hit(ev.clientX, ev.clientY);
         if (!p) return;
-        if (g.item.kind === "task" && overHead(ev)) {
+        if (overHead(ev)) {
           setPrev({ id: g.item.id, kind: "allday", date: p.key, label: g.item.title });
           return;
         }
@@ -124,11 +124,12 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
         setPrev({ id: "new", kind: "create", date: g.date, startMin: a, endMin: b });
       } else if (g.kind === "tray") {
         // A task from the "To schedule" list or an all-day chip: drop on the grid for a time, or on the strip for a day.
-        setGhost({ label: g.task.title, x: ev.clientX, y: ev.clientY });
+        const label = g.task ? g.task.title : g.item.title;
+        setGhost({ label, x: ev.clientX, y: ev.clientY });
         const inside = ev.clientY >= sr.top && ev.clientY <= sr.bottom && ev.clientX >= sr.left && ev.clientX <= sr.right;
         const p = inside ? hit(ev.clientX, ev.clientY) : null;
         if (!p) setPrev(null);
-        else if (overHead(ev)) setPrev({ id: "tray", srcId: g.srcId, kind: "allday", date: p.key, label: g.task.title });
+        else if (overHead(ev)) setPrev({ id: "tray", srcId: g.srcId, kind: "allday", date: p.key, label });
         else {
           const startMin = clamp(snapMin(p.min - 15), 0, DAY_MIN - 60);
           setPrev({ id: "tray", srcId: g.srcId, kind: "tray", date: p.key, startMin, endMin: startMin + 60 });
@@ -198,7 +199,11 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
           cb.onCreate({ date: g.date, startMin, endMin: startMin + 60 });
         }
       } else if (g.kind === "tray") {
-        if (wasActive && p) cb.onScheduleTask(g.task, p.kind === "allday" ? { date: p.date, allDay: true } : { date: p.date, startMin: p.startMin, endMin: p.endMin });
+        if (wasActive && p) {
+          const to = p.kind === "allday" ? { date: p.date, allDay: true } : { date: p.date, startMin: p.startMin, endMin: p.endMin };
+          if (g.task) cb.onScheduleTask(g.task, to);
+          else cb.onMove(g.item, to);
+        }
         else if (!wasActive) g.onClick?.();
       }
     };
@@ -281,21 +286,23 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
                     {itemsFor(key).allDay.map((it) => {
                       const chip = (
                         <span className="block truncate rounded px-1.5 py-0.5 text-[11px] font-medium leading-tight text-left" style={{ background: hex2rgba(it.color, 0.16), color: it.color, filter: "brightness(0.85)" }}>
+                          {it.task && it.task.recurrence !== "none" ? "↻ " : ""}
                           {it.title}
                         </span>
                       );
                       const dimmed = preview && preview.srcId === it.id ? "opacity-40" : "";
-                      if (it.task) {
+                      if (it.task || (it.raw && it.editable)) {
                         return (
                           <div
                             key={it.id}
-                            data-allday-task={it.task.id}
+                            data-allday-task={it.task ? it.task.id : undefined}
+                            data-allday-event={it.raw ? it.id : undefined}
                             role="button"
                             tabIndex={0}
                             title={it.title}
                             onPointerDown={(e) => {
                               e.stopPropagation();
-                              begin(e, { kind: "tray", task: it.task, srcId: it.id, onClick: () => onOpen(it) });
+                              begin(e, it.task ? { kind: "tray", task: it.task, srcId: it.id, onClick: () => onOpen(it) } : { kind: "tray", item: it, srcId: it.id, onClick: () => onOpen(it) });
                             }}
                             onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen(it))}
                             className={`block w-full min-w-0 cursor-grab active:cursor-grabbing select-none ${dimmed}`}
@@ -400,6 +407,7 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
                           )}
                           <div className="min-w-0 flex-1">
                             <span className="block font-semibold break-words" style={{ color: it.color, filter: "brightness(0.8)" }}>
+                              {it.task && it.task.recurrence !== "none" ? "↻ " : ""}
                               {it.title}
                             </span>
                             {tall && <span className={`block ${muted}`}>{rangeLabel(it.startMin, it.endMin)}</span>}

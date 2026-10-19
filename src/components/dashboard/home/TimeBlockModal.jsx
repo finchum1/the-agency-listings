@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fromKey, toKey } from "../../../lib/homeDates";
 import { DAY_MIN, fromMin, toMin } from "../../../lib/timeGrid";
+import { RECURRENCES } from "../../../lib/taskRecurrence";
 import { muted } from "./styles";
 
 const inputClass =
@@ -33,6 +34,7 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
   const [taskId, setTaskId] = useState(task ? task.id : "");
   const [title, setTitle] = useState(task ? task.title : "");
   const [f, setF] = useState(initial);
+  const [repeat, setRepeat] = useState(task ? task.recurrence || "none" : "none");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const set = (patch) => setF((p) => ({ ...p, ...patch }));
@@ -64,10 +66,11 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
       const changes = { ...block };
       if (f.date !== chosen.due_date) changes.due_date = f.date;
       if (name !== chosen.title) changes.title = name;
+      if (repeat !== (chosen.recurrence || "none")) changes.recurrence = repeat;
       await tasksApi.update(chosen, changes);
       onClose();
     } else {
-      const ok = await tasksApi.add({ title: name, due_date: f.date, recurrence: "none", ...block });
+      const ok = await tasksApi.add({ title: name, due_date: f.date, recurrence: repeat, ...block });
       setBusy(false);
       if (ok) onClose();
       else setError("Couldn't save that. Try again.");
@@ -123,7 +126,7 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
         {!task && openTasks.length > 0 && (
           <div>
             <label className={labelClass}>Task</label>
-            <select value={taskId} onChange={(e) => setTaskId(e.target.value)} className={inputClass} aria-label="Existing task">
+            <select value={taskId} onChange={(e) => { setTaskId(e.target.value); setRepeat(openTasks.find((t) => t.id === e.target.value)?.recurrence || "none"); }} className={inputClass} aria-label="Existing task">
               <option value="">New task</option>
               {openTasks.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -183,7 +186,22 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
           )}
         </div>
         <p className={`text-xs ${muted}`}>{dateLabel}</p>
-        {task && task.recurrence !== "none" && <p className={`text-xs ${muted}`}>This task repeats, and its time block repeats with it. Changing the day restarts the repeat from that day.</p>}
+
+        <div>
+          <label className={labelClass}>Repeat</label>
+          <select value={repeat} onChange={(e) => setRepeat(e.target.value)} className={inputClass} aria-label="Repeat">
+            {RECURRENCES.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        {repeat !== "none" && (
+          <p className={`text-xs ${muted}`}>
+            It comes back on its own after you tick it off{f.allDay ? "" : ", at the same time"}. Changing the day or the repeat restarts the series from that day.
+          </p>
+        )}
 
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1">

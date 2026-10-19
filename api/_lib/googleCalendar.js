@@ -275,7 +275,10 @@ export async function createEvent(token, googleCalendarId, input, meta) {
 }
 
 export async function updateEvent(token, googleCalendarId, eventId, input, meta) {
-  const e = await api(token, `/calendars/${encodeURIComponent(googleCalendarId)}/events/${encodeURIComponent(eventId)}`, { method: "PATCH", body: buildEventBody(input) });
+  const body = buildEventBody(input);
+  // PATCH merges start/end, so an event that changes between timed and all-day has to clear the other form's field.
+  for (const k of ["start", "end"]) body[k] = body[k].date ? { ...body[k], dateTime: null, timeZone: null } : { ...body[k], date: null };
+  const e = await api(token, `/calendars/${encodeURIComponent(googleCalendarId)}/events/${encodeURIComponent(eventId)}`, { method: "PATCH", body });
   return mapEvent(e, meta.rowId, true);
 }
 

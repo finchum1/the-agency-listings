@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
 import { browserTimeZone, useCalendarEvents } from "../../../hooks/useCalendarEvents";
-import { addDays, dayLabel, fromKey, monthGrid, startOfWeek, timeLabel, toKey } from "../../../lib/homeDates";
+import { addDays, dayLabel, daysBetween, fromKey, monthGrid, startOfWeek, timeLabel, toKey } from "../../../lib/homeDates";
 import { DAY_MIN, fromMin, toMin } from "../../../lib/timeGrid";
 import { CalendarsPanel, EventModal } from "./CalendarPanels";
 import TimeBlockModal from "./TimeBlockModal";
@@ -129,7 +129,14 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
       for (const e of cal.events) {
         const base = { id: `${e.calendarId}-${e.uid}-${e.start || e.startDate}`, kind: "calendar", title: e.title, sub: [e.location, names[e.calendarId]].filter(Boolean).join(" · "), color: colors[e.calendarId] || "#525252", allDay: e.allDay, raw: e };
         if (e.allDay) {
-          for (let d = fromKey(e.startDate), n = 0; toKey(d) < e.endDate && n < 31; d = addDays(d, 1), n++) add(toKey(d), { ...base, id: `${base.id}-${toKey(d)}` });
+          for (let d = fromKey(e.startDate), n = 0; toKey(d) < e.endDate && n < 31; d = addDays(d, 1), n++) {
+            const key = toKey(d);
+            const item = { ...base, id: `${base.id}-${key}`, date: key, editable: Boolean(e.canWrite) };
+            const ov = moved[item.id];
+            if (!ov) add(key, item);
+            else if (ov.allDay) add(ov.date, { ...item, date: ov.date });
+            else add(ov.date, { ...item, allDay: false, date: ov.date, start: new Date(`${ov.date}T${fromMin(ov.startMin)}:00`).toISOString(), startMin: ov.startMin, endMin: ov.endMin });
+          }
         } else {
           // A timed event becomes one block per day it touches (most are one).
           const s = new Date(e.start);
@@ -143,7 +150,8 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
             const endMin = en >= addDays(d, 1) ? DAY_MIN : en.getHours() * 60 + en.getMinutes();
             const item = { ...base, id: `${base.id}-${key}`, start: n === 0 ? e.start : d.toISOString(), date: key, startMin, endMin: Math.max(endMin, startMin + 15), editable: Boolean(e.canWrite) && single };
             const ov = moved[item.id];
-            if (ov) add(ov.date, { ...item, date: ov.date, startMin: ov.startMin, endMin: ov.endMin });
+            if (ov && ov.allDay) add(ov.date, { ...item, allDay: true, date: ov.date });
+            else if (ov) add(ov.date, { ...item, date: ov.date, startMin: ov.startMin, endMin: ov.endMin });
             else add(key, item);
           }
         }
@@ -199,13 +207,19 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
       return;
     }
     const e = item.raw;
+    const keep = { title: e.title, location: e.location || "", description: e.description || "" };
+    let event;
+    if (p.allDay) {
+      // Onto the all-day strip: an all-day event slides to the new day (keeping its length); a timed one becomes all-day.
+      if (e.allDay) {
+        const start = toKey(addDays(fromKey(e.startDate), daysBetween(item.date, p.date)));
+        const length = Math.max(1, daysBetween(e.startDate, e.endDate));
+        event = { ...keep, allDay: true, startDate: start, endDate: toKey(addDays(fromKey(start), length - 1)) };
+      } else event = { ...keep, allDay: true, startDate: p.date, endDate: p.date };
+    } else event = { ...keep, start: toLocalIso(p.date, p.startMin), end: toLocalIso(p.date, p.endMin), timeZone: browserTimeZone() };
     setMoved((m) => ({ ...m, [item.id]: p }));
     try {
-      await cal.saveEvent({
-        calendarRowId: e.calendarId,
-        eventId: e.eventId,
-        event: { title: e.title, start: toLocalIso(p.date, p.startMin), end: toLocalIso(p.date, p.endMin), timeZone: browserTimeZone(), location: e.location || "", description: e.description || "" },
-      });
+      await cal.saveEvent({ calendarRowId: e.calendarId, eventId: e.eventId, event });
     } catch (err) {
       setMoved({});
       setMoveError(`Couldn't move “${e.title}”: ${err.message}`);
