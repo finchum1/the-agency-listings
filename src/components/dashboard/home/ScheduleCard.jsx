@@ -285,16 +285,9 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
           <button type="button" onClick={() => setManaging((m) => !m)} aria-expanded={managing} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
             Calendars
           </button>
-          {view !== "month" && (
-            <button type="button" onClick={() => setBlock({ range: nextSlot() })} className="rounded-full border border-black/10 dark:border-white/15 text-xs font-semibold px-3.5 py-1.5 hover:bg-black/5 dark:hover:bg-white/10">
-              + Block time
-            </button>
-          )}
-          {canAddEvent && (
-            <button type="button" onClick={() => setEventModal({ event: null })} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-3.5 py-1.5">
-              + Event
-            </button>
-          )}
+          <button type="button" onClick={() => setBlock({ range: nextSlot() })} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-3.5 py-1.5">
+            + Add
+          </button>
         </div>
       </div>
 

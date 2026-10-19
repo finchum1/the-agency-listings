@@ -91,7 +91,7 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
     onClose();
   };
 
-  const heading = editing ? (hadTime ? "Time block" : "Task") : task ? "Schedule task" : f.allDay ? "All-day task" : "Block time";
+  const heading = editing ? "Edit task" : task ? "Schedule task" : "New task";
   const dateLabel = fromKey(f.date).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 
   return (
@@ -114,20 +114,20 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
               type="button"
               aria-pressed="false"
               disabled={!canAddEvent}
-              title={canAddEvent ? "" : "Connect a Google calendar (Calendars) to add events"}
+              title={canAddEvent ? "A Google Calendar event" : "Connect a Google calendar (Calendars) to add events"}
               onClick={() => onEvent({ date: f.date, allDay: f.allDay, startMin: toMin(f.start), endMin: toMin(f.end) })}
               className={tabClass(false, !canAddEvent)}
             >
-              Google event
+              Event
             </button>
           </div>
         )}
 
         {!task && openTasks.length > 0 && (
           <div>
-            <label className={labelClass}>Task</label>
+            <label className={labelClass}>Use a task from your list</label>
             <select value={taskId} onChange={(e) => { setTaskId(e.target.value); setRepeat(openTasks.find((t) => t.id === e.target.value)?.recurrence || "none"); }} className={inputClass} aria-label="Existing task">
-              <option value="">New task</option>
+              <option value="">A new task</option>
               {openTasks.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.title}
@@ -138,7 +138,7 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
         )}
 
         <div>
-          <label className={labelClass}>{chosen && !task ? "Name" : "What are you working on?"}</label>
+          <label className={labelClass}>{chosen && !task ? "Name" : "Task"}</label>
           <input
             autoFocus
             value={chosen && !task ? chosen.title : title}
@@ -206,7 +206,7 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-1">
           <button type="submit" disabled={busy} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-2.5 disabled:opacity-60">
-            {busy ? "Saving…" : editing ? "Save changes" : f.allDay ? "Add task" : "Add to schedule"}
+            {busy ? "Saving…" : editing ? "Save changes" : task ? "Schedule it" : "Add task"}
           </button>
           <button type="button" onClick={onClose} className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
             Cancel

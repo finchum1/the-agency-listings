@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "../../../hooks/useAuth";
 import { useAgentTasks } from "../../../hooks/useAgentTasks";
 import { useLeadAlerts } from "../../../hooks/useLeadAlerts";
@@ -9,6 +10,7 @@ import ScheduleCard from "./ScheduleCard";
 import ScorecardCard from "./ScorecardCard";
 import Shortcuts from "./Shortcuts";
 import TasksCard from "./TasksCard";
+import TimeBlockModal from "./TimeBlockModal";
 import { muted } from "./styles";
 
 // The page agents land on after signing in: a welcome, shortcuts, their schedule, new website inquiries, their own task
@@ -16,6 +18,7 @@ import { muted } from "./styles";
 export default function DashboardHomePage() {
   const { user, profile } = useAuth();
   const tasksApi = useAgentTasks(user?.id);
+  const [editTask, setEditTask] = useState(null);
 
   const wantsBlog = (profile?.site_access || "full") !== "none";
   const wantsPeople = !!profile?.people_enabled;
@@ -61,13 +64,14 @@ export default function DashboardHomePage() {
       </div>
 
       <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-3 items-start">
-        <TasksCard tasksApi={tasksApi} span />
+        <TasksCard tasksApi={tasksApi} onEdit={setEditTask} span />
       </div>
 
       <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-2 items-start">
         <LeadAlertsCard alerts={alerts} loading={alertsLoading} peopleEnabled={wantsPeople} onDismiss={dismissAlert} />
         {wantsPeople && <ScorecardCard userId={user?.id} />}
       </div>
+      {editTask && <TimeBlockModal key={editTask.id} task={editTask} openTasks={[]} canAddEvent={false} tasksApi={tasksApi} fallbackDate={today} onClose={() => setEditTask(null)} />}
     </div>
   );
 }
