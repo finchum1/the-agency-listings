@@ -295,6 +295,26 @@ export default function PersonPanel({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  // Arrow keys step through the contacts in this column. Left/right always do; up/down too while the phone sheet is
+  // just the small peek (nothing there scrolls). Ignored while typing in a field.
+  const stepRef = useRef({});
+  stepRef.current = { onPrev, onNext, vertical: sheet && snap === "peek" };
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      const t = e.target;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      const { onPrev: prev, onNext: next, vertical } = stepRef.current;
+      const back = e.key === "ArrowLeft" || (vertical && e.key === "ArrowUp");
+      const fwd = e.key === "ArrowRight" || (vertical && e.key === "ArrowDown");
+      if (!back && !fwd) return;
+      e.preventDefault();
+      (back ? prev : next)?.();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   // Desktop: pressing anywhere outside the side peek closes it. Another card on the board is the exception: that swaps
   // the peek to that person instead of closing and reopening it.
   useEffect(() => {
@@ -476,9 +496,21 @@ export default function PersonPanel({
             {person.archived && " · Archived"}
           </p>
         </div>
-        <button type="button" onClick={onClose} className="p-1 -mr-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]" aria-label="Close panel">
-          ✕
-        </button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {position > 0 && (
+            <>
+              <button type="button" onClick={onPrev} disabled={!onPrev} className={navBtn} aria-label="Previous contact in this column">
+                ‹
+              </button>
+              <button type="button" onClick={onNext} disabled={!onNext} className={navBtn} aria-label="Next contact in this column">
+                ›
+              </button>
+            </>
+          )}
+          <button type="button" onClick={onClose} className="p-1 ml-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]" aria-label="Close panel">
+            ✕
+          </button>
+        </div>
       </div>
       <ContactButtons person={{ ...person, phone: form.phone, email: form.email }} />
     </div>
