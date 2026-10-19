@@ -8,6 +8,8 @@ import { SIDE_TAGS } from "../../../lib/peopleSides";
 import ProgressRing from "./ProgressRing";
 import { useTransactionProgress } from "../../../hooks/useTransactionProgress";
 import PersonPanel from "./PersonPanel";
+import { usePeekWidth } from "../../../hooks/usePeekWidth";
+import { useMediaQuery } from "../../../hooks/useMediaQuery";
 
 const COLUMN_DRAG_TYPE = "application/x-people-column";
 
@@ -227,6 +229,8 @@ export default function PeopleBoard({ group }) {
   const prevStageNames = board.prev ? allStages[board.prev.group] : null;
 
   const [selectedId, setSelectedId] = useState(null);
+  const peek = usePeekWidth(group === "transaction");
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const [addingStage, setAddingStage] = useState(null);
   const [newPerson, setNewPerson] = useState({ name: "", phone: "", email: "", side: "" });
   const [saving, setSaving] = useState(false);
@@ -380,7 +384,7 @@ export default function PeopleBoard({ group }) {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onCancel);
-      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", onKey, true);
       window.removeEventListener("touchmove", stopTouchScroll);
       document.body.style.userSelect = "";
       document.body.style.cursor = "";
@@ -416,6 +420,7 @@ export default function PeopleBoard({ group }) {
     }
     function onKey(ev) {
       if (ev.key === "Escape") {
+        ev.preventDefault();
         d.cancelled = true;
         cleanup();
       }
@@ -424,7 +429,7 @@ export default function PeopleBoard({ group }) {
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", onCancel);
-    window.addEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
     // A finger has to rest on the card for a moment first, so scrolling the board still works.
     if (d.touch) timer = setTimeout(begin, LONG_PRESS_MS);
   };
@@ -528,8 +533,16 @@ export default function PeopleBoard({ group }) {
 
   if (loading) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
 
+  // With the side peek open the board shrinks to the space left of it; with the phone sheet peeking it gets room below.
+  const peekOpen = !!selected;
   return (
-    <div className="space-y-4">
+    <div
+      className="space-y-4 transition-[margin,padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none"
+      style={{
+        marginRight: peekOpen && isDesktop ? peek.css : undefined,
+        paddingBottom: peekOpen && !isDesktop ? "45dvh" : undefined,
+      }}
+    >
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0">
           <h1 className="text-2xl font-display font-semibold">{board.title}</h1>
@@ -848,6 +861,7 @@ export default function PeopleBoard({ group }) {
           stageNames={stages}
           nextStageNames={nextStageNames}
           prevStageNames={prevStageNames}
+          peek={peek}
           position={siblingIdx >= 0 ? siblingIdx + 1 : 0}
           total={siblings.length}
           onPrev={siblingIdx > 0 ? () => setSelectedId(siblings[siblingIdx - 1].id) : undefined}

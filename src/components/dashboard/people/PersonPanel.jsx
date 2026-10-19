@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS, ARCHIVE_REASONS, SOURCES } from "../../../lib/peopleStages";
 import ContactButtons from "./ContactButtons";
+import { useMediaQuery } from "../../../hooks/useMediaQuery";
+import { PEEK_WIDTHS } from "../../../hooks/usePeekWidth";
 import TransactionModules from "./TransactionModules";
 
 const inputClass =
@@ -52,6 +54,7 @@ export default function PersonPanel({
   onNext,
   onClose,
   onChanged,
+  peek,
 }) {
   const board = BOARDS[person.stage_group];
   const [form, setForm] = useState(() => toForm(person));
@@ -201,7 +204,7 @@ export default function PersonPanel({
   const isTransaction = person.stage_group === "transaction";
   const transactionDetails = (
     <div className="space-y-3">
-        <div className="grid sm:grid-cols-2 gap-3">
+        <div className="grid @md:grid-cols-2 gap-3">
           <div>
             <label className={labelClass}>Side</label>
             <select value={form.side === "both" ? "" : form.side} onChange={setField("side", true)} className={inputClass}>
@@ -230,12 +233,12 @@ export default function PersonPanel({
             <label className={labelClass}>Title company</label>
             <input value={form.title_company} onChange={setField("title_company")} onBlur={flush} className={inputClass} />
           </div>
-          <div className="sm:col-span-2">
+          <div className="@md:col-span-2">
             <label className={labelClass}>Lender</label>
             <input value={form.lender} onChange={setField("lender")} onBlur={flush} className={inputClass} />
           </div>
         </div>
-        <div className="grid sm:grid-cols-2 gap-3">
+        <div className="grid @md:grid-cols-2 gap-3">
           {[
             ["contract_date", "Contract date"],
             ["inspection_date", "Inspection"],
@@ -258,15 +261,88 @@ export default function PersonPanel({
     </div>
   );
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center sm:p-6" role="dialog" aria-modal="true">
-      <button type="button" aria-label="Close" onClick={onClose} className="absolute inset-0 bg-black/40" />
-      <div
-        className={`relative w-full h-full sm:h-auto sm:max-h-[90vh] flex flex-col overflow-hidden bg-white dark:bg-[#1a1a1a] text-[#1c1a17] dark:text-[#faf9f7] shadow-xl sm:rounded-2xl ${
-          isTransaction ? "sm:max-w-5xl sm:min-h-[70vh]" : "sm:max-w-xl"
-        }`}
-      >
-      <div className="shrink-0 px-6 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-4 space-y-4 border-b border-black/5 dark:border-white/10">
+  // ---- Where the panel sits ----------------------------------------------------------------------------------------
+  // Desktop: a side peek that slides in from the right, in one of three widths, without covering the board behind it.
+  // Phone: a bottom sheet. It opens as a small peek (the contact's name, stage and call/text/email), slides up to show
+  // everything, and slides down to close.
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const sheet = !isDesktop;
+  const [entered, setEntered] = useState(false);
+  const [snap, setSnap] = useState("peek"); // "peek" | "full" (phone)
+  const [dragTy, setDragTy] = useState(null); // px the sheet is being dragged to, or null
+  const [, setViewportTick] = useState(0);
+  const grab = useRef(null);
+  const dragTyRef = useRef(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setEntered(true), 16);
+    return () => clearTimeout(t);
+  }, []);
+  useEffect(() => {
+    const onResize = () => setViewportTick((n) => n + 1);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape" && !e.defaultPrevented) onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const vh = typeof window === "undefined" ? 800 : window.innerHeight;
+  const sheetH = Math.round(vh * 0.92);
+  const visibleFor = { peek: Math.round(vh * 0.42), full: sheetH };
+  const restTy = sheetH - visibleFor[snap];
+  const sheetTy = !entered ? sheetH : dragTy ?? restTy;
+
+  const grabHandlers = {
+    onPointerDown: (e) => {
+      if (isDesktop || e.target.closest("button, input, select, textarea, a")) return;
+      grab.current = { id: e.pointerId, y: e.clientY, ty: restTy, lastY: e.clientY, lastT: performance.now(), v: 0, moved: 0 };
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    onPointerMove: (e) => {
+      const g = grab.current;
+      if (!g || e.pointerId !== g.id) return;
+      const now = performance.now();
+      const dt = Math.max(1, now - g.lastT);
+      g.v = (e.clientY - g.lastY) / dt; // px per ms, down is positive
+      g.lastY = e.clientY;
+      g.lastT = now;
+      g.moved = Math.max(g.moved, Math.abs(e.clientY - g.y));
+      const ty = Math.min(sheetH, Math.max(0, g.ty + (e.clientY - g.y)));
+      dragTyRef.current = ty;
+      setDragTy(ty);
+    },
+    onPointerUp: (e) => {
+      const g = grab.current;
+      if (!g || e.pointerId !== g.id) return;
+      grab.current = null;
+      const ty = dragTyRef.current ?? g.ty;
+      dragTyRef.current = null;
+      setDragTy(null);
+      if (g.moved < 6) return; // a tap, not a drag
+      const shown = sheetH - ty;
+      let target;
+      if (Math.abs(g.v) > 0.5) target = g.v > 0 ? (snap === "full" ? "peek" : "close") : "full";
+      else {
+        const opts = [["close", 0], ["peek", visibleFor.peek], ["full", visibleFor.full]];
+        target = opts.reduce((best, o) => (Math.abs(o[1] - shown) < Math.abs(best[1] - shown) ? o : best))[0];
+      }
+      if (target === "close") onClose();
+      else setSnap(target);
+    },
+    onPointerCancel: () => {
+      grab.current = null;
+      dragTyRef.current = null;
+      setDragTy(null);
+    },
+  };
+
+  const panelHeader = (
+      <div className="shrink-0 px-6 pt-4 md:pt-5 pb-4 space-y-4 border-b border-black/5 dark:border-white/10">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             {position > 0 && (
@@ -284,6 +360,30 @@ export default function PersonPanel({
             )}
           </div>
           <div className="flex items-center gap-3">
+            {isDesktop && peek && (
+              <div role="group" aria-label="Panel width" className="flex items-center rounded-full border border-black/10 dark:border-white/15 p-0.5">
+                {Object.entries(PEEK_WIDTHS).map(([key, w]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => peek.set(key)}
+                    aria-pressed={peek.choice === key}
+                    aria-label={`${w.label} width`}
+                    title={`${w.label} width`}
+                    className={`h-6 w-7 flex items-center justify-center rounded-full transition-colors ${
+                      peek.choice === key
+                        ? "bg-[#1c1a17] text-white dark:bg-[#faf9f7] dark:text-[#1c1a17]"
+                        : "text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+                    }`}
+                  >
+                    <svg width="14" height="11" viewBox="0 0 14 11" fill="none" aria-hidden="true">
+                      <rect x="0.5" y="0.5" width="13" height="10" rx="1.5" stroke="currentColor" />
+                      <rect x={key === "narrow" ? 9 : key === "standard" ? 6 : 3} y="1" width={key === "narrow" ? 4.5 : key === "standard" ? 7.5 : 10.5} height="9" rx="1" fill="currentColor" />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+            )}
             <span className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 min-w-12 text-right">{status}</span>
             <button type="button" onClick={onClose} className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]" aria-label="Close panel">
               ✕
@@ -301,9 +401,11 @@ export default function PersonPanel({
 
         <ContactButtons person={{ ...person, phone: form.phone, email: form.email }} />
       </div>
+  );
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6">
-      <div className={`grid gap-y-6 ${isTransaction ? "lg:grid-cols-2 lg:gap-x-8" : ""}`}>
+  const panelBody = (
+      <div className={`@container flex-1 min-h-0 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] overscroll-contain ${sheet && snap === "peek" ? "overflow-hidden touch-none" : "overflow-y-auto"}`} {...(sheet && snap === "peek" ? grabHandlers : {})} onFocusCapture={() => sheet && snap === "peek" && setSnap("full")}>
+      <div className={`grid gap-y-6 ${isTransaction ? "@3xl:grid-cols-2 @3xl:gap-x-8" : ""}`}>
         <div className="min-w-0 space-y-6">
         <div className="space-y-3">
           <div>
@@ -320,7 +422,7 @@ export default function PersonPanel({
               className={inputClass}
             />
           </div>
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid @md:grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Phone</label>
               <input type="tel" value={form.phone} onChange={setField("phone")} onBlur={flush} className={inputClass} />
@@ -330,7 +432,7 @@ export default function PersonPanel({
               <input type="email" value={form.email} onChange={setField("email")} onBlur={flush} className={inputClass} />
             </div>
           </div>
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="grid @md:grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Next follow-up</label>
               <input
@@ -423,7 +525,7 @@ export default function PersonPanel({
         )}
 
         {isTransaction && (
-          <div className="min-w-0 lg:col-span-2">
+          <div className="min-w-0 @3xl:col-span-2">
             <TransactionModules
               person={person}
               side={form.side === "both" ? "" : form.side}
@@ -440,7 +542,7 @@ export default function PersonPanel({
 
         <section
           className={`min-w-0 space-y-3 pt-4 border-t border-black/5 dark:border-white/10 ${
-            isTransaction ? "lg:col-span-2" : ""
+            isTransaction ? "@3xl:col-span-2" : ""
           }`}
         >
           {board.next && !person.archived && (
@@ -514,7 +616,54 @@ export default function PersonPanel({
         </div>
       </div>
       </div>
+  );
+
+  const surface = "bg-white dark:bg-[#1a1a1a] text-[#1c1a17] dark:text-[#faf9f7]";
+
+  if (isDesktop) {
+    return (
+      <aside
+        role="dialog"
+        aria-modal="false"
+        aria-label={`${person.name}'s card`}
+        style={{ width: peek ? peek.css : "min(600px, calc(100vw - 8rem))", transform: entered ? "translateX(0)" : "translateX(100%)" }}
+        className={`fixed inset-y-0 right-0 z-50 flex flex-col border-l border-black/10 dark:border-white/10 shadow-[-16px_0_48px_-12px_rgba(0,0,0,0.18)] transition-[transform,width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${surface}`}
+      >
+        {panelHeader}
+        {panelBody}
+      </aside>
+    );
+  }
+
+  return (
+    <>
+      {snap === "full" && (
+        <button type="button" aria-label="Shrink to the preview" onClick={() => setSnap("peek")} className="fixed inset-0 z-40 bg-black/35" />
+      )}
+      <div
+        role="dialog"
+        aria-modal="false"
+        aria-label={`${person.name}'s card`}
+        style={{
+          height: sheetH,
+          transform: `translateY(${sheetTy}px)`,
+          transition: dragTy === null ? "transform 320ms cubic-bezier(0.16, 1, 0.3, 1)" : "none",
+        }}
+        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-2xl shadow-[0_-12px_40px_-8px_rgba(0,0,0,0.3)] motion-reduce:!transition-none ${surface}`}
+      >
+        <div {...grabHandlers} className="touch-none shrink-0 cursor-grab">
+          <button
+            type="button"
+            aria-label={snap === "peek" ? "Show everything" : "Shrink to the preview"}
+            onClick={() => setSnap((s) => (s === "peek" ? "full" : "peek"))}
+            className="flex w-full justify-center pt-2.5 pb-1"
+          >
+            <span className="h-1.5 w-10 rounded-full bg-black/20 dark:bg-white/25" />
+          </button>
+          {panelHeader}
+        </div>
+        {panelBody}
       </div>
-    </div>
+    </>
   );
 }
