@@ -39,28 +39,16 @@ function TaskRow({ task, today, showDay, onComplete, onUpdate, onRemove, onEdit 
           aria-label={task.recurrence === "none" ? "Mark done" : "Mark done and schedule the next one"}
           className="h-4 w-4 shrink-0 accent-[#ed2127] cursor-pointer"
         />
-        <input
-          defaultValue={task.title}
-          maxLength={300}
-          aria-label="Task"
-          onBlur={(e) => {
-            const v = e.target.value.trim();
-            if (!v) e.target.value = task.title;
-            else if (v !== task.title) onUpdate(task, { title: v });
-          }}
-          onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-          className="min-w-0 flex-1 bg-transparent text-sm font-medium leading-snug rounded focus:outline-none focus:bg-black/[0.03] dark:focus:bg-white/[0.05] px-1 -mx-1 py-0.5"
-        />
-        {task.list && <span className="hidden sm:inline-block shrink-0 rounded-full bg-black/[0.05] dark:bg-white/10 px-2 py-0.5 text-[10px] font-semibold">{task.list}</span>}
+        <button type="button" onClick={() => onEdit(task)} aria-label={`Edit “${task.title}”`} className="min-w-0 flex-1 flex items-center gap-3 text-left rounded-lg px-1 -mx-1 py-1 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ed2127]/40">
+          <span className="min-w-0 flex-1 text-sm font-medium leading-snug break-words">{task.title}</span>
+          {task.list && <span className="hidden sm:inline-block shrink-0 rounded-full bg-black/[0.05] dark:bg-white/10 px-2 py-0.5 text-[10px] font-semibold">{task.list}</span>}
+          {meta.length > 0 && <span className={`hidden sm:block shrink-0 text-[11px] ${muted}`}>{meta.join("  ·  ")}</span>}
+        </button>
         {progress && (
           <button type="button" onClick={() => setStepsOpen((v) => !v)} aria-expanded={stepsOpen} aria-label="Show checklist" className={`shrink-0 text-[11px] font-medium hover:text-[#1c1a17] dark:hover:text-[#faf9f7] ${progress.done === progress.total ? "text-emerald-600 dark:text-emerald-400" : muted}`}>
             {stepsOpen ? "▾" : "▸"} {progress.done}/{progress.total}
           </button>
         )}
-        {meta.length > 0 && <span className={`hidden sm:block shrink-0 text-[11px] ${muted}`}>{meta.join("  ·  ")}</span>}
-        <button type="button" onClick={() => onEdit(task)} className="shrink-0 text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
-          Edit
-        </button>
         <button
           type="button"
           onClick={() => onRemove(task.id)}
