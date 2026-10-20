@@ -22,6 +22,7 @@ import { SITE_ORIGIN, publishedOrDueFilter } from "../src/lib/seo.js";
 import { DEFAULT_ORG_SLUG } from "../src/lib/brand.js";
 import { MARKETING_META } from "../src/lib/marketingMeta.js";
 import { SIGNATURE_HOST, bareHost, isAppHost, isMarketingHost } from "../src/lib/appHosts.js";
+import { handleLlms } from "./_lib/llmsTxt.js";
 
 // Every agent site also has 5 standalone subpages (see App.jsx's
 // /sites/:slug/* routes and api/meta-agent-site.js's ?page= handling) —
@@ -55,7 +56,7 @@ ${u.lastmod ? `    <lastmod>${new Date(u.lastmod).toISOString().slice(0, 10)}</l
 `;
 }
 
-// robots.txt, served from here (vercel.json rewrites /robots.txt to
+// robots.txt and /llms.txt (api/_lib/llmsTxt.js), served from here (vercel.json rewrites /robots.txt to
 // /api/sitemap?robots=1) rather than as a static file because the
 // Sitemap line has to name the host actually being asked for — every
 // agent's custom domain has its own sitemap (see buildCustomDomainSitemap),
@@ -71,6 +72,8 @@ function robotsTxt(req) {
 }
 
 export default async function handler(req, res) {
+  // /llms.txt (vercel.json rewrites it here too, like robots.txt): a markdown summary of the site for AI tools.
+  if (req.query?.llms) return handleLlms(req, res);
   if (req.query?.robots) {
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=3600");

@@ -130,6 +130,10 @@
       "destination": "/api/sitemap?robots=1"
     },
     {
+      "source": "/llms.txt",
+      "destination": "/api/sitemap?llms=1"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
