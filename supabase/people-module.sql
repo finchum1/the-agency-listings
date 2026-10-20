@@ -688,3 +688,8 @@ alter table public.agent_sites add constraint agent_sites_layout_check check (la
 alter table public.listings add column if not exists header_style text not null default 'classic';
 alter table public.listings drop constraint if exists listings_header_style_check;
 alter table public.listings add constraint listings_header_style_check check (header_style in ('classic', 'floating'));
+
+-- 27. A short label (a neighborhood or city) shown next to the logo in a property site's header, typed in the back office.
+alter table public.listings add column if not exists header_label text;
+alter table public.listings drop constraint if exists listings_header_label_check;
+alter table public.listings add constraint listings_header_label_check check (header_label is null or length(header_label) <= 40);

@@ -146,6 +146,7 @@ const emptyListing = {
   hero_video_url: "",
   site_template: "classic",
   header_style: "classic",
+  header_label: "",
   custom_domain: "",
   seo_title: "",
   seo_description: "",
@@ -211,6 +212,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
         hero_video_url: listing.hero_video_url || "",
         site_template: listing.site_template || "classic",
         header_style: listing.header_style || "classic",
+        header_label: listing.header_label || "",
         custom_domain: listing.custom_domain || "",
         seo_title: listing.seo_title || "",
         seo_description: listing.seo_description || "",
@@ -264,6 +266,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
       baths: form.baths === "" ? null : Number(form.baths),
       sqft: form.sqft === "" ? null : Number(form.sqft),
       accent_color: form.accent_color || null,
+      header_label: form.header_label.trim() || null,
       custom_domain: normalizeDomain(form.custom_domain),
       description: descriptionText
         .split(/\n\s*\n/)
@@ -424,9 +427,21 @@ export default function ListingForm({ mode, listing, onSaved }) {
 
       <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
         <div>
-          <h2 className="font-display text-lg font-semibold">Header Style</h2>
-          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">How the navigation bar at the top of the public site looks and behaves. Works with either template.</p>
+          <h2 className="font-display text-lg font-semibold">Header</h2>
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">The navigation bar at the top of the public site. Works with either template.</p>
         </div>
+        <div>
+          <label className={labelClass}>Text next to the logo (optional)</label>
+          <input
+            value={form.header_label}
+            onChange={update("header_label")}
+            maxLength={40}
+            className={inputClass}
+            placeholder="e.g. Nichols Hills or Oklahoma City"
+          />
+          <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-1">Shows beside the logo in the header, like the agent name does on an agent site. Leave empty for none.</p>
+        </div>
+        <label className={labelClass}>Header style</label>
         <div className="grid sm:grid-cols-2 gap-3">
           {HEADER_STYLES.map((h) => (
             <button

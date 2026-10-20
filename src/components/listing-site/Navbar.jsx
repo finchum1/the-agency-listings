@@ -21,6 +21,15 @@ export default function Navbar({ backLink }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // The optional short text beside the logo (a neighborhood or city), with a thin divider. Light over the hero, dark
+  // once the bar is solid.
+  const labelEl = listing.headerLabel ? (
+    <span className={`flex items-center gap-3 min-w-0 transition-colors ${scrolled || open ? "text-[var(--ls-text)]" : "text-[var(--ls-on-dark)]"}`}>
+      <span className="hidden sm:block h-7 w-px bg-current opacity-25 shrink-0" aria-hidden="true" />
+      <span className="hidden sm:block text-sm font-display tracking-wide whitespace-nowrap truncate">{listing.headerLabel}</span>
+    </span>
+  ) : null;
+
   if (listing.headerStyle === "floating") {
     // A clear header at the top that becomes a detached, rounded pill once scrolled (same idea as the agent sites'
     // floating header). On the pill, text uses the page's own text color; over the hero it stays light.
@@ -39,6 +48,7 @@ export default function Navbar({ backLink }) {
             <a href="#overview" className="flex items-center min-w-0 shrink-0">
               <BrandLogo src={listing.brokerage.logo} name={listing.brokerage.name} className="h-11 sm:h-12 w-auto" />
             </a>
+            {labelEl}
             {backLink && (
               <a href={backLink.href} className={`inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors opacity-85 hover:opacity-100 ${tone}`}>
                 <span aria-hidden="true">←</span>
@@ -97,6 +107,7 @@ export default function Navbar({ backLink }) {
           <a href="#overview" className="flex items-center min-w-0">
             <BrandLogo src={listing.brokerage.logo} name={listing.brokerage.name} className="h-14 sm:h-16 w-auto" />
           </a>
+          {labelEl}
           {backLink && (
             <a
               href={backLink.href}

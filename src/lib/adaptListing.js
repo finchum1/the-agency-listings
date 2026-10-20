@@ -27,6 +27,8 @@ export function adaptListing({ listing, agent, photos }) {
     siteTemplate: listing.site_template || "classic",
     // "classic" (flush full-width bar) or "floating" (clear at the top, a detached rounded pill once scrolled).
     headerStyle: listing.header_style === "floating" ? "floating" : "classic",
+    // Optional short text beside the logo in the header (a neighborhood or city), typed in the back office.
+    headerLabel: (listing.header_label || "").trim(),
     theme: listing.theme || "classic",
     fontPairing: listing.font_pairing || "playfair-jost",
     accentColor: listing.accent_color || "",
