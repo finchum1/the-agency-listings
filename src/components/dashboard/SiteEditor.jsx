@@ -76,8 +76,9 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
 
   const meta = section ? SECTIONS[section] : null;
 
+  // Blog posts get the room: the editor, calendar and analytics are wide, the other site pages are short forms.
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className={`${section === "blog" ? "max-w-6xl" : "max-w-3xl"} space-y-8`}>
       {!hideHeader && (
         <div>
           <h1 className="text-2xl font-display font-semibold">{heading || meta?.title || "Website"}</h1>
