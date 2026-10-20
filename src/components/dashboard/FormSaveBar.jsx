@@ -4,8 +4,25 @@
 // submit button, which stays in place underneath as a fallback (Enter-key
 // submit, screen readers, etc.). Only appears once something's actually
 // changed, or right after a save, so it doesn't sit on screen at rest.
+import { useEffect, useState } from "react";
+
+// How long the "Saved" confirmation stays on screen before the pill goes away.
+const SAVED_VISIBLE_MS = 2500;
+
 export default function FormSaveBar({ dirty, saving, saved, error, label = "Save Changes" }) {
-  if (!dirty && !saving && !(saved && !dirty) && !error) return null;
+  const justSaved = saved && !dirty && !saving && !error;
+  const [showSaved, setShowSaved] = useState(false);
+  useEffect(() => {
+    if (!justSaved) {
+      setShowSaved(false);
+      return;
+    }
+    setShowSaved(true);
+    const t = setTimeout(() => setShowSaved(false), SAVED_VISIBLE_MS);
+    return () => clearTimeout(t);
+  }, [justSaved]);
+
+  if (!dirty && !saving && !showSaved && !error) return null;
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white pl-5 pr-2 py-2 shadow-xl shadow-black/20">
