@@ -672,3 +672,10 @@ alter table public.agent_tasks add constraint agent_tasks_list_check check (list
 alter table public.agent_tasks drop constraint if exists agent_tasks_checklist_check;
 alter table public.agent_tasks add constraint agent_tasks_checklist_check
   check (jsonb_typeof(checklist) = 'array' and jsonb_array_length(checklist) <= 50);
+
+-- 24. Website layouts. `theme` (classic, dark, sand, red, linen) only changes colors; `layout` changes how the home
+--     page and its sections are arranged. 'classic' is the original look and stays the default, so nobody's site
+--     changes until an agent (or an admin) picks another layout.
+alter table public.agent_sites add column if not exists layout text not null default 'classic';
+alter table public.agent_sites drop constraint if exists agent_sites_layout_check;
+alter table public.agent_sites add constraint agent_sites_layout_check check (layout in ('classic', 'editorial', 'bold'));

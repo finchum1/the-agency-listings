@@ -52,7 +52,8 @@ export default function Navbar() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
   const isHome = location.pathname === agentSiteHref(site.slug) || location.pathname === "/";
-  const solid = scrolled || open || !isHome;
+  // The editorial layout opens on a light page, not a photo, so its nav can't be clear-with-light-text at the top.
+  const solid = scrolled || open || !isHome || site.layout === "editorial";
 
   const visiblePages = PAGES.filter((page) => !page.sectionKey || site.homeSections.includes(page.sectionKey));
 

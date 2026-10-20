@@ -48,6 +48,14 @@ const THEMES = [
   },
 ];
 
+// How the home page and its sections are arranged (agent_sites.layout, check constraint kept in sync). Independent of
+// the color theme below: any layout works with any theme, font pairing and button style.
+const LAYOUTS = [
+  { value: "classic", label: "Classic", description: "Full-screen photo hero, then bio, listings, and testimonials in tidy sections. The original look." },
+  { value: "editorial", label: "Minimal editorial", description: "Light and airy, like a magazine: big quiet headlines, thin rules, captioned photos, and testimonials as pull-quotes." },
+  { value: "bold", label: "Bold statement", description: "Oversized uppercase type, full-bleed photos with text over them, solid color blocks, and big numbers." },
+];
+
 // Button shape on the public site (agent_sites.button_style, check
 // constraint kept in sync) — buttons and tags opt in with .as-btn, see
 // index.css.
@@ -131,6 +139,34 @@ const HOME_SECTION_LABELS = {
 const ALL_SECTION_KEYS = Object.keys(HOME_SECTION_LABELS);
 const DEFAULT_HOME_SECTIONS = ["bio", "testimonials", "listings", "areas", "blog"];
 
+// A tiny wireframe of each layout for the picker.
+function LayoutSketch({ kind }) {
+  const bar = "rounded-[2px] bg-[#1c1a17]/15 dark:bg-white/20";
+  const accent = "rounded-[2px] bg-[#ed2127]";
+  return (
+    <div className="h-24 rounded-lg border border-black/10 dark:border-white/15 overflow-hidden bg-white dark:bg-[#111] p-1.5 flex flex-col gap-1" aria-hidden="true">
+      {kind === "classic" && (
+        <>
+          <div className="h-10 rounded-[3px] bg-[#1c1a17]/70 flex items-end p-1.5"><div className="h-1.5 w-10 rounded-full bg-white/80" /></div>
+          <div className="flex gap-1.5 flex-1"><div className={`${bar} w-8`} /><div className="flex-1 flex flex-col gap-1 pt-0.5"><div className={`${bar} h-1.5`} /><div className={`${bar} h-1.5 w-3/4`} /></div></div>
+        </>
+      )}
+      {kind === "editorial" && (
+        <>
+          <div className="flex flex-col items-center gap-1 pt-1"><div className="h-2 w-16 rounded-[2px] bg-[#1c1a17]/55" /><div className={`${accent} h-px w-5`} /><div className={`${bar} h-1 w-12`} /></div>
+          <div className={`${bar} flex-1 mt-0.5`} />
+        </>
+      )}
+      {kind === "bold" && (
+        <>
+          <div className="h-11 rounded-[3px] bg-[#1c1a17]/70 flex flex-col justify-end p-1.5 gap-0.5"><div className="h-2.5 w-14 rounded-[1px] bg-white" /><div className="h-2.5 w-10 rounded-[1px] bg-white" /></div>
+          <div className="flex gap-1 flex-1"><div className={`${accent} flex-1`} /><div className="flex-1 rounded-[2px] bg-[#1c1a17]/70" /><div className={`${bar} flex-1`} /></div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function SiteForm({ site, onSaved }) {
   const { brand } = useOrg();
   const accentOptions = accentChoices(brand);
@@ -153,6 +189,7 @@ export default function SiteForm({ site, onSaved }) {
       tagline: s.tagline || "",
       region: s.region || "",
       theme: s.theme || "classic",
+      layout: s.layout || "classic",
       header_style: s.header_style || "classic",
       button_style: s.button_style || "square",
       font_pairing: s.font_pairing || "playfair-jost",
@@ -247,6 +284,7 @@ export default function SiteForm({ site, onSaved }) {
       tagline: form.tagline,
       region: form.region,
       theme: form.theme,
+      layout: form.layout,
       header_style: form.header_style,
       button_style: form.button_style,
       font_pairing: form.font_pairing,
@@ -353,9 +391,32 @@ export default function SiteForm({ site, onSaved }) {
           </div>
         </CollapsibleSection>
 
-        <CollapsibleSection title="Template & Design" description="Theme, accent color, font pairing, and logo.">
+        <CollapsibleSection title="Template & Design" description="Layout, color theme, accent color, font pairing, and logo.">
           <div>
-            <label className={labelClass}>Template</label>
+            <label className={labelClass}>Layout</label>
+            <div className="grid sm:grid-cols-3 gap-3">
+              {LAYOUTS.map((l) => (
+                <button
+                  key={l.value}
+                  type="button"
+                  onClick={() => set("layout", l.value)}
+                  className={`text-left rounded-xl border p-3.5 transition-colors ${
+                    form.layout === l.value
+                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
+                  }`}
+                >
+                  <LayoutSketch kind={l.value} />
+                  <p className="text-sm font-semibold mt-2.5">{l.label}</p>
+                  <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{l.description}</p>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-2">Save, then open the site to see the new layout. Your content stays the same.</p>
+          </div>
+
+          <div>
+            <label className={labelClass}>Color theme</label>
             <div className="grid sm:grid-cols-3 gap-3">
               {THEMES.map((t) => (
                 <button

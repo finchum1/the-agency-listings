@@ -1,8 +1,12 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { sanitizeHtml } from "../../lib/sanitizeHtml";
+import { EditorialBio } from "./layouts/Editorial";
+import { BoldBio } from "./layouts/Bold";
 
 export default function Bio() {
   const { site, isStandalonePage } = useAgentSiteContext();
+  if (site.layout === "editorial") return <EditorialBio />;
+  if (site.layout === "bold") return <BoldBio />;
   if (!site.bioHtml && site.stats.length === 0) return null;
   // On Home, Hero.jsx already supplies the page's one H1 — this section's
   // heading stays H2 there. Standalone at /about (no Hero on that route),
