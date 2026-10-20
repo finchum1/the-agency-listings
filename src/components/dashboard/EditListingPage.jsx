@@ -33,7 +33,9 @@ export default function EditListingPage() {
   // notFound — no hint that a listing exists there at all.
   const noAccess = listing && !isAdmin && listing.agent_id !== user?.id;
 
-  if (loading) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
+  // Only the very first load blanks the page: a refresh after saving keeps the form on screen (so its "Saved" note and
+  // scroll position survive) while the new data comes in underneath.
+  if (loading && !listing) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
   if (notFound || noAccess) {
     return (
       <div>

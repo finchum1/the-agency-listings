@@ -6,6 +6,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { normalizeDomain } from "../../lib/normalizeDomain";
 import StatusSelect from "./StatusSelect";
 import VideoUploadField from "./VideoUploadField";
+import FormSaveBar from "./FormSaveBar";
 
 // Structural site templates — distinct from THEMES below (which are
 // color/font variants *within* the classic template). Luxury has its
@@ -166,6 +167,12 @@ export default function ListingForm({ mode, listing, onSaved }) {
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [saved, setSaved] = useState(false);
+  // What the form looked like when it was loaded or last saved. Anything different from this is an unsaved change,
+  // wherever in the form it was made, and brings up the floating Save bar.
+  const [baseline, setBaseline] = useState(() => JSON.stringify({ form: emptyListing, descriptionText: "", features: [] }));
+  const snapshot = JSON.stringify({ form, descriptionText, features });
+  const dirty = snapshot !== baseline;
 
   useEffect(() => {
     if (isAdmin && orgId) {
@@ -180,7 +187,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
 
   useEffect(() => {
     if (listing) {
-      setForm({
+      const loaded = {
         slug: listing.slug || "",
         agent_id: listing.agent_id || "",
         status: listing.status || "draft",
@@ -208,14 +215,16 @@ export default function ListingForm({ mode, listing, onSaved }) {
         seo_title: listing.seo_title || "",
         seo_description: listing.seo_description || "",
         og_image_url: listing.og_image_url || "",
-      });
-      setDescriptionText((listing.description || []).join("\n\n"));
-      setFeatures(
-        (listing.features || []).map((group) => ({
-          category: group.category || "",
-          itemsText: (group.items || []).join("\n"),
-        }))
-      );
+      };
+      const loadedDescription = (listing.description || []).join("\n\n");
+      const loadedFeatures = (listing.features || []).map((group) => ({
+        category: group.category || "",
+        itemsText: (group.items || []).join("\n"),
+      }));
+      setForm(loaded);
+      setDescriptionText(loadedDescription);
+      setFeatures(loadedFeatures);
+      setBaseline(JSON.stringify({ form: loaded, descriptionText: loadedDescription, features: loadedFeatures }));
     }
   }, [listing]);
 
@@ -268,6 +277,8 @@ export default function ListingForm({ mode, listing, onSaved }) {
         })),
     };
 
+    const savedSnapshot = snapshot;
+    setSaved(false);
     setSaving(true);
     if (mode === "create") {
       const { data, error } = await supabase.from("listings").insert(payload).select().single();
@@ -284,6 +295,8 @@ export default function ListingForm({ mode, listing, onSaved }) {
         setError(error.message);
         return;
       }
+      setBaseline(savedSnapshot);
+      setSaved(true);
       onSaved?.(listing.id);
     }
   };
@@ -764,6 +777,8 @@ export default function ListingForm({ mode, listing, onSaved }) {
       >
         {saving ? "Saving…" : mode === "create" ? "Create Listing" : "Save Changes"}
       </button>
+
+      <FormSaveBar dirty={dirty} saving={saving} saved={saved} error={error} label={mode === "create" ? "Create Listing" : "Save Changes"} />
     </form>
   );
 }

@@ -1,10 +1,10 @@
 // Floating "Save Changes" pill for the long dashboard forms (SiteForm.jsx,
-// BrokerageSiteForm.jsx) — fixed to the bottom of the viewport so it's
+// BrokerageSiteForm.jsx, ListingForm.jsx) — fixed to the bottom of the viewport so it's
 // reachable without scrolling all the way down to the form's own trailing
 // submit button, which stays in place underneath as a fallback (Enter-key
 // submit, screen readers, etc.). Only appears once something's actually
 // changed, or right after a save, so it doesn't sit on screen at rest.
-export default function FormSaveBar({ dirty, saving, saved, error }) {
+export default function FormSaveBar({ dirty, saving, saved, error, label = "Save Changes" }) {
   if (!dirty && !saving && !(saved && !dirty) && !error) return null;
 
   return (
@@ -22,7 +22,7 @@ export default function FormSaveBar({ dirty, saving, saved, error }) {
           disabled={saving}
           className="rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-semibold px-4 py-2 transition-colors disabled:opacity-60"
         >
-          {saving ? "Saving…" : "Save Changes"}
+          {saving ? "Saving…" : label}
         </button>
       )}
     </div>
