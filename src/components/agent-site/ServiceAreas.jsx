@@ -1,12 +1,11 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import SiteLink from "./SiteLink";
-import { EditorialAreas } from "./layouts/Editorial";
-import { BoldAreas } from "./layouts/Bold";
+import { LAYOUT_SECTIONS } from "./layouts";
 
 export default function ServiceAreas() {
   const { site, isStandalonePage } = useAgentSiteContext();
-  if (site.layout === "editorial") return <EditorialAreas />;
-  if (site.layout === "bold") return <BoldAreas />;
+  const Variant = LAYOUT_SECTIONS[site.layout]?.Areas;
+  if (Variant) return <Variant />;
   if (site.areas.length === 0) return null;
   // See Bio.jsx's comment — Home already has an H1 from Hero.jsx, but
   // this section IS the page at standalone /areas.

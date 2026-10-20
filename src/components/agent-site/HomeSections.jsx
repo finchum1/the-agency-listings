@@ -6,6 +6,7 @@ import FeaturedListings from "./FeaturedListings";
 import ServiceAreas from "./ServiceAreas";
 import BlogTeaser from "./BlogTeaser";
 import Contact from "./Contact";
+import { LISTINGS_FIRST_LAYOUTS } from "./layouts";
 
 // Home page composition, driven by agent_sites.home_sections — which of
 // the optional sections show, and in what order (set in the site editor,
@@ -24,10 +25,15 @@ const SECTION_COMPONENTS = {
 
 export default function HomeSections() {
   const { site } = useAgentSiteContext();
+  // A "listings first" layout puts the listings straight after the hero, whatever order the agent set for the rest.
+  const sectionOrder =
+    LISTINGS_FIRST_LAYOUTS.includes(site.layout) && site.homeSections.includes("listings")
+      ? ["listings", ...site.homeSections.filter((k) => k !== "listings")]
+      : site.homeSections;
   return (
     <>
       <Hero />
-      {site.homeSections.map((key) => {
+      {sectionOrder.map((key) => {
         const Section = SECTION_COMPONENTS[key];
         return Section ? <Section key={key} /> : null;
       })}

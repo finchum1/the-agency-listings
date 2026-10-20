@@ -1,12 +1,11 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { sanitizeHtml } from "../../lib/sanitizeHtml";
-import { EditorialTestimonials } from "./layouts/Editorial";
-import { BoldTestimonials } from "./layouts/Bold";
+import { LAYOUT_SECTIONS } from "./layouts";
 
 export default function Testimonials() {
   const { site } = useAgentSiteContext();
-  if (site.layout === "editorial") return <EditorialTestimonials />;
-  if (site.layout === "bold") return <BoldTestimonials />;
+  const Variant = LAYOUT_SECTIONS[site.layout]?.Testimonials;
+  if (Variant) return <Variant />;
   if (site.testimonials.length === 0) return null;
 
   return (

@@ -4,6 +4,7 @@ import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { agentSiteHref } from "../../lib/agentSiteLinks";
 import SiteLink from "./SiteLink";
 import BrandLogo from "../BrandLogo";
+import { LIGHT_HERO_LAYOUTS } from "./layouts";
 
 // sectionKey matches agent_sites.home_sections entries (see
 // HomeSections.jsx) — a page whose section an agent has turned off isn't
@@ -52,8 +53,8 @@ export default function Navbar() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
   const isHome = location.pathname === agentSiteHref(site.slug) || location.pathname === "/";
-  // The editorial layout opens on a light page, not a photo, so its nav can't be clear-with-light-text at the top.
-  const solid = scrolled || open || !isHome || site.layout === "editorial";
+  // Some layouts open on a light page, not a photo, so their nav can't be clear-with-light-text at the top.
+  const solid = scrolled || open || !isHome || LIGHT_HERO_LAYOUTS.includes(site.layout);
 
   const visiblePages = PAGES.filter((page) => !page.sectionKey || site.homeSections.includes(page.sectionKey));
 

@@ -53,6 +53,8 @@ const THEMES = [
 const LAYOUTS = [
   { value: "classic", label: "Classic", description: "Full-screen photo hero, then bio, listings, and testimonials in tidy sections. The original look." },
   { value: "editorial", label: "Minimal editorial", description: "Light and airy, like a magazine: big quiet headlines, thin rules, captioned photos, and testimonials as pull-quotes." },
+  { value: "portrait", label: "Portrait split", description: "Leads with the agent: a tall portrait beside their name, tagline, and a way to connect, then warm card-style sections." },
+  { value: "listings", label: "Listings first", description: "A short banner, then the listings right away with a big feature home and status filters. The bio becomes a slim strip." },
   { value: "bold", label: "Bold statement", description: "Oversized uppercase type, full-bleed photos with text over them, solid color blocks, and big numbers." },
 ];
 
@@ -155,6 +157,19 @@ function LayoutSketch({ kind }) {
         <>
           <div className="flex flex-col items-center gap-1 pt-1"><div className="h-2 w-16 rounded-[2px] bg-[#1c1a17]/55" /><div className={`${accent} h-px w-5`} /><div className={`${bar} h-1 w-12`} /></div>
           <div className={`${bar} flex-1 mt-0.5`} />
+        </>
+      )}
+      {kind === "portrait" && (
+        <div className="flex gap-1.5 flex-1">
+          <div className="w-1/2 rounded-[3px] bg-[#1c1a17]/60" />
+          <div className="flex-1 flex flex-col justify-center gap-1"><div className="h-2.5 w-full rounded-[2px] bg-[#1c1a17]/55" /><div className={`${bar} h-1.5 w-3/4`} /><div className={`${accent} h-2.5 w-10 mt-1`} /></div>
+        </div>
+      )}
+      {kind === "listings" && (
+        <>
+          <div className="h-6 rounded-[3px] bg-[#1c1a17]/70" />
+          <div className="flex gap-1 flex-1"><div className="flex-[1.6] rounded-[2px] bg-[#1c1a17]/35" /><div className="flex-1 flex flex-col gap-1 justify-center"><div className={`${accent} h-1.5 w-8`} /><div className={`${bar} h-1.5`} /></div></div>
+          <div className="flex gap-1 h-5"><div className={`${bar} flex-1`} /><div className={`${bar} flex-1`} /><div className={`${bar} flex-1`} /></div>
         </>
       )}
       {kind === "bold" && (

@@ -1,12 +1,11 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { sanitizeHtml } from "../../lib/sanitizeHtml";
-import { EditorialBio } from "./layouts/Editorial";
-import { BoldBio } from "./layouts/Bold";
+import { LAYOUT_SECTIONS, FULL_SECTION_ON_OWN_PAGE } from "./layouts";
 
 export default function Bio() {
   const { site, isStandalonePage } = useAgentSiteContext();
-  if (site.layout === "editorial") return <EditorialBio />;
-  if (site.layout === "bold") return <BoldBio />;
+  const Variant = LAYOUT_SECTIONS[site.layout]?.Bio;
+  if (Variant && !(isStandalonePage && FULL_SECTION_ON_OWN_PAGE[site.layout]?.includes("Bio"))) return <Variant />;
   if (!site.bioHtml && site.stats.length === 0) return null;
   // On Home, Hero.jsx already supplies the page's one H1 — this section's
   // heading stays H2 there. Standalone at /about (no Hero on that route),

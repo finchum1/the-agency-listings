@@ -1,7 +1,6 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import SiteLink from "./SiteLink";
-import { EditorialBlog } from "./layouts/Editorial";
-import { BoldBlog } from "./layouts/Bold";
+import { LAYOUT_SECTIONS } from "./layouts";
 
 // On Home, only a taste — the 6 most recent (posts already arrive sorted
 // newest-first, see useAgentSite.js's own `order("post_date", {ascending:
@@ -19,8 +18,9 @@ export default function BlogTeaser() {
   const posts = isStandalonePage ? site.posts : site.posts.slice(0, HOME_PREVIEW_COUNT);
   const hasMore = !isStandalonePage && site.posts.length > HOME_PREVIEW_COUNT;
 
-  if (site.layout === "editorial") return <EditorialBlog posts={posts} hasMore={hasMore} standalone={isStandalonePage} />;
-  if (site.layout === "bold") return <BoldBlog posts={posts} hasMore={hasMore} standalone={isStandalonePage} />;
+
+  const Variant = LAYOUT_SECTIONS[site.layout]?.Blog;
+  if (Variant) return <Variant posts={posts} hasMore={hasMore} standalone={isStandalonePage} />;
 
   return (
     <section id="blog" className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">

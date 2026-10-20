@@ -1,13 +1,12 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { formatPrice, STATUS_LABELS } from "../../lib/format";
 import { agentSiteHref } from "../../lib/agentSiteLinks";
-import { EditorialListings } from "./layouts/Editorial";
-import { BoldListings } from "./layouts/Bold";
+import { LAYOUT_SECTIONS } from "./layouts";
 
 export default function FeaturedListings() {
   const { site, isStandalonePage } = useAgentSiteContext();
-  if (site.layout === "editorial") return <EditorialListings />;
-  if (site.layout === "bold") return <BoldListings />;
+  const Variant = LAYOUT_SECTIONS[site.layout]?.Listings;
+  if (Variant) return <Variant />;
   if (site.listings.length === 0) return null;
   // See Bio.jsx's comment — Home already has an H1 from Hero.jsx, but
   // this section IS the page at standalone /listings.

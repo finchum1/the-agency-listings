@@ -1,13 +1,12 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import SiteLink from "./SiteLink";
-import { EditorialHero } from "./layouts/Editorial";
-import { BoldHero } from "./layouts/Bold";
+import { LAYOUT_SECTIONS } from "./layouts";
 
 export default function Hero() {
   const { site } = useAgentSiteContext();
+  const Variant = LAYOUT_SECTIONS[site.layout]?.Hero;
+  if (Variant) return <Variant />;
 
-  if (site.layout === "editorial") return <EditorialHero />;
-  if (site.layout === "bold") return <BoldHero />;
 
   return (
     <section className="relative h-screen min-h-[640px] w-full">
