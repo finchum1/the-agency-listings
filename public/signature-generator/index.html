@@ -95,6 +95,11 @@
     .preview-box { background: #ffffff; color: #1c1a17; border: 1px solid var(--line); border-radius: 12px; padding: 24px; overflow: hidden; }
     #sigInner { transform-origin: top left; width: max-content; }
     .preview-box.is-sample { opacity: 0.55; }
+    .themes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 14px; }
+    .themes .lbl { font-size: 13px; font-weight: 500; color: var(--muted); margin-right: 2px; }
+    .chip { font: inherit; font-size: 14px; font-weight: 500; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+    .chip:hover { color: var(--text); }
+    .chip[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
     .preview-note { font-size: 13px; color: var(--muted); margin: 12px 0 0; }
     details { margin-top: 18px; }
     summary { cursor: pointer; font-size: 14px; color: var(--muted); }
@@ -201,6 +206,7 @@
       <div class="sticky">
         <section class="card" aria-labelledby="s2">
           <div class="step"><span class="n">2</span><h2 id="s2">Preview &amp; copy</h2></div>
+          <div class="themes" id="themes" role="group" aria-label="Signature theme"><span class="lbl">Theme</span></div>
           <div id="preview" class="preview-box is-sample" aria-live="polite"><div id="sigInner"></div></div>
           <p class="preview-note" id="previewNote">This is an example. Type your name to see yours.</p>
           <div class="row">
@@ -326,6 +332,16 @@
   var SAMPLE = { name: "Your Name", title: "Real Estate Advisor", phone: "405-555-0123", website: "yourwebsite.com",
                  credentials: "", location: "Oklahoma", instagram: "", facebook: "", linkedin: "", tiktok: "", x: "", youtube: "" };
 
+  // Seasonal themes. Add a new one here (and its banner image in /assets/) and it shows up as a button. A banner is a
+  // decorative strip across the top of the signature; it points at an image on this site like the logo does, so don't
+  // rename or delete a banner file once signatures using it have gone out.
+  var THEMES = [
+    { key: "none", label: "Standard" },
+    { key: "christmas", label: "\uD83C\uDF84 Christmas lights", banner: { file: "theme-christmas-lights.gif", w: 380, h: 34 } }
+  ];
+  var theme = "none";
+  function themeByKey(k) { for (var i = 0; i < THEMES.length; i++) if (THEMES[i].key === k) return THEMES[i]; return THEMES[0]; }
+
   var NETWORKS = [
     { key: "instagram", label: "Instagram", base: "https://instagram.com/" },
     { key: "facebook",  label: "Facebook",  base: "https://facebook.com/" },
@@ -395,6 +411,12 @@
 
     var h = [];
     h.push('<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:Arial,Helvetica,sans-serif;color:#1c1a17;">');
+    var themed = themeByKey(v.theme);
+    if (themed.banner) {
+      h.push('  <tr>');
+      h.push('    <td colspan="2" style="padding:0 0 12px 0;"><img src="' + base + themed.banner.file + '" width="' + themed.banner.w + '" height="' + themed.banner.h + '" alt="" style="display:block;border:0;width:' + themed.banner.w + 'px;height:' + themed.banner.h + 'px;" /></td>');
+      h.push('  </tr>');
+    }
     h.push('  <tr>');
     h.push('    <td valign="middle" style="padding:0 20px 0 0;border-right:1px solid #e4e0d8;">');
     h.push('      <img src="' + base + 'logo-v1.gif" width="180" height="79" alt="The Agency" style="display:block;border:0;width:180px;height:79px;" />');
@@ -440,6 +462,7 @@
   function readForm() {
     var v = {};
     fields.forEach(function (k) { v[k] = $(k).value; });
+    v.theme = theme;
     return v;
   }
 
@@ -452,7 +475,7 @@
   function render() {
     var v = readForm();
     var hasName = v.name.trim().length > 0;
-    var data = hasName ? v : SAMPLE;
+    var data = hasName ? v : Object.assign({}, SAMPLE, { theme: theme });
     innerEl.innerHTML = buildSignature(data, PREVIEW_BASE);
     fit();
     previewEl.classList.toggle("is-sample", !hasName);
@@ -521,9 +544,23 @@
 
   fields.forEach(function (k) { $(k).addEventListener("input", render); });
 
+  // Theme buttons.
+  var themesEl = $("themes");
+  function paintThemes() {
+    Array.prototype.forEach.call(themesEl.querySelectorAll(".chip"), function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-theme") === theme ? "true" : "false"); });
+  }
+  THEMES.forEach(function (t) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.setAttribute("data-theme", t.key); b.textContent = t.label;
+    b.addEventListener("click", function () { theme = t.key; paintThemes(); render(); });
+    themesEl.appendChild(b);
+  });
+
   // Restore the last session, if any.
   var saved = load();
   if (saved) fields.forEach(function (k) { if (typeof saved[k] === "string") $(k).value = saved[k]; });
+  if (saved && typeof saved.theme === "string") theme = themeByKey(saved.theme).key;
+  paintThemes();
   render();
 
   // Tabs for the email-app instructions.
