@@ -683,3 +683,8 @@ alter table public.agent_sites add constraint agent_sites_layout_check check (la
 -- 25. Two more website layouts: 'portrait' (Portrait split) and 'listings' (Listings first).
 alter table public.agent_sites drop constraint if exists agent_sites_layout_check;
 alter table public.agent_sites add constraint agent_sites_layout_check check (layout in ('classic', 'editorial', 'bold', 'portrait', 'listings'));
+
+-- 26. Property (listing) sites can use the floating pill header too, like agent sites do (agent_sites.header_style).
+alter table public.listings add column if not exists header_style text not null default 'classic';
+alter table public.listings drop constraint if exists listings_header_style_check;
+alter table public.listings add constraint listings_header_style_check check (header_style in ('classic', 'floating'));

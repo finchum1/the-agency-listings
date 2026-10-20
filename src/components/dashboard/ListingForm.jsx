@@ -25,6 +25,13 @@ const SITE_TEMPLATES = [
   },
 ];
 
+// How the fixed nav behaves on the public site (listings.header_style, check constraint kept in sync). Works with either
+// site template. Same two choices as agent sites.
+const HEADER_STYLES = [
+  { value: "classic", label: "Classic", description: "Flush, full-width bar. Clear over the hero, solid once you scroll." },
+  { value: "floating", label: "Floating", description: "A clear header at the top that becomes a detached, rounded pill once you scroll." },
+];
+
 function slugify(text) {
   return text
     .toLowerCase()
@@ -137,6 +144,7 @@ const emptyListing = {
   property_type: "Single Family Home",
   hero_video_url: "",
   site_template: "classic",
+  header_style: "classic",
   custom_domain: "",
   seo_title: "",
   seo_description: "",
@@ -195,6 +203,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
         property_type: listing.property_type || "Single Family Home",
         hero_video_url: listing.hero_video_url || "",
         site_template: listing.site_template || "classic",
+        header_style: listing.header_style || "classic",
         custom_domain: listing.custom_domain || "",
         seo_title: listing.seo_title || "",
         seo_description: listing.seo_description || "",
@@ -395,6 +404,37 @@ export default function ListingForm({ mode, listing, onSaved }) {
             >
               <p className="text-sm font-semibold">{t.label}</p>
               <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{t.description}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
+        <div>
+          <h2 className="font-display text-lg font-semibold">Header Style</h2>
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">How the navigation bar at the top of the public site looks and behaves. Works with either template.</p>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {HEADER_STYLES.map((h) => (
+            <button
+              key={h.value}
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, header_style: h.value }))}
+              className={`text-left rounded-xl border p-3.5 transition-colors ${
+                form.header_style === h.value
+                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                  : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
+              }`}
+            >
+              <div className="mb-2.5 h-9 rounded-lg bg-[#1c1a17]/10 dark:bg-white/10 flex items-center px-2" aria-hidden="true">
+                {h.value === "classic" ? (
+                  <div className="h-full w-full flex items-center justify-between"><span className="h-2 w-8 rounded-sm bg-[#1c1a17]/40 dark:bg-white/50" /><span className="flex gap-1"><i className="h-1.5 w-4 rounded-sm bg-[#1c1a17]/25 dark:bg-white/30" /><i className="h-1.5 w-4 rounded-sm bg-[#1c1a17]/25 dark:bg-white/30" /></span></div>
+                ) : (
+                  <div className="h-6 w-full rounded-full bg-white dark:bg-[#2a2a2a] shadow flex items-center justify-between px-2.5"><span className="h-2 w-8 rounded-sm bg-[#1c1a17]/40 dark:bg-white/50" /><span className="flex gap-1"><i className="h-1.5 w-4 rounded-sm bg-[#1c1a17]/25 dark:bg-white/30" /><i className="h-1.5 w-4 rounded-sm bg-[#1c1a17]/25 dark:bg-white/30" /></span></div>
+                )}
+              </div>
+              <p className="text-sm font-semibold">{h.label}</p>
+              <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{h.description}</p>
             </button>
           ))}
         </div>

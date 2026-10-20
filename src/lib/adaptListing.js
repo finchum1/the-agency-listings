@@ -25,6 +25,8 @@ export function adaptListing({ listing, agent, photos }) {
       logo: listing.theme === "red" ? (brokerage.logos.white || brokerage.logo) : brokerage.logos[listing.logo_variant] || brokerage.logo,
     },
     siteTemplate: listing.site_template || "classic",
+    // "classic" (flush full-width bar) or "floating" (clear at the top, a detached rounded pill once scrolled).
+    headerStyle: listing.header_style === "floating" ? "floating" : "classic",
     theme: listing.theme || "classic",
     fontPairing: listing.font_pairing || "playfair-jost",
     accentColor: listing.accent_color || "",
