@@ -336,7 +336,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
             value={form.image_url}
             onChange={(url) => setForm((f) => ({ ...f, image_url: url || "" }))}
           />
-          <div>
+          <div className="max-w-4xl">
             <label className={labelClass}>Body</label>
             <RichTextEditor
               value={form.body_html}
