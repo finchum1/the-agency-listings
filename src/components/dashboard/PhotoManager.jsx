@@ -88,6 +88,14 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
     onChanged?.();
   };
 
+  const saveCaption = async (photo, value) => {
+    const caption = value.trim();
+    if (caption === (photo.caption || "")) return;
+    const { error: err } = await supabase.from("listing_photos").update({ caption }).eq("id", photo.id);
+    if (err) setError(err.message);
+    else onChanged?.();
+  };
+
   const remove = async (photo) => {
     if (!confirm("Delete this photo?")) return;
     const path = photo.url.split("/listing-photos/")[1];
@@ -123,8 +131,8 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
           <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">Drag to reorder. First photo is the hero unless you star another.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {photos.map((photo) => (
+              <div key={photo.id}>
               <div
-                key={photo.id}
                 draggable
                 onDragStart={handleDragStart(photo)}
                 onDragOver={handleDragOver(photo)}
@@ -167,6 +175,19 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
                     ✕
                   </button>
                 </div>
+              </div>
+              {/* Shown in the big view on the public site. Leave it empty for no caption. Outside the draggable tile so
+                  the text can be selected and edited normally. */}
+              <input
+                key={`${photo.id}:${photo.caption || ""}`}
+                defaultValue={photo.caption || ""}
+                maxLength={80}
+                placeholder="Caption (optional)"
+                aria-label="Photo caption"
+                onBlur={(e) => saveCaption(photo, e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+                className="mt-1.5 w-full rounded-md border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+              />
               </div>
             ))}
           </div>

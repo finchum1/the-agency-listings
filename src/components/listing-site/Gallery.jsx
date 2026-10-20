@@ -96,7 +96,7 @@ export default function Gallery() {
               className="w-full max-h-[75vh] object-contain rounded-lg"
             />
             <figcaption className="text-white/80 text-sm text-center mt-4">
-              {images[activeIndex].caption} — {activeIndex + 1} / {images.length}
+              {images[activeIndex].caption ? `${images[activeIndex].caption} — ` : ""}{activeIndex + 1} / {images.length}
             </figcaption>
           </figure>
 
