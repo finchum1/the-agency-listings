@@ -30,6 +30,23 @@ export default function HomeSections() {
     LISTINGS_FIRST_LAYOUTS.includes(site.layout) && site.homeSections.includes("listings")
       ? ["listings", ...site.homeSections.filter((k) => k !== "listings")]
       : site.homeSections;
+  // Classic layout: the hero stays pinned and the rest of the page scrolls up over it, so the first scroll covers the
+  // photo instead of moving it away. The sections all have solid backgrounds; they sit in a layer above the hero.
+  // The wrapper limits how long the hero stays pinned to this block, so the footer is never under it.
+  if (site.layout === "classic") {
+    return (
+      <div className="relative">
+        <Hero />
+        <div className="relative z-10">
+          {sectionOrder.map((key) => {
+            const Section = SECTION_COMPONENTS[key];
+            return Section ? <Section key={key} /> : null;
+          })}
+          <Contact />
+        </div>
+      </div>
+    );
+  }
   return (
     <>
       <Hero />

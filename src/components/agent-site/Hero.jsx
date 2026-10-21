@@ -7,9 +7,9 @@ export default function Hero() {
   const Variant = LAYOUT_SECTIONS[site.layout]?.Hero;
   if (Variant) return <Variant />;
 
-
+  // Pinned to the top while the sections after it scroll up over it (HomeSections.jsx puts them in a layer above).
   return (
-    <section className="relative h-screen min-h-[640px] w-full">
+    <section className="sticky top-0 z-0 h-screen min-h-[640px] w-full">
       {site.heroVideo ? (
         <video
           className="absolute inset-0 h-full w-full object-cover"
