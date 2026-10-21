@@ -9,7 +9,7 @@ import { trackView } from "../lib/trackView";
 import { ListingProvider } from "../context/ListingContext";
 
 import Navbar from "../components/listing-site/Navbar";
-import Hero from "../components/listing-site/Hero";
+import Hero, { HeroBackdrop, HERO_OVERLAP_STYLE } from "../components/listing-site/Hero";
 import LuxuryHero from "../components/listing-site/LuxuryHero";
 import StatsBar from "../components/listing-site/StatsBar";
 import OpenHouseBanner from "../components/listing-site/OpenHouseBanner";
@@ -100,14 +100,37 @@ export default function ListingSitePage({ listing, agent, photos, openHouses, lo
         style={!isLuxury && adapted.accentColor ? { "--ls-accent": adapted.accentColor } : undefined}
       >
         <Navbar backLink={backLink} />
-        {isLuxury ? <LuxuryHero /> : <Hero />}
-        <StatsBar />
-        <OpenHouseBanner />
-        <Description />
-        <Gallery />
-        <Features />
-        <LocationMap />
-        <AgentContact />
+        {isLuxury ? (
+          <>
+            <LuxuryHero />
+            <StatsBar />
+            <OpenHouseBanner />
+            <Description />
+            <Gallery />
+            <Features />
+            <LocationMap />
+            <AgentContact />
+          </>
+        ) : (
+          // Classic: the hero photo/video stays pinned and the page, text included, scrolls up over it. The footer is
+          // outside this block so the pinned media is never under it.
+          <div className="relative">
+            <HeroBackdrop />
+            <div className="relative z-10" style={HERO_OVERLAP_STYLE}>
+              <Hero />
+              {/* flow-root keeps the stats bar's negative top margin from pulling this whole block up over the hero text */}
+              <div className="flow-root bg-[var(--ls-bg)]">
+                <StatsBar />
+                <OpenHouseBanner />
+                <Description />
+                <Gallery />
+                <Features />
+                <LocationMap />
+                <AgentContact />
+              </div>
+            </div>
+          </div>
+        )}
         <Footer />
       </div>
     </ListingProvider>

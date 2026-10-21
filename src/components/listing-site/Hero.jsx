@@ -1,32 +1,36 @@
 import { useListingContext } from "../../context/ListingContext";
 import { formatPrice } from "../../lib/format";
 
-export default function Hero() {
+// The classic property-site hero is two layers (see ListingSitePage.jsx): the photo or video is pinned in place behind
+// the page (HeroBackdrop), and the text (status, MLS number, address, price, tour button) is the page's first block of
+// content, so it scrolls up over the pinned media together with everything after it.
+const HERO_HEIGHT = "max(100vh, 640px)";
+
+export function HeroBackdrop() {
   const { listing } = useListingContext();
   const hero = listing.images[0];
   const video = listing.heroVideo;
 
   return (
-    <section id="overview" className="relative h-screen min-h-[640px] w-full">
+    <div className="sticky top-0 z-0 w-full overflow-hidden" style={{ height: HERO_HEIGHT }}>
       {video ? (
-        <video
-          className="absolute inset-0 h-full w-full object-cover"
-          src={video}
-          poster={hero?.url}
-          autoPlay
-          muted
-          loop
-          playsInline
-        />
+        <video className="absolute inset-0 h-full w-full object-cover" src={video} poster={hero?.url} autoPlay muted loop playsInline />
       ) : (
-        <img
-          src={hero?.url}
-          alt={hero?.alt}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <img src={hero?.url} alt={hero?.alt} className="absolute inset-0 h-full w-full object-cover" />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/40" />
+    </div>
+  );
+}
 
+// The layer that sits on top of HeroBackdrop: pulled up by the backdrop's own height so the two overlap exactly.
+export const HERO_OVERLAP_STYLE = { marginTop: `calc(${HERO_HEIGHT} * -1)` };
+
+export default function Hero() {
+  const { listing } = useListingContext();
+
+  return (
+    <section id="overview" className="relative w-full" style={{ height: HERO_HEIGHT }}>
       {/* Hardcoded white, not --ls-on-dark: that token means "text on
           --ls-dark" (a solid band), which for most templates happens to
           be light anyway -- but the Linen template flips --ls-on-dark to
