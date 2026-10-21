@@ -693,3 +693,52 @@ alter table public.listings add constraint listings_header_style_check check (he
 alter table public.listings add column if not exists header_label text;
 alter table public.listings drop constraint if exists listings_header_label_check;
 alter table public.listings add constraint listings_header_label_check check (header_label is null or length(header_label) <= 40);
+
+-- 28. Personal access tokens for the Claude connection (api/mcp.js). The token itself is shown once when it is made and
+--     only its SHA-256 hash is stored, so a database leak can't be used to connect. Only an admin can make one for now;
+--     the connection reads data as that person, through the same row-level rules as the dashboard.
+create table if not exists public.mcp_tokens (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  name text not null check (length(btrim(name)) between 1 and 60),
+  token_hash text not null unique,
+  token_hint text not null,
+  created_at timestamptz not null default now(),
+  last_used_at timestamptz,
+  revoked_at timestamptz
+);
+alter table public.mcp_tokens enable row level security;
+revoke all on public.mcp_tokens from anon, authenticated;
+-- The hash column is never readable by the browser; the list shows the rest.
+grant select (id, owner_id, name, token_hint, created_at, last_used_at, revoked_at) on public.mcp_tokens to authenticated;
+drop policy if exists mcp_tokens_owner_read on public.mcp_tokens;
+create policy mcp_tokens_owner_read on public.mcp_tokens for select to authenticated using (owner_id = auth.uid());
+
+create or replace function public.create_mcp_token(p_name text) returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  v_token text;
+begin
+  if auth.uid() is null or not exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin') then
+    raise exception 'Only an admin can create a Claude connection token.';
+  end if;
+  if (select count(*) from public.mcp_tokens where owner_id = auth.uid() and revoked_at is null) >= 10 then
+    raise exception 'You already have 10 active tokens. Revoke one first.';
+  end if;
+  v_token := 'lp_' || replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
+  insert into public.mcp_tokens (owner_id, name, token_hash, token_hint)
+  values (auth.uid(), btrim(p_name), encode(sha256(convert_to(v_token, 'utf8')), 'hex'), right(v_token, 4));
+  return v_token;
+end;
+$$;
+revoke all on function public.create_mcp_token(text) from public, anon;
+grant execute on function public.create_mcp_token(text) to authenticated;
+
+create or replace function public.revoke_mcp_token(p_id uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  update public.mcp_tokens set revoked_at = coalesce(revoked_at, now()) where id = p_id and owner_id = auth.uid();
+end;
+$$;
+revoke all on function public.revoke_mcp_token(uuid) from public, anon;
+grant execute on function public.revoke_mcp_token(uuid) to authenticated;
