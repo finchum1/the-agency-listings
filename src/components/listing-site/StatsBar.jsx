@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { useListingContext } from "../../context/ListingContext";
 import { formatNumber } from "../../lib/format";
 
@@ -25,6 +26,59 @@ const stats = [
   { key: "garage", label: "Garage", value: (f) => f.garage },
 ];
 
+// Counts a number up to its value the first time it scrolls into view. The stat text is split into a leading part, the
+// first number, and a trailing part ("0.75+ acres" -> "", 0.75, "+ acres"; "4-car" -> "", 4, "-car"), so the words and
+// punctuation stay put and only the number moves. Text with no number in it (a dash) is shown as is. A year counts up
+// from a few decades earlier instead of from zero. Reduced-motion visitors, and browsers without IntersectionObserver,
+// just see the final value.
+const COUNT_MS = 1400;
+const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+
+function CountUp({ text, year }) {
+  const ref = useRef(null);
+  const match = /^(\D*)(\d[\d,]*(?:\.\d+)?)(.*)$/s.exec(String(text ?? ""));
+  const [shown, setShown] = useState(null); // null = show the final text
+
+  useEffect(() => {
+    if (!match || !ref.current || typeof IntersectionObserver === "undefined") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const target = parseFloat(match[2].replace(/,/g, ""));
+    const decimals = (match[2].split(".")[1] || "").length;
+    const commas = match[2].includes(",");
+    const from = year ? target - 40 : 0;
+    const fmt = (n) => (commas ? n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) : n.toFixed(decimals));
+    let frame = 0;
+    setShown(`${match[1]}${fmt(from)}${match[3]}`);
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        const start = performance.now();
+        const tick = (now) => {
+          const t = Math.min(1, (now - start) / COUNT_MS);
+          setShown(t >= 1 ? null : `${match[1]}${fmt(from + (target - from) * easeOut(t))}${match[3]}`);
+          if (t < 1) frame = requestAnimationFrame(tick);
+        };
+        frame = requestAnimationFrame(tick);
+      },
+      { threshold: 0.6 },
+    );
+    io.observe(ref.current);
+    return () => {
+      io.disconnect();
+      cancelAnimationFrame(frame);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text]);
+
+  return (
+    <span ref={ref} className="tabular-nums">
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true">{shown ?? text}</span>
+    </span>
+  );
+}
+
 export default function StatsBar() {
   const { listing } = useListingContext();
   const f = listing.quickFacts;
@@ -37,7 +91,7 @@ export default function StatsBar() {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ls-accent)" strokeWidth="1.6">
               {icons[s.key]}
             </svg>
-            <span className="text-lg font-semibold text-[var(--ls-text)]">{s.value(f)}</span>
+            <span className="text-lg font-semibold text-[var(--ls-text)]"><CountUp text={s.value(f)} year={s.key === "year"} /></span>
             <span className="text-[11px] uppercase tracking-wider-plus text-[var(--ls-text)]/50">
               {s.label}
             </span>
