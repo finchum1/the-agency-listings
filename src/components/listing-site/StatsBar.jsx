@@ -31,8 +31,9 @@ const stats = [
 // punctuation stay put and only the number moves. Text with no number in it (a dash) is shown as is. A year counts up
 // from a few decades earlier instead of from zero. Reduced-motion visitors, and browsers without IntersectionObserver,
 // just see the final value.
-const COUNT_MS = 1400;
-const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+const COUNT_MS = 2600;
+// A gentle ease-out (squared, not cubed) so the numbers climb steadily instead of racing up and then crawling.
+const easeOut = (t) => 1 - Math.pow(1 - t, 2);
 
 function CountUp({ text, year }) {
   const ref = useRef(null);
