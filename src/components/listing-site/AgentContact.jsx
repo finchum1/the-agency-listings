@@ -2,6 +2,11 @@ import { useState } from "react";
 import { HoneypotField, useSpamGuard } from "../../lib/spamGuard";
 import { useListingContext } from "../../context/ListingContext";
 
+// The theme's own text and background colors, so the typed text and the placeholder stay readable in the dark
+// themes too (inputs would otherwise inherit the page's dark default text color on a dark card).
+const fieldClass =
+  "w-full rounded-lg border border-[var(--ls-text)]/20 bg-[var(--ls-bg)] text-[var(--ls-text)] placeholder:text-[var(--ls-text)]/50 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ls-accent)]/40";
+
 export default function AgentContact() {
   const { listing, listingId } = useListingContext();
   const { agent, address, brokerage } = listing;
@@ -102,7 +107,7 @@ export default function AgentContact() {
                 required
                 value={form.name}
                 onChange={update("name")}
-                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ls-accent)]/40"
+                className={fieldClass}
                 placeholder="Jane Doe"
               />
             </div>
@@ -113,7 +118,7 @@ export default function AgentContact() {
               <input
                 value={form.phone}
                 onChange={update("phone")}
-                className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ls-accent)]/40"
+                className={fieldClass}
                 placeholder="(555) 555-5555"
               />
             </div>
@@ -127,7 +132,7 @@ export default function AgentContact() {
               type="email"
               value={form.email}
               onChange={update("email")}
-              className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ls-accent)]/40"
+              className={fieldClass}
               placeholder="jane@email.com"
             />
           </div>
@@ -139,7 +144,7 @@ export default function AgentContact() {
               rows={4}
               value={form.message}
               onChange={update("message")}
-              className="w-full rounded-lg border border-black/10 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ls-accent)]/40"
+              className={fieldClass}
               placeholder={`I'd like to schedule a tour of ${address.line1}...`}
             />
           </div>
