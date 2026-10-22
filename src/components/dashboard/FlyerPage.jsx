@@ -448,32 +448,20 @@ export default function FlyerPage() {
             ))}
           </div>
 
-          <div className="mt-4 flex items-start gap-5">
-            <div className="min-w-0 flex-1">
-            {blurb && <p className="text-[13px] leading-relaxed text-[#1c1a17]/75">{blurb}</p>}
+          {blurb && <p className="mt-4 text-[13px] leading-relaxed text-[#1c1a17]/75">{blurb}</p>}
 
-            {includedFeatures.length > 0 && (
-              <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1">
-                {includedFeatures.map((item, i) => (
-                  <div key={i} className="flex items-center gap-1.5 text-[11px] text-[#1c1a17]/75">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2.5" className="shrink-0">
-                      <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    <span className="truncate">{item}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            </div>
-            {includeQr && qrUrl && (
-              <div className="shrink-0 w-[1.3in] text-center">
-                <div className="rounded-lg bg-white p-1 shadow-sm shadow-black/10 border border-black/10">
-                  <FlyerQr value={qrUrl} className="block w-full h-auto" label="QR code to the listing website" />
+          {includedFeatures.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1">
+              {includedFeatures.map((item, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-[11px] text-[#1c1a17]/75">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2.5" className="shrink-0">
+                    <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span className="truncate">{item}</span>
                 </div>
-                <p className="mt-1.5 text-[9px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/70 leading-tight">Scan for photos &amp; details</p>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
 
           {galleryPhotos.length > 0 && (
             <div className="mt-4 grid grid-cols-5 gap-2">
@@ -501,12 +489,22 @@ export default function FlyerPage() {
               {agent?.license && <p className="text-[10px] text-[#1c1a17]/40">{agent.license}</p>}
             </div>
           </div>
-          <div className="text-right">
-            <p className="text-[10px] text-[#1c1a17]/50">
-              {brokerage.address.line1}, {brokerage.address.city}, {brokerage.address.state}{" "}
-              {brokerage.address.zip}
-            </p>
-            <p className="text-[9px] text-[#1c1a17]/35 mt-0.5 max-w-[3in] ml-auto">{brokerage.disclaimer}</p>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-[10px] text-[#1c1a17]/50">
+                {brokerage.address.line1}, {brokerage.address.city}, {brokerage.address.state}{" "}
+                {brokerage.address.zip}
+              </p>
+              <p className="text-[9px] text-[#1c1a17]/35 mt-0.5 max-w-[3in] ml-auto">{brokerage.disclaimer}</p>
+              {includeQr && qrUrl && (
+                <p className="mt-1.5 text-[9px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/70">Scan for photos &amp; details</p>
+              )}
+            </div>
+            {includeQr && qrUrl && (
+              <div className="shrink-0 w-[0.95in] rounded-lg bg-white p-0.5 border border-black/10">
+                <FlyerQr value={qrUrl} className="block w-full h-auto" label="QR code to the listing website" />
+              </div>
+            )}
           </div>
         </div>
       </div>
