@@ -87,6 +87,10 @@ export default defineConfig({
         // reload — closing the loop with zero manual DevTools steps.
         skipWaiting: true,
         clientsClaim: true,
+        // The whole app is one bundle (the dashboard, every public site template and the marketing pages) and it has grown
+        // past workbox's default 2 MiB precache limit, which fails the production build. Raised so it keeps building.
+        // Splitting the dashboard from the public sites would shrink what visitors download; see the roadmap.
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,svg,png,ico}'],
         navigateFallback: '/index.html',
         runtimeCaching: [
