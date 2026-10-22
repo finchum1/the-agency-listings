@@ -7,6 +7,8 @@ import { supabase } from "../../lib/supabaseClient";
 import { formatPrice, formatNumber, STATUS_LABELS } from "../../lib/format";
 import { brandFromOrg } from "../../lib/brand";
 import BrandLogo from "../BrandLogo";
+import FlyerQr from "./FlyerQr";
+import { listingUrl, taggedUrl } from "../../lib/listingAnalytics";
 
 const STAT_ICONS = {
   beds: <path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 18v2M21 18v2M3 12V9a2 2 0 0 1 2-2h3v5M9 7h6" />,
@@ -65,6 +67,8 @@ export default function FlyerPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
+  // The QR code is on by default; turning it off is only for the sheet being printed right now, not saved.
+  const [includeQr, setIncludeQr] = useState(true);
   // Set only right before printing (see handlePrint) -- an inlined
   // data: URI version of the hero photo, so the printed output has zero
   // network dependency left to race against. Normal on-screen viewing
@@ -181,6 +185,10 @@ export default function FlyerPage() {
       </div>
     );
   }
+
+  // The code opens the listing's own website, tagged so every scan shows up as "Flyer / QR code" in its analytics. A draft has
+  // no public page yet, so there's nothing to scan.
+  const qrUrl = listing.status === "draft" ? "" : taggedUrl(listingUrl(listing), "flyer");
 
   const f = {
     beds: listing.beds ?? "—",
@@ -335,6 +343,22 @@ export default function FlyerPage() {
             </div>
           )}
 
+          <div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" checked={includeQr && Boolean(qrUrl)} disabled={!qrUrl} onChange={(e) => setIncludeQr(e.target.checked)} className="accent-[#ed2127] dark:accent-[#f2454b]" />
+              Include a QR code to the listing website
+            </label>
+            <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+              {qrUrl ? (
+                <>
+                  Opens <span className="font-mono">{qrUrl}</span>. Scans are counted as “Flyer / QR code” in this listing's analytics.
+                </>
+              ) : (
+                "Available once the listing is published, since a draft has no public website to scan to."
+              )}
+            </p>
+          </div>
+
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -424,20 +448,32 @@ export default function FlyerPage() {
             ))}
           </div>
 
-          {blurb && <p className="mt-4 text-[13px] leading-relaxed text-[#1c1a17]/75">{blurb}</p>}
+          <div className="mt-4 flex items-start gap-5">
+            <div className="min-w-0 flex-1">
+            {blurb && <p className="text-[13px] leading-relaxed text-[#1c1a17]/75">{blurb}</p>}
 
-          {includedFeatures.length > 0 && (
-            <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1">
-              {includedFeatures.map((item, i) => (
-                <div key={i} className="flex items-center gap-1.5 text-[11px] text-[#1c1a17]/75">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2.5" className="shrink-0">
-                    <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span className="truncate">{item}</span>
-                </div>
-              ))}
+            {includedFeatures.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1">
+                {includedFeatures.map((item, i) => (
+                  <div key={i} className="flex items-center gap-1.5 text-[11px] text-[#1c1a17]/75">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2.5" className="shrink-0">
+                      <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span className="truncate">{item}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             </div>
-          )}
+            {includeQr && qrUrl && (
+              <div className="shrink-0 w-[1.3in] text-center">
+                <div className="rounded-lg bg-white p-1 shadow-sm shadow-black/10 border border-black/10">
+                  <FlyerQr value={qrUrl} className="block w-full h-auto" label="QR code to the listing website" />
+                </div>
+                <p className="mt-1.5 text-[9px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/70 leading-tight">Scan for photos &amp; details</p>
+              </div>
+            )}
+          </div>
 
           {galleryPhotos.length > 0 && (
             <div className="mt-4 grid grid-cols-5 gap-2">
