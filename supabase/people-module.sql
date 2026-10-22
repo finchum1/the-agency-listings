@@ -1299,3 +1299,8 @@ end;
 $$;
 revoke all on function public.brokerage_analytics(uuid, integer, text) from public, anon;
 grant execute on function public.brokerage_analytics(uuid, integer, text) to authenticated, service_role;
+
+-- ============================================================================
+-- 35. Flyer templates: which layout a listing's flyer uses (src/components/dashboard/flyer/templates.jsx).
+-- ============================================================================
+alter table public.listings add column if not exists flyer_template text not null default 'classic' check (flyer_template in ('classic', 'editorial'));
