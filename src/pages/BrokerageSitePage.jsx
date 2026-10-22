@@ -4,7 +4,7 @@ import { useBrokerageSite } from "../hooks/useBrokerageSite";
 import { adaptBrokerageSite } from "../lib/adaptBrokerageSite";
 import { buildBrokerageSiteMeta, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta } from "../lib/pageMeta";
-import { trackView } from "../lib/trackView";
+import { startVisit } from "../lib/trackView";
 import { BrokerageSiteProvider } from "../context/BrokerageSiteContext";
 
 import Navbar from "../components/brokerage-site/Navbar";
@@ -33,9 +33,8 @@ export default function BrokerageSitePage({ path, pageTitle, customDomain, child
     });
   }, [site, pageTitle, path]);
 
-  useEffect(() => {
-    if (site?.id) trackView("brokerage_site", site.id);
-  }, [site?.id]);
+  // "/brokerage/about" or (on the office's own domain) "/about" -> "about"; the home page is "home".
+  useEffect(() => startVisit("brokerage_site", site?.id, { page: (path || "/").replace(/^\/brokerage/, "").replace(/^\//, "").split("/")[0] || "home" }), [site?.id]);
 
   if (loading) {
     return (

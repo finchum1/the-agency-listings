@@ -5,7 +5,7 @@ import { adaptBrokerageSite } from "../lib/adaptBrokerageSite";
 import { sanitizeHtml } from "../lib/sanitizeHtml";
 import { buildBrokerageAreaMeta, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta } from "../lib/pageMeta";
-import { trackView } from "../lib/trackView";
+import { startVisit } from "../lib/trackView";
 import { BrokerageSiteProvider } from "../context/BrokerageSiteContext";
 import Navbar from "../components/brokerage-site/Navbar";
 import Footer from "../components/brokerage-site/Footer";
@@ -31,9 +31,7 @@ export default function BrokerageAreaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [area, site]);
 
-  useEffect(() => {
-    if (site?.id) trackView("brokerage_site", site.id);
-  }, [site?.id]);
+  useEffect(() => startVisit("brokerage_site", site?.id, { page: "area" }), [site?.id]);
 
   if (loading) {
     return (

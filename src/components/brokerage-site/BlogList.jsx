@@ -10,7 +10,7 @@ export default function BlogList({ preview = false, isStandalonePage = false }) 
   const Heading = isStandalonePage ? "h1" : "h2";
 
   return (
-    <section className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
+    <section id="blog" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
       <div className="mx-auto max-w-7xl">
         <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">From the Blog</p>
         <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-10 text-[var(--as-text)]">

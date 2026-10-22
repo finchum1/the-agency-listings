@@ -55,7 +55,7 @@ export default function About({ isStandalonePage = false }) {
   // text-only layout, unchanged.
   if (site.aboutPhoto) {
     return (
-      <section className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
+      <section id="about" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-12 md:grid-cols-2 md:items-center">
             <div className="text-left">
@@ -78,7 +78,7 @@ export default function About({ isStandalonePage = false }) {
   }
 
   return (
-    <section className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
+    <section id="about" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
       <div className="mx-auto max-w-4xl text-center">
         {eyebrowAndHeading}
         <div className="max-w-2xl mx-auto text-left">{bodyText}</div>

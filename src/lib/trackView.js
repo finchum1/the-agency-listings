@@ -35,6 +35,8 @@ const SECTION_IDS = {
   listing: ["facts", "overview", "gallery", "features", "location", "contact"],
   agent_site: ["bio", "listings", "areas", "blog", "contact"],
   agent_post: [],
+  brokerage_site: ["about", "agents", "areas", "blog", "listings", "contact"],
+  brokerage_post: [],
 };
 const SOCIAL_RE = /(^|\.)(instagram|facebook|linkedin|tiktok|youtube|twitter|x)\.com$|^youtu\.be$/i;
 let current = null; // { id, targetType, start, depth, sent: Set }

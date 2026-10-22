@@ -7,7 +7,7 @@
 // Writes with the service-role key so page_views / listing_events can have NO client-facing write policy at all — every row
 // on those tables came from this trusted function, never directly from a browser.
 //
-// Listing and agent-site views also carry what the visit looked like: an anonymous per-browser id (no IP address is stored), where it came
+// Listing, agent-site and brokerage-site views also carry what the visit looked like: an anonymous per-browser id (no IP address is stored), where it came
 // from (a tagged ?src= link or the referring site), the device type, and the city/state Vercel works out from the request.
 // Obvious crawlers and link-preview bots are ignored so they don't inflate the numbers.
 import { createClient } from "@supabase/supabase-js";
@@ -15,8 +15,8 @@ import { createClient } from "@supabase/supabase-js";
 const VALID_TYPES = new Set(["listing", "agent_site", "agent_post", "brokerage_site", "brokerage_post"]);
 const LISTING_EVENTS = new Set(["gallery_open", "photo_view", "phone_click", "email_click", "form_start", "section"]);
 const SITE_EVENTS = new Set(["phone_click", "email_click", "form_start", "section", "listing_click", "social_click", "blog_click"]);
-const SITE_PAGES = new Set(["home", "about", "listings", "areas", "area", "blog", "contact"]);
-const DETAILED = new Set(["listing", "agent_site", "agent_post"]); // the targets that record who visited, from where, and on what
+const SITE_PAGES = new Set(["home", "about", "listings", "areas", "area", "blog", "contact", "agents", "search", "home-valuation"]);
+const DETAILED = new Set(["listing", "agent_site", "agent_post", "brokerage_site", "brokerage_post"]); // the targets that record who visited, from where, and on what
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ID_RE = /^[A-Za-z0-9-]{8,64}$/;
 const BOT_RE = /bot|crawl|spider|slurp|preview|facebookexternalhit|embedly|whatsapp|telegram|discord|headless|lighthouse|pingdom|uptime|curl|wget|python|java\/|go-http|monitor/i;
@@ -123,11 +123,11 @@ export default async function handler(req, res) {
     const type = body.type;
     if (!UUID_RE.test(viewId || "") || !(LISTING_EVENTS.has(type) || SITE_EVENTS.has(type))) return res.status(400).json({ error: "Invalid event." });
     // The target comes from the recorded view, not from the caller, so events can't be pointed at an arbitrary listing or site.
-    const { data: view } = await supabase.from("page_views").select("target_type, target_id, visitor_id").eq("id", viewId).in("target_type", ["listing", "agent_site", "agent_post"]).maybeSingle();
+    const { data: view } = await supabase.from("page_views").select("target_type, target_id, visitor_id").eq("id", viewId).in("target_type", [...DETAILED]).maybeSingle();
     if (!view) return res.status(200).json({ ok: false });
     const isListing = view.target_type === "listing";
     if (!(isListing ? LISTING_EVENTS : SITE_EVENTS).has(type)) return res.status(400).json({ error: "Invalid event." });
-    const table = isListing ? "listing_events" : "site_events";
+    const table = isListing ? "listing_events" : view.target_type.startsWith("brokerage") ? "brokerage_events" : "site_events";
     const { count } = await supabase.from(table).select("*", { count: "exact", head: true }).eq("view_id", viewId);
     if ((count || 0) >= 80) return res.status(200).json({ ok: false });
     let targetId = view.target_id;
@@ -135,6 +135,11 @@ export default async function handler(req, res) {
       const { data: post } = await supabase.from("agent_site_posts").select("agent_site_id").eq("id", view.target_id).maybeSingle();
       if (!post) return res.status(200).json({ ok: false });
       targetId = post.agent_site_id;
+    } else if (view.target_type === "brokerage_post") {
+      const { data: post } = await supabase.from("brokerage_posts").select("org_id").eq("id", view.target_id).maybeSingle();
+      const { data: site } = post ? await supabase.from("brokerage_site").select("id").eq("org_id", post.org_id).maybeSingle() : { data: null };
+      if (!site) return res.status(200).json({ ok: false });
+      targetId = site.id;
     }
     const detail = body.detail == null ? null : String(body.detail).slice(0, 60);
     const { error } = await supabase.from(table).insert({ [isListing ? "listing_id" : "site_id"]: targetId, view_id: viewId, visitor_id: view.visitor_id, type, detail });
@@ -161,7 +166,7 @@ export default async function handler(req, res) {
       country: header(req, "x-vercel-ip-country"),
       region: header(req, "x-vercel-ip-country-region"),
       city: header(req, "x-vercel-ip-city"),
-      page: targetType === "agent_site" && SITE_PAGES.has(body.page) ? body.page : null,
+      page: (targetType === "agent_site" || targetType === "brokerage_site") && SITE_PAGES.has(body.page) ? body.page : null,
     });
   }
   const { error } = await supabase.from("page_views").insert(row);

@@ -21,7 +21,7 @@ export default function AgentRoster({ preview = false, isStandalonePage = false 
   const Heading = isStandalonePage ? "h1" : "h2";
 
   return (
-    <section className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
+    <section id="agents" className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
       <div className="mx-auto max-w-7xl">
         <div className="text-center mb-14">
           <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">Our Team</p>

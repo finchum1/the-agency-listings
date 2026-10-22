@@ -1,13 +1,31 @@
 import { useState } from "react";
-import { useSiteAnalyticsRollup } from "../../hooks/useListingAnalytics";
-import { RANGES, SITE_SHARE_CHANNELS, formatDuration, pct, placeLabel, siteUrl, sourceLabel } from "../../lib/listingAnalytics";
+import { useBrokerageAnalyticsRollup, useSiteAnalyticsRollup } from "../../hooks/useListingAnalytics";
+import { RANGES, SITE_SHARE_CHANNELS, brokerageUrl, formatDuration, pct, placeLabel, siteUrl, sourceLabel } from "../../lib/listingAnalytics";
 import { BarList, Stat, Trend, card, isWeekly, muted } from "./ListingAnalyticsView";
 import TrackedLinks from "./TrackedLinks";
 
-const PAGE_LABELS = { home: "Home", about: "About", listings: "Listings", areas: "Areas", area: "Area pages", blog: "Blog list", contact: "Contact", post: "Blog posts" };
-const SECTION_LABELS = { bio: "Read the bio", listings: "Looked at listings", areas: "Looked at areas", blog: "Saw the blog", contact: "Reached the contact form" };
+const PAGE_LABELS = { home: "Home", about: "About", listings: "Listings", areas: "Areas", area: "Area pages", blog: "Blog list", contact: "Contact", post: "Blog posts", agents: "Agent roster", search: "Home search", "home-valuation": "Home valuation" };
+// What each kind of site calls its sections and the things visitors do (an agent's is about "you", the office's about "us").
+const COPY = {
+  agent: {
+    sections: { bio: "Read the bio", listings: "Looked at listings", areas: "Looked at areas", blog: "Saw the blog", contact: "Reached the contact form" },
+    phone: "Tapped your phone number",
+    email: "Tapped your email",
+    form: "Started the contact form",
+    listing: "Opened one of your listings",
+  },
+  brokerage: {
+    sections: { about: "Read about the office", agents: "Saw the agent roster", listings: "Looked at listings", areas: "Looked at areas", blog: "Saw the blog", contact: "Reached the contact section" },
+    phone: "Tapped the office phone number",
+    email: "Tapped the office email",
+    form: "Started a form",
+    listing: "Opened a listing",
+  },
+};
 
-function View({ data, loading }) {
+function View({ data, loading, kind }) {
+  const copy = COPY[kind];
+  const SECTION_LABELS = copy.sections;
   if (loading || !data) return <div className={`${card} h-64 animate-pulse`} />;
   const e = data.engagement;
   const tracked = data.tracked_visits;
@@ -18,10 +36,10 @@ function View({ data, loading }) {
   const posts = data.posts.map((p) => ({ label: p.title, value: p.views }));
   const funnel = Object.keys(SECTION_LABELS).map((k) => ({ label: SECTION_LABELS[k], value: e.sections[k] || 0, note: `${pct(e.sections[k] || 0, tracked)}%` }));
   const actions = [
-    { label: "Tapped your phone number", value: e.phone_clicks },
-    { label: "Tapped your email", value: e.email_clicks },
-    { label: "Started the contact form", value: e.form_starts },
-    { label: "Opened one of your listings", value: e.listing_clicks },
+    { label: copy.phone, value: e.phone_clicks },
+    { label: copy.email, value: e.email_clicks },
+    { label: copy.form, value: e.form_starts },
+    { label: copy.listing, value: e.listing_clicks },
     { label: "Opened a blog post", value: e.blog_clicks },
     { label: "Clicked a social link", value: e.social_clicks },
   ].map((a) => ({ ...a, note: `${pct(a.value, tracked)}%` }));
@@ -92,11 +110,14 @@ function View({ data, loading }) {
   );
 }
 
-// The agent site's analytics: everything the public site can tell us about its visitors, plus tagged links for each place the
-// address gets shared. Shown on the Analytics page of My Site, and in the admin editor for any agent's site.
-export default function SiteAnalytics({ site }) {
+// The analytics for a public site: everything it can tell us about its visitors, plus tagged links for each place the address
+// gets shared. `kind` is "agent" (Dashboard > Website > Analytics, and the admin editor for any agent's site) or "brokerage"
+// (the office's own site, admin only).
+export default function SiteAnalytics({ site, kind = "agent" }) {
   const [days, setDays] = useState(30);
-  const { data, loading, error } = useSiteAnalyticsRollup(site.id, days);
+  const agent = useSiteAnalyticsRollup(kind === "agent" ? site.id : null, days);
+  const office = useBrokerageAnalyticsRollup(kind === "brokerage" ? site.id : null, days);
+  const { data, loading, error } = kind === "agent" ? agent : office;
   return (
     <div className="space-y-5">
       <div className="flex justify-end">
@@ -108,9 +129,9 @@ export default function SiteAnalytics({ site }) {
           ))}
         </div>
       </div>
-      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : <View data={data} loading={loading} />}
-      <TrackedLinks base={siteUrl(site)} channels={SITE_SHARE_CHANNELS} what="your website" />
-      <p className={`text-xs ${muted}`}>Visits while you're signed in to the dashboard aren't counted, so checking your own site never inflates these numbers. Known search and link-preview bots are left out too.</p>
+      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : <View data={data} loading={loading} kind={kind} />}
+      <TrackedLinks base={kind === "agent" ? siteUrl(site) : brokerageUrl(site)} channels={SITE_SHARE_CHANNELS} what={kind === "agent" ? "your website" : "the office website"} />
+      <p className={`text-xs ${muted}`}>Visits while you're signed in to the dashboard aren't counted, so checking the site never inflates these numbers. Known search and link-preview bots are left out too.</p>
     </div>
   );
 }

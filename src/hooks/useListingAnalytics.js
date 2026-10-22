@@ -34,3 +34,20 @@ export function useSiteAnalyticsRollup(siteId, days) {
   }, [siteId, days]);
   return state;
 }
+
+/** The brokerage site's analytics for the last `days` days (the brokerage_analytics() rollup). */
+export function useBrokerageAnalyticsRollup(siteId, days) {
+  const [state, setState] = useState({ data: null, loading: true, error: "" });
+  useEffect(() => {
+    if (!siteId) return;
+    let live = true;
+    setState((s) => ({ ...s, loading: true }));
+    supabase.rpc("brokerage_analytics", { p_site_id: siteId, p_days: days }).then(({ data, error }) => {
+      if (live) setState({ data: error ? null : data, loading: false, error: error?.message || "" });
+    });
+    return () => {
+      live = false;
+    };
+  }, [siteId, days]);
+  return state;
+}

@@ -63,6 +63,12 @@ export function siteUrl(site, origin = window.location.origin) {
   return domain ? `https://${domain}` : `${origin}/sites/${site.slug}`;
 }
 
+/** The office's own site: its domain if it has one, otherwise the app's /brokerage page. */
+export function brokerageUrl(site, origin = window.location.origin) {
+  const domain = String(site?.custom_domain || "").trim();
+  return domain ? `https://${domain}` : `${origin}/brokerage`;
+}
+
 /** The listing's public address: its own domain if it has one, otherwise the app's /listings/<slug> page. */
 export function listingUrl(listing, origin = window.location.origin) {
   const domain = String(listing?.custom_domain || "").trim();
