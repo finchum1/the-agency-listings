@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useForceLight } from "../hooks/useForceLight";
 import { brandFromOrg } from "../lib/brand";
 import { groupByCategory, telHref, websiteHref } from "../lib/vendors";
 
 // /vendors/<token>: the list of vendors an agent picked for a client. No sign-in; the token in the address is the credential,
 // and the page tells search engines to stay away. Phone numbers are tap-to-call.
 export default function VendorSharePage() {
+  useForceLight();
   const { token } = useParams();
   const [state, setState] = useState({ loading: true });
 

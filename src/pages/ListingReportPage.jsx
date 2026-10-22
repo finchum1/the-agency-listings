@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useForceLight } from "../hooks/useForceLight";
 import { brandFromOrg } from "../lib/brand";
 import { RANGES, listingUrl } from "../lib/listingAnalytics";
 import { formatPrice } from "../lib/format";
@@ -8,6 +9,7 @@ import ListingAnalyticsView from "../components/dashboard/ListingAnalyticsView";
 // /report/<token>: the activity report an agent sends a seller. No sign-in; the token in the address is the credential, and
 // search engines are told to stay away. Light theme only.
 export default function ListingReportPage() {
+  useForceLight();
   const { token } = useParams();
   const [days, setDays] = useState(30);
   const [state, setState] = useState({ loading: true });
