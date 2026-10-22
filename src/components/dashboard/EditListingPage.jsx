@@ -43,6 +43,9 @@ export default function EditListingPage() {
 
   return (
     <div className="max-w-3xl space-y-8">
+      <Link to="/dashboard/listings" className="inline-block -mb-4 text-xs font-semibold text-[#1c1a17]/55 dark:text-[#faf9f7]/55 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] hover:underline">
+        ← All listings
+      </Link>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-semibold">{listing.address_line1}</h1>
         <div className="flex items-center gap-3">

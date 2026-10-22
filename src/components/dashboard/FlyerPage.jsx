@@ -285,6 +285,9 @@ export default function FlyerPage() {
             <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">{listing.address_line1}</p>
           </div>
           <div className="flex items-center gap-4">
+            <Link to="/dashboard/listings" className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
+              ← All listings
+            </Link>
             <Link to={`/dashboard/listings/${id}/edit`} className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
               ← Back to listing
             </Link>

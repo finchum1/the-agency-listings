@@ -159,9 +159,15 @@ export default function ListingAnalyticsPage() {
 
   return (
     <div className="max-w-5xl">
-      <Link to={`/dashboard/listings/${listing.id}/edit`} className={`text-xs font-semibold hover:underline ${muted}`}>
-        ← {listing.address_line1}
-      </Link>
+      <div className={`flex items-center gap-3 text-xs font-semibold ${muted}`}>
+        <Link to="/dashboard/listings" className="hover:underline">
+          ← All listings
+        </Link>
+        <span aria-hidden="true">/</span>
+        <Link to={`/dashboard/listings/${listing.id}/edit`} className="hover:underline">
+          {listing.address_line1}
+        </Link>
+      </div>
       <div className="mt-2 mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-display font-semibold">Analytics</h1>
