@@ -383,13 +383,21 @@ export default function DashboardLayout() {
           </button>
         );
       };
+      // Admin sits apart from the day-to-day items, at the bottom of the rail just above the profile.
       return (
-        <div className="flex flex-col gap-1.5">
-          {!workingElsewhere && railItem("Home", "home", path === "/dashboard" || path === "/dashboard/", { to: "/dashboard" })}
-          {!workingElsewhere && siteAccess !== "none" && railItem("Website", "website", inSite, { items: siteItems })}
-          {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { items: PEOPLE_ITEMS })}
-          {NAV_ITEMS.map((item) => railItem(item.label, item.icon, item.activeWhen(path), { to: item.to }))}
-          {isAdmin && railItem("Admin", "admin", inAdminArea(path), { items: adminItems })}
+        <div className="flex min-h-full flex-col">
+          <div className="flex flex-col gap-1.5">
+            {!workingElsewhere && railItem("Home", "home", path === "/dashboard" || path === "/dashboard/", { to: "/dashboard" })}
+            {!workingElsewhere && siteAccess !== "none" && railItem("Website", "website", inSite, { items: siteItems })}
+            {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { items: PEOPLE_ITEMS })}
+            {NAV_ITEMS.map((item) => railItem(item.label, item.icon, item.activeWhen(path), { to: item.to }))}
+          </div>
+          {isAdmin && (
+            <div className="mt-auto pt-3">
+              <div className="mx-2 mb-3 border-t border-black/10 dark:border-white/10" aria-hidden="true" />
+              {railItem("Admin", "admin", inAdminArea(path), { items: adminItems })}
+            </div>
+          )}
         </div>
       );
     }
@@ -433,8 +441,10 @@ export default function DashboardLayout() {
       </div>
     );
 
+    // The everyday modules at the top; Admin is set apart at the bottom, just above the profile and sign-out.
     return (
-      <>
+      <div className="flex min-h-full flex-col">
+        <div>
         {!workingElsewhere && (
           <div className="space-y-1">
             <Link to="/dashboard" onClick={onNavigate} className={`${navLinkClass(path === "/dashboard" || path === "/dashboard/")} flex items-center gap-3`}>
@@ -453,8 +463,13 @@ export default function DashboardLayout() {
             </Link>
           ))}
         </div>
-        {isAdmin && group("Admin", "admin", adminOpen, setAdminOpen, adminItems)}
-      </>
+        </div>
+        {isAdmin && (
+          <div className="mt-auto pt-6">
+            <div className="border-t border-black/10 dark:border-white/10 pt-3">{group("Admin", "admin", adminOpen, setAdminOpen, adminItems)}</div>
+          </div>
+        )}
+      </div>
     );
   };
 
