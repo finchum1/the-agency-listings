@@ -52,8 +52,8 @@ export default function EditorialSheet({ listing, agent, brokerage, headline, bl
         </div>
       </div>
 
-      <div className="px-[0.6in] pt-[0.22in] flex-1 flex gap-[0.35in]">
-        <div className="min-w-0 flex-1">
+      <div data-flyer-body className="px-[0.6in] pt-[0.22in] flex-1 flex gap-[0.35in]">
+        <div data-flyer-grow className="min-w-0 flex-1">
           {blurb && <p className="font-display text-[15px] leading-[1.6] text-[#1c1a17]/85">{blurb}</p>}
           {includedFeatures.length > 0 && (
             <ul className="mt-4 columns-2 gap-6 text-[11px] leading-[1.9] text-[#1c1a17]/75">

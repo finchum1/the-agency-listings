@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { useParams, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
@@ -25,6 +25,19 @@ function defaultPhotoIds(photos) {
   const hero = photos.find((p) => p.is_hero);
   const rest = photos.filter((p) => !hero || p.id !== hero.id);
   return [...(hero ? [hero] : []), ...rest].slice(0, MAX_FLYER_PHOTOS).map((p) => p.id);
+}
+
+const PAGE_PX = 11 * 96; // a letter page at 96 css px per inch
+
+function measureFit() {
+  const sheet = document.getElementById("flyer-sheet");
+  if (!sheet) return null;
+  const overPx = Math.max(0, Math.round(sheet.getBoundingClientRect().height - PAGE_PX));
+  const body = sheet.querySelector("[data-flyer-body]");
+  const grow = sheet.querySelector("[data-flyer-grow]");
+  const last = grow?.lastElementChild;
+  const roomPx = body && last ? Math.max(0, Math.round(body.getBoundingClientRect().bottom - last.getBoundingClientRect().bottom)) : 0;
+  return { overPx, roomPx };
 }
 
 // Printable 8.5x11 listing flyer — echoes the public listing site's look
@@ -55,6 +68,9 @@ export default function FlyerPage() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [excludedFeatures, setExcludedFeatures] = useState([]);
   const [template, setTemplate] = useState("classic");
+  // How the flyer sits on the page right now: overPx > 0 means it spills onto a second printed page; roomPx is the spare space
+  // left for more text (see measureFit).
+  const [fit, setFit] = useState(null);
   const [textInitialized, setTextInitialized] = useState(false);
   const [photosTouched, setPhotosTouched] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -68,6 +84,17 @@ export default function FlyerPage() {
   // just uses heroPhoto.url directly; this stays null until the first
   // print.
   const [printHeroUrl, setPrintHeroUrl] = useState(null);
+
+  // Measured after every render, since the text, features, photos and template all change the height. It looks at the real
+  // laid-out sheet, so it stays right whatever the fonts or the template do.
+  useLayoutEffect(() => {
+    const next = measureFit();
+    setFit((prev) => (prev && next && prev.overPx === next.overPx && prev.roomPx === next.roomPx ? prev : next));
+  });
+  useEffect(() => {
+    // Web fonts can arrive after the first paint and change line breaks.
+    document.fonts?.ready?.then(() => setFit(measureFit()));
+  }, [template]);
 
   // Text/features init — a one-time gate is fine here since it doesn't
   // depend on an async photos fetch settling.
@@ -132,6 +159,25 @@ export default function FlyerPage() {
     setExcludedFeatures((keys) => (keys.includes(key) ? keys.filter((k) => k !== key) : [...keys, key]));
   };
 
+  // Cuts the blurb to the most that fits on one page, at a sentence end when one is close, otherwise at a word. It measures the real
+  // sheet after each try (binary search), so it's right for whichever template and however many features or photos there are.
+  const trimToFit = () => {
+    let lo = 0;
+    let hi = blurb.length;
+    while (lo < hi) {
+      const mid = Math.ceil((lo + hi) / 2);
+      flushSync(() => setBlurb(blurb.slice(0, mid)));
+      if ((measureFit()?.overPx ?? 0) === 0) lo = mid;
+      else hi = mid - 1;
+    }
+    let cut = blurb.slice(0, lo);
+    const sentence = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("! "), cut.lastIndexOf("? "));
+    if (sentence > lo * 0.6) cut = cut.slice(0, sentence + 1);
+    else if (lo < blurb.length) cut = cut.replace(/\s+\S*$/, "");
+    flushSync(() => setBlurb(cut.trim()));
+    setSaved(false);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     setSaveError("");
@@ -185,6 +231,8 @@ export default function FlyerPage() {
   // no public page yet, so there's nothing to scan.
   const qrUrl = listing.status === "draft" ? "" : taggedUrl(listingUrl(listing), "flyer");
 
+  const tpl = FLYER_TEMPLATES.find((t) => t.key === template) || FLYER_TEMPLATES[0];
+
   const f = {
     beds: listing.beds ?? "—",
     baths: listing.baths ?? "—",
@@ -207,6 +255,7 @@ export default function FlyerPage() {
   // synchronously so the DOM has it painted before window.print() runs
   // on the next line.
   const handlePrint = async () => {
+    if (fit?.overPx > 0 && !confirm("This flyer is longer than one page, so the footer will print on a second page. Print anyway?")) return;
     if (heroPhoto?.url) {
       try {
         const res = await fetch(heroPhoto.url);
@@ -294,6 +343,19 @@ export default function FlyerPage() {
               className={inputClass}
               placeholder="A short, punchy line or two — this can be tighter than the full web description."
             />
+            {fit?.overPx > 0 && blurb.length > 0 && (
+              <button type="button" onClick={trimToFit} className="mt-2 rounded-full border border-red-600/40 dark:border-red-400/40 text-red-600 dark:text-red-400 text-xs font-semibold px-3 py-1.5 hover:bg-red-600/5">
+                Trim the blurb to fit one page
+              </button>
+            )}
+            {fit && (
+              <p className={`mt-1.5 text-xs ${fit.overPx > 0 ? "text-red-600 dark:text-red-400 font-medium" : "text-[#1c1a17]/50 dark:text-[#faf9f7]/50"}`}>
+                {blurb.length.toLocaleString()} characters ·{" "}
+                {fit.overPx > 0
+                  ? `Too long: this flyer runs about ${Math.ceil(fit.overPx / tpl.lineHeight)} line${Math.ceil(fit.overPx / tpl.lineHeight) === 1 ? "" : "s"} onto a second page. Shorten the blurb by about ${((Math.ceil(fit.overPx / tpl.lineHeight) + 1) * tpl.lineChars).toLocaleString()} characters, or uncheck some features or photos.`
+                  : `Fits on one page, with room for about ${(Math.floor(fit.roomPx / tpl.lineHeight) * Math.round(tpl.lineChars * 0.85)).toLocaleString()} more characters.`}
+              </p>
+            )}
           </div>
           <div>
             <label className={labelClass}>

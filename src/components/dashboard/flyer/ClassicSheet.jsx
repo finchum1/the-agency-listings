@@ -48,7 +48,7 @@ export default function ClassicSheet({ listing, agent, brokerage, headline, blur
           </div>
         </div>
 
-        <div className="px-6 pt-5 flex-1">
+        <div data-flyer-body data-flyer-grow className="px-6 pt-5 flex-1">
           {/* Logo centered between price and MLS# — a 3-column grid keeps
               it truly centered regardless of how wide either side is
               (unlike justify-between with a middle item), and still
