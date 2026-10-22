@@ -24,7 +24,7 @@ export default function EditorialSheet({ listing, agent, brokerage, headline, bl
           {STATUS_LABELS[listing.status] || listing.status}
           {listing.mls_number ? <span className="text-[#1c1a17]/35"> &nbsp;·&nbsp; MLS# {listing.mls_number}</span> : null}
         </span>
-        <BrandLogo src={brokerage.logo} name={brokerage.name} className="h-7 w-auto" />
+        <BrandLogo src={brokerage.logo} name={brokerage.name} className="h-11 w-auto" />
       </div>
 
       <div className="px-[0.6in] pt-[0.26in]">
@@ -77,16 +77,13 @@ export default function EditorialSheet({ listing, agent, brokerage, headline, bl
 
       <div className="mt-[0.15in] px-[0.6in] pb-[0.3in]">
         <div className="border-t border-[#1c1a17]/15 pt-4 flex items-center justify-between gap-6">
-          <div className="flex items-center gap-3 min-w-0">
-            {agent?.photo_url && <img src={agent.photo_url} alt="" className="h-12 w-12 rounded-full object-cover bg-black/5 shrink-0" />}
+          <div className="flex items-center gap-4 min-w-0">
+            {agent?.photo_url && <img src={agent.photo_url} alt="" className="h-[0.9in] w-[0.9in] rounded-full object-cover bg-black/5 shrink-0" />}
             <div className="min-w-0">
-              <p className="text-[13px] font-semibold">{agent?.full_name}</p>
-              <p className="text-[11px] text-[#1c1a17]/65">
-                {agent?.phone}
-                {agent?.phone && agent?.email ? "  ·  " : ""}
-                {agent?.email}
-              </p>
-              {agent?.license && <p className="text-[9px] text-[#1c1a17]/40">{agent.license}</p>}
+              <p className="font-display text-xl font-semibold leading-tight">{agent?.full_name}</p>
+              <p className="mt-0.5 text-[13px] text-[#1c1a17]/70">{agent?.phone}</p>
+              <p className="text-[13px] text-[#1c1a17]/70">{agent?.email}</p>
+              {agent?.license && <p className="mt-0.5 text-[10px] text-[#1c1a17]/45">{agent.license}</p>}
             </div>
           </div>
           {includeQr && qrUrl && (
