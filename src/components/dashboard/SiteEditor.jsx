@@ -8,6 +8,7 @@ import PostsManager from "./PostsManager";
 import PeriodAnalyticsPanel from "./PeriodAnalyticsPanel";
 import RedirectsManager from "./RedirectsManager";
 import ImportPosts from "./ImportPosts";
+import CompareTemplatesPanel from "./CompareTemplatesPanel";
 import { useAuth } from "../../hooks/useAuth";
 
 // Shared editor for an agent's personal site — used both for an agent's
@@ -42,6 +43,10 @@ const SECTIONS = {
   blog: {
     title: "Blog Posts",
     blurb: "Write and manage your blog posts.",
+  },
+  compare: {
+    title: "Compare Templates",
+    blurb: "See your site in every layout and color theme, and pick the one you like best.",
   },
   redirects: {
     title: "Redirects",
@@ -78,7 +83,7 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
 
   // The blog page (list, calendar, analytics and the post editor) is a little wider than the other site pages' short forms.
   return (
-    <div className={`${section === "blog" ? "max-w-4xl" : "max-w-3xl"} space-y-8`}>
+    <div className={`${section === "blog" ? "max-w-4xl" : section === "compare" ? "max-w-7xl" : "max-w-3xl"} space-y-8`}>
       {!hideHeader && (
         <div>
           <h1 className="text-2xl font-display font-semibold">{heading || meta?.title || "Website"}</h1>
@@ -100,6 +105,7 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
       )}
 
       {show("details") && <SiteForm site={site} onSaved={refresh} />}
+      {section === "compare" && <CompareTemplatesPanel site={site} onChanged={refresh} />}
       {show("testimonials") && <TestimonialsManager agentSiteId={site.id} testimonials={testimonials} onChanged={refresh} />}
       {show("areas") && <AreasManager agentSiteId={site.id} areas={areas} onChanged={refresh} />}
       {show("redirects") && <RedirectsManager site={site} />}

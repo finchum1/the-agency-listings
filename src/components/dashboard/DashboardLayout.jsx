@@ -78,6 +78,7 @@ const NAV_ITEMS = [
 const SITE_ITEMS = [
   { to: "/dashboard/site/analytics", label: "Analytics" },
   { to: "/dashboard/site/details", label: "Site Details" },
+  { to: "/dashboard/site/compare", label: "Compare Templates" },
   { to: "/dashboard/site/testimonials", label: "Testimonials" },
   { to: "/dashboard/site/areas", label: "Areas of Expertise" },
   { to: "/dashboard/site/blog", label: "Blog Posts" },

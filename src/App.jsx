@@ -27,6 +27,7 @@ import CustomDomainSitePage from "./pages/CustomDomainSitePage";
 import PublicAgentSitePage from "./pages/PublicAgentSitePage";
 import PublicAgentPostPage from "./pages/PublicAgentPostPage";
 import PublicAgentAreaPage from "./pages/PublicAgentAreaPage";
+import SitePreviewPage, { PreviewSite } from "./pages/SitePreviewPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { AboutPage, PrivacyPage, TermsPage } from "./pages/LegalPages";
 import LandingPage from "./pages/LandingPage";
@@ -193,6 +194,59 @@ export default function App() {
       />
       <Route path="/sites/:slug/blog/:postSlug" element={<PublicAgentPostPage />} />
 
+      {/* Template comparison share links: no sign-in, the token in the address is the credential. /preview/:token is the
+          page the agent opens; the /site routes are the frames inside it (and "Open full size"). */}
+      <Route path="/preview/:token" element={<SitePreviewPage />} />
+      <Route
+        path="/preview/:token/site"
+        element={
+          <PreviewSite>
+            <HomeSections />
+          </PreviewSite>
+        }
+      />
+      <Route
+        path="/preview/:token/site/about"
+        element={
+          <PreviewSite pageTitle="About">
+            <Bio />
+            <Testimonials />
+          </PreviewSite>
+        }
+      />
+      <Route
+        path="/preview/:token/site/listings"
+        element={
+          <PreviewSite pageTitle="Listings">
+            <FeaturedListings />
+          </PreviewSite>
+        }
+      />
+      <Route
+        path="/preview/:token/site/areas"
+        element={
+          <PreviewSite pageTitle="Areas">
+            <ServiceAreas />
+          </PreviewSite>
+        }
+      />
+      <Route
+        path="/preview/:token/site/blog"
+        element={
+          <PreviewSite pageTitle="Blog">
+            <BlogTeaser />
+          </PreviewSite>
+        }
+      />
+      <Route
+        path="/preview/:token/site/contact"
+        element={
+          <PreviewSite pageTitle="Contact">
+            <Contact />
+          </PreviewSite>
+        }
+      />
+
       {/* Brokerage Site — the office's own public site (singleton, admin-
           edited from /dashboard/brokerage-site), theme/font/accent/logo/
           home-sections customizable the same way an agent site is (see
@@ -311,6 +365,7 @@ export default function App() {
         <Route path="site/testimonials" element={<MySitePage section="testimonials" />} />
         <Route path="site/areas" element={<MySitePage section="areas" />} />
         <Route path="site/blog" element={<MySitePage section="blog" />} />
+        <Route path="site/compare" element={<MySitePage section="compare" />} />
         <Route path="site/redirects" element={<MySitePage section="redirects" />} />
         <Route path="upcoming" element={<UpcomingModule />} />
         <Route path="settings" element={<PeopleGate />}>

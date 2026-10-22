@@ -7,7 +7,7 @@ import { supabase } from "../lib/supabaseClient";
 // testimonials, areas, published posts, and their non-draft listings. RLS
 // handles visibility (draft sites/posts are invisible to anyone but the
 // owner/admin).
-export function useAgentSite({ slug, customDomain } = {}) {
+export function useAgentSite({ slug, customDomain, previewToken } = {}) {
   const [site, setSite] = useState(null);
   const [agent, setAgent] = useState(null);
   const [testimonials, setTestimonials] = useState([]);
@@ -18,9 +18,30 @@ export function useAgentSite({ slug, customDomain } = {}) {
   const [notFound, setNotFound] = useState(false);
 
   const refresh = useCallback(async () => {
-    if (!slug && !customDomain) return;
+    if (!slug && !customDomain && !previewToken) return;
     setLoading(true);
     setNotFound(false);
+
+    // A share link (/preview/<token>): the server hands over this one site's data, drafts included, to whoever holds the token.
+    if (previewToken) {
+      try {
+        const res = await fetch(`/api/site-preview?token=${encodeURIComponent(previewToken)}`);
+        if (!res.ok) throw new Error("expired");
+        const data = await res.json();
+        setSite(data.site);
+        setAgent(data.agent || null);
+        setTestimonials(data.testimonials || []);
+        setAreas(data.areas || []);
+        setPosts(data.posts || []);
+        setListings((data.listings || []).map((l) => ({ ...l, hero_photo_url: l.listing_photos?.find((p) => p.is_hero)?.url || l.listing_photos?.[0]?.url || null })));
+      } catch {
+        setSite(null);
+        setAgent(null);
+        setNotFound(true);
+      }
+      setLoading(false);
+      return;
+    }
 
     let query = supabase.from("agent_sites").select("*, agent:profiles(*), org:organizations(*)");
     query = slug ? query.eq("slug", slug) : query.ilike("custom_domain", customDomain);
@@ -75,14 +96,14 @@ export function useAgentSite({ slug, customDomain } = {}) {
       })),
     );
     setLoading(false);
-  }, [slug, customDomain]);
+  }, [slug, customDomain, previewToken]);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
   useEffect(() => {
-    if (!site?.id) return;
+    if (!site?.id || previewToken) return;
     const channel = supabase
       .channel(`agent-site-${site.id}`)
       .on(

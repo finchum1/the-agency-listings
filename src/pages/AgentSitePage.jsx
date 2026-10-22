@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { adaptAgentSite } from "../lib/adaptAgentSite";
 import { buildAgentSitePageMeta, SITE_ORIGIN } from "../lib/seo";
@@ -8,6 +8,7 @@ import { trackView } from "../lib/trackView";
 import { isAgentSiteAppHost } from "../lib/agentSiteLinks";
 import { AgentSiteProvider } from "../context/AgentSiteContext";
 import { brandFromOrg } from "../lib/brand";
+import { getPreviewBase, readPreviewOverrides } from "../lib/sitePreview";
 
 import Navbar from "../components/agent-site/Navbar";
 import Footer from "../components/agent-site/Footer";
@@ -30,8 +31,13 @@ export default function AgentSitePage({
   pageTitle,
   children,
 }) {
-  const adapted = site ? adaptAgentSite({ site, agent, testimonials, areas, posts, listings }) : null;
   const location = useLocation();
+  // Previewing another layout or color theme (the Compare Templates page and share links): the site renders with the
+  // requested ones, and nothing is saved or counted as a visit.
+  const overrides = useMemo(() => (site ? readPreviewOverrides(location.search, getPreviewBase() ? "share" : site.slug) : null), [site, location.search]);
+  const previewing = Boolean(overrides) || Boolean(getPreviewBase());
+  const shown = site && overrides ? { ...site, ...(overrides.layout ? { layout: overrides.layout } : {}), ...(overrides.theme ? { theme: overrides.theme } : {}) } : site;
+  const adapted = shown ? adaptAgentSite({ site: shown, agent, testimonials, areas, posts, listings }) : null;
   // "about" | "listings" | "areas" | "blog" | "contact" | undefined (Home)
   // — matches buildAgentSitePageMeta's page keys 1:1 since pageTitle is
   // always one of "About"/"Listings"/"Areas"/"Blog"/"Contact" (App.jsx).
@@ -95,8 +101,30 @@ export default function AgentSitePage({
   }, [site, adapted, pageKey, location.pathname]);
 
   useEffect(() => {
-    if (site?.id) trackView("agent_site", site.id);
+    if (site?.id && !previewing) trackView("agent_site", site.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site?.id]);
+
+  // A preview is never something to index.
+  useEffect(() => {
+    if (!previewing) return;
+    const meta = document.createElement("meta");
+    meta.name = "robots";
+    meta.content = "noindex, nofollow";
+    document.head.appendChild(meta);
+    return () => meta.remove();
+  }, [previewing]);
+
+  // Inside a preview, links that would leave it (a listing page, another site) do nothing. Phone and email links still work.
+  const guardLinks = previewing
+    ? (e) => {
+        const a = e.target.closest?.("a");
+        const href = a?.getAttribute("href");
+        if (!href || href.startsWith("#") || /^(tel|mailto):/i.test(href)) return;
+        const stay = getPreviewBase() ? href.startsWith(getPreviewBase()) : href.startsWith(`/sites/${site.slug}`);
+        if (!stay) e.preventDefault();
+      }
+    : undefined;
 
   if (loading) {
     return (
@@ -118,6 +146,7 @@ export default function AgentSitePage({
         data-buttons={adapted.buttonStyle}
         data-font={adapted.fontPairing}
         style={adapted.accentColor ? { "--as-accent": adapted.accentColor } : undefined}
+        onClickCapture={guardLinks}
       >
         <Navbar />
         {/* Every inner page (About, Listings, Areas, Blog, Contact) opens with its title right under the fixed header, so

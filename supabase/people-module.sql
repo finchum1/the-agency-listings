@@ -813,3 +813,63 @@ end;
 $$;
 revoke all on function public.revoke_api_token(uuid) from public, anon;
 grant execute on function public.revoke_api_token(uuid) to authenticated;
+
+-- 30. Template comparison share links. An agent whose site is still a draft (or who can't log in yet) can open
+--     /preview/<token> to see their own site in every layout and color theme and tell us which they like. The token is
+--     shown once when the link is made and only its SHA-256 hash is stored. A link expires, can be revoked, and only the
+--     site's owner or an admin of its organization can make one. api/site-preview.js (service role) serves the draft site's
+--     data to a valid token; the browser never reads these rows' hashes.
+create table if not exists public.site_preview_links (
+  id uuid primary key default gen_random_uuid(),
+  agent_site_id uuid not null references public.agent_sites(id) on delete cascade,
+  created_by uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  token_hash text not null unique,
+  token_hint text not null,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  revoked_at timestamptz,
+  last_viewed_at timestamptz,
+  picked_layout text,
+  picked_theme text,
+  picked_at timestamptz
+);
+create index if not exists site_preview_links_site_idx on public.site_preview_links (agent_site_id, created_at desc);
+alter table public.site_preview_links enable row level security;
+revoke all on public.site_preview_links from anon, authenticated;
+grant select (id, agent_site_id, created_by, token_hint, created_at, expires_at, revoked_at, last_viewed_at, picked_layout, picked_theme, picked_at) on public.site_preview_links to authenticated;
+drop policy if exists site_preview_links_manager_read on public.site_preview_links;
+create policy site_preview_links_manager_read on public.site_preview_links for select to authenticated using (
+  exists (select 1 from public.agent_sites s where s.id = site_preview_links.agent_site_id and (s.agent_id = auth.uid() or public.can_manage_org(s.org_id)))
+);
+
+create or replace function public.create_site_preview_link(p_site uuid, p_days integer default 30) returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  v_token text;
+  v_site public.agent_sites%rowtype;
+begin
+  select * into v_site from public.agent_sites where id = p_site;
+  if v_site.id is null or auth.uid() is null or not (v_site.agent_id = auth.uid() or public.can_manage_org(v_site.org_id)) then
+    raise exception 'You can''t share this site.';
+  end if;
+  if (select count(*) from public.site_preview_links where agent_site_id = p_site and revoked_at is null and expires_at > now()) >= 10 then
+    raise exception 'This site already has 10 active share links. Revoke one first.';
+  end if;
+  v_token := 'pv' || replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
+  insert into public.site_preview_links (agent_site_id, token_hash, token_hint, expires_at)
+  values (p_site, encode(sha256(convert_to(v_token, 'utf8')), 'hex'), right(v_token, 4), now() + make_interval(days => greatest(1, least(coalesce(p_days, 30), 90))));
+  return v_token;
+end;
+$$;
+revoke all on function public.create_site_preview_link(uuid, integer) from public, anon;
+grant execute on function public.create_site_preview_link(uuid, integer) to authenticated;
+
+create or replace function public.revoke_site_preview_link(p_id uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  update public.site_preview_links l set revoked_at = coalesce(l.revoked_at, now())
+  where l.id = p_id and exists (select 1 from public.agent_sites s where s.id = l.agent_site_id and (s.agent_id = auth.uid() or public.can_manage_org(s.org_id)));
+end;
+$$;
+revoke all on function public.revoke_site_preview_link(uuid) from public, anon;
+grant execute on function public.revoke_site_preview_link(uuid) to authenticated;

@@ -6,6 +6,7 @@ import SiteEditor from "./SiteEditor";
 const TABS = [
   ["analytics", "Analytics"],
   ["details", "Site Details"],
+  ["compare", "Compare Templates"],
   ["testimonials", "Testimonials"],
   ["areas", "Areas of Expertise"],
   ["blog", "Blog Posts"],

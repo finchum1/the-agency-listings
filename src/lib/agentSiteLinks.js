@@ -1,4 +1,5 @@
 import { isAppHost } from "./appHosts";
+import { getPreviewBase } from "./sitePreview";
 
 // True on the canonical app host (including localhost/previews) — real
 // SPA routes live under /sites/:slug/... there. False on any other host,
@@ -21,5 +22,8 @@ export function isAgentSiteAppHost() {
 // another site's, so there's never a need to jump hosts — which is what
 // lets SiteLink use plain client-side navigation everywhere.
 export function agentSiteHref(slug, path = "") {
+  // A share-link preview (/preview/<token>/site) keeps its own links inside the preview.
+  const preview = getPreviewBase();
+  if (preview) return `${preview}${path}`;
   return isAgentSiteAppHost() ? `/sites/${slug}${path}` : path || "/";
 }
