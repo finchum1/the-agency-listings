@@ -111,18 +111,15 @@ export default function ClassicSheet({ listing, agent, brokerage, headline, blur
         </div>
 
         <div className="shrink-0 px-6 py-4 bg-white border-t border-black/5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {agent?.photo_url && (
-              <img src={agent.photo_url} alt="" className="h-11 w-11 rounded-full object-cover bg-black/5" />
+              <img src={agent.photo_url} alt="" className="h-[0.95in] w-[0.95in] rounded-full object-cover bg-black/5" />
             )}
             <div>
-              <p className="text-sm font-semibold text-[#1c1a17]">{agent?.full_name}</p>
-              <p className="text-[11px] text-[#1c1a17]/60">
-                {agent?.phone}
-                {agent?.phone && agent?.email ? " · " : ""}
-                {agent?.email}
-              </p>
-              {agent?.license && <p className="text-[10px] text-[#1c1a17]/40">{agent.license}</p>}
+              <p className="text-xl font-display font-semibold leading-tight text-[#1c1a17]">{agent?.full_name}</p>
+              <p className="mt-0.5 text-[13px] text-[#1c1a17]/70">{agent?.phone}</p>
+              <p className="text-[13px] text-[#1c1a17]/70">{agent?.email}</p>
+              {agent?.license && <p className="mt-0.5 text-[11px] text-[#1c1a17]/45">{agent.license}</p>}
             </div>
           </div>
           <div className="flex items-center gap-4">
