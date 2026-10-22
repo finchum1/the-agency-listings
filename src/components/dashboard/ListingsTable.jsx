@@ -5,6 +5,7 @@ import { useListings } from "../../hooks/useListings";
 import { useListingsAnalytics } from "../../hooks/useListingsAnalytics";
 import { supabase } from "../../lib/supabaseClient";
 import { STATUS_LABELS } from "../../lib/format";
+import { matchesSearch } from "../../lib/searchMatch";
 import AnalyticsStats from "./AnalyticsStats";
 import ListingsDataTable from "./ListingsDataTable";
 
@@ -19,14 +20,18 @@ export default function ListingsTable() {
     ready: !authLoading,
   });
   const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
 
   const listingIds = useMemo(() => listings.map((l) => l.id), [listings]);
   const analytics = useListingsAnalytics(listingIds);
 
   const filtered = useMemo(() => {
-    if (filter === "all") return listings;
-    return listings.filter((l) => l.status === filter);
-  }, [listings, filter]);
+    return listings.filter(
+      (l) =>
+        (filter === "all" || l.status === filter) &&
+        matchesSearch([l.address_line1, l.city, l.state, l.zip, l.mls_number, l.agent?.full_name, l.agent?.email, STATUS_LABELS[l.status], l.price, l.custom_domain], query),
+    );
+  }, [listings, filter, query]);
 
   const handleStatusChange = async (id, status) => {
     const { error } = await supabase.from("listings").update({ status }).eq("id", id);
@@ -57,6 +62,22 @@ export default function ListingsTable() {
 
       <AnalyticsStats stats={analytics} />
 
+      <div className="mb-4 flex items-center gap-3">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={isAdmin ? "Search by address, city, zip, MLS number, or agent" : "Search by address, city, zip, or MLS number"}
+          aria-label="Search listings"
+          className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+        />
+        {(query.trim() || filter !== "all") && !loading && (
+          <span className="shrink-0 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+            {filtered.length} of {listings.length}
+          </span>
+        )}
+      </div>
+
       <div className="flex items-center gap-2 mb-5 flex-wrap">
         <button
           onClick={() => setFilter("all")}
@@ -84,7 +105,18 @@ export default function ListingsTable() {
         <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>
       ) : filtered.length === 0 ? (
         <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-12 text-center">
-          <p className="text-[#1c1a17]/60 dark:text-[#faf9f7]/60">No listings yet.</p>
+          <p className="text-[#1c1a17]/60 dark:text-[#faf9f7]/60">
+            {listings.length === 0 ? (
+              "No listings yet."
+            ) : (
+              <>
+                No listings match.{" "}
+                <button type="button" onClick={() => { setQuery(""); setFilter("all"); }} className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                  Clear search
+                </button>
+              </>
+            )}
+          </p>
         </div>
       ) : (
         <ListingsDataTable rows={filtered} onStatusChange={handleStatusChange} />
