@@ -87,7 +87,7 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
       >
         <Navbar />
 
-        <article className="pt-32 pb-24 px-6 lg:px-10">
+        <article className="pt-40 pb-24 px-6 lg:px-10">
           <div className="mx-auto max-w-3xl">
             {post.category && (
               <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">

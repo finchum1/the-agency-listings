@@ -63,7 +63,7 @@ export function ListingsListings() {
   const href = (l) => `/listings/${l.slug}?from=${encodeURIComponent(agentSiteHref(site.slug, "/listings"))}`;
 
   return (
-    <section id="listings" className="px-6 lg:px-10 py-16 sm:py-20 bg-[var(--as-bg)]">
+    <section id="listings" className={`px-6 lg:px-10 pb-16 sm:pb-20 ${isStandalonePage ? "pt-24" : "pt-16 sm:pt-20"} bg-[var(--as-bg)]`}>
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
           <div>
@@ -195,7 +195,7 @@ export function ListingsAreas() {
   if (site.areas.length === 0) return null;
   const Heading = isStandalonePage ? "h1" : "h2";
   return (
-    <section id="areas" className="px-6 lg:px-10 py-16 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
+    <section id="areas" className={`px-6 lg:px-10 pb-16 ${isStandalonePage ? "pt-24" : "pt-16"} bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10`}>
       <div className="mx-auto max-w-7xl">
         <p className={eyebrow}>Areas of expertise</p>
         <Heading className={`${h2Class} mt-2 mb-8`}>Find your area</Heading>
@@ -220,7 +220,7 @@ export function ListingsBlog({ posts, hasMore, standalone }) {
   const Heading = standalone ? "h1" : "h2";
   const shown = standalone ? posts : posts.slice(0, 3);
   return (
-    <section id="blog" className="px-6 lg:px-10 py-16 bg-[var(--as-bg)]">
+    <section id="blog" className={`px-6 lg:px-10 pb-16 ${standalone ? "pt-24" : "pt-16"} bg-[var(--as-bg)]`}>
       <div className="mx-auto max-w-7xl">
         <p className={eyebrow}>From the blog</p>
         <Heading className={`${h2Class} mt-2 mb-8`}>Market insights</Heading>

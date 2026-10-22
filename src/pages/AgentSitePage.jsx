@@ -120,7 +120,9 @@ export default function AgentSitePage({
         style={adapted.accentColor ? { "--as-accent": adapted.accentColor } : undefined}
       >
         <Navbar />
-        {children}
+        {/* Every inner page (About, Listings, Areas, Blog, Contact) opens with its title right under the fixed header, so
+            it gets extra room there. Home starts with its hero and needs none. */}
+        {pageKey ? <div className="pt-14">{children}</div> : children}
         <Footer />
       </div>
     </AgentSiteProvider>
