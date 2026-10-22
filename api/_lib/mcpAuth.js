@@ -8,26 +8,19 @@ import { serviceClient } from "./authUser.js";
 // the token's owner, then drops back to a normal signed-in client.
 const sha256 = (s) => crypto.createHash("sha256").update(s).digest("hex");
 
-// token hash -> { client, userId, name, expires }. A session lasts about an hour, so reuse it for 45 minutes.
+// owner id -> { client, expires }. A session lasts about an hour, so reuse it for 45 minutes.
 const sessions = new Map();
 const SESSION_MS = 45 * 60 * 1000;
 
-export async function authenticateToken(req) {
-  const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
-  if (!/^lp_[0-9a-f]{64}$/.test(token)) return null;
-  const hash = sha256(token);
+/** A Supabase client signed in AS this person (row-level security applies), reused for 45 minutes. */
+export async function sessionClientFor(admin, ownerId) {
+  const cached = sessions.get(ownerId);
+  if (cached && cached.expires > Date.now()) return cached.client;
+  sessions.delete(ownerId);
 
-  const cached = sessions.get(hash);
-  if (cached && cached.expires > Date.now()) return cached;
-  sessions.delete(hash);
-
-  const admin = serviceClient();
-  const { data: row } = await admin.from("mcp_tokens").select("id, owner_id, name, last_used_at").eq("token_hash", hash).is("revoked_at", null).maybeSingle();
-  if (!row) return null;
-
-  const { data: userData, error: userError } = await admin.auth.admin.getUserById(row.owner_id);
+  const { data: userData, error: userError } = await admin.auth.admin.getUserById(ownerId);
   const email = userData?.user?.email;
-  if (userError || !email) return null;
+  if (userError || !email) throw new Error("Couldn't find the account behind this token.");
 
   // A magic-link token is generated for the owner (nothing is emailed) and exchanged for a normal session.
   const { data: link, error: linkError } = await admin.auth.admin.generateLink({ type: "magiclink", email });
@@ -42,8 +35,24 @@ export async function authenticateToken(req) {
     auth: { persistSession: false, autoRefreshToken: false },
     global: { headers: { Authorization: `Bearer ${accessToken}` } },
   });
-  const entry = { client, userId: row.owner_id, tokenName: row.name, expires: Date.now() + SESSION_MS };
-  sessions.set(hash, entry);
+  sessions.set(ownerId, { client, expires: Date.now() + SESSION_MS });
+  return client;
+}
+
+export const hashToken = sha256;
+export const TOKEN_PATTERN = /^lp_[0-9a-f]{64}$/;
+
+export async function authenticateToken(req) {
+  const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
+  if (!TOKEN_PATTERN.test(token)) return null;
+  const hash = sha256(token);
+
+  const admin = serviceClient();
+  const { data: row } = await admin.from("mcp_tokens").select("id, owner_id, name, last_used_at").eq("token_hash", hash).is("revoked_at", null).maybeSingle();
+  if (!row) return null;
+
+  const client = await sessionClientFor(admin, row.owner_id);
+  const entry = { client, userId: row.owner_id, tokenName: row.name };
 
   // "Last used" is for the list on the dashboard; no need to write it on every request.
   const last = row.last_used_at ? new Date(row.last_used_at).getTime() : 0;

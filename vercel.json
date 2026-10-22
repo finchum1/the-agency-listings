@@ -134,6 +134,14 @@
       "destination": "/api/sitemap?llms=1"
     },
     {
+      "source": "/v1/:path*",
+      "destination": "/api/bots?path=:path*"
+    },
+    {
+      "source": "/v1",
+      "destination": "/api/bots"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
@@ -141,6 +149,9 @@
   "functions": {
     "api/admin/agents.js": {
       "maxDuration": 30
+    },
+    "api/bots.js": {
+      "maxDuration": 60
     }
   }
 }

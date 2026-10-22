@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 import ClaudeConnectionCard from "./ClaudeConnectionCard";
+import BotApiCard from "./BotApiCard";
 import { useTheme } from "../../hooks/useTheme";
 import ImageUploadField from "./ImageUploadField";
 
@@ -228,6 +229,7 @@ export default function MyProfilePage() {
       )}
 
       {profile?.role === "admin" && <ClaudeConnectionCard />}
+      {profile?.role === "admin" && <BotApiCard />}
 
       <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mt-6">
         <h2 className="font-display text-lg font-semibold">Appearance</h2>

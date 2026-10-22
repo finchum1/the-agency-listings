@@ -742,3 +742,74 @@ end;
 $$;
 revoke all on function public.revoke_mcp_token(uuid) from public, anon;
 grant execute on function public.revoke_mcp_token(uuid) to authenticated;
+
+-- 29. Bot API (api/bots.js, served at /v1/...). Scoped personal tokens for automation (for example Grok bots): each token
+--     gets only the scopes it needs ('blog', 'agents', 'sites', 'listings'), so one bot can write blog posts and nothing
+--     else. Like the Claude tokens: shown once, only the SHA-256 hash is kept, admin-only, revocable. Every call a token
+--     makes is logged in api_audit_log.
+create table if not exists public.api_tokens (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  name text not null check (length(btrim(name)) between 1 and 60),
+  scopes text[] not null,
+  token_hash text not null unique,
+  token_hint text not null,
+  created_at timestamptz not null default now(),
+  last_used_at timestamptz,
+  revoked_at timestamptz,
+  constraint api_tokens_scopes_check check (scopes <@ array['blog', 'agents', 'sites', 'listings']::text[] and cardinality(scopes) > 0)
+);
+alter table public.api_tokens enable row level security;
+revoke all on public.api_tokens from anon, authenticated;
+grant select (id, owner_id, name, scopes, token_hint, created_at, last_used_at, revoked_at) on public.api_tokens to authenticated;
+drop policy if exists api_tokens_owner_read on public.api_tokens;
+create policy api_tokens_owner_read on public.api_tokens for select to authenticated using (owner_id = auth.uid());
+
+create table if not exists public.api_audit_log (
+  id bigint generated always as identity primary key,
+  token_id uuid references public.api_tokens(id) on delete set null,
+  owner_id uuid,
+  method text not null,
+  path text not null,
+  status integer not null,
+  detail text,
+  created_at timestamptz not null default now()
+);
+create index if not exists api_audit_log_token_idx on public.api_audit_log (token_id, created_at desc);
+alter table public.api_audit_log enable row level security;
+revoke all on public.api_audit_log from anon, authenticated;
+grant select on public.api_audit_log to authenticated;
+drop policy if exists api_audit_log_owner_read on public.api_audit_log;
+create policy api_audit_log_owner_read on public.api_audit_log for select to authenticated using (owner_id = auth.uid());
+
+create or replace function public.create_api_token(p_name text, p_scopes text[]) returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  v_token text;
+begin
+  if auth.uid() is null or not exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin') then
+    raise exception 'Only an admin can create an API token.';
+  end if;
+  if p_scopes is null or cardinality(p_scopes) = 0 or not (p_scopes <@ array['blog', 'agents', 'sites', 'listings']::text[]) then
+    raise exception 'Choose at least one valid scope.';
+  end if;
+  if (select count(*) from public.api_tokens where owner_id = auth.uid() and revoked_at is null) >= 20 then
+    raise exception 'You already have 20 active API tokens. Revoke one first.';
+  end if;
+  v_token := 'lp_' || replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
+  insert into public.api_tokens (owner_id, name, scopes, token_hash, token_hint)
+  values (auth.uid(), btrim(p_name), p_scopes, encode(sha256(convert_to(v_token, 'utf8')), 'hex'), right(v_token, 4));
+  return v_token;
+end;
+$$;
+revoke all on function public.create_api_token(text, text[]) from public, anon;
+grant execute on function public.create_api_token(text, text[]) to authenticated;
+
+create or replace function public.revoke_api_token(p_id uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  update public.api_tokens set revoked_at = coalesce(revoked_at, now()) where id = p_id and owner_id = auth.uid();
+end;
+$$;
+revoke all on function public.revoke_api_token(uuid) from public, anon;
+grant execute on function public.revoke_api_token(uuid) to authenticated;
