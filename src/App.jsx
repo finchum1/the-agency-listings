@@ -18,6 +18,8 @@ import FlyerPage from "./components/dashboard/FlyerPage";
 import AgentsPage from "./components/dashboard/AgentsPage";
 import UpcomingModule from "./components/dashboard/UpcomingModule";
 import VendorsPage from "./components/dashboard/VendorsPage";
+import ListingAnalyticsPage from "./components/dashboard/ListingAnalyticsPage";
+import ListingReportPage from "./pages/ListingReportPage";
 import VendorSharePage from "./pages/VendorSharePage";
 import MyProfilePage from "./components/dashboard/MyProfilePage";
 import MySitePage from "./components/dashboard/MySitePage";
@@ -201,6 +203,8 @@ export default function App() {
       <Route path="/preview/:token" element={<SitePreviewPage />} />
       {/* A client's private list of recommended vendors: no sign-in, the token in the address is the credential. */}
       <Route path="/vendors/:token" element={<VendorSharePage />} />
+      {/* A seller's private activity report for one listing: same idea, token in the address. */}
+      <Route path="/report/:token" element={<ListingReportPage />} />
       <Route
         path="/preview/:token/site"
         element={
@@ -362,6 +366,7 @@ export default function App() {
         <Route path="listings/new" element={<NewListingPage />} />
         <Route path="listings/:id/edit" element={<EditListingPage />} />
         <Route path="listings/:id/flyer" element={<FlyerPage />} />
+        <Route path="listings/:id/analytics" element={<ListingAnalyticsPage />} />
         <Route path="profile" element={<MyProfilePage />} />
         <Route path="site" element={<DashboardHome />} />
         <Route path="site/analytics" element={<MySitePage section="analytics" />} />

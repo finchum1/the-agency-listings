@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { HoneypotField, useSpamGuard } from "../../lib/spamGuard";
 import { useListingContext } from "../../context/ListingContext";
+import { trackListingEvent } from "../../lib/trackView";
 
 // The theme's own text and background colors, so the typed text and the placeholder stay readable in the dark
 // themes too (inputs would otherwise inherit the page's dark default text color on a dark card).
@@ -82,10 +83,10 @@ export default function AgentContact() {
                 {brokerage.name} — {agent.license}
               </p>
               <div className="flex flex-col gap-0.5 mt-1 text-sm">
-                <a href={`tel:${agent.phone}`} className="text-[var(--ls-accent)] hover:underline">
+                <a href={`tel:${agent.phone}`} onClick={() => trackListingEvent("phone_click")} className="text-[var(--ls-accent)] hover:underline">
                   {agent.phone}
                 </a>
-                <a href={`mailto:${agent.email}`} className="text-[var(--ls-accent)] hover:underline">
+                <a href={`mailto:${agent.email}`} onClick={() => trackListingEvent("email_click")} className="text-[var(--ls-accent)] hover:underline">
                   {agent.email}
                 </a>
               </div>
@@ -95,6 +96,7 @@ export default function AgentContact() {
 
         <form
           onSubmit={handleSubmit}
+          onFocus={() => trackListingEvent("form_start")}
           className="bg-[var(--ls-bg-alt)] border border-black/5 rounded-2xl p-8 space-y-5"
         >
           <HoneypotField guard={guard} />

@@ -959,3 +959,156 @@ end;
 $$;
 revoke all on function public.revoke_vendor_share_link(uuid) from public, anon;
 grant execute on function public.revoke_vendor_share_link(uuid) to authenticated;
+
+-- ============================================================================
+-- 32. Property-site analytics: who visited, from where, on what device, how long, and what they looked at.
+--     page_views gains optional visit details (written only by api/track-view.js, as before). listing_events records the
+--     things a buyer does on a listing site. listing_analytics() rolls one listing's numbers up for the dashboard and for the
+--     private seller report links (listing_report_links), which api/listing-report.js serves without a sign-in.
+-- ============================================================================
+alter table public.page_views
+  add column if not exists visitor_id text,
+  add column if not exists session_id text,
+  add column if not exists source text,
+  add column if not exists referrer_host text,
+  add column if not exists device text,
+  add column if not exists country text,
+  add column if not exists region text,
+  add column if not exists city text,
+  add column if not exists duration_sec integer,
+  add column if not exists max_depth smallint;
+
+create table if not exists public.listing_events (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references public.organizations(id) on delete cascade,
+  listing_id uuid not null references public.listings(id) on delete cascade,
+  view_id uuid,
+  visitor_id text,
+  type text not null check (type in ('gallery_open', 'photo_view', 'phone_click', 'email_click', 'form_start', 'section')),
+  detail text check (length(detail) <= 60),
+  created_at timestamptz not null default now()
+);
+create index if not exists listing_events_listing_idx on public.listing_events (listing_id, created_at desc);
+create index if not exists listing_events_view_idx on public.listing_events (view_id);
+alter table public.listing_events enable row level security;
+revoke all on public.listing_events from anon, authenticated;
+grant select on public.listing_events to authenticated;
+drop policy if exists listing_events_read on public.listing_events;
+create policy listing_events_read on public.listing_events for select to authenticated
+  using (public.can_manage_org(org_id) or exists (select 1 from public.listings l where l.id = listing_events.listing_id and l.agent_id = auth.uid()));
+
+create or replace function public.listing_events_set_org() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  select org_id into new.org_id from public.listings where id = new.listing_id;
+  return new;
+end;
+$$;
+drop trigger if exists set_org_id on public.listing_events;
+create trigger set_org_id before insert on public.listing_events for each row execute function public.listing_events_set_org();
+
+-- One listing's numbers for the last p_days days. SECURITY INVOKER: a signed-in caller only sees what row-level security lets
+-- them read (their own listings, or any in an organization they manage); the seller-report API calls it with the service role
+-- after checking the link's token.
+create or replace function public.listing_analytics(p_listing_id uuid, p_days integer default 30, p_tz text default 'America/Chicago') returns jsonb
+language plpgsql stable set search_path = public as $$
+declare
+  v_days integer := greatest(1, least(coalesce(p_days, 30), 730));
+  v_since timestamptz := now() - make_interval(days => greatest(1, least(coalesce(p_days, 30), 730)));
+  v_chart integer := least(greatest(1, least(coalesce(p_days, 30), 730)), 90);
+  r jsonb;
+begin
+  with pv as (
+    select id, coalesce(visitor_id, id::text) as vid, session_id, source, referrer_host, device, country, region, city, duration_sec, max_depth, created_at
+    from public.page_views where target_type = 'listing' and target_id = p_listing_id and created_at >= v_since
+  ), ev as (
+    select view_id, type, detail from public.listing_events where listing_id = p_listing_id and created_at >= v_since
+  ), days as (
+    select d::date as day from generate_series((now() at time zone p_tz)::date - (v_chart - 1), (now() at time zone p_tz)::date, interval '1 day') d
+  )
+  select jsonb_build_object(
+    'days', v_days,
+    'views', (select count(*) from pv),
+    'visitors', (select count(distinct vid) from pv),
+    'returning', (select count(*) from (select vid from pv group by vid having count(distinct coalesce(session_id, id::text)) > 1) t),
+    'avg_duration', (select round(avg(duration_sec))::int from pv where duration_sec between 3 and 3600),
+    'avg_depth', (select round(avg(max_depth))::int from pv where max_depth is not null),
+    'tracked_views', (select count(*) from pv where session_id is not null),
+    'detail_since', (select min(created_at) from public.page_views where target_type = 'listing' and target_id = p_listing_id and session_id is not null),
+    'leads', (select count(*) from public.leads where target_type = 'listing' and target_id = p_listing_id and created_at >= v_since),
+    'daily', coalesce((select jsonb_agg(jsonb_build_object('day', days.day, 'views', coalesce(x.views, 0), 'visitors', coalesce(x.visitors, 0)) order by days.day)
+      from days left join (select (created_at at time zone p_tz)::date as day, count(*) as views, count(distinct vid) as visitors from pv group by 1) x on x.day = days.day), '[]'::jsonb),
+    'sources', coalesce((select jsonb_agg(t order by t.views desc) from (select coalesce(source, 'direct') as source, count(*) as views, count(distinct vid) as visitors from pv group by 1 order by 2 desc limit 12) t), '[]'::jsonb),
+    'referrers', coalesce((select jsonb_agg(t order by t.views desc) from (select referrer_host, count(*) as views from pv where source = 'referral' and referrer_host is not null group by 1 order by 2 desc limit 8) t), '[]'::jsonb),
+    'devices', coalesce((select jsonb_agg(t order by t.views desc) from (select coalesce(device, 'unknown') as device, count(*) as views from pv group by 1) t), '[]'::jsonb),
+    'locations', coalesce((select jsonb_agg(t order by t.views desc) from (select city, region, country, count(*) as views, count(distinct vid) as visitors from pv where city is not null group by 1, 2, 3 order by 4 desc limit 10) t), '[]'::jsonb),
+    'regions', coalesce((select jsonb_agg(t order by t.views desc) from (select region, country, count(*) as views from pv where region is not null group by 1, 2 order by 3 desc limit 8) t), '[]'::jsonb),
+    'engagement', jsonb_build_object(
+      'gallery_opens', (select count(distinct view_id) from ev where type = 'gallery_open'),
+      'photo_views', (select count(*) from ev where type = 'photo_view'),
+      'phone_clicks', (select count(distinct view_id) from ev where type = 'phone_click'),
+      'email_clicks', (select count(distinct view_id) from ev where type = 'email_click'),
+      'form_starts', (select count(distinct view_id) from ev where type = 'form_start'),
+      'sections', coalesce((select jsonb_object_agg(detail, n) from (select detail, count(distinct view_id) as n from ev where type = 'section' group by 1) s), '{}'::jsonb)
+    )
+  ) into r;
+  return r;
+end;
+$$;
+revoke all on function public.listing_analytics(uuid, integer, text) from public, anon;
+grant execute on function public.listing_analytics(uuid, integer, text) to authenticated, service_role;
+
+-- Private, no-sign-in report links for a seller (token stored only as a hash, like the other share links).
+create table if not exists public.listing_report_links (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references public.organizations(id) on delete cascade,
+  listing_id uuid not null references public.listings(id) on delete cascade,
+  created_by uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  token_hash text not null unique,
+  token_hint text not null,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  revoked_at timestamptz,
+  last_viewed_at timestamptz,
+  view_count integer not null default 0
+);
+create index if not exists listing_report_links_listing_idx on public.listing_report_links (listing_id, created_at desc);
+alter table public.listing_report_links enable row level security;
+revoke all on public.listing_report_links from anon, authenticated;
+grant select (id, org_id, listing_id, created_by, token_hint, created_at, expires_at, revoked_at, last_viewed_at, view_count) on public.listing_report_links to authenticated;
+drop policy if exists listing_report_links_read on public.listing_report_links;
+create policy listing_report_links_read on public.listing_report_links for select to authenticated
+  using (created_by = auth.uid() or public.can_manage_org(org_id));
+
+create or replace function public.create_listing_report_link(p_listing_id uuid, p_days integer default 180) returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  v_org uuid;
+  v_token text;
+begin
+  select org_id into v_org from public.listings l
+   where l.id = p_listing_id and (l.agent_id = auth.uid() or public.can_manage_org(l.org_id));
+  if auth.uid() is null or v_org is null then
+    raise exception 'You can only share reports for your own listings.';
+  end if;
+  if (select count(*) from public.listing_report_links where listing_id = p_listing_id and revoked_at is null and expires_at > now()) >= 20 then
+    raise exception 'This listing has 20 active report links. Turn some off first.';
+  end if;
+  v_token := 'lr' || replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
+  insert into public.listing_report_links (org_id, listing_id, token_hash, token_hint, expires_at)
+  values (v_org, p_listing_id, encode(sha256(convert_to(v_token, 'utf8')), 'hex'), right(v_token, 4), now() + make_interval(days => greatest(1, least(coalesce(p_days, 180), 365))));
+  return v_token;
+end;
+$$;
+revoke all on function public.create_listing_report_link(uuid, integer) from public, anon;
+grant execute on function public.create_listing_report_link(uuid, integer) to authenticated;
+
+create or replace function public.revoke_listing_report_link(p_id uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  update public.listing_report_links set revoked_at = coalesce(revoked_at, now())
+   where id = p_id and (created_by = auth.uid() or public.can_manage_org(org_id));
+end;
+$$;
+revoke all on function public.revoke_listing_report_link(uuid) from public, anon;
+grant execute on function public.revoke_listing_report_link(uuid) to authenticated;

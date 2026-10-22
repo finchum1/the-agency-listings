@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useListingContext } from "../../context/ListingContext";
+import { trackListingEvent } from "../../lib/trackView";
 
 export default function Gallery() {
   const { listing } = useListingContext();
@@ -26,6 +27,12 @@ export default function Gallery() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [activeIndex, close, prev, next]);
+
+  useEffect(() => {
+    if (activeIndex === null) return;
+    trackListingEvent("gallery_open");
+    trackListingEvent("photo_view", activeIndex + 1);
+  }, [activeIndex]);
 
   if (images.length === 0) return null;
 

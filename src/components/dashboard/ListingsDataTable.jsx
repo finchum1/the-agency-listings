@@ -50,6 +50,9 @@ export default function ListingsDataTable({ rows, onStatusChange }) {
                       View live
                     </a>
                   )}
+                  <Link to={`/dashboard/listings/${listing.id}/analytics`} className="text-xs text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
+                    Analytics
+                  </Link>
                   <Link to={`/dashboard/listings/${listing.id}/edit`} className="text-xs text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
                     Edit
                   </Link>

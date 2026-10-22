@@ -5,7 +5,7 @@ import { buildListingMeta, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta, applyStructuredData } from "../lib/pageMeta";
 import { buildListingSchema } from "../lib/structuredData";
 import { isAppHost } from "../lib/appHosts";
-import { trackView } from "../lib/trackView";
+import { startListingVisit } from "../lib/trackView";
 import { ListingProvider } from "../context/ListingContext";
 
 import Navbar from "../components/listing-site/Navbar";
@@ -67,9 +67,7 @@ export default function ListingSitePage({ listing, agent, photos, openHouses, lo
   // Separate effect, keyed only on the id, so a re-render (e.g. from a
   // realtime update to the listing) never fires a second view for the
   // same visit.
-  useEffect(() => {
-    if (listing?.id) trackView("listing", listing.id);
-  }, [listing?.id]);
+  useEffect(() => startListingVisit(listing?.id), [listing?.id]);
 
   if (loading) {
     return (

@@ -60,6 +60,9 @@ export default function EditListingPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-semibold">{listing.address_line1}</h1>
         <div className="flex items-center gap-3">
+          <Link to={`/dashboard/listings/${listing.id}/analytics`} className={pillLinkClass}>
+            Analytics
+          </Link>
           <Link to={`/dashboard/listings/${listing.id}/flyer`} className={pillLinkClass}>
             Flyer
           </Link>

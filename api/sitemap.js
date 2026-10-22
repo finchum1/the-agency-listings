@@ -66,7 +66,7 @@ ${u.lastmod ? `    <lastmod>${new Date(u.lastmod).toISOString().slice(0, 10)}</l
 // to stay under Vercel's Hobby-plan 12-function cap.
 function robotsTxt(req) {
   const rawHost = req.headers.host || "";
-  const lines = ["User-agent: *", "Allow: /", "Disallow: /dashboard", "Disallow: /login", "Disallow: /accept-invite", "Disallow: /preview", "Disallow: /vendors"];
+  const lines = ["User-agent: *", "Allow: /", "Disallow: /dashboard", "Disallow: /login", "Disallow: /accept-invite", "Disallow: /preview", "Disallow: /vendors", "Disallow: /report"];
   lines.push("", `Sitemap: https://${rawHost}/sitemap.xml`);
   return `${lines.join("\n")}\n`;
 }

@@ -1,0 +1,206 @@
+import { useCallback, useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../hooks/useAuth";
+import { useListing } from "../../hooks/useListing";
+import { useListingAnalytics } from "../../hooks/useListingAnalytics";
+import { RANGES, SHARE_CHANNELS, listingUrl, taggedUrl } from "../../lib/listingAnalytics";
+import ListingAnalyticsView from "./ListingAnalyticsView";
+
+const card = "bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-5";
+const quietBtn = "rounded-full border border-black/10 dark:border-white/15 px-3 py-1.5 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
+const muted = "text-[#1c1a17]/55 dark:text-[#faf9f7]/55";
+
+function useCopy() {
+  const [copied, setCopied] = useState("");
+  const copy = async (key, text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    setCopied(key);
+    setTimeout(() => setCopied((c) => (c === key ? "" : c)), 1800);
+  };
+  return [copied, copy];
+}
+
+// Links for each place an agent shares the listing, so the analytics can say where visitors came from.
+function TrackedLinks({ listing }) {
+  const [copied, copy] = useCopy();
+  const [custom, setCustom] = useState("");
+  const base = listingUrl(listing);
+  const channels = [...SHARE_CHANNELS];
+  const tag = custom.trim().toLowerCase().replace(/[^a-z0-9._-]/g, "").slice(0, 30);
+  return (
+    <div className={card}>
+      <h3 className="font-display text-base font-semibold">Track where buyers come from</h3>
+      <p className={`text-xs mt-1 ${muted}`}>Use a different link for each place you share this listing. Visits through it show up under that name in “Where visitors came from.”</p>
+      <ul className="mt-3 divide-y divide-black/5 dark:divide-white/10">
+        {channels.map((c) => {
+          const url = taggedUrl(base, c.src);
+          return (
+            <li key={c.src} className="py-2.5 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">{c.label}</p>
+                <p className={`text-xs truncate font-mono ${muted}`}>{url}</p>
+              </div>
+              <button type="button" onClick={() => copy(c.src, url)} className={`${quietBtn} shrink-0`}>
+                {copied === c.src ? "Copied ✓" : "Copy link"}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mt-3 flex gap-2">
+        <input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Something else, e.g. open-house-sign" aria-label="Custom source name" className="flex-1 min-w-0 rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm" />
+        <button type="button" disabled={!tag} onClick={() => copy("custom", taggedUrl(base, tag))} className={`${quietBtn} shrink-0 disabled:opacity-40`}>
+          {copied === "custom" ? "Copied ✓" : "Copy link"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Private, no-sign-in links the agent sends the seller.
+function SellerReports({ listing }) {
+  const [links, setLinks] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [fresh, setFresh] = useState("");
+  const [copied, copy] = useCopy();
+
+  const load = useCallback(async () => {
+    const { data } = await supabase
+      .from("listing_report_links")
+      .select("id, token_hint, created_at, expires_at, view_count, last_viewed_at")
+      .eq("listing_id", listing.id)
+      .is("revoked_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .order("created_at", { ascending: false });
+    setLinks(data || []);
+  }, [listing.id]);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const create = async () => {
+    setBusy(true);
+    const { data, error } = await supabase.rpc("create_listing_report_link", { p_listing_id: listing.id });
+    setBusy(false);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    const url = `${window.location.origin}/report/${data}`;
+    setFresh(url);
+    copy("fresh", url);
+    load();
+  };
+  const revoke = async (l) => {
+    if (!confirm("Turn this link off? Anyone who has it will see an expired page.")) return;
+    await supabase.rpc("revoke_listing_report_link", { p_id: l.id });
+    if (fresh) setFresh("");
+    load();
+  };
+  const mail = fresh
+    ? `mailto:?subject=${encodeURIComponent(`Online activity for ${listing.address_line1}`)}&body=${encodeURIComponent(`Here's a live report of the online activity for ${listing.address_line1}: visitors, where they're coming from, and what they're looking at. It updates automatically.\n\n${fresh}`)}`
+    : "";
+
+  return (
+    <div className={card}>
+      <h3 className="font-display text-base font-semibold">Seller report</h3>
+      <p className={`text-xs mt-1 ${muted}`}>A private page the seller can open any time, with no login. It shows these numbers for this listing and updates on its own, and it never shows inquiry names or contact details.</p>
+      <div className="mt-3 flex flex-wrap gap-2 items-center">
+        <button type="button" onClick={create} disabled={busy} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2 disabled:opacity-50">
+          {busy ? "Making…" : "Create report link"}
+        </button>
+        {fresh && (
+          <>
+            <button type="button" onClick={() => copy("fresh", fresh)} className={quietBtn}>
+              {copied === "fresh" ? "Copied ✓" : "Copy link"}
+            </button>
+            <a href={mail} className={quietBtn}>
+              Email to seller
+            </a>
+            <a href={fresh} target="_blank" rel="noreferrer" className={quietBtn}>
+              Preview
+            </a>
+          </>
+        )}
+      </div>
+      {fresh && <p className="mt-2 text-xs break-all font-mono select-all">{fresh}</p>}
+      {links.length > 0 && (
+        <ul className="mt-4 divide-y divide-black/5 dark:divide-white/10">
+          {links.map((l) => (
+            <li key={l.id} className="py-2.5 flex items-center justify-between gap-3 text-sm">
+              <span className="min-w-0">
+                Link …{l.token_hint} · made {new Date(l.created_at).toLocaleDateString()} · opened {l.view_count} time{l.view_count === 1 ? "" : "s"} · expires {new Date(l.expires_at).toLocaleDateString()}
+              </span>
+              <button type="button" onClick={() => revoke(l)} className="shrink-0 text-xs font-semibold text-red-600 dark:text-red-400 hover:underline">
+                Turn off
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className={`mt-3 text-xs ${muted}`}>A link's full address is only shown when you create it. If you lose one, make a new link and turn the old one off.</p>
+    </div>
+  );
+}
+
+// Dashboard > Listings > (a listing) > Analytics: everything the property site can tell us about its visitors.
+export default function ListingAnalyticsPage() {
+  const { id } = useParams();
+  const { user, isAdmin } = useAuth();
+  const { listing, loading, notFound } = useListing({ id });
+  const [days, setDays] = useState(30);
+  const { data, loading: dataLoading, error } = useListingAnalytics(listing?.id, days);
+
+  if (loading && !listing) return <p className={`text-sm ${muted}`}>Loading…</p>;
+  if (notFound || !listing || (!isAdmin && listing.agent_id !== user?.id)) {
+    return (
+      <div>
+        <p className={`text-sm mb-4 ${muted}`}>Listing not found, or you don't have access to it.</p>
+        <Link to="/dashboard/listings" className="text-sm text-[#ed2127] dark:text-[#f2454b] hover:underline">
+          ← Back to listings
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-5xl">
+      <Link to={`/dashboard/listings/${listing.id}/edit`} className={`text-xs font-semibold hover:underline ${muted}`}>
+        ← {listing.address_line1}
+      </Link>
+      <div className="mt-2 mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-display font-semibold">Analytics</h1>
+          <p className={`text-sm mt-0.5 ${muted}`}>
+            {listing.address_line1}, {listing.city}
+          </p>
+        </div>
+        <div className="flex items-center rounded-full border border-black/10 dark:border-white/15 p-0.5 text-xs font-medium" role="group" aria-label="Time period">
+          {RANGES.map((r) => (
+            <button key={r.days} type="button" onClick={() => setDays(r.days)} className={`px-3 py-1.5 rounded-full transition-colors ${days === r.days ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "text-[#1c1a17]/55 dark:text-[#faf9f7]/55 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"}`}>
+              {r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {error ? <p className="text-sm text-red-600 dark:text-red-400">{error}</p> : <ListingAnalyticsView data={data} loading={dataLoading} />}
+
+      <div className="mt-5 grid md:grid-cols-2 gap-5 items-start">
+        <TrackedLinks listing={listing} />
+        <SellerReports listing={listing} />
+      </div>
+      <p className={`mt-4 text-xs ${muted}`}>Visits while you're signed in to the dashboard aren't counted, so checking your own page never inflates these numbers. Known search and link-preview bots are left out too.</p>
+    </div>
+  );
+}
