@@ -164,6 +164,15 @@ export default function VendorsPage() {
   const [links, setLinks] = useState([]);
   const [linkBusy, setLinkBusy] = useState(false);
   const [freshLink, setFreshLink] = useState("");
+  // The agent's own website address, if they have one: client links can use it instead of the app's address.
+  const [siteDomain, setSiteDomain] = useState("");
+  const [useSiteDomain, setUseSiteDomain] = useState(() => {
+    try {
+      return localStorage.getItem("vendor_link_host") !== "app";
+    } catch {
+      return true;
+    }
+  });
 
   const load = useCallback(async () => {
     if (!orgId) return;
@@ -176,6 +185,18 @@ export default function VendorsPage() {
     if (!orgId) setLoading(false);
     load();
   }, [orgId, orgLoading, load]);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    supabase
+      .from("agent_sites")
+      .select("custom_domain")
+      .eq("agent_id", profile.id)
+      .not("custom_domain", "is", null)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => setSiteDomain(data?.custom_domain || ""));
+  }, [profile?.id]);
 
   const loadLinks = useCallback(async () => {
     if (!orgId) return;
@@ -258,7 +279,8 @@ export default function VendorsPage() {
       alert(err.message);
       return;
     }
-    const url = `${window.location.origin}/vendors/${data}`;
+    const origin = siteDomain && useSiteDomain ? `https://${siteDomain}` : window.location.origin;
+    const url = `${origin}/vendors/${data}`;
     setFreshLink(url);
     copy("fresh", url);
     loadLinks();
@@ -384,6 +406,25 @@ export default function VendorsPage() {
               Clear
             </button>
           </div>
+          {siteDomain && (
+            <label className="mt-2 flex items-center gap-2 text-xs text-[#1c1a17]/60 dark:text-[#faf9f7]/60">
+              <input
+                type="checkbox"
+                checked={useSiteDomain}
+                onChange={(e) => {
+                  setUseSiteDomain(e.target.checked);
+                  setFreshLink("");
+                  try {
+                    localStorage.setItem("vendor_link_host", e.target.checked ? "site" : "app");
+                  } catch {
+                    /* storage blocked: the choice just won't persist */
+                  }
+                }}
+                className="h-3.5 w-3.5 accent-[#ed2127]"
+              />
+              Send the link from {siteDomain}
+            </label>
+          )}
           {freshLink && (
             <p className="mt-2 text-xs break-all text-[#1c1a17]/60 dark:text-[#faf9f7]/60">
               Copied to your clipboard: <span className="font-mono select-all">{freshLink}</span>
