@@ -73,6 +73,25 @@ function SellerReports({ listing }) {
   const [busy, setBusy] = useState(false);
   const [fresh, setFresh] = useState("");
   const [copied, copy] = useCopy();
+  // The listing agent's own website address, if they have one: report links can be sent from it instead of the app's address.
+  const [siteDomain, setSiteDomain] = useState("");
+  const [useSiteDomain, setUseSiteDomain] = useState(() => {
+    try {
+      return localStorage.getItem("report_link_host") !== "app";
+    } catch {
+      return true;
+    }
+  });
+  useEffect(() => {
+    supabase
+      .from("agent_sites")
+      .select("custom_domain")
+      .eq("agent_id", listing.agent_id)
+      .not("custom_domain", "is", null)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => setSiteDomain(data?.custom_domain || ""));
+  }, [listing.agent_id]);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -96,7 +115,8 @@ function SellerReports({ listing }) {
       alert(error.message);
       return;
     }
-    const url = `${window.location.origin}/report/${data}`;
+    const origin = siteDomain && useSiteDomain ? `https://${siteDomain}` : window.location.origin;
+    const url = `${origin}/report/${data}`;
     setFresh(url);
     copy("fresh", url);
     load();
@@ -133,6 +153,25 @@ function SellerReports({ listing }) {
           </>
         )}
       </div>
+      {siteDomain && (
+        <label className={`mt-2 flex items-center gap-2 text-xs ${muted}`}>
+          <input
+            type="checkbox"
+            checked={useSiteDomain}
+            onChange={(e) => {
+              setUseSiteDomain(e.target.checked);
+              setFresh("");
+              try {
+                localStorage.setItem("report_link_host", e.target.checked ? "site" : "app");
+              } catch {
+                /* storage blocked: the choice just won't persist */
+              }
+            }}
+            className="h-3.5 w-3.5 accent-[#ed2127]"
+          />
+          Send the link from {siteDomain}
+        </label>
+      )}
       {fresh && <p className="mt-2 text-xs break-all font-mono select-all">{fresh}</p>}
       {links.length > 0 && (
         <ul className="mt-4 divide-y divide-black/5 dark:divide-white/10">
