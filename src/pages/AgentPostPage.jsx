@@ -7,7 +7,7 @@ import { buildAgentPostMeta, absoluteUrl, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta, applyStructuredData } from "../lib/pageMeta";
 import { buildBlogPostSchema, buildBreadcrumbSchema } from "../lib/structuredData";
 import { brandFromOrg } from "../lib/brand";
-import { trackView } from "../lib/trackView";
+import { startVisit } from "../lib/trackView";
 import { isAgentSiteAppHost } from "../lib/agentSiteLinks";
 import { AgentSiteProvider } from "../context/AgentSiteContext";
 import Navbar from "../components/agent-site/Navbar";
@@ -60,9 +60,7 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [post, site, agent]);
 
-  useEffect(() => {
-    if (post?.id) trackView("agent_post", post.id);
-  }, [post?.id]);
+  useEffect(() => startVisit("agent_post", post?.id), [post?.id]);
 
   if (loading) {
     return (

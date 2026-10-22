@@ -2,11 +2,11 @@ import { formatDuration, pct, placeLabel, sourceLabel } from "../../lib/listingA
 
 // The analytics body shared by the dashboard's listing analytics page and the seller report: one listing's numbers for a
 // period (see listing_analytics() in supabase/people-module.sql). Takes the JSON that function returns.
-const card = "bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-5";
-const eyebrow = "text-[11px] font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
-const muted = "text-[#1c1a17]/55 dark:text-[#faf9f7]/55";
+export const card = "bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-5";
+export const eyebrow = "text-[11px] font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
+export const muted = "text-[#1c1a17]/55 dark:text-[#faf9f7]/55";
 
-function Stat({ label, value, hint }) {
+export function Stat({ label, value, hint }) {
   return (
     <div className={card}>
       <p className="text-2xl font-display font-semibold tabular-nums">{value}</p>
@@ -16,7 +16,7 @@ function Stat({ label, value, hint }) {
   );
 }
 
-function BarList({ rows, empty }) {
+export function BarList({ rows, empty }) {
   const max = Math.max(1, ...rows.map((r) => r.value));
   if (rows.length === 0) return <p className={`text-sm ${muted}`}>{empty}</p>;
   return (
@@ -47,9 +47,9 @@ function weekly(daily) {
   }
   return out;
 }
-const isWeekly = (daily) => daily.length > 31;
+export const isWeekly = (daily) => daily.length > 31;
 
-function Trend({ daily }) {
+export function Trend({ daily }) {
   const byWeek = isWeekly(daily);
   const bars = byWeek ? weekly(daily) : daily;
   const max = Math.max(1, ...bars.map((d) => d.views));

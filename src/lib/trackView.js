@@ -14,7 +14,7 @@ export function trackView(targetType, targetId) {
   }).catch(() => {});
 }
 
-// ---- Property sites: a richer visit record ---------------------------------------------------------------------------
+// ---- A richer visit record for property sites and agent sites ---------------------------------------------------------
 // One anonymous id per browser (so "unique visitors" and "returning" mean something) and one per tab session. Neither is
 // tied to a person, and no IP address is ever stored.
 const randomId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
@@ -31,8 +31,13 @@ function storedId(store, key) {
   }
 }
 
-const SECTIONS = ["facts", "overview", "gallery", "features", "location", "contact"];
-let current = null; // { id, listingId, start, depth, sent: Set }
+const SECTION_IDS = {
+  listing: ["facts", "overview", "gallery", "features", "location", "contact"],
+  agent_site: ["bio", "listings", "areas", "blog", "contact"],
+  agent_post: [],
+};
+const SOCIAL_RE = /(^|\.)(instagram|facebook|linkedin|tiktok|youtube|twitter|x)\.com$|^youtu\.be$/i;
+let current = null; // { id, targetType, start, depth, sent: Set }
 
 const post = (payload, { beacon = false } = {}) => {
   const body = JSON.stringify(payload);
@@ -43,7 +48,7 @@ const post = (payload, { beacon = false } = {}) => {
   fetch("/api/track-view", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
 };
 
-/** Something a buyer did on a listing site. Each kind of thing is sent once per visit (per photo / per section). */
+/** Something a visitor did. Each kind of thing is sent once per page view (per photo / per section / per network). */
 export function trackListingEvent(type, detail) {
   if (!current) return;
   const key = `${type}:${detail ?? ""}`;
@@ -52,13 +57,37 @@ export function trackListingEvent(type, detail) {
   post({ kind: "event", viewId: current.id, type, detail: detail == null ? undefined : String(detail) });
 }
 
+// Phone, email, social, listing and blog links, and starting a form, recognised from the page itself, so the site's own
+// components don't each need to report them.
+function onClick(e) {
+  const a = e.target instanceof Element ? e.target.closest("a[href]") : null;
+  if (!a || !current) return;
+  const href = a.getAttribute("href") || "";
+  if (href.startsWith("tel:")) return trackListingEvent("phone_click");
+  if (href.startsWith("mailto:")) return trackListingEvent("email_click");
+  if (current.targetType === "listing") return;
+  try {
+    const url = new URL(href, window.location.href);
+    if (SOCIAL_RE.test(url.hostname)) return trackListingEvent("social_click", url.hostname.replace(/^www\./, "").replace(/\.com$/, ""));
+    if (url.origin === window.location.origin) {
+      if (/\/listings\/[^/]+/.test(url.pathname) && !/\/sites\/[^/]+\/listings\/?$/.test(url.pathname)) return trackListingEvent("listing_click");
+      if (/\/blog\/[^/]+/.test(url.pathname)) return trackListingEvent("blog_click");
+    }
+  } catch {
+    /* not a link we can read */
+  }
+}
+function onFocusIn(e) {
+  if (current && e.target instanceof Element && e.target.closest("form")) trackListingEvent("form_start");
+}
+
 /**
- * Records a visit to a listing site, then keeps watching it: how long they stay, how far down they scroll, and which sections
+ * Records a visit to a public page, then keeps watching it: how long they stay, how far down they scroll, and which sections
  * they reach. Visits from someone signed in to the dashboard (an agent previewing their own page) aren't counted, so they
- * don't inflate the numbers. Returns a function that stops watching.
+ * don't inflate the numbers. `page` names an agent-site page (home, about, ...). Returns a function that stops watching.
  */
-export function startListingVisit(listingId) {
-  if (!listingId) return () => {};
+export function startVisit(targetType, targetId, { page } = {}) {
+  if (!targetId) return () => {};
   let stopped = false;
   let cleanup = () => {};
 
@@ -69,21 +98,31 @@ export function startListingVisit(listingId) {
     .then((session) => {
       if (stopped || session) return;
       const id = randomId();
-      current = { id, listingId, start: Date.now(), depth: 0, sent: new Set(), active: 0, last: Date.now() };
+      const visit = { id, targetType, start: Date.now(), depth: 0, sent: new Set(), active: 0, last: Date.now() };
+      current = visit;
       const params = new URLSearchParams(window.location.search);
+      const src = params.get("src") || params.get("utm_source") || "";
+      let seen = false;
+      try {
+        seen = sessionStorage.getItem("ag_seen") === "1";
+        sessionStorage.setItem("ag_seen", "1");
+      } catch {
+        /* storage blocked: every page counts as the start of a visit */
+      }
       post({
         kind: "view",
-        targetType: "listing",
-        targetId: listingId,
+        targetType,
+        targetId,
         viewId: id,
+        page,
         visitorId: storedId(localStorage, "ag_vid"),
         sessionId: storedId(sessionStorage, "ag_sid"),
-        src: params.get("src") || params.get("utm_source") || "",
+        src,
         referrer: document.referrer || "",
+        cont: seen && !src,
       });
 
       // Time on page counts only while the tab is showing, so a page left open in a background tab doesn't read as an hour.
-      const visit = current;
       const tick = () => {
         const now = Date.now();
         if (document.visibilityState === "visible") visit.active += now - visit.last;
@@ -105,6 +144,8 @@ export function startListingVisit(listingId) {
       window.addEventListener("scroll", onScroll, { passive: true });
       document.addEventListener("visibilitychange", onVisibility);
       window.addEventListener("pagehide", flush);
+      document.addEventListener("click", onClick, true);
+      document.addEventListener("focusin", onFocusIn);
       const heartbeat = setInterval(() => {
         tick();
         if (visit.active > 0) post({ kind: "end", viewId: visit.id, duration: Math.round(visit.active / 1000), depth: visit.depth }, { beacon: true });
@@ -124,7 +165,7 @@ export function startListingVisit(listingId) {
             }),
           { threshold: 0.3 },
         );
-        SECTIONS.forEach((s) => {
+        (SECTION_IDS[targetType] || []).forEach((s) => {
           const el = document.getElementById(s);
           if (el) observer.observe(el);
         });
@@ -137,8 +178,10 @@ export function startListingVisit(listingId) {
         window.removeEventListener("scroll", onScroll);
         document.removeEventListener("visibilitychange", onVisibility);
         window.removeEventListener("pagehide", flush);
+        document.removeEventListener("click", onClick, true);
+        document.removeEventListener("focusin", onFocusIn);
         flush();
-        current = null;
+        if (current === visit) current = null;
       };
     });
 
@@ -147,3 +190,5 @@ export function startListingVisit(listingId) {
     cleanup();
   };
 }
+
+export const startListingVisit = (listingId) => startVisit("listing", listingId);

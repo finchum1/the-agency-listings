@@ -4,7 +4,7 @@ import { adaptAgentSite } from "../lib/adaptAgentSite";
 import { buildAgentSitePageMeta, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta, applyStructuredData } from "../lib/pageMeta";
 import { buildAgentSchema, buildBreadcrumbSchema } from "../lib/structuredData";
-import { trackView } from "../lib/trackView";
+import { startVisit } from "../lib/trackView";
 import { isAgentSiteAppHost } from "../lib/agentSiteLinks";
 import { AgentSiteProvider } from "../context/AgentSiteContext";
 import { brandFromOrg } from "../lib/brand";
@@ -101,7 +101,8 @@ export default function AgentSitePage({
   }, [site, adapted, pageKey, location.pathname]);
 
   useEffect(() => {
-    if (site?.id && !previewing) trackView("agent_site", site.id);
+    if (!site?.id || previewing) return undefined;
+    return startVisit("agent_site", site.id, { page: pageKey || "home" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site?.id]);
 

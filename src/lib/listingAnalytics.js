@@ -31,6 +31,7 @@ const SOURCE_LABELS = {
   flyer: "Flyer / QR code",
   qr: "Flyer / QR code",
   referral: "Other websites",
+  "google-profile": "Google Business Profile",
 };
 export const sourceLabel = (s) => SOURCE_LABELS[s] || s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -44,6 +45,23 @@ export const SHARE_CHANNELS = [
   { src: "flyer", label: "Flyer / QR code" },
   { src: "zillow", label: "Zillow" },
 ];
+
+/** The same idea for an agent's website: the places an agent hands out their address. */
+export const SITE_SHARE_CHANNELS = [
+  { src: "facebook", label: "Facebook" },
+  { src: "instagram", label: "Instagram" },
+  { src: "linkedin", label: "LinkedIn" },
+  { src: "email", label: "Email signature" },
+  { src: "text", label: "Text message" },
+  { src: "qr", label: "Business card / QR code" },
+  { src: "google-profile", label: "Google Business Profile" },
+];
+
+/** An agent site's public address: its own domain if it has one, otherwise the app's /sites/<slug> page. */
+export function siteUrl(site, origin = window.location.origin) {
+  const domain = String(site?.custom_domain || "").trim();
+  return domain ? `https://${domain}` : `${origin}/sites/${site.slug}`;
+}
 
 /** The listing's public address: its own domain if it has one, otherwise the app's /listings/<slug> page. */
 export function listingUrl(listing, origin = window.location.origin) {

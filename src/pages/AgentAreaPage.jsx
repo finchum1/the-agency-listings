@@ -4,7 +4,7 @@ import { adaptAgentSite } from "../lib/adaptAgentSite";
 import { sanitizeHtml } from "../lib/sanitizeHtml";
 import { buildAgentAreaMeta, SITE_ORIGIN } from "../lib/seo";
 import { applyPageMeta } from "../lib/pageMeta";
-import { trackView } from "../lib/trackView";
+import { startVisit } from "../lib/trackView";
 import { isAgentSiteAppHost } from "../lib/agentSiteLinks";
 import { AgentSiteProvider } from "../context/AgentSiteContext";
 import Navbar from "../components/agent-site/Navbar";
@@ -39,9 +39,7 @@ export default function AgentAreaPage({ site, agent, area, loading, notFound }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [area, site, agent]);
 
-  useEffect(() => {
-    if (site?.id) trackView("agent_site", site.id);
-  }, [site?.id]);
+  useEffect(() => startVisit("agent_site", site?.id, { page: "area" }), [site?.id]);
 
   if (loading) {
     return (

@@ -1112,3 +1112,98 @@ end;
 $$;
 revoke all on function public.revoke_listing_report_link(uuid) from public, anon;
 grant execute on function public.revoke_listing_report_link(uuid) to authenticated;
+
+-- ============================================================================
+-- 33. Agent-site analytics: the same visit details as property sites (page_views.page, site_events, site_analytics()).
+-- ============================================================================
+alter table public.page_views add column if not exists page text;
+
+create table if not exists public.site_events (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references public.organizations(id) on delete cascade,
+  site_id uuid not null references public.agent_sites(id) on delete cascade,
+  view_id uuid,
+  visitor_id text,
+  type text not null check (type in ('phone_click', 'email_click', 'form_start', 'section', 'listing_click', 'social_click', 'blog_click')),
+  detail text check (length(detail) <= 60),
+  created_at timestamptz not null default now()
+);
+create index if not exists site_events_site_idx on public.site_events (site_id, created_at desc);
+create index if not exists site_events_view_idx on public.site_events (view_id);
+alter table public.site_events enable row level security;
+revoke all on public.site_events from anon, authenticated;
+grant select on public.site_events to authenticated;
+drop policy if exists site_events_read on public.site_events;
+create policy site_events_read on public.site_events for select to authenticated
+  using (public.can_manage_org(org_id) or exists (select 1 from public.agent_sites s where s.id = site_events.site_id and s.agent_id = auth.uid()));
+
+create or replace function public.site_events_set_org() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  select org_id into new.org_id from public.agent_sites where id = new.site_id;
+  return new;
+end;
+$$;
+drop trigger if exists set_org_id on public.site_events;
+create trigger set_org_id before insert on public.site_events for each row execute function public.site_events_set_org();
+
+-- One agent site's numbers for the last p_days days: page views of the site and its blog posts, visitors, visits (sessions),
+-- time per visit, where they came from, and what they did. SECURITY INVOKER like listing_analytics().
+create or replace function public.site_analytics(p_site_id uuid, p_days integer default 30, p_tz text default 'America/Chicago') returns jsonb
+language plpgsql stable set search_path = public as $$
+declare
+  v_days integer := greatest(1, least(coalesce(p_days, 30), 730));
+  v_since timestamptz := now() - make_interval(days => greatest(1, least(coalesce(p_days, 30), 730)));
+  v_chart integer := least(greatest(1, least(coalesce(p_days, 30), 730)), 90);
+  r jsonb;
+begin
+  with pv as (
+    select p.id, coalesce(p.visitor_id, p.id::text) as vid, p.session_id, p.source, p.referrer_host, p.device, p.country, p.region, p.city,
+           p.duration_sec, p.max_depth, p.created_at, p.target_type, p.target_id, p.page
+    from public.page_views p
+    where p.created_at >= v_since and (
+      (p.target_type = 'agent_site' and p.target_id = p_site_id)
+      or (p.target_type = 'agent_post' and p.target_id in (select id from public.agent_site_posts where agent_site_id = p_site_id)))
+  ), ev as (
+    select e.type, e.detail, pv.session_id as sid from public.site_events e join pv on pv.id = e.view_id where e.site_id = p_site_id and pv.session_id is not null
+  ), days as (
+    select d::date as day from generate_series((now() at time zone p_tz)::date - (v_chart - 1), (now() at time zone p_tz)::date, interval '1 day') d
+  ), visits as (
+    select session_id, sum(coalesce(duration_sec, 0)) as secs, count(*) as pages from pv where session_id is not null group by session_id
+  )
+  select jsonb_build_object(
+    'days', v_days,
+    'views', (select count(*) from pv),
+    'visitors', (select count(distinct vid) from pv),
+    'visits', (select count(distinct coalesce(session_id, id::text)) from pv),
+    'returning', (select count(*) from (select vid from pv group by vid having count(distinct coalesce(session_id, id::text)) > 1) t),
+    'avg_visit_secs', (select round(avg(secs))::int from visits where secs between 3 and 7200),
+    'pages_per_visit', (select round(avg(pages), 1) from visits),
+    'avg_depth', (select round(avg(max_depth))::int from pv where max_depth is not null),
+    'tracked_views', (select count(*) from pv where session_id is not null),
+    'tracked_visits', (select count(*) from visits),
+    'detail_since', (select min(created_at) from pv where session_id is not null),
+    'leads', (select count(*) from public.leads where target_type = 'agent_site' and target_id = p_site_id and created_at >= v_since),
+    'daily', coalesce((select jsonb_agg(jsonb_build_object('day', days.day, 'views', coalesce(x.views, 0), 'visitors', coalesce(x.visitors, 0)) order by days.day)
+      from days left join (select (created_at at time zone p_tz)::date as day, count(*) as views, count(distinct vid) as visitors from pv group by 1) x on x.day = days.day), '[]'::jsonb),
+    'pages', coalesce((select jsonb_agg(t order by t.views desc) from (select case when target_type = 'agent_post' then 'post' else coalesce(page, 'home') end as page, count(*) as views from pv group by 1 order by 2 desc) t), '[]'::jsonb),
+    'posts', coalesce((select jsonb_agg(t order by t.views desc) from (select sp.title, count(*) as views from pv join public.agent_site_posts sp on sp.id = pv.target_id where pv.target_type = 'agent_post' group by sp.id, sp.title order by 2 desc limit 8) t), '[]'::jsonb),
+    'sources', coalesce((select jsonb_agg(t order by t.visits desc) from (select source, count(distinct coalesce(session_id, id::text)) as visits from pv where source is not null group by 1 order by 2 desc limit 12) t), '[]'::jsonb),
+    'referrers', coalesce((select jsonb_agg(t order by t.views desc) from (select referrer_host, count(*) as views from pv where source = 'referral' and referrer_host is not null group by 1 order by 2 desc limit 8) t), '[]'::jsonb),
+    'devices', coalesce((select jsonb_agg(t order by t.visits desc) from (select coalesce(device, 'unknown') as device, count(distinct coalesce(session_id, id::text)) as visits from pv group by 1) t), '[]'::jsonb),
+    'locations', coalesce((select jsonb_agg(t order by t.visits desc) from (select city, region, country, count(distinct coalesce(session_id, id::text)) as visits from pv where city is not null group by 1, 2, 3 order by 4 desc limit 10) t), '[]'::jsonb),
+    'engagement', jsonb_build_object(
+      'phone_clicks', (select count(distinct sid) from ev where type = 'phone_click'),
+      'email_clicks', (select count(distinct sid) from ev where type = 'email_click'),
+      'form_starts', (select count(distinct sid) from ev where type = 'form_start'),
+      'listing_clicks', (select count(distinct sid) from ev where type = 'listing_click'),
+      'blog_clicks', (select count(distinct sid) from ev where type = 'blog_click'),
+      'social_clicks', (select count(distinct sid) from ev where type = 'social_click'),
+      'sections', coalesce((select jsonb_object_agg(detail, n) from (select detail, count(distinct sid) as n from ev where type = 'section' group by 1) s), '{}'::jsonb)
+    )
+  ) into r;
+  return r;
+end;
+$$;
+revoke all on function public.site_analytics(uuid, integer, text) from public, anon;
+grant execute on function public.site_analytics(uuid, integer, text) to authenticated, service_role;

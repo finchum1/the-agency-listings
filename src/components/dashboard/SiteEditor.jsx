@@ -1,11 +1,9 @@
-import { useMemo } from "react";
 import { useAgentSiteEditor } from "../../hooks/useAgentSiteEditor";
-import { useSiteAnalytics } from "../../hooks/useSiteAnalytics";
 import SiteForm from "./SiteForm";
 import TestimonialsManager from "./TestimonialsManager";
 import AreasManager from "./AreasManager";
 import PostsManager from "./PostsManager";
-import PeriodAnalyticsPanel from "./PeriodAnalyticsPanel";
+import SiteAnalytics from "./SiteAnalytics";
 import RedirectsManager from "./RedirectsManager";
 import ImportPosts from "./ImportPosts";
 import CompareTemplatesPanel from "./CompareTemplatesPanel";
@@ -26,7 +24,7 @@ import { useAuth } from "../../hooks/useAuth";
 const SECTIONS = {
   analytics: {
     title: "Analytics",
-    blurb: "How many people are visiting your site and reaching out.",
+    blurb: "Who is visiting your site, where they come from, and what they do there.",
   },
   details: {
     title: "Site Details",
@@ -63,18 +61,6 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
 
   const show = (key) => !section || section === key;
 
-  const postIds = useMemo(() => posts.map((p) => p.id), [posts]);
-  const analytics = useSiteAnalytics({ siteId: site?.id, postIds });
-
-  const periodViewSources = useMemo(
-    () => [
-      { targetType: "agent_site", targetIds: site ? [site.id] : [] },
-      { targetType: "agent_post", targetIds: postIds },
-    ],
-    [site, postIds],
-  );
-  const periodLeadSources = useMemo(() => [{ targetType: "agent_site", targetIds: site ? [site.id] : [] }], [site]);
-
   if (loading) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
   if (error) return <p className="text-sm text-red-600 dark:text-red-400">{error}</p>;
   if (!site) return null;
@@ -83,7 +69,7 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
 
   // The blog page (list, calendar, analytics and the post editor) is a little wider than the other site pages' short forms.
   return (
-    <div className={`${section === "blog" ? "max-w-4xl" : section === "compare" ? "max-w-7xl" : "max-w-3xl"} space-y-8`}>
+    <div className={`${section === "blog" ? "max-w-4xl" : section === "compare" ? "max-w-7xl" : section === "analytics" ? "max-w-5xl" : "max-w-3xl"} space-y-8`}>
       {!hideHeader && (
         <div>
           <h1 className="text-2xl font-display font-semibold">{heading || meta?.title || "Website"}</h1>
@@ -95,14 +81,7 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
         </div>
       )}
 
-      {show("analytics") && (
-        <PeriodAnalyticsPanel
-          totals={analytics}
-          viewSources={periodViewSources}
-          leadSources={periodLeadSources}
-          viewsLabel="Site Views"
-        />
-      )}
+      {show("analytics") && <SiteAnalytics site={site} />}
 
       {show("details") && <SiteForm site={site} onSaved={refresh} />}
       {section === "compare" && <CompareTemplatesPanel site={site} onChanged={refresh} />}
