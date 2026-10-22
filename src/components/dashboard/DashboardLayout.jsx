@@ -52,6 +52,11 @@ const ICON_PATHS = {
       <path d="M8 3v4M16 3v4M3.5 10h17" />
     </>
   ),
+  vendors: (
+    <>
+      <path d="M14.5 6.5a3.5 3.5 0 0 0-4.6 4.4L4 16.8V20h3.2l5.9-5.9a3.5 3.5 0 0 0 4.4-4.6l-2.3 2.3-2-.6-.6-2z" />
+    </>
+  ),
   admin: <path d="M12 3l7.5 3v5.5c0 4.6-3.1 8.2-7.5 9.5-4.4-1.3-7.5-4.9-7.5-9.5V6z" />,
   signout: <path d="M10 4.5H6.5A1.5 1.5 0 0 0 5 6v12a1.5 1.5 0 0 0 1.5 1.5H10M15 8l4 4-4 4M19 12H9.5" />,
 };
@@ -69,6 +74,7 @@ function NavIcon({ name, className = "" }) {
 const NAV_ITEMS = [
   { to: "/dashboard/listings", label: "Listings", icon: "listings", activeWhen: (p) => p === "/dashboard/listings" || p.startsWith("/dashboard/listings/") },
   { to: "/dashboard/upcoming", label: "Upcoming", icon: "upcoming", activeWhen: (p) => p === "/dashboard/upcoming" },
+  { to: "/dashboard/vendors", label: "Vendors", icon: "vendors", activeWhen: (p) => p === "/dashboard/vendors" },
 ];
 
 // Website is a collapsible group, one page per section. profiles.site_access

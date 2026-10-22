@@ -873,3 +873,89 @@ end;
 $$;
 revoke all on function public.revoke_site_preview_link(uuid) from public, anon;
 grant execute on function public.revoke_site_preview_link(uuid) to authenticated;
+
+-- 31. Vendors: the office's preferred vendors and contractors, one list per organization. Every signed-in member of the
+--     organization can read it; only its admins can add, change or delete vendors. An agent can also turn a hand-picked set of
+--     vendors into a private link for a client (vendor_share_links). The link page is served by api/vendor-share.js with the
+--     service role, so a client never needs to sign in.
+create table if not exists public.vendors (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null default public.current_org_id() references public.organizations(id) on delete cascade,
+  category text not null check (length(btrim(category)) between 1 and 60),
+  name text not null check (length(btrim(name)) between 1 and 160),
+  contact_name text not null default '' check (length(contact_name) <= 120),
+  phone text not null default '' check (length(phone) <= 40),
+  email text not null default '' check (length(email) <= 200),
+  website text not null default '' check (length(website) <= 300),
+  notes text not null default '' check (length(notes) <= 1000),
+  created_by uuid default auth.uid() references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists vendors_org_category_idx on public.vendors (org_id, lower(category), lower(name));
+alter table public.vendors enable row level security;
+drop policy if exists vendors_member_read on public.vendors;
+create policy vendors_member_read on public.vendors for select to authenticated using (org_id = public.current_org_id() or public.is_platform_admin());
+drop policy if exists vendors_admin_write on public.vendors;
+create policy vendors_admin_write on public.vendors for all to authenticated using (public.can_manage_org(org_id)) with check (public.can_manage_org(org_id));
+drop trigger if exists vendors_touch on public.vendors;
+create trigger vendors_touch before update on public.vendors for each row execute function public.set_updated_at();
+
+create table if not exists public.vendor_share_links (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references public.organizations(id) on delete cascade,
+  created_by uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  token_hash text not null unique,
+  token_hint text not null,
+  title text not null default '' check (length(title) <= 100),
+  vendor_ids uuid[] not null check (cardinality(vendor_ids) between 1 and 80),
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  revoked_at timestamptz,
+  last_viewed_at timestamptz,
+  view_count integer not null default 0
+);
+create index if not exists vendor_share_links_owner_idx on public.vendor_share_links (created_by, created_at desc);
+alter table public.vendor_share_links enable row level security;
+revoke all on public.vendor_share_links from anon, authenticated;
+grant select (id, org_id, created_by, token_hint, title, vendor_ids, created_at, expires_at, revoked_at, last_viewed_at, view_count) on public.vendor_share_links to authenticated;
+drop policy if exists vendor_share_links_owner_read on public.vendor_share_links;
+create policy vendor_share_links_owner_read on public.vendor_share_links for select to authenticated using (created_by = auth.uid());
+
+create or replace function public.create_vendor_share_link(p_vendor_ids uuid[], p_title text default '', p_days integer default 90) returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  v_org uuid := public.current_org_id();
+  v_token text;
+  v_ids uuid[];
+begin
+  if auth.uid() is null or v_org is null then
+    raise exception 'Sign in to share vendors.';
+  end if;
+  select coalesce(array_agg(distinct x), '{}') into v_ids from unnest(p_vendor_ids) x;
+  if cardinality(v_ids) = 0 then
+    raise exception 'Pick at least one vendor.';
+  end if;
+  if (select count(*) from public.vendors where id = any(v_ids) and org_id = v_org) <> cardinality(v_ids) then
+    raise exception 'Some of those vendors aren''t in your office''s list.';
+  end if;
+  if (select count(*) from public.vendor_share_links where created_by = auth.uid() and revoked_at is null and expires_at > now()) >= 100 then
+    raise exception 'You have 100 active vendor links. Revoke some first.';
+  end if;
+  v_token := 'vs' || replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
+  insert into public.vendor_share_links (org_id, token_hash, token_hint, title, vendor_ids, expires_at)
+  values (v_org, encode(sha256(convert_to(v_token, 'utf8')), 'hex'), right(v_token, 4), left(btrim(coalesce(p_title, '')), 100), v_ids, now() + make_interval(days => greatest(1, least(coalesce(p_days, 90), 365))));
+  return v_token;
+end;
+$$;
+revoke all on function public.create_vendor_share_link(uuid[], text, integer) from public, anon;
+grant execute on function public.create_vendor_share_link(uuid[], text, integer) to authenticated;
+
+create or replace function public.revoke_vendor_share_link(p_id uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  update public.vendor_share_links set revoked_at = coalesce(revoked_at, now()) where id = p_id and created_by = auth.uid();
+end;
+$$;
+revoke all on function public.revoke_vendor_share_link(uuid) from public, anon;
+grant execute on function public.revoke_vendor_share_link(uuid) to authenticated;

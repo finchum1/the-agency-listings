@@ -17,6 +17,8 @@ import EditListingPage from "./components/dashboard/EditListingPage";
 import FlyerPage from "./components/dashboard/FlyerPage";
 import AgentsPage from "./components/dashboard/AgentsPage";
 import UpcomingModule from "./components/dashboard/UpcomingModule";
+import VendorsPage from "./components/dashboard/VendorsPage";
+import VendorSharePage from "./pages/VendorSharePage";
 import MyProfilePage from "./components/dashboard/MyProfilePage";
 import MySitePage from "./components/dashboard/MySitePage";
 import DashboardHome from "./components/dashboard/DashboardHome";
@@ -197,6 +199,8 @@ export default function App() {
       {/* Template comparison share links: no sign-in, the token in the address is the credential. /preview/:token is the
           page the agent opens; the /site routes are the frames inside it (and "Open full size"). */}
       <Route path="/preview/:token" element={<SitePreviewPage />} />
+      {/* A client's private list of recommended vendors: no sign-in, the token in the address is the credential. */}
+      <Route path="/vendors/:token" element={<VendorSharePage />} />
       <Route
         path="/preview/:token/site"
         element={
@@ -368,6 +372,7 @@ export default function App() {
         <Route path="site/compare" element={<MySitePage section="compare" />} />
         <Route path="site/redirects" element={<MySitePage section="redirects" />} />
         <Route path="upcoming" element={<UpcomingModule />} />
+        <Route path="vendors" element={<VendorsPage />} />
         <Route path="settings" element={<PeopleGate />}>
           <Route index element={<SettingsPage />} />
         </Route>
