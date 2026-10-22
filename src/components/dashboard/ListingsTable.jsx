@@ -2,11 +2,9 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useListings } from "../../hooks/useListings";
-import { useListingsAnalytics } from "../../hooks/useListingsAnalytics";
 import { supabase } from "../../lib/supabaseClient";
 import { STATUS_LABELS } from "../../lib/format";
 import { matchesSearch } from "../../lib/searchMatch";
-import AnalyticsStats from "./AnalyticsStats";
 import ListingsDataTable from "./ListingsDataTable";
 
 export default function ListingsTable() {
@@ -21,9 +19,6 @@ export default function ListingsTable() {
   });
   const [filter, setFilter] = useState("all");
   const [query, setQuery] = useState("");
-
-  const listingIds = useMemo(() => listings.map((l) => l.id), [listings]);
-  const analytics = useListingsAnalytics(listingIds);
 
   const filtered = useMemo(() => {
     return listings.filter(
@@ -59,8 +54,6 @@ export default function ListingsTable() {
           + New Listing
         </Link>
       </div>
-
-      <AnalyticsStats stats={analytics} />
 
       <div className="mb-4 flex items-center gap-3">
         <input

@@ -36,25 +36,44 @@ function BarList({ rows, empty }) {
   );
 }
 
+// Views per day, with the count printed above every bar. A long period (more than a month of days) is added up by week so the
+// bars stay wide enough to carry their numbers; on a narrow screen the chart scrolls sideways instead of squeezing them.
+const BAR_MIN_PX = 22;
+function weekly(daily) {
+  const out = [];
+  for (let end = daily.length; end > 0; end -= 7) {
+    const chunk = daily.slice(Math.max(0, end - 7), end);
+    out.unshift({ day: chunk[0].day, views: chunk.reduce((n, d) => n + d.views, 0), visitors: chunk.reduce((n, d) => n + d.visitors, 0) });
+  }
+  return out;
+}
+const isWeekly = (daily) => daily.length > 31;
+
 function Trend({ daily }) {
-  const max = Math.max(1, ...daily.map((d) => d.views));
+  const byWeek = isWeekly(daily);
+  const bars = byWeek ? weekly(daily) : daily;
+  const max = Math.max(1, ...bars.map((d) => d.views));
   const fmt = (d) => new Date(`${d}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-  const every = Math.max(1, Math.ceil(daily.length / 6));
+  const every = bars.length > 16 ? Math.ceil(bars.length / 10) : 1;
+  const what = byWeek ? "week of " : "";
   return (
-    <div>
-      <div className="flex items-end gap-[2px] h-36" role="img" aria-label="Views per day">
-        {daily.map((d) => (
-          <div key={d.day} className="flex-1 h-full flex items-end min-w-0" title={`${fmt(d.day)}: ${d.views} view${d.views === 1 ? "" : "s"}, ${d.visitors} visitor${d.visitors === 1 ? "" : "s"}`}>
-            <div className="w-full rounded-t-[2px] bg-[#1c1a17]/80 dark:bg-[#f2454b]" style={{ height: `${d.views === 0 ? 2 : Math.max(5, (d.views / max) * 100)}%`, opacity: d.views === 0 ? 0.2 : 1 }} />
-          </div>
-        ))}
-      </div>
-      <div className={`mt-1.5 flex text-[10px] ${muted}`}>
-        {daily.map((d, i) => (
-          <span key={d.day} className="flex-1 min-w-0 text-center whitespace-nowrap overflow-visible">
-            {i % every === 0 ? fmt(d.day) : ""}
-          </span>
-        ))}
+    <div className="overflow-x-auto pb-1">
+      <div style={{ minWidth: bars.length * BAR_MIN_PX }}>
+        <div className="flex items-end gap-[3px] h-40" role="img" aria-label={byWeek ? "Views per week" : "Views per day"}>
+          {bars.map((d) => (
+            <div key={d.day} className="flex-1 min-w-0 h-full flex flex-col items-center justify-end" title={`${what}${fmt(d.day)}: ${d.views} view${d.views === 1 ? "" : "s"}, ${d.visitors} visitor${d.visitors === 1 ? "" : "s"}`}>
+              <span className="mb-0.5 text-[10px] leading-none font-medium tabular-nums text-[#1c1a17]/70 dark:text-[#faf9f7]/70">{d.views.toLocaleString()}</span>
+              <div className="w-full rounded-t-[2px] bg-[#1c1a17]/80 dark:bg-[#f2454b]" style={{ height: `${d.views === 0 ? 2 : Math.max(5, (d.views / max) * 82)}%`, opacity: d.views === 0 ? 0.2 : 1 }} />
+            </div>
+          ))}
+        </div>
+        <div className={`mt-1.5 flex gap-[3px] text-[10px] ${muted}`}>
+          {bars.map((d, i) => (
+            <span key={d.day} className="flex-1 min-w-0 text-center whitespace-nowrap overflow-visible">
+              {i % every === 0 ? fmt(d.day) : ""}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -94,7 +113,7 @@ export default function ListingAnalyticsView({ data, loading }) {
 
       <div className={card}>
         <div className="flex items-baseline justify-between mb-3">
-          <h3 className="font-display text-base font-semibold">Views by day</h3>
+          <h3 className="font-display text-base font-semibold">{isWeekly(data.daily) ? "Views by week" : "Views by day"}</h3>
           <span className={`text-xs ${muted}`}>{rangeDays > 90 ? "Last 90 days" : `Last ${rangeDays} days`}</span>
         </div>
         <Trend daily={data.daily} />
