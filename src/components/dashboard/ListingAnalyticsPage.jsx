@@ -137,6 +137,63 @@ function SellerReports({ listing }) {
   );
 }
 
+// A Monday-morning email to the listing's agent with last week's visits (api/weekly-reports.js). Off until turned on, per listing.
+function WeeklyEmail({ listing, onChanged }) {
+  const [on, setOn] = useState(Boolean(listing.weekly_report));
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
+  const live = ["coming_soon", "for_sale", "pending"].includes(listing.status);
+
+  const toggle = async () => {
+    const next = !on;
+    setOn(next);
+    setNote("");
+    const { error } = await supabase.from("listings").update({ weekly_report: next }).eq("id", listing.id);
+    if (error) {
+      setOn(!next);
+      setNote(error.message);
+    } else onChanged?.();
+  };
+  const sendNow = async () => {
+    setBusy(true);
+    setNote("");
+    try {
+      const { data } = await supabase.auth.getSession();
+      const res = await fetch("/api/weekly-reports", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token}` }, body: JSON.stringify({ listingId: listing.id }) });
+      const out = await res.json().catch(() => ({}));
+      setNote(res.ok ? "Sent. Check your email." : out.error || "That didn't send.");
+    } catch {
+      setNote("That didn't send.");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <div className={card}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="font-display text-base font-semibold">Weekly email</h3>
+          <p className={`text-xs mt-1 ${muted}`}>Every Monday morning, an email to you with last week's views, visitors, where they came from and what they did.</p>
+        </div>
+        <button type="button" role="switch" aria-checked={on} aria-label="Weekly email" onClick={toggle} className={`relative shrink-0 h-7 w-12 rounded-full transition-colors ${on ? "bg-[#ed2127] dark:bg-[#f2454b]" : "bg-black/20 dark:bg-white/25"}`}>
+          <span className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${on ? "translate-x-5" : ""}`} />
+        </button>
+      </div>
+      <p className={`mt-3 text-xs ${muted}`}>
+        {on ? "On." : "Off."}{" "}
+        {on && !live ? "Emails only go out while the listing is Coming Soon, For Sale or Pending. " : ""}
+        {listing.weekly_report_sent_at ? `Last one sent ${new Date(listing.weekly_report_sent_at).toLocaleDateString()}.` : ""}
+      </p>
+      <div className="mt-3 flex items-center gap-3 flex-wrap">
+        <button type="button" onClick={sendNow} disabled={busy} className={`${quietBtn} disabled:opacity-50`}>
+          {busy ? "Sending…" : "Email me this week's report now"}
+        </button>
+        {note && <span className={`text-xs ${muted}`}>{note}</span>}
+      </div>
+    </div>
+  );
+}
+
 // Dashboard > Listings > (a listing) > Analytics: everything the property site can tell us about its visitors.
 export default function ListingAnalyticsPage() {
   const { id } = useParams();
@@ -188,7 +245,10 @@ export default function ListingAnalyticsPage() {
 
       <div className="mt-5 grid md:grid-cols-2 gap-5 items-start">
         <TrackedLinks base={listingUrl(listing)} channels={SHARE_CHANNELS} />
-        <SellerReports listing={listing} />
+        <div className="space-y-5">
+          <SellerReports listing={listing} />
+          <WeeklyEmail key={listing.id} listing={listing} />
+        </div>
       </div>
       <p className={`mt-4 text-xs ${muted}`}>Visits while you're signed in to the dashboard aren't counted, so checking your own page never inflates these numbers. Known search and link-preview bots are left out too.</p>
     </div>

@@ -146,6 +146,12 @@
       "destination": "/index.html"
     }
   ],
+  "crons": [
+    {
+      "path": "/api/weekly-reports",
+      "schedule": "0 14 * * 1"
+    }
+  ],
   "functions": {
     "api/admin/agents.js": {
       "maxDuration": 30

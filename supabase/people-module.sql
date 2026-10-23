@@ -1361,3 +1361,10 @@ create policy people_outreach_owner_all on public.people_outreach
     and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled)
     and exists (select 1 from public.people pe where pe.id = person_id and pe.owner_id = auth.uid())
   );
+
+-- ============================================================================
+-- 38. Weekly listing report email: an agent can turn on a Monday-morning email, per listing, with last week's visits (see
+--     api/weekly-reports.js, run by a Vercel cron). weekly_report_sent_at keeps it to one email a week however often it runs.
+-- ============================================================================
+alter table public.listings add column if not exists weekly_report boolean not null default false;
+alter table public.listings add column if not exists weekly_report_sent_at timestamptz;
