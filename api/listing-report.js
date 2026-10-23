@@ -32,7 +32,7 @@ export default async function handler(req, res) {
   const days = DAYS.includes(asked) ? asked : 30;
   const { data: listing } = await admin
     .from("listings")
-    .select("id, slug, custom_domain, address_line1, city, state, zip, price, status, created_at, agent:profiles(full_name, title, phone, email, photo_url), org:organizations(id, slug, name, brand, address_line1, city, state, zip), listing_photos(url, is_hero, sort_order)")
+    .select("id, slug, custom_domain, address_line1, city, state, zip, price, status, created_at, agent:profiles(full_name, title, license, phone, email, photo_url), org:organizations(id, slug, name, brand, address_line1, city, state, zip, disclaimer), listing_photos(url, is_hero, sort_order)")
     .eq("id", link.listing_id)
     .maybeSingle();
   if (!listing) return res.status(404).json({ error: "This link isn't valid anymore." });

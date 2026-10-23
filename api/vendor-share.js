@@ -29,7 +29,7 @@ export default async function handler(req, res) {
   const [{ data: vendors }, { data: agent }, { data: org }] = await Promise.all([
     admin.from("vendors").select("id, category, name, contact_name, phone, email, website, notes").in("id", link.vendor_ids).eq("org_id", link.org_id),
     admin.from("profiles").select("full_name, title, license, phone, email, photo_url").eq("id", link.created_by).maybeSingle(),
-    admin.from("organizations").select("id, slug, name, brand, address_line1, city, state, zip").eq("id", link.org_id).maybeSingle(),
+    admin.from("organizations").select("id, slug, name, brand, address_line1, city, state, zip, disclaimer").eq("id", link.org_id).maybeSingle(),
   ]);
   await admin.from("vendor_share_links").update({ last_viewed_at: new Date().toISOString(), view_count: (link.view_count || 0) + 1 }).eq("id", link.id);
   return res.status(200).json({ title: link.title, expires_at: link.expires_at, agent: agent || null, org: org || null, vendors: vendors || [] });
