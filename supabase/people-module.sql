@@ -1304,3 +1304,7 @@ grant execute on function public.brokerage_analytics(uuid, integer, text) to aut
 -- 35. Flyer templates: which layout a listing's flyer uses (src/components/dashboard/flyer/templates.jsx).
 -- ============================================================================
 alter table public.listings add column if not exists flyer_template text not null default 'classic' check (flyer_template in ('classic', 'editorial'));
+
+-- 36. Flyer template: add 'luxury' to the allowed keys.
+alter table public.listings drop constraint if exists listings_flyer_template_check;
+alter table public.listings add constraint listings_flyer_template_check check (flyer_template in ('classic', 'editorial', 'luxury'));
