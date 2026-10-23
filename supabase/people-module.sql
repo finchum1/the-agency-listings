@@ -1308,3 +1308,56 @@ alter table public.listings add column if not exists flyer_template text not nul
 -- 36. Flyer template: add 'luxury' to the allowed keys.
 alter table public.listings drop constraint if exists listings_flyer_template_check;
 alter table public.listings add constraint listings_flyer_template_check check (flyer_template in ('classic', 'editorial', 'luxury'));
+-- ============================================================================
+-- 37. People bot: a 'people' scope for the Bot API (leads, pipeline, transactions, notes, to-dos) and people_outreach, the
+--     messages a bot drafts for an agent to approve. Nothing is ever sent by the bot: the agent opens a draft from the person's
+--     card in the dashboard, sends it from their own email or messages app, and marks it sent.
+-- ============================================================================
+alter table public.api_tokens drop constraint if exists api_tokens_scopes_check;
+alter table public.api_tokens add constraint api_tokens_scopes_check check (scopes <@ array['blog', 'agents', 'sites', 'listings', 'people']::text[] and cardinality(scopes) > 0);
+
+create or replace function public.create_api_token(p_name text, p_scopes text[]) returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  v_token text;
+begin
+  if auth.uid() is null or not exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin') then
+    raise exception 'Only an admin can create an API token.';
+  end if;
+  if p_scopes is null or cardinality(p_scopes) = 0 or not (p_scopes <@ array['blog', 'agents', 'sites', 'listings', 'people']::text[]) then
+    raise exception 'Choose at least one valid scope.';
+  end if;
+  if (select count(*) from public.api_tokens where owner_id = auth.uid() and revoked_at is null) >= 20 then
+    raise exception 'You already have 20 active API tokens. Revoke one first.';
+  end if;
+  v_token := 'lp_' || replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
+  insert into public.api_tokens (owner_id, name, scopes, token_hash, token_hint)
+  values (auth.uid(), btrim(p_name), p_scopes, encode(sha256(convert_to(v_token, 'utf8')), 'hex'), right(v_token, 4));
+  return v_token;
+end;
+$$;
+
+create table if not exists public.people_outreach (
+  id uuid primary key default gen_random_uuid(),
+  person_id uuid not null references public.people(id) on delete cascade,
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  channel text not null check (channel in ('email', 'text', 'call')),
+  subject text not null default '' check (length(subject) <= 200),
+  body text not null check (length(btrim(body)) between 1 and 5000),
+  status text not null default 'draft' check (status in ('draft', 'sent', 'discarded')),
+  drafted_by text not null default '',
+  created_at timestamptz not null default now(),
+  resolved_at timestamptz
+);
+create index if not exists people_outreach_owner_idx on public.people_outreach (owner_id, status, created_at desc);
+create index if not exists people_outreach_person_idx on public.people_outreach (person_id, created_at desc);
+alter table public.people_outreach enable row level security;
+drop policy if exists people_outreach_owner_all on public.people_outreach;
+create policy people_outreach_owner_all on public.people_outreach
+  for all
+  using (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled))
+  with check (
+    owner_id = auth.uid()
+    and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled)
+    and exists (select 1 from public.people pe where pe.id = person_id and pe.owner_id = auth.uid())
+  );

@@ -6,6 +6,7 @@ const SCOPES = [
   { key: "agents", label: "Agents", hint: "Add new agents (a profile only, unless told to send an invite)" },
   { key: "sites", label: "Agent websites", hint: "Create and change agent websites, areas and testimonials" },
   { key: "listings", label: "Listings", hint: "Create and change property listings, from a link, an MLS number or details" },
+  { key: "people", label: "People (your leads, pipeline and deals)", hint: "Add leads, notes, pipeline moves, transactions and to-dos in your own People. Messages are drafts you approve; nothing is sent or deleted" },
 ];
 const inputClass =
   "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";

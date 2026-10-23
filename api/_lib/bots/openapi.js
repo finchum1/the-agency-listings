@@ -51,6 +51,29 @@ const postFields = {
   image_url: str("A picture address to use as is"), image_source_url: str("A public picture address to download and store"), slug: str(""),
 };
 
+
+const stageFields = {
+  stage_group: str("Which board: lead, pipeline or transaction. Moving to another board needs `stage` too.", { enum: ["lead", "pipeline", "transaction"] }),
+  stage: str("A column on that board. See GET /people/stages: agents can rename their columns."),
+};
+const personFields = {
+  name: str(""), email: str("Used to refuse duplicates"), phone: str(""),
+  source: str("e.g. Open house, Referral, Past client, Sphere of influence (GET /people/stages lists them)"),
+  ...stageFields,
+  side: str("buyer, seller or both. A transaction must be buyer or seller.", { enum: ["buyer", "seller", "both"] }),
+  next_follow_up: str("YYYY-MM-DD"),
+  property_address: str("The home in a transaction"), price: num("Contract price"), commission: num("Commission in dollars"),
+  other_agent: str(""), title_company: str(""), lender: str(""),
+  contract_date: str("YYYY-MM-DD"), inspection_date: str("YYYY-MM-DD"), appraisal_date: str("YYYY-MM-DD"), financing_deadline: str("YYYY-MM-DD"), closing_date: str("YYYY-MM-DD"),
+  note: str("Adds a note to their card"),
+};
+const taskFields = {
+  title: str(""), due_date: str("YYYY-MM-DD"), recurrence: str("", { enum: ["none", "daily", "weekdays", "weekly", "biweekly", "monthly", "quarterly", "yearly"] }),
+  list: str("A label such as Clients or Marketing"), start_time: str("HH:MM, to put it on the schedule (needs due_date)"), duration_min: { type: "integer" },
+  checklist: { type: "array", items: { type: "string" }, description: "Steps inside the to-do" },
+  done: { type: "boolean", description: "true completes it (a repeating to-do moves to its next date)" },
+};
+
 export function buildSpec(origin) {
   return {
     openapi: "3.0.3",
@@ -58,7 +81,7 @@ export function buildSpec(origin) {
       title: "Latchpoint Real Estate bot API",
       version: "1.0.0",
       description:
-        "Create and edit blog posts, agents, agent websites and property listings. Authenticate with a personal token (My Profile > Bot API access) sent as `Authorization: Bearer <token>`. Each token has scopes: `blog`, `agents`, `sites`, `listings`. Everything it creates starts as a DRAFT unless you say otherwise. There are no delete endpoints.",
+        "Create and edit blog posts, agents, agent websites and property listings, and (scope `people`) run the token owner's own People module: leads, pipeline, transactions, notes, drafted messages and to-dos. People data is private to the person who made the token. Messages a bot writes are DRAFTS the agent approves in the dashboard; nothing is sent. Archive a person instead of deleting. Authenticate with a personal token (My Profile > Bot API access) sent as `Authorization: Bearer <token>`. Each token has scopes: `blog`, `agents`, `sites`, `listings`, `people`. Everything it creates starts as a DRAFT unless you say otherwise. There are no delete endpoints.",
     },
     servers: [{ url: `${origin}/v1` }],
     components: { securitySchemes: { bearer: { type: "http", scheme: "bearer", description: "Token from My Profile > Bot API access" } } },
@@ -107,6 +130,47 @@ export function buildSpec(origin) {
         get: op("One listing in full", null, { parameters: [idParam("id", "Listing id")] }),
         patch: op("Change a listing (send only what changes; photos and open houses are added)", "listings", { parameters: [idParam("id", "Listing id")], requestBody: body(obj(listingFields)) }),
       },
+      "/people/overview": { get: op("Counts per board and stage, follow-ups due, closings coming up, drafts waiting", "people") },
+      "/people/stages": { get: op("The columns on each board (the agent's own names), sources, archive reasons", "people") },
+      "/people": {
+        get: op("List people", "people", { parameters: [{ name: "group", in: "query", schema: { type: "string", enum: ["lead", "pipeline", "transaction"] } }, { name: "stage", in: "query", schema: { type: "string" } }, { name: "q", in: "query", schema: { type: "string" }, description: "Name, email, phone or address" }, { name: "follow_up", in: "query", schema: { type: "string", enum: ["overdue", "today", "week"] } }, { name: "archived", in: "query", schema: { type: "string", enum: ["false", "true", "all"] } }, { name: "side", in: "query", schema: { type: "string" } }, { name: "source", in: "query", schema: { type: "string" } }, { name: "order", in: "query", schema: { type: "string", enum: ["updated", "follow_up"] } }, { name: "limit", in: "query", schema: { type: "integer" } }, { name: "offset", in: "query", schema: { type: "integer" } }] }),
+        post: op("Add a lead, pipeline contact or transaction", "people", {
+          description: "Lands on the Leads board in the first column unless you say otherwise. Refuses (409) if someone with that email is already in People, unless `allow_duplicate` is true.",
+          requestBody: body(obj({ ...personFields, allow_duplicate: { type: "boolean" } }, ["name"]), { name: "Jane Smith", email: "jane@example.com", phone: "405-555-0142", source: "Open house", side: "buyer", next_follow_up: "2026-10-28", note: "Met at 88 Lakeview open house. Pre-approved to 450k." }),
+        }),
+      },
+      "/people/{id}": {
+        get: op("One person with notes, drafts and (for a transaction) checklist progress", "people", { parameters: [idParam("id", "Person id")] }),
+        patch: op("Change a person: details, follow-up, stage, move between boards, archive", "people", {
+          description: "Send only what changes. To move boards send `stage_group` and `stage`. A transaction needs side buyer or seller. Archive with `archived: true` and an `archived_reason`; `archived: false` brings them back. There is no delete.",
+          parameters: [idParam("id", "Person id")],
+          requestBody: body(obj({ ...personFields, archived: { type: "boolean" }, archived_reason: str("Deal fell through, Went with another agent, Not interested, Not responding, Timing / no longer moving, Other") })),
+        }),
+      },
+      "/people/{id}/notes": {
+        get: op("A person's notes, newest first", "people", { parameters: [idParam("id", "Person id")] }),
+        post: op("Add a note (log a call, a conversation, what they want)", "people", { parameters: [idParam("id", "Person id")], requestBody: body(obj({ body: str("The note") }, ["body"]), { body: "Called. Wants to see 3 homes in Edmond this Saturday." }) }),
+      },
+      "/people/{id}/outreach": {
+        post: op("Draft an email, text or call talking points for the agent to approve", "people", {
+          description: "Nothing is sent. The draft shows on the person's card in the dashboard (and on the People overview) where the agent opens it in their own email or messages app, sends it, and marks it sent. Needs an email on file for email and a phone number for text or call. Max 10 waiting per person.",
+          parameters: [idParam("id", "Person id")],
+          requestBody: body(obj({ channel: str("", { enum: ["email", "text", "call"] }), subject: str("Email only"), body: str("The message, or for a call the talking points") }, ["channel", "body"]), { channel: "email", subject: "Homes for Saturday", body: "Hi Jane, I lined up three homes for Saturday morning..." }),
+        }),
+      },
+      "/outreach": { get: op("Drafts and their status", "people", { parameters: [{ name: "status", in: "query", schema: { type: "string", enum: ["draft", "sent", "discarded"] } }, { name: "person_id", in: "query", schema: { type: "string" } }, { name: "limit", in: "query", schema: { type: "integer" } }] }) },
+      "/outreach/{id}": { patch: op("Edit a waiting draft or discard it. A bot cannot mark one sent.", "people", { parameters: [idParam("id", "Draft id")], requestBody: body(obj({ subject: str(""), body: str(""), status: str("Only discarded", { enum: ["discarded"] }) })) }) },
+      "/people/{id}/checklist": { get: op("A transaction's task and document checklists with due dates and progress", "people", { parameters: [idParam("id", "Person id")] }) },
+      "/people/{id}/checklist/apply": { post: op("Fill an empty checklist from the agent's template for the deal's side", "people", { description: "The deal needs a side (buyer or seller). Refuses (409) if it already has that checklist.", parameters: [idParam("id", "Person id")], requestBody: body(obj({ kind: str("tasks, documents or both (default)", { enum: ["tasks", "documents", "both"] }) })) }) },
+      "/people/{id}/checklist/tasks": { post: op("Add a checklist task to a transaction", "people", { parameters: [idParam("id", "Person id")], requestBody: body(obj({ text: str(""), section: str(""), anchor: str("Date it counts from", { enum: ["contract_date", "inspection_date", "closing_date"] }), offset_days: { type: "integer", description: "Days after (positive) or before (negative) the anchor" }, due_override: str("YYYY-MM-DD, pins it to a date") }, ["text"])) }) },
+      "/checklist/tasks/{id}": { patch: op("Tick off or change a checklist task", "people", { parameters: [idParam("id", "Task id")], requestBody: body(obj({ done: { type: "boolean" }, text: str(""), section: str(""), anchor: str("", { enum: ["contract_date", "inspection_date", "closing_date"] }), offset_days: { type: "integer" }, due_override: str("YYYY-MM-DD, or null to clear") })) }) },
+      "/people/{id}/checklist/documents": { post: op("Add a document to collect on a transaction", "people", { parameters: [idParam("id", "Person id")], requestBody: body(obj({ text: str(""), section: str("") }, ["text"])) }) },
+      "/checklist/documents/{id}": { patch: op("Mark a document collected or change it", "people", { parameters: [idParam("id", "Document id")], requestBody: body(obj({ done: { type: "boolean" }, text: str(""), section: str("") })) }) },
+      "/tasks": {
+        get: op("The agent's own to-do list", "people", { parameters: [{ name: "done", in: "query", schema: { type: "string", enum: ["false", "true", "all"] } }, { name: "due", in: "query", schema: { type: "string", enum: ["overdue", "today", "week"] } }, { name: "limit", in: "query", schema: { type: "integer" } }] }),
+        post: op("Add a to-do", "people", { requestBody: body(obj(taskFields, ["title"]), { title: "Call Jane about Saturday showings", due_date: "2026-10-24", list: "Clients" }) }),
+      },
+      "/tasks/{id}": { patch: op("Change or complete a to-do", "people", { parameters: [idParam("id", "Task id")], requestBody: body(obj(taskFields)) }) },
       "/listings/{id}/photos": { post: op("Add photos from picture addresses", "listings", { parameters: [idParam("id", "Listing id")], requestBody: body(obj({ photos: listingFields.photos, set_hero_first: { type: "boolean", description: "Make the first photo in this call the hero" } }, ["photos"])) }) },
     },
   };

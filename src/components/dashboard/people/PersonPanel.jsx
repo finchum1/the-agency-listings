@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS, ARCHIVE_REASONS, SOURCES } from "../../../lib/peopleStages";
 import ContactButtons from "./ContactButtons";
+import OutreachDrafts from "./OutreachDrafts";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { PEEK_WIDTHS } from "../../../hooks/usePeekWidth";
 import TransactionModules from "./TransactionModules";
@@ -520,6 +521,7 @@ export default function PersonPanel({
       <div className={`@container flex-1 min-h-0 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] overscroll-contain ${sheet && snap === "peek" ? "overflow-hidden" : "overflow-y-auto"}`} onFocusCapture={() => sheet && snap === "peek" && setSnap("full")}>
       <div className={`grid gap-y-6 ${isTransaction ? "@3xl:grid-cols-2 @3xl:gap-x-8" : ""}`}>
         <div className="min-w-0 space-y-6">
+        <OutreachDrafts person={person} onLogged={loadNotes} />
         <div className="space-y-3">
           <div>
             <label className={labelClass}>Name</label>

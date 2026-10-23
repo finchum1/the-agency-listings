@@ -1,6 +1,6 @@
 // The bot API, served at /v1/... (vercel.json rewrites /v1/:path* here). Scoped personal tokens (made under My Profile >
 // Bot API access) let automations such as Grok bots add and edit blog posts, add agents, create agent websites and create
-// property listings. Admin-only, draft-first, no deletes, every call logged in api_audit_log. The full description is the
+// property listings, and (scope "people") run the People module: leads, pipeline, transactions, notes, drafted messages and to-dos. Admin-only, draft-first, no deletes, every call logged in api_audit_log. The full description is the
 // OpenAPI document at /v1/openapi.json (api/_lib/bots/openapi.js).
 import { isAppHost } from "../src/lib/appHosts.js";
 import { audit, authenticateBot } from "./_lib/bots/context.js";
@@ -10,6 +10,7 @@ import * as agents from "./_lib/bots/agents.js";
 import * as sites from "./_lib/bots/sites.js";
 import * as posts from "./_lib/bots/posts.js";
 import * as listings from "./_lib/bots/listings.js";
+import * as people from "./_lib/bots/people.js";
 import { importListing } from "./_lib/bots/importListing.js";
 
 const send = (res, status, payload) => {
@@ -39,6 +40,26 @@ const ROUTES = [
   ["POST", "/listings", (ctx, p, body, q, req) => listings.createListing(ctx, body, req)],
   ["PATCH", "/listings/:id", (ctx, p, body, q, req) => listings.updateListing(ctx, p.id, body, req)],
   ["POST", "/listings/:id/photos", (ctx, p, body) => listings.addListingPhotos(ctx, p.id, body)],
+  ["GET", "/people/overview", (ctx) => people.overview(ctx)],
+  ["GET", "/people/stages", (ctx) => people.stages(ctx)],
+  ["GET", "/people", (ctx, p, b, q) => people.listPeople(ctx, q)],
+  ["POST", "/people", (ctx, p, body) => people.createPerson(ctx, body)],
+  ["GET", "/people/:id", (ctx, p) => people.getPerson(ctx, p.id)],
+  ["PATCH", "/people/:id", (ctx, p, body) => people.updatePerson(ctx, p.id, body)],
+  ["GET", "/people/:id/notes", (ctx, p, b, q) => people.listNotes(ctx, p.id, q)],
+  ["POST", "/people/:id/notes", (ctx, p, body) => people.addNote(ctx, p.id, body)],
+  ["POST", "/people/:id/outreach", (ctx, p, body) => people.createOutreach(ctx, p.id, body)],
+  ["GET", "/outreach", (ctx, p, b, q) => people.listOutreach(ctx, q)],
+  ["PATCH", "/outreach/:id", (ctx, p, body) => people.updateOutreach(ctx, p.id, body)],
+  ["GET", "/people/:id/checklist", (ctx, p) => people.getChecklist(ctx, p.id)],
+  ["POST", "/people/:id/checklist/apply", (ctx, p, body) => people.applyChecklist(ctx, p.id, body)],
+  ["POST", "/people/:id/checklist/tasks", (ctx, p, body) => people.addChecklistTask(ctx, p.id, body)],
+  ["PATCH", "/checklist/tasks/:id", (ctx, p, body) => people.updateChecklistTask(ctx, p.id, body)],
+  ["POST", "/people/:id/checklist/documents", (ctx, p, body) => people.addChecklistDocument(ctx, p.id, body)],
+  ["PATCH", "/checklist/documents/:id", (ctx, p, body) => people.updateChecklistDocument(ctx, p.id, body)],
+  ["GET", "/tasks", (ctx, p, b, q) => people.listTasks(ctx, q)],
+  ["POST", "/tasks", (ctx, p, body) => people.createTask(ctx, body)],
+  ["PATCH", "/tasks/:id", (ctx, p, body) => people.updateTask(ctx, p.id, body)],
 ];
 
 function match(method, path) {
@@ -109,11 +130,16 @@ export default async function handler(req, res) {
 
 const isCreate = (path, result) =>
   Boolean(result) &&
-  ((/^\/(agents|sites|listings)$/.test(path) && (result.agent_id || result.site || result.listing)) || (/^\/sites\/[^/]+\/posts$/.test(path) && result.post) || (path === "/listings/import" && result.created));
+  ((/^\/(agents|sites|listings)$/.test(path) && (result.agent_id || result.site || result.listing)) || (/^\/sites\/[^/]+\/posts$/.test(path) && result.post) || (path === "/listings/import" && result.created) ||
+  (path === "/people" && result.person) ||
+  (/^\/people\/[^/]+\/notes$/.test(path) && result.note) ||
+  (/^\/people\/[^/]+\/outreach$/.test(path) && result.outreach) ||
+  (path === "/tasks" && result.task) ||
+  (/^\/people\/[^/]+\/checklist\/(tasks|documents)$/.test(path) && (result.task || result.document)));
 
 function summarize(method, result) {
   if (method === "GET") return null;
-  const id = result?.agent_id || result?.site?.id || result?.post?.id || result?.listing?.id;
+  const id = result?.agent_id || result?.site?.id || result?.post?.id || result?.listing?.id || result?.person?.id || result?.note?.id || result?.outreach?.id || result?.task?.id || result?.document?.id;
   return id ? `id ${id}` : null;
 }
 

@@ -88,8 +88,17 @@ export default function PeopleOverview() {
   const { people, loading, error, refresh } = usePeople();
   const { stages, closedStage } = usePeopleStages();
   const [selectedId, setSelectedId] = useState(null);
+  const [drafts, setDrafts] = useState([]);
   const [openTasks, setOpenTasks] = useState([]);
   const [followExpanded, setFollowExpanded] = useState({});
+
+  const loadDrafts = useCallback(async () => {
+    const { data } = await supabase.from("people_outreach").select("id, person_id, channel, subject, body, created_at").eq("status", "draft").order("created_at", { ascending: true }).limit(50);
+    setDrafts(data || []);
+  }, []);
+  useEffect(() => {
+    loadDrafts();
+  }, [loadDrafts]);
 
   const loadTasks = useCallback(async () => {
     const { data } = await supabase.from("transaction_tasks").select("*").eq("done", false);
@@ -180,6 +189,21 @@ export default function PeopleOverview() {
         <p className="text-sm mt-1 text-[#1c1a17]/60 dark:text-[#faf9f7]/60">Where your people, pipeline and deals stand right now.</p>
       </div>
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+      {drafts.length > 0 && (
+        <section className={`${card} space-y-3 border-[#ed2127]/30 dark:border-[#f2454b]/40`}>
+          <h2 className="font-display text-lg font-semibold">Drafts waiting for you ({drafts.length})</h2>
+          <p className={`text-xs ${muted}`}>Written by your bot. Nothing has been sent. Open a person to send, edit or discard.</p>
+          <ul className="space-y-1.5">
+            {drafts.slice(0, 6).map((d) => {
+              const person = people.find((p) => p.id === d.person_id);
+              if (!person) return null;
+              return personRow(person, `${d.channel === "email" ? "Email" : d.channel === "text" ? "Text" : "Call"}${d.subject ? `: ${d.subject}` : `: ${d.body.slice(0, 70)}`}`);
+            })}
+          </ul>
+          {drafts.length > 6 && <p className={`text-xs ${muted}`}>{drafts.length - 6} more on their cards.</p>}
+        </section>
+      )}
 
       <div className="grid gap-4 md:grid-cols-3">
         {["lead", "pipeline", "transaction"].map((g) => (
@@ -343,6 +367,7 @@ export default function PeopleOverview() {
           onClose={() => {
             setSelectedId(null);
             loadTasks();
+            loadDrafts();
           }}
           onChanged={refresh}
         />
