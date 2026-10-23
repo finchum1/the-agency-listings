@@ -270,6 +270,7 @@ export default function PersonPanel({
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const sheet = !isDesktop;
   const [entered, setEntered] = useState(false);
+  const [draftCount, setDraftCount] = useState(0);
   const [snap, setSnap] = useState("peek"); // "peek" (name + call/text/email) | "full" (phone)
   const [peekPx, setPeekPx] = useState(190); // how much of the sheet the peek shows: measured from its own content
   const [dragTy, setDragTy] = useState(null); // px the sheet is being dragged to, or null
@@ -333,7 +334,7 @@ export default function PersonPanel({
   // The peek is exactly as tall as the handle, the name and the contact buttons, whatever the phone's size.
   useLayoutEffect(() => {
     if (sheet && snap === "peek" && grabRef.current) setPeekPx(grabRef.current.offsetHeight);
-  }, [sheet, snap, form.name, person.stage, person.archived]);
+  }, [sheet, snap, form.name, person.stage, person.archived, draftCount]);
 
   const vh = typeof window === "undefined" ? 800 : window.innerHeight;
   const sheetH = Math.round(vh * 0.92);
@@ -515,6 +516,18 @@ export default function PersonPanel({
         </div>
       </div>
       <ContactButtons person={{ ...person, phone: form.phone, email: form.email }} />
+      {draftCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setSnap("full")}
+          className="flex w-full items-center justify-between gap-2 rounded-xl bg-[#ed2127]/10 dark:bg-[#f2454b]/15 px-3.5 py-2.5 text-left text-sm font-semibold text-[#b3151a] dark:text-[#ff8a8e]"
+        >
+          <span>
+            {draftCount} draft message{draftCount === 1 ? "" : "s"} waiting for you
+          </span>
+          <span aria-hidden="true">Review ›</span>
+        </button>
+      )}
     </div>
   );
 
@@ -522,7 +535,7 @@ export default function PersonPanel({
       <div className={`@container flex-1 min-h-0 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] overscroll-contain ${sheet && snap === "peek" ? "overflow-hidden" : "overflow-y-auto"}`} onFocusCapture={() => sheet && snap === "peek" && setSnap("full")}>
       <div className={`grid gap-y-6 ${isTransaction ? "@3xl:grid-cols-2 @3xl:gap-x-8" : ""}`}>
         <div className="min-w-0 space-y-6">
-        <OutreachDrafts person={person} onLogged={loadNotes} />
+        <OutreachDrafts person={person} onLogged={loadNotes} onCount={setDraftCount} />
         <div className="space-y-3">
           <div>
             <label className={labelClass}>Name</label>

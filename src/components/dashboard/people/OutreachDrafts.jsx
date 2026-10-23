@@ -17,7 +17,7 @@ const openLabel = (c) => (c === "email" ? "Open in Mail" : c === "text" ? "Open 
 
 // Messages a bot drafted for this person. Nothing was sent: the agent opens each one in their own email or messages app, sends it
 // there, and then marks it sent here, which also leaves a note on the card. A draft can be discarded instead.
-export default function OutreachDrafts({ person, onLogged }) {
+export default function OutreachDrafts({ person, onLogged, onCount }) {
   const [drafts, setDrafts] = useState([]);
   const [busy, setBusy] = useState("");
   const [copied, setCopied] = useState("");
@@ -25,7 +25,8 @@ export default function OutreachDrafts({ person, onLogged }) {
   const load = useCallback(async () => {
     const { data } = await supabase.from("people_outreach").select("*").eq("person_id", person.id).eq("status", "draft").order("created_at", { ascending: true });
     setDrafts(data || []);
-  }, [person.id]);
+    onCount?.((data || []).length);
+  }, [person.id, onCount]);
   useEffect(() => {
     load();
   }, [load]);
