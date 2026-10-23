@@ -19,6 +19,7 @@ import AgentsPage from "./components/dashboard/AgentsPage";
 import UpcomingModule from "./components/dashboard/UpcomingModule";
 import VendorsPage from "./components/dashboard/VendorsPage";
 import ListingAnalyticsPage from "./components/dashboard/ListingAnalyticsPage";
+import OfficeAnalyticsPage from "./components/dashboard/OfficeAnalyticsPage";
 import ListingReportPage from "./pages/ListingReportPage";
 import VendorSharePage from "./pages/VendorSharePage";
 import MyProfilePage from "./components/dashboard/MyProfilePage";
@@ -392,6 +393,14 @@ export default function App() {
             redirect rather than 404 in case either was already bookmarked. */}
         <Route path="upcoming-listings" element={<Navigate to="/dashboard/upcoming" replace />} />
         <Route path="buyer-needs" element={<Navigate to="/dashboard/upcoming" replace />} />
+        <Route
+          path="office-analytics"
+          element={
+            <ProtectedRoute adminOnly>
+              <OfficeAnalyticsPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="agents"
           element={

@@ -105,6 +105,7 @@ const PEOPLE_ITEMS = [
 ];
 
 const ADMIN_ITEMS = [
+  { to: "/dashboard/office-analytics", label: "Office Analytics" },
   { to: "/dashboard/brokerage-site", label: "Brokerage Site" },
   { to: "/dashboard/sites", label: "Agent Sites" },
   { to: "/dashboard/agents", label: "Agents" },

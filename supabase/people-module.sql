@@ -1368,3 +1368,86 @@ create policy people_outreach_owner_all on public.people_outreach
 -- ============================================================================
 alter table public.listings add column if not exists weekly_report boolean not null default false;
 alter table public.listings add column if not exists weekly_report_sent_at timestamptz;
+-- ============================================================================
+-- 39. Office analytics: one rollup across every property site (and agent website) in the organization, filterable by agent,
+--     listing status and traffic source. Admin-only. SECURITY INVOKER, so row-level security still applies.
+-- ============================================================================
+create or replace function public.office_analytics(p_days integer default 30, p_agent uuid default null, p_status text default null, p_source text default null, p_tz text default 'America/Chicago') returns jsonb
+language plpgsql stable set search_path = public as $$
+declare
+  v_org uuid := public.current_org_id();
+  v_days integer := greatest(1, least(coalesce(p_days, 30), 365));
+  v_since timestamptz := now() - make_interval(days => greatest(1, least(coalesce(p_days, 30), 365)));
+  v_prior timestamptz := now() - make_interval(days => 2 * greatest(1, least(coalesce(p_days, 30), 365)));
+  v_chart integer := least(greatest(1, least(coalesce(p_days, 30), 365)), 90);
+  r jsonb;
+begin
+  if v_org is null or not public.can_manage_org(v_org) then
+    raise exception 'Only an admin can see office analytics.';
+  end if;
+  with ls as (
+    select l.id, l.address_line1, l.city, l.status, l.agent_id, p.full_name as agent_name
+    from public.listings l left join public.profiles p on p.id = l.agent_id
+    where l.org_id = v_org and (p_agent is null or l.agent_id = p_agent) and (p_status is null or l.status = p_status)
+  ), pv as (
+    select v.id, coalesce(v.visitor_id, v.id::text) as vid, v.target_id as listing_id, v.source, v.device, v.city, v.region, v.duration_sec, v.created_at
+    from public.page_views v join ls on ls.id = v.target_id
+    where v.target_type = 'listing' and v.created_at >= v_prior and (p_source is null or coalesce(v.source, 'direct') = p_source)
+  ), cur as (select * from pv where created_at >= v_since),
+  prev as (select * from pv where created_at < v_since),
+  lead_counts as (
+    select target_id as listing_id, count(*) as n from public.leads
+    where target_type = 'listing' and created_at >= v_since and target_id in (select id from ls) group by 1
+  ), days as (
+    select d::date as day from generate_series((now() at time zone p_tz)::date - (v_chart - 1), (now() at time zone p_tz)::date, interval '1 day') d
+  ), per_listing as (
+    select ls.id, ls.address_line1, ls.city, ls.status, ls.agent_id, ls.agent_name,
+           count(c.id) as views, count(distinct c.vid) as visitors,
+           round(avg(c.duration_sec) filter (where c.duration_sec between 3 and 3600))::int as avg_duration,
+           coalesce(max(lc.n), 0) as leads, max(c.created_at) as last_view
+    from ls left join cur c on c.listing_id = ls.id left join lead_counts lc on lc.listing_id = ls.id
+    group by ls.id, ls.address_line1, ls.city, ls.status, ls.agent_id, ls.agent_name
+  ), per_agent as (
+    select ls.agent_id, ls.agent_name, count(distinct ls.id) as listings, count(c.id) as views, count(distinct c.vid) as visitors
+    from ls left join cur c on c.listing_id = ls.id group by ls.agent_id, ls.agent_name
+  ), site_set as (
+    select s.id as site_id, s.agent_id, s.slug from public.agent_sites s where s.org_id = v_org and (p_agent is null or s.agent_id = p_agent)
+  ), site_posts as (
+    select sp.id as post_id, sp.agent_site_id as site_id from public.agent_site_posts sp where sp.agent_site_id in (select site_id from site_set)
+  ), site_pv as (
+    select v.id, coalesce(v.visitor_id, v.id::text) as vid, ss.site_id
+    from public.page_views v join site_set ss on v.target_type = 'agent_site' and v.target_id = ss.site_id
+    where v.created_at >= v_since and (p_source is null or coalesce(v.source, 'direct') = p_source)
+    union all
+    select v.id, coalesce(v.visitor_id, v.id::text) as vid, spp.site_id
+    from public.page_views v join site_posts spp on v.target_type = 'agent_post' and v.target_id = spp.post_id
+    where v.created_at >= v_since and (p_source is null or coalesce(v.source, 'direct') = p_source)
+  ), site_leads as (
+    select target_id as site_id, count(*) as n from public.leads where target_type = 'agent_site' and created_at >= v_since group by 1
+  )
+  select jsonb_build_object(
+    'days', v_days,
+    'views', (select count(*) from cur),
+    'prior_views', (select count(*) from prev),
+    'visitors', (select count(distinct vid) from cur),
+    'avg_duration', (select round(avg(duration_sec))::int from cur where duration_sec between 3 and 3600),
+    'leads', (select coalesce(sum(n), 0) from lead_counts),
+    'listings_count', (select count(*) from ls),
+    'daily', coalesce((select jsonb_agg(jsonb_build_object('day', days.day, 'views', coalesce(x.views, 0), 'visitors', coalesce(x.visitors, 0)) order by days.day)
+      from days left join (select (created_at at time zone p_tz)::date as day, count(*) as views, count(distinct vid) as visitors from cur group by 1) x on x.day = days.day), '[]'::jsonb),
+    'sources', coalesce((select jsonb_agg(t order by t.views desc) from (select coalesce(source, 'direct') as source, count(*) as views, count(distinct vid) as visitors from cur group by 1 order by 2 desc limit 12) t), '[]'::jsonb),
+    'devices', coalesce((select jsonb_agg(t order by t.views desc) from (select coalesce(device, 'unknown') as device, count(*) as views from cur group by 1) t), '[]'::jsonb),
+    'locations', coalesce((select jsonb_agg(t order by t.views desc) from (select city, region, count(*) as views from cur where city is not null group by 1, 2 order by 3 desc limit 10) t), '[]'::jsonb),
+    'listings', coalesce((select jsonb_agg(t order by t.views desc, t.address_line1) from (select * from per_listing order by views desc, address_line1 limit 300) t), '[]'::jsonb),
+    'agents', coalesce((select jsonb_agg(jsonb_build_object('agent_id', a.agent_id, 'agent_name', a.agent_name, 'listings', a.listings, 'views', a.views, 'visitors', a.visitors,
+        'leads', (select coalesce(sum(pl.leads), 0) from per_listing pl where pl.agent_id = a.agent_id)) order by a.views desc, a.agent_name) from per_agent a), '[]'::jsonb),
+    'sites', coalesce((select jsonb_agg(t order by t.views desc, t.agent_name) from (
+        select ss.site_id, ss.agent_id, pr.full_name as agent_name, ss.slug, count(p.id) as views, count(distinct p.vid) as visitors, coalesce(max(sl.n), 0) as leads
+        from site_set ss left join site_pv p on p.site_id = ss.site_id left join public.profiles pr on pr.id = ss.agent_id left join site_leads sl on sl.site_id = ss.site_id
+        group by ss.site_id, ss.agent_id, pr.full_name, ss.slug order by 5 desc limit 200) t), '[]'::jsonb)
+  ) into r;
+  return r;
+end;
+$$;
+revoke all on function public.office_analytics(integer, uuid, text, text, text) from public, anon;
+grant execute on function public.office_analytics(integer, uuid, text, text, text) to authenticated, service_role;
