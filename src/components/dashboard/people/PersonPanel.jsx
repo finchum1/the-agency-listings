@@ -3,6 +3,7 @@ import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS, ARCHIVE_REASONS, SOURCES } from "../../../lib/peopleStages";
 import ContactButtons from "./ContactButtons";
 import OutreachDrafts from "./OutreachDrafts";
+import ClientTimelineCard from "./ClientTimelineCard";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { PEEK_WIDTHS } from "../../../hooks/usePeekWidth";
 import TransactionModules from "./TransactionModules";
@@ -636,6 +637,12 @@ export default function PersonPanel({
           <section className="min-w-0 space-y-3">
             <h3 className="font-display text-base font-semibold">Details</h3>
             {transactionDetails}
+          </section>
+        )}
+
+        {isTransaction && (
+          <section className="min-w-0">
+            <ClientTimelineCard person={person} dates={{ contract_date: form.contract_date, inspection_date: form.inspection_date, closing_date: form.closing_date }} />
           </section>
         )}
 

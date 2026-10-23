@@ -21,6 +21,7 @@ import VendorsPage from "./components/dashboard/VendorsPage";
 import ListingAnalyticsPage from "./components/dashboard/ListingAnalyticsPage";
 import OfficeAnalyticsPage from "./components/dashboard/OfficeAnalyticsPage";
 import ListingReportPage from "./pages/ListingReportPage";
+import TransactionTimelinePage from "./pages/TransactionTimelinePage";
 import VendorSharePage from "./pages/VendorSharePage";
 import MyProfilePage from "./components/dashboard/MyProfilePage";
 import MySitePage from "./components/dashboard/MySitePage";
@@ -206,6 +207,8 @@ export default function App() {
       <Route path="/vendors/:token" element={<VendorSharePage />} />
       {/* A seller's private activity report for one listing: same idea, token in the address. */}
       <Route path="/report/:token" element={<ListingReportPage />} />
+      {/* A buyer's or seller's private closing timeline. */}
+      <Route path="/timeline/:token" element={<TransactionTimelinePage />} />
       <Route
         path="/preview/:token/site"
         element={

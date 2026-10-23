@@ -15,6 +15,7 @@ import BrokerageAreaPage from "./BrokerageAreaPage";
 import NotFoundPage from "./NotFoundPage";
 import VendorSharePage from "./VendorSharePage";
 import ListingReportPage from "./ListingReportPage";
+import TransactionTimelinePage from "./TransactionTimelinePage";
 import { safeFromPath } from "../lib/backLink";
 import HomeSections from "../components/agent-site/HomeSections";
 import Bio from "../components/agent-site/Bio";
@@ -273,6 +274,7 @@ export default function CustomDomainSitePage() {
           their own address. The token in the link is the credential; see VendorSharePage / ListingReportPage. */}
       <Route path="/vendors/:token" element={<VendorSharePage />} />
       <Route path="/report/:token" element={<ListingReportPage />} />
+      <Route path="/timeline/:token" element={<TransactionTimelinePage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
