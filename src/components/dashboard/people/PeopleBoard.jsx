@@ -8,6 +8,8 @@ import { SIDE_TAGS } from "../../../lib/peopleSides";
 import ProgressRing from "./ProgressRing";
 import { useTransactionProgress } from "../../../hooks/useTransactionProgress";
 import PersonPanel from "./PersonPanel";
+import DraftBadge from "./DraftBadge";
+import { usePeopleDrafts } from "../../../hooks/usePeopleDrafts";
 import { usePeekWidth } from "../../../hooks/usePeekWidth";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 
@@ -116,7 +118,7 @@ function PersonCardBody({ p, group, progress, today }) {
 }
 
 const CARD_CLASS =
-  "bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl p-3 space-y-2 select-none";
+  "relative bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-xl p-3 space-y-2 select-none";
 
 function ColumnTitle({ name, onRename }) {
   const [editing, setEditing] = useState(false);
@@ -223,6 +225,7 @@ export default function PeopleBoard({ group }) {
   const board = BOARDS[group];
   const { people, setPeople, loading, error, refresh } = usePeople();
   const { progress, reload: reloadProgress } = useTransactionProgress(group === "transaction");
+  const { draftCounts, reloadDrafts } = usePeopleDrafts();
   const { stages: allStages, closedStage, renameStage, addStage, moveStage, removeStage, setClosedStage } = usePeopleStages();
   const stages = allStages[group];
   const nextStageNames = board.next ? allStages[board.next.group] : null;
@@ -696,7 +699,7 @@ export default function PeopleBoard({ group }) {
 
               {/* Each column scrolls on its own, so a long list never spills past
                   the bottom of the column or pushes the others around. */}
-              <div data-stage-list="" className="flex-1 min-h-0 overflow-y-auto space-y-2 -mx-1 px-1 pb-1 [scrollbar-width:thin]">
+              <div data-stage-list="" className="flex-1 min-h-0 overflow-y-auto space-y-2 -mx-2 px-2 pt-2 pb-1 [scrollbar-width:thin]">
               {addingStage === stage && (
                 <form
                   onSubmit={handleAdd}
@@ -790,6 +793,7 @@ export default function PeopleBoard({ group }) {
                       className={`${CARD_CLASS} cursor-grab hover:shadow-sm transition-shadow`}
                     >
                       <PersonCardBody p={p} group={group} progress={progress} today={today} />
+                      <DraftBadge count={draftCounts[p.id]} />
                     </div>,
                   );
                 }
@@ -820,6 +824,7 @@ export default function PeopleBoard({ group }) {
             }}
           >
             <PersonCardBody p={people.find((x) => x.id === drag.id)} group={group} progress={progress} today={today} />
+            <DraftBadge count={draftCounts[drag.id]} />
           </div>,
           document.body,
         )}
@@ -869,6 +874,7 @@ export default function PeopleBoard({ group }) {
           onClose={() => {
             setSelectedId(null);
             reloadProgress();
+            reloadDrafts();
           }}
           onChanged={() => {
             refresh();

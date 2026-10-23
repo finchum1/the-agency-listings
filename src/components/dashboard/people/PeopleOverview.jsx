@@ -20,6 +20,7 @@ const KEY_DATES = [
   ["closing_date", "Closing"],
 ];
 
+const DRAFTS_SHOWN = 3; // draft messages listed before the "show more" switch
 const UPCOMING_DAYS = 14;
 const FOLLOW_UP_DAYS = 7;
 const FOLLOW_UP_SHOW = 5; // rows shown per follow-up / checklist-task group before "N more"
@@ -89,6 +90,7 @@ export default function PeopleOverview() {
   const { stages, closedStage } = usePeopleStages();
   const [selectedId, setSelectedId] = useState(null);
   const [drafts, setDrafts] = useState([]);
+  const [allDrafts, setAllDrafts] = useState(false);
   const [openTasks, setOpenTasks] = useState([]);
   const [followExpanded, setFollowExpanded] = useState({});
 
@@ -195,13 +197,26 @@ export default function PeopleOverview() {
           <h2 className="font-display text-lg font-semibold">Drafts waiting for you ({drafts.length})</h2>
           <p className={`text-xs ${muted}`}>Written by your bot. Nothing has been sent. Open a person to send, edit or discard.</p>
           <ul className="space-y-1.5">
-            {drafts.slice(0, 6).map((d) => {
+            {(allDrafts ? drafts : drafts.slice(0, DRAFTS_SHOWN)).map((d) => {
               const person = people.find((p) => p.id === d.person_id);
               if (!person) return null;
               return personRow(person, `${d.channel === "email" ? "Email" : d.channel === "text" ? "Text" : "Call"}${d.subject ? `: ${d.subject}` : `: ${d.body.slice(0, 70)}`}`);
             })}
           </ul>
-          {drafts.length > 6 && <p className={`text-xs ${muted}`}>{drafts.length - 6} more on their cards.</p>}
+          {drafts.length > DRAFTS_SHOWN && (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={allDrafts}
+              onClick={() => setAllDrafts((v) => !v)}
+              className="flex items-center gap-2.5 text-xs font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+            >
+              <span className={`relative h-5 w-9 rounded-full transition-colors ${allDrafts ? "bg-[#ed2127] dark:bg-[#f2454b]" : "bg-black/20 dark:bg-white/25"}`}>
+                <span className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${allDrafts ? "translate-x-4" : ""}`} />
+              </span>
+              {allDrafts ? "Show fewer" : `Show ${drafts.length - DRAFTS_SHOWN} more`}
+            </button>
+          )}
         </section>
       )}
 
