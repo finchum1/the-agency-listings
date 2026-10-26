@@ -2046,3 +2046,108 @@ grant execute on function public.deal_mark_read(uuid), public.deal_submit_review
 --     emailed_at marks the message as handled so a retry or a second click never sends it twice.
 -- ============================================================================
 alter table public.deal_messages add column if not exists emailed_at timestamptz;
+
+-- ============================================================================
+-- 44. Pick a coordinator per deal. An agent can hand individual deals to a TC (deal_tcs) without giving that TC all their deals;
+--     the agent-wide assignment an admin makes on the Agents page (deal_team) still works for agents who always use one. A TC must
+--     have the coordinator role (profiles.deals_role = 'tc') and work in the same office to be picked.
+-- ============================================================================
+create table if not exists public.deal_tcs (
+  person_id uuid not null references public.people(id) on delete cascade,
+  tc_id uuid not null references public.profiles(id) on delete cascade,
+  assigned_by uuid default auth.uid() references public.profiles(id) on delete set null,
+  created_at timestamptz not null default now(),
+  primary key (person_id, tc_id)
+);
+create index if not exists deal_tcs_tc_idx on public.deal_tcs (tc_id);
+alter table public.deal_tcs enable row level security;
+
+create or replace function public.deal_access(p_owner uuid, p_person uuid) returns text
+language sql stable security definer set search_path = public as $$
+  select case
+    when p_owner is null or auth.uid() is null then null
+    when p_owner = auth.uid() then 'owner'
+    when exists (select 1 from public.profiles me join public.profiles o on o.id = p_owner
+                 where me.id = auth.uid() and me.deals_role = 'compliance' and me.org_id is not null and me.org_id = o.org_id) then 'compliance'
+    when exists (select 1 from public.profiles me where me.id = auth.uid() and me.deals_role = 'tc')
+         and (exists (select 1 from public.deal_team t where t.tc_id = auth.uid() and t.agent_id = p_owner)
+              or (p_person is not null and exists (select 1 from public.deal_tcs d where d.person_id = p_person and d.tc_id = auth.uid()))) then 'tc'
+  end
+$$;
+create or replace function public.deal_access(p_owner uuid) returns text
+language sql stable security definer set search_path = public as $$ select public.deal_access(p_owner, null::uuid) $$;
+create or replace function public.deal_person_access(p_person uuid) returns text
+language sql stable security definer set search_path = public as $$
+  select public.deal_access(p.owner_id, p.id) from public.people p where p.id = p_person and p.stage_group = 'transaction'
+$$;
+grant execute on function public.deal_access(uuid, uuid) to authenticated;
+
+create or replace function public.is_office_tc(p_tc uuid, p_owner uuid) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.profiles tc join public.profiles o on o.id = p_owner
+                 where tc.id = p_tc and tc.deals_role = 'tc' and tc.org_id is not null and tc.org_id = o.org_id)
+$$;
+grant execute on function public.is_office_tc(uuid, uuid) to authenticated;
+
+drop policy if exists deal_tcs_read on public.deal_tcs;
+create policy deal_tcs_read on public.deal_tcs for select to authenticated using (tc_id = auth.uid() or public.deal_person_access(person_id) is not null);
+drop policy if exists deal_tcs_owner_add on public.deal_tcs;
+create policy deal_tcs_owner_add on public.deal_tcs for insert to authenticated
+  with check (public.deal_person_access(person_id) = 'owner' and public.is_office_tc(tc_id, auth.uid()));
+drop policy if exists deal_tcs_owner_remove on public.deal_tcs;
+create policy deal_tcs_owner_remove on public.deal_tcs for delete to authenticated using (public.deal_person_access(person_id) = 'owner');
+
+-- Everything that decided access by owner alone now looks at the deal too.
+drop policy if exists people_deal_team_read on public.people;
+create policy people_deal_team_read on public.people for select to authenticated
+  using (stage_group = 'transaction' and public.deal_access(owner_id, id) in ('tc', 'compliance'));
+drop policy if exists people_deal_tc_update on public.people;
+create policy people_deal_tc_update on public.people for update to authenticated
+  using (stage_group = 'transaction' and public.deal_access(owner_id, id) = 'tc')
+  with check (stage_group = 'transaction' and public.deal_access(owner_id, id) = 'tc');
+
+create or replace function public.people_deal_guard() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare acc text;
+begin
+  if auth.uid() is null then return new; end if;
+  if (new.compliance_status, new.compliance_updated_at, new.compliance_by) is distinct from (old.compliance_status, old.compliance_updated_at, old.compliance_by)
+     and coalesce(current_setting('app.deal_rpc', true), '') <> '1' then
+    raise exception 'Use Submit for review (or the compliance actions) to change a deal''s review status.';
+  end if;
+  acc := public.deal_access(old.owner_id, old.id);
+  if acc = 'tc' and (new.owner_id is distinct from old.owner_id or new.stage_group is distinct from old.stage_group
+                     or new.contact_id is distinct from old.contact_id or new.lead_id is distinct from old.lead_id) then
+    raise exception 'A transaction coordinator can edit a deal but not move it or reassign it.';
+  end if;
+  return new;
+end;
+$$;
+
+create or replace function public.deal_attention() returns jsonb
+language sql stable set search_path = public as $$
+  select jsonb_build_object(
+    'needs_changes', count(*) filter (where p.compliance_status = 'needs_changes' and public.deal_access(p.owner_id, p.id) in ('owner', 'tc')),
+    'to_review', count(*) filter (where p.compliance_status = 'submitted' and public.deal_access(p.owner_id, p.id) = 'compliance'),
+    'unread', (select count(*) from public.deal_messages m left join public.deal_reads r on r.person_id = m.person_id and r.user_id = auth.uid()
+               where m.author_id is distinct from auth.uid() and m.created_at > coalesce(r.read_at, '-infinity'::timestamptz)
+                 and exists (select 1 from public.people pp where pp.id = m.person_id and pp.stage_group = 'transaction' and not pp.archived)))
+  from public.people p where p.stage_group = 'transaction' and not p.archived
+$$;
+
+-- Fix: a user with no access to a deal (access = null) slipped past the "not in" check in deal_submit_review.
+create or replace function public.deal_submit_review(p_person uuid, p_note text default '') returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if coalesce(public.deal_person_access(p_person), '') not in ('owner', 'tc') then raise exception 'Only the agent or their coordinator can submit a deal for review.'; end if;
+  perform set_config('app.deal_rpc', '1', true);
+  update public.people set compliance_status = 'submitted', compliance_updated_at = now(), compliance_by = null where id = p_person;
+  update public.transaction_documents set review_status = null, review_note = '', reviewed_by = null, reviewed_at = null where person_id = p_person and review_status = 'issue';
+  insert into public.deal_messages (person_id, author_id, kind, body) values (p_person, auth.uid(), 'submitted', coalesce(nullif(btrim(p_note), ''), 'Submitted for compliance review.'));
+end;
+$$;
+
+-- An agent can see which coordinators are assigned to them for every deal, and compliance can see who coordinates what.
+drop policy if exists deal_team_agent_read on public.deal_team;
+create policy deal_team_agent_read on public.deal_team for select to authenticated
+  using (agent_id = auth.uid() or public.deal_access(agent_id, null::uuid) = 'compliance');

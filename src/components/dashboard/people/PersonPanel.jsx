@@ -8,6 +8,7 @@ import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { PEEK_WIDTHS } from "../../../hooks/usePeekWidth";
 import TransactionModules from "./TransactionModules";
 import DealCompliance from "./DealCompliance";
+import DealTeam from "./DealTeam";
 
 const inputClass =
   "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -648,7 +649,8 @@ export default function PersonPanel({
         </div>
 
         {isTransaction && (
-          <div className="min-w-0">
+          <div className="min-w-0 space-y-6">
+            <DealTeam person={person} />
             <DealCompliance person={person} viewer="owner" onChanged={onChanged} />
           </div>
         )}

@@ -36,8 +36,9 @@ function CoordinatorAgents({ tc, agents, onError }) {
   const others = agents.filter((a) => a.id !== tc.id && a.people_enabled);
   return (
     <fieldset className="space-y-1.5">
-      <legend className={labelClass}>Works with these agents' deals</legend>
+      <legend className={labelClass}>Coordinates every deal for these agents</legend>
       {others.length === 0 && <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No agents have the People module on yet.</p>}
+      <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">Leave an agent unticked and they can still pick this person for individual deals.</p>
       <div className="max-h-44 overflow-y-auto space-y-1 rounded-lg border border-black/10 dark:border-white/15 p-2">
         {others.map((a) => (
           <label key={a.id} className="flex items-center gap-2 text-sm cursor-pointer">

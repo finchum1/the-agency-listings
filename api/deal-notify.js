@@ -43,12 +43,13 @@ export default async function handler(req, res) {
   const { data: claimed } = await admin.from("deal_messages").update({ emailed_at: new Date().toISOString() }).eq("id", msg.id).is("emailed_at", null).select("id");
   if (!claimed?.length) return res.status(200).json({ ok: true, sent: 0, note: "Already emailed." });
 
-  const [{ data: owner }, { data: team }, { data: reviewer }] = await Promise.all([
+  const [{ data: owner }, { data: team }, { data: perDeal }, { data: reviewer }] = await Promise.all([
     admin.from("profiles").select("full_name, email, org:organizations(name)").eq("id", deal.owner_id).maybeSingle(),
     admin.from("deal_team").select("tc:profiles!deal_team_tc_id_fkey(email)").eq("agent_id", deal.owner_id),
+    admin.from("deal_tcs").select("tc:profiles!deal_tcs_tc_id_fkey(email)").eq("person_id", deal.id),
     admin.from("profiles").select("full_name, email").eq("id", auth.user.id).maybeSingle(),
   ]);
-  const to = [...new Set([owner?.email, ...(team || []).map((t) => t.tc?.email)].filter(Boolean).map((e) => e.toLowerCase()))];
+  const to = [...new Set([owner?.email, ...(team || []).map((t) => t.tc?.email), ...(perDeal || []).map((t) => t.tc?.email)].filter(Boolean).map((e) => e.toLowerCase()))];
   if (!to.length) {
     await admin.from("deal_messages").update({ emailed_at: null }).eq("id", msg.id);
     return res.status(502).json({ error: "The agent has no email address on file." });

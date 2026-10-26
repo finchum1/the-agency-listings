@@ -21,6 +21,19 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
   const [form, setForm] = useState(() => toForm(deal));
   const [error, setError] = useState("");
   const [fresh, setFresh] = useState(deal);
+  const [tcNames, setTcNames] = useState([]);
+  useEffect(() => {
+    (async () => {
+      const [{ data: per }, { data: wide }] = await Promise.all([
+        supabase.from("deal_tcs").select("tc_id").eq("person_id", deal.id),
+        supabase.from("deal_team").select("tc_id").eq("agent_id", deal.owner_id),
+      ]);
+      const ids = [...new Set([...(per || []), ...(wide || [])].map((r) => r.tc_id))];
+      if (!ids.length) return setTcNames([]);
+      const { data: profs } = await supabase.from("profiles").select("full_name").in("id", ids);
+      setTcNames((profs || []).map((p) => p.full_name));
+    })();
+  }, [deal.id, deal.owner_id]);
 
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && !e.defaultPrevented && onClose();
@@ -70,6 +83,7 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
             <p className={`mt-0.5 text-xs ${muted}`}>
               {fresh.property_address ? `${fresh.name} · ` : ""}
               {fresh.side === "buyer" ? "Buyer" : fresh.side === "seller" ? "Seller" : "Side not set"} · Agent {agentName || "unknown"}
+              {tcNames.length > 0 && ` · TC ${tcNames.join(", ")}`}
               {!edit && " · Read only"}
             </p>
           </div>
