@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { boardPath } from "../../../lib/deals";
 import { Link } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS } from "../../../lib/peopleStages";
@@ -10,7 +11,6 @@ import PersonPanel from "./PersonPanel";
 
 const money = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
-const BOARD_ROUTES = { lead: "leads", pipeline: "pipeline", transaction: "transactions" };
 
 const KEY_DATES = [
   ["contract_date", "Contract"],
@@ -58,7 +58,7 @@ function BoardTile({ group, people, stages }) {
   const board = BOARDS[group];
   const rows = people.filter((p) => p.stage_group === group && !p.archived);
   return (
-    <Link to={`/dashboard/people/${BOARD_ROUTES[group]}`} className={`${card} block hover:shadow-sm transition-shadow`}>
+    <Link to={boardPath(group)} className={`${card} block hover:shadow-sm transition-shadow`}>
       <div className="flex items-baseline justify-between">
         <h2 className="font-display text-base font-semibold">{board.title}</h2>
         <span className="text-2xl font-semibold">{rows.length}</span>
@@ -228,7 +228,7 @@ export default function PeopleOverview() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <ValueTile label="Open deals" value={openDeals.length} sub={`${money.format(sum(openDeals, "price"))} volume`} />
-        <ValueTile label="Expected commission" value={money.format(sum(openDeals, "commission"))} sub="From open transactions" />
+        <ValueTile label="Expected commission" value={money.format(sum(openDeals, "commission"))} sub="From open deals" />
         <ValueTile
           label={`Closed in ${year}`}
           value={closedThisYear.length}

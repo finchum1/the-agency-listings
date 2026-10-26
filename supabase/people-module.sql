@@ -1794,3 +1794,249 @@ end;
 $$;
 revoke all on function public.merge_contacts(uuid, uuid) from public, anon;
 grant execute on function public.merge_contacts(uuid, uuid) to authenticated;
+
+-- ============================================================================
+-- 42. Deals (the old "Transactions" board, now its own top-level module). Same rows as before (people with
+--     stage_group = 'transaction'); what's new is who can see and work on them:
+--       owner       the agent. Everything, as before.
+--       tc          a transaction coordinator an admin assigned to this agent (deal_team). Can see and edit the deal, its
+--                   tasks and documents, and talk in the deal's thread.
+--       compliance  office-wide read of every deal in the organization (profiles.deals_role = 'compliance'), plus the
+--                   review actions: mark documents OK / needs fixing, approve, or send back with a message.
+--     Admins get no automatic access: an admin who should review deals gives themselves the compliance role.
+--     Leads, Pipeline, notes and contacts stay strictly private to their agent: none of the new rules touch them.
+-- ============================================================================
+alter table public.profiles
+  add column if not exists deals_role text check (deals_role in ('tc', 'compliance'));
+
+create or replace function public.guard_profile_privileged_columns() returns trigger
+language plpgsql security definer set search_path to 'public' as $$
+begin
+  if auth.uid() is null then return new; end if;
+  if public.is_platform_admin() then return new; end if;
+  if new.org_id is distinct from old.org_id then
+    raise exception 'Only the platform owner can change which organization an account belongs to.';
+  end if;
+  if new.role is distinct from old.role
+     or new.site_access is distinct from old.site_access
+     or new.people_enabled is distinct from old.people_enabled
+     or new.deals_role is distinct from old.deals_role
+     or new.login_enabled is distinct from old.login_enabled then
+    if exists (
+      select 1 from public.profiles p join public.organizations o on o.id = p.org_id
+      where p.id = auth.uid() and p.role = 'admin' and p.org_id = old.org_id and o.type = 'brokerage'
+    ) then
+      return new;
+    end if;
+    raise exception 'Only an admin can change role, site access, People access, Deals role, or login access.';
+  end if;
+  return new;
+end;
+$$;
+
+-- Which transaction coordinator works with which agents.
+create table if not exists public.deal_team (
+  org_id uuid not null default public.current_org_id() references public.organizations(id) on delete cascade,
+  tc_id uuid not null references public.profiles(id) on delete cascade,
+  agent_id uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (tc_id, agent_id)
+);
+alter table public.deal_team enable row level security;
+drop policy if exists deal_team_read on public.deal_team;
+create policy deal_team_read on public.deal_team for select to authenticated using (tc_id = auth.uid() or public.can_manage_org(org_id));
+drop policy if exists deal_team_admin_write on public.deal_team;
+create policy deal_team_admin_write on public.deal_team for all to authenticated using (public.can_manage_org(org_id)) with check (public.can_manage_org(org_id));
+
+-- How the signed-in user relates to a deal owned by p_owner: 'owner', 'compliance', 'tc' or null.
+create or replace function public.deal_access(p_owner uuid) returns text
+language sql stable security definer set search_path = public as $$
+  select case
+    when p_owner is null or auth.uid() is null then null
+    when p_owner = auth.uid() then 'owner'
+    when exists (select 1 from public.profiles me join public.profiles o on o.id = p_owner
+                 where me.id = auth.uid() and me.deals_role = 'compliance' and me.org_id is not null and me.org_id = o.org_id) then 'compliance'
+    when exists (select 1 from public.deal_team t where t.tc_id = auth.uid() and t.agent_id = p_owner) then 'tc'
+  end
+$$;
+create or replace function public.deal_person_access(p_person uuid) returns text
+language sql stable security definer set search_path = public as $$
+  select public.deal_access((select owner_id from public.people where id = p_person and stage_group = 'transaction'))
+$$;
+grant execute on function public.deal_access(uuid), public.deal_person_access(uuid) to authenticated;
+
+alter table public.people
+  add column if not exists compliance_status text not null default 'none' check (compliance_status in ('none', 'submitted', 'needs_changes', 'approved')),
+  add column if not exists compliance_updated_at timestamptz,
+  add column if not exists compliance_by uuid references public.profiles(id) on delete set null;
+
+alter table public.transaction_documents
+  add column if not exists review_status text check (review_status in ('ok', 'issue')),
+  add column if not exists review_note text not null default '',
+  add column if not exists reviewed_by uuid references public.profiles(id) on delete set null,
+  add column if not exists reviewed_at timestamptz;
+
+-- The compliance columns and document review marks only move through the functions below.
+create or replace function public.people_deal_guard() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare acc text;
+begin
+  if auth.uid() is null then return new; end if;
+  if (new.compliance_status, new.compliance_updated_at, new.compliance_by) is distinct from (old.compliance_status, old.compliance_updated_at, old.compliance_by)
+     and coalesce(current_setting('app.deal_rpc', true), '') <> '1' then
+    raise exception 'Use Submit for review (or the compliance actions) to change a deal''s review status.';
+  end if;
+  acc := public.deal_access(old.owner_id);
+  if acc = 'tc' and (new.owner_id is distinct from old.owner_id or new.stage_group is distinct from old.stage_group
+                     or new.contact_id is distinct from old.contact_id or new.lead_id is distinct from old.lead_id) then
+    raise exception 'A transaction coordinator can edit a deal but not move it or reassign it.';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists people_deal_guard on public.people;
+create trigger people_deal_guard before update on public.people for each row execute function public.people_deal_guard();
+
+create or replace function public.transaction_documents_guard() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then return new; end if;
+  if tg_op = 'INSERT' then
+    new.owner_id := (select owner_id from public.people where id = new.person_id);
+    if new.review_status is not null or coalesce(new.review_note, '') <> '' then new.review_status := null; new.review_note := ''; end if;
+  elsif (new.review_status, new.review_note, new.reviewed_by, new.reviewed_at) is distinct from (old.review_status, old.review_note, old.reviewed_by, old.reviewed_at)
+        and coalesce(current_setting('app.deal_rpc', true), '') <> '1' then
+    raise exception 'Only compliance can mark a document as reviewed.';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists transaction_documents_guard on public.transaction_documents;
+create trigger transaction_documents_guard before insert or update on public.transaction_documents for each row execute function public.transaction_documents_guard();
+
+-- Tasks added by a coordinator still belong to the agent who owns the deal.
+create or replace function public.transaction_tasks_owner() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is not null then new.owner_id := (select owner_id from public.people where id = new.person_id); end if;
+  return new;
+end;
+$$;
+drop trigger if exists transaction_tasks_owner on public.transaction_tasks;
+create trigger transaction_tasks_owner before insert on public.transaction_tasks for each row execute function public.transaction_tasks_owner();
+
+-- Access rules (added to the existing owner-only ones, which are unchanged).
+drop policy if exists people_deal_team_read on public.people;
+create policy people_deal_team_read on public.people for select to authenticated
+  using (stage_group = 'transaction' and public.deal_access(owner_id) in ('tc', 'compliance'));
+drop policy if exists people_deal_tc_update on public.people;
+create policy people_deal_tc_update on public.people for update to authenticated
+  using (stage_group = 'transaction' and public.deal_access(owner_id) = 'tc')
+  with check (stage_group = 'transaction' and public.deal_access(owner_id) = 'tc');
+
+drop policy if exists transaction_tasks_team_read on public.transaction_tasks;
+create policy transaction_tasks_team_read on public.transaction_tasks for select to authenticated using (public.deal_person_access(person_id) in ('tc', 'compliance'));
+drop policy if exists transaction_tasks_tc_write on public.transaction_tasks;
+create policy transaction_tasks_tc_write on public.transaction_tasks for all to authenticated
+  using (public.deal_person_access(person_id) = 'tc') with check (public.deal_person_access(person_id) = 'tc');
+
+drop policy if exists transaction_documents_team_read on public.transaction_documents;
+create policy transaction_documents_team_read on public.transaction_documents for select to authenticated using (public.deal_person_access(person_id) in ('tc', 'compliance'));
+drop policy if exists transaction_documents_tc_write on public.transaction_documents;
+create policy transaction_documents_tc_write on public.transaction_documents for all to authenticated
+  using (public.deal_person_access(person_id) = 'tc') with check (public.deal_person_access(person_id) = 'tc');
+
+-- A conversation per deal between the agent, their coordinator and compliance, plus the review history.
+create table if not exists public.deal_messages (
+  id uuid primary key default gen_random_uuid(),
+  person_id uuid not null references public.people(id) on delete cascade,
+  author_id uuid default auth.uid() references public.profiles(id) on delete set null,
+  kind text not null default 'message' check (kind in ('message', 'submitted', 'approved', 'changes')),
+  body text not null default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists deal_messages_person_idx on public.deal_messages (person_id, created_at);
+alter table public.deal_messages enable row level security;
+drop policy if exists deal_messages_read on public.deal_messages;
+create policy deal_messages_read on public.deal_messages for select to authenticated using (public.deal_person_access(person_id) is not null);
+drop policy if exists deal_messages_post on public.deal_messages;
+create policy deal_messages_post on public.deal_messages for insert to authenticated
+  with check (author_id = auth.uid() and kind = 'message' and length(btrim(body)) > 0 and public.deal_person_access(person_id) is not null);
+
+create table if not exists public.deal_reads (
+  user_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  person_id uuid not null references public.people(id) on delete cascade,
+  read_at timestamptz not null default now(),
+  primary key (user_id, person_id)
+);
+alter table public.deal_reads enable row level security;
+drop policy if exists deal_reads_own on public.deal_reads;
+create policy deal_reads_own on public.deal_reads for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+create or replace function public.deal_mark_read(p_person uuid) returns void
+language sql security definer set search_path = public as $$
+  insert into public.deal_reads (user_id, person_id, read_at) select auth.uid(), p_person, now()
+  where public.deal_person_access(p_person) is not null
+  on conflict (user_id, person_id) do update set read_at = now()
+$$;
+
+-- Agent or coordinator: hand the deal to compliance. Flags from a previous round are cleared so the list is fresh.
+create or replace function public.deal_submit_review(p_person uuid, p_note text default '') returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if public.deal_person_access(p_person) not in ('owner', 'tc') then raise exception 'Only the agent or their coordinator can submit a deal for review.'; end if;
+  perform set_config('app.deal_rpc', '1', true);
+  update public.people set compliance_status = 'submitted', compliance_updated_at = now(), compliance_by = null where id = p_person;
+  update public.transaction_documents set review_status = null, review_note = '', reviewed_by = null, reviewed_at = null where person_id = p_person and review_status = 'issue';
+  insert into public.deal_messages (person_id, author_id, kind, body) values (p_person, auth.uid(), 'submitted', coalesce(nullif(btrim(p_note), ''), 'Submitted for compliance review.'));
+end;
+$$;
+
+-- Compliance: approve, or send back. Flagged documents are listed in the message automatically.
+create or replace function public.deal_review(p_person uuid, p_decision text, p_message text default '') returns void
+language plpgsql security definer set search_path = public as $$
+declare flagged text; body text;
+begin
+  if public.deal_person_access(p_person) is distinct from 'compliance' then raise exception 'Only compliance can review a deal.'; end if;
+  if p_decision not in ('approved', 'needs_changes') then raise exception 'Decision must be approved or needs_changes.'; end if;
+  select string_agg('• ' || text || case when btrim(review_note) <> '' then ': ' || btrim(review_note) else '' end, E'\n' order by position)
+    into flagged from public.transaction_documents where person_id = p_person and review_status = 'issue';
+  if p_decision = 'needs_changes' and coalesce(btrim(p_message), '') = '' and flagged is null then raise exception 'Add a message or flag at least one document.'; end if;
+  body := btrim(coalesce(p_message, ''));
+  if p_decision = 'needs_changes' and flagged is not null then body := btrim(body || E'\n\nNeeds fixing:\n' || flagged); end if;
+  if p_decision = 'approved' and body = '' then body := 'Approved.'; end if;
+  perform set_config('app.deal_rpc', '1', true);
+  update public.people set compliance_status = p_decision, compliance_updated_at = now(), compliance_by = auth.uid() where id = p_person;
+  insert into public.deal_messages (person_id, author_id, kind, body) values (p_person, auth.uid(), case when p_decision = 'approved' then 'approved' else 'changes' end, body);
+end;
+$$;
+
+create or replace function public.deal_mark_document(p_doc uuid, p_status text, p_note text default '') returns void
+language plpgsql security definer set search_path = public as $$
+declare pid uuid;
+begin
+  select person_id into pid from public.transaction_documents where id = p_doc;
+  if public.deal_person_access(pid) is distinct from 'compliance' then raise exception 'Only compliance can mark a document.'; end if;
+  if p_status is not null and p_status not in ('ok', 'issue') then raise exception 'Status must be ok, issue, or empty.'; end if;
+  perform set_config('app.deal_rpc', '1', true);
+  update public.transaction_documents
+    set review_status = p_status, review_note = case when p_status = 'issue' then left(coalesce(p_note, ''), 500) else '' end,
+        reviewed_by = case when p_status is null then null else auth.uid() end, reviewed_at = case when p_status is null then null else now() end
+    where id = p_doc;
+end;
+$$;
+
+-- Counts for the Deals menu badge. Runs as the caller, so the access rules above decide what is counted.
+create or replace function public.deal_attention() returns jsonb
+language sql stable set search_path = public as $$
+  select jsonb_build_object(
+    'needs_changes', count(*) filter (where p.compliance_status = 'needs_changes' and public.deal_access(p.owner_id) in ('owner', 'tc')),
+    'to_review', count(*) filter (where p.compliance_status = 'submitted' and public.deal_access(p.owner_id) = 'compliance'),
+    'unread', (select count(*) from public.deal_messages m left join public.deal_reads r on r.person_id = m.person_id and r.user_id = auth.uid()
+               where m.author_id is distinct from auth.uid() and m.created_at > coalesce(r.read_at, '-infinity'::timestamptz)
+                 and exists (select 1 from public.people pp where pp.id = m.person_id and pp.stage_group = 'transaction' and not pp.archived)))
+  from public.people p where p.stage_group = 'transaction' and not p.archived
+$$;
+
+revoke all on function public.deal_mark_read(uuid), public.deal_submit_review(uuid, text), public.deal_review(uuid, text, text), public.deal_mark_document(uuid, text, text), public.deal_attention() from public, anon;
+grant execute on function public.deal_mark_read(uuid), public.deal_submit_review(uuid, text), public.deal_review(uuid, text, text), public.deal_mark_document(uuid, text, text), public.deal_attention() to authenticated;

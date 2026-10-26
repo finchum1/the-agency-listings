@@ -21,6 +21,8 @@ import VendorsPage from "./components/dashboard/VendorsPage";
 import ListingAnalyticsPage from "./components/dashboard/ListingAnalyticsPage";
 import OfficeAnalyticsPage from "./components/dashboard/OfficeAnalyticsPage";
 import ContactsPage from "./components/dashboard/people/contacts/ContactsPage";
+import DealsGate from "./components/dashboard/people/DealsGate";
+import DealsPage from "./components/dashboard/people/DealsPage";
 import ListingReportPage from "./pages/ListingReportPage";
 import TransactionTimelinePage from "./pages/TransactionTimelinePage";
 import VendorSharePage from "./pages/VendorSharePage";
@@ -392,7 +394,10 @@ export default function App() {
           <Route path="contacts" element={<ContactsPage />} />
           <Route path="leads" element={<PeopleBoard group="lead" />} />
           <Route path="pipeline" element={<PeopleBoard group="pipeline" />} />
-          <Route path="transactions" element={<PeopleBoard group="transaction" />} />
+          <Route path="transactions" element={<Navigate to="/dashboard/deals" replace />} />
+        </Route>
+        <Route path="deals" element={<DealsGate />}>
+          <Route index element={<DealsPage />} />
         </Route>
         {/* Old separate routes, now combined into one "Upcoming" tab —
             redirect rather than 404 in case either was already bookmarked. */}

@@ -32,7 +32,7 @@ export function useContacts() {
       fetchAll(() => supabase.from("contacts").select("*").order("created_at", { ascending: false }).order("id")),
       supabase.from("contact_tags").select("*").order("name"),
       fetchAll(() => supabase.from("contact_tag_links").select("contact_id, tag_id").order("contact_id").order("tag_id")),
-      fetchAll(() => supabase.from("people").select("id, contact_id, stage_group, stage, archived").not("contact_id", "is", null).eq("archived", false).order("id")),
+      fetchAll(() => supabase.from("people").select("id, contact_id, stage_group, stage, archived").eq("owner_id", user?.id).not("contact_id", "is", null).eq("archived", false).order("id")),
       fetchAll(() => supabase.from("agent_tasks").select("id, contact_id, title, due_date, recurrence").not("contact_id", "is", null).eq("done", false).order("id")),
       supabase.from("contact_smart_lists").select("*").order("created_at"),
     ]);
@@ -46,7 +46,7 @@ export function useContacts() {
     setTasks(k.data || []);
     setLists(s.data || []);
     setLoading(false);
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (user?.id) load();

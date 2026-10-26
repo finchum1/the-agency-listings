@@ -9,10 +9,10 @@ export const BOARDS = {
   pipeline: {
     title: "Pipeline",
     stages: ["12+ Months", "6+ Months", "3-6 Months", "Coming Soon", "Active"],
-    next: { group: "transaction", label: "Move to Transactions" },
+    next: { group: "transaction", label: "Start a deal" },
   },
   transaction: {
-    title: "Transactions",
+    title: "Deals",
     stages: ["Pending", "Closing Soon", "Closed"],
     next: null,
     prev: { group: "pipeline", label: "Move back to Pipeline" },

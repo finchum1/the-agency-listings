@@ -268,7 +268,7 @@ export default function ContactsPage() {
           <option value="">Any board</option>
           <option value="lead">On Leads</option>
           <option value="pipeline">On Pipeline</option>
-          <option value="transaction">On Transactions</option>
+          <option value="transaction">On Deals</option>
           <option value="none">Not on a board</option>
         </select>
         <select value={filters.contacted} onChange={(e) => set({ contacted: e.target.value })} aria-label="Last contacted" className={select}>
@@ -380,7 +380,7 @@ export default function ContactsPage() {
           )}
         </div>
       )}
-      <p className={`mt-3 text-xs ${muted}`}>{filtered.length.toLocaleString()} shown{filtersOn ? " with these filters" : ""}. L, P and T mark someone who is on your Leads, Pipeline or Transactions board.</p>
+      <p className={`mt-3 text-xs ${muted}`}>{filtered.length.toLocaleString()} shown{filtersOn ? " with these filters" : ""}. L, P and T mark someone who is on your Leads, Pipeline or Deals board.</p>
 
       {open && (
         <ContactPanel

@@ -73,6 +73,7 @@ export function usePeopleStages() {
       const { error: moveErr } = await supabase
         .from("people")
         .update({ stage: name })
+        .eq("owner_id", user.id)
         .eq("stage_group", group)
         .eq("stage", oldName);
       if (moveErr) return moveErr.message;

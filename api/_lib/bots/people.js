@@ -50,7 +50,7 @@ async function stageLists(ctx) {
 }
 
 async function loadPerson(ctx, personId) {
-  const { data, error } = await ctx.client.from("people").select("*").eq("id", id(personId, "person")).maybeSingle();
+  const { data, error } = await ctx.client.from("people").select("*").eq("owner_id", ctx.ownerId).eq("id", id(personId, "person")).maybeSingle();
   if (error) fail(error);
   if (!data) throw new HttpError(404, "No person with that id in your People.");
   return data;
@@ -112,7 +112,7 @@ export async function stages(ctx) {
 
 export async function overview(ctx) {
   await gate(ctx);
-  const rows = must(await ctx.client.from("people").select("stage_group, stage, next_follow_up, closing_date, price, commission, created_at").eq("archived", false).limit(5000));
+  const rows = must(await ctx.client.from("people").select("stage_group, stage, next_follow_up, closing_date, price, commission, created_at").eq("owner_id", ctx.ownerId).eq("archived", false).limit(5000));
   const today = toKey(new Date());
   const week = toKey(new Date(Date.now() + 7 * 864e5));
   const month = toKey(new Date(Date.now() + 30 * 864e5));
@@ -146,7 +146,7 @@ export async function listPeople(ctx, q) {
   await gate(ctx);
   const limit = clip(q.limit, 50, 200);
   const offset = Math.max(0, Number.parseInt(q.offset, 10) || 0);
-  let query = ctx.client.from("people").select("*", { count: "exact" });
+  let query = ctx.client.from("people").select("*", { count: "exact" }).eq("owner_id", ctx.ownerId);
   if (q.group) query = query.eq("stage_group", oneOf(q, "group", GROUPS));
   if (q.stage) query = query.eq("stage", String(q.stage).slice(0, 60));
   if (q.side) query = query.eq("side", oneOf(q, "side", SIDES));
@@ -189,7 +189,7 @@ export async function createPerson(ctx, body) {
   if (f.side === "both" && place.stage_group === "transaction") throw bad('A transaction is for one side: send side "buyer" or "seller".');
 
   if (f.email && body.allow_duplicate !== true) {
-    const { data: dup } = await ctx.client.from("people").select("id, name, archived, stage_group, stage").ilike("email", f.email).limit(1).maybeSingle();
+    const { data: dup } = await ctx.client.from("people").select("id, name, archived, stage_group, stage").eq("owner_id", ctx.ownerId).ilike("email", f.email).limit(1).maybeSingle();
     if (dup) {
       throw new HttpError(409, `${dup.name} is already in your People with that email${dup.archived ? " (archived)" : ""}. Update them instead, or send allow_duplicate: true.`, { person_id: dup.id, archived: dup.archived, stage_group: dup.stage_group, stage: dup.stage });
     }

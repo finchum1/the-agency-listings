@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { dealAccess } from "../../lib/deals";
+import { useDealAttention } from "../../hooks/useDealAttention";
 import { createPortal } from "react-dom";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
@@ -38,6 +40,12 @@ const ICON_PATHS = {
       <circle cx="9" cy="8.5" r="3.2" />
       <path d="M3 20c.4-3.5 3-5.5 6-5.5s5.6 2 6 5.5" />
       <path d="M16 5.6a3.2 3.2 0 0 1 0 5.8M18 14.8c1.8.7 3 2.3 3.2 5.2" />
+    </>
+  ),
+  deals: (
+    <>
+      <path d="M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10A.5.5 0 0 1 7 20z" />
+      <path d="M14 3.5V8h4M9.5 14.5l2 2 3.5-4" />
     </>
   ),
   listings: (
@@ -102,7 +110,6 @@ const PEOPLE_ITEMS = [
   { to: "/dashboard/people/contacts", label: "Contacts" },
   { to: "/dashboard/people/leads", label: "Leads" },
   { to: "/dashboard/people/pipeline", label: "Pipeline" },
-  { to: "/dashboard/people/transactions", label: "Transactions" },
 ];
 
 const ADMIN_ITEMS = [
@@ -339,6 +346,8 @@ export default function DashboardLayout() {
   // to use the Website or People tools for themselves, so those two menus step aside. Agents and admins of that
   // organization still get theirs, per their own switches.
   const workingElsewhere = Boolean(isPlatformAdmin && org && profile?.org_id && org.id !== profile.org_id);
+  const deals = dealAccess(profile);
+  const dealsAttention = useDealAttention(deals.any && !workingElsewhere);
   const siteAccess = profile?.site_access || "full";
   const siteItems = siteAccess === "limited" ? SITE_ITEMS.filter((i) => i.to.endsWith("/blog")) : SITE_ITEMS;
 
@@ -350,7 +359,7 @@ export default function DashboardLayout() {
     // Closed drawer: one icon per main item. A group's icon goes to the first page in that group.
     if (rail) {
       const itemClass = (active, menuOpen) =>
-        `mx-auto flex h-11 w-11 items-center justify-center rounded-xl transition-colors ${
+        `relative mx-auto flex h-11 w-11 items-center justify-center rounded-xl transition-colors ${
           active || menuOpen
             ? "bg-[#1c1a17]/10 dark:bg-[#faf9f7]/10 text-[#1c1a17] dark:text-[#faf9f7]"
             : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
@@ -361,12 +370,13 @@ export default function DashboardLayout() {
       };
       const tipOff = () => setRailTip(null);
       // An icon with nothing inside it goes straight to its page; one with pages inside opens a small menu of them.
-      const railItem = (label, icon, active, { to, items }) => {
+      const railItem = (label, icon, active, { to, items, badge = 0 }) => {
         const handlers = { onMouseEnter: tipOn(label), onMouseLeave: tipOff, onFocus: tipOn(label), onBlur: tipOff };
         if (!items) {
           return (
             <Link key={label} to={to} onClick={onNavigate} aria-label={label} aria-current={active ? "page" : undefined} className={itemClass(active, false)} {...handlers}>
               <NavIcon name={icon} />
+              {badge > 0 && <span aria-hidden="true" className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#ed2127] dark:bg-[#f2454b] ring-2 ring-white dark:ring-[#161616]" />}
             </Link>
           );
         }
@@ -398,6 +408,7 @@ export default function DashboardLayout() {
             {!workingElsewhere && railItem("Home", "home", path === "/dashboard" || path === "/dashboard/", { to: "/dashboard" })}
             {!workingElsewhere && siteAccess !== "none" && railItem("Website", "website", inSite, { items: siteItems })}
             {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { items: PEOPLE_ITEMS })}
+            {!workingElsewhere && deals.any && railItem("Deals", "deals", path.startsWith("/dashboard/deals"), { to: "/dashboard/deals", badge: dealsAttention.total })}
             {NAV_ITEMS.map((item) => railItem(item.label, item.icon, item.activeWhen(path), { to: item.to }))}
           </div>
           {isAdmin && (
@@ -463,6 +474,15 @@ export default function DashboardLayout() {
         )}
         {!workingElsewhere && siteAccess !== "none" && group("Website", "website", siteOpen, setSiteOpen, siteItems)}
         {!workingElsewhere && profile?.people_enabled && group("People", "people", peopleOpen, setPeopleOpen, PEOPLE_ITEMS)}
+        {!workingElsewhere && deals.any && (
+          <div className="mt-1 space-y-1">
+            <Link to="/dashboard/deals" onClick={onNavigate} className={`${navLinkClass(path.startsWith("/dashboard/deals"))} flex items-center gap-3`}>
+              <NavIcon name="deals" />
+              <span className="flex-1">Deals</span>
+              {dealsAttention.total > 0 && <span aria-label={`${dealsAttention.total} need attention`} className="rounded-full bg-[#ed2127] dark:bg-[#f2454b] px-1.5 py-px text-[10px] font-semibold text-white">{dealsAttention.total}</span>}
+            </Link>
+          </div>
+        )}
         <div className="mt-1 space-y-1">
           {NAV_ITEMS.map((item) => (
             <Link key={item.to} to={item.to} onClick={onNavigate} className={`${navLinkClass(item.activeWhen(path))} flex items-center gap-3`}>

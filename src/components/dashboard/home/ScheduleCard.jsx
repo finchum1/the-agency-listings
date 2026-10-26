@@ -22,7 +22,7 @@ const DEAL_DATES = [
 ];
 // Open deals' key dates (contract, inspection, appraisal, financing deadline, closing) for the schedule. Only runs when
 // the agent has People on.
-function useDealDates(enabled) {
+function useDealDates(enabled, userId) {
   const { closedStage } = usePeopleStages();
   const [deals, setDeals] = useState([]);
   useEffect(() => {
@@ -31,13 +31,14 @@ function useDealDates(enabled) {
     supabase
       .from("people")
       .select("id, name, property_address, stage, contract_date, inspection_date, appraisal_date, financing_deadline, closing_date")
+      .eq("owner_id", userId)
       .eq("stage_group", "transaction")
       .eq("archived", false)
       .then(({ data }) => active && setDeals((data || []).filter((p) => p.stage !== closedStage)));
     return () => {
       active = false;
     };
-  }, [enabled, closedStage]);
+  }, [enabled, closedStage, userId]);
   return enabled ? deals : [];
 }
 
@@ -116,7 +117,7 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
     setParams({}, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const deals = useDealDates(wantsPeople);
+  const deals = useDealDates(wantsPeople, userId);
 
   const byDay = useMemo(() => {
     const map = new Map();

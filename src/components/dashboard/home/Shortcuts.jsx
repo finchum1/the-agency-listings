@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
+import { boardPath } from "../../../lib/deals";
 import { Link } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS } from "../../../lib/peopleStages";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
 import { card } from "./styles";
 
-const BOARD_ROUTES = { lead: "leads", pipeline: "pipeline", transaction: "transactions" };
 const inputClass =
   "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
@@ -13,7 +13,7 @@ const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9
 const KINDS = {
   lead: { label: "Add lead", title: "Add a lead", where: "Leads" },
   pipeline: { label: "Add to pipeline", title: "Add to your pipeline", where: "Pipeline" },
-  transaction: { label: "Add transaction", title: "Add a transaction", where: "Transactions" },
+  transaction: { label: "Add deal", title: "Add a deal", where: "Deals" },
 };
 
 const EMPTY = { name: "", phone: "", email: "", side: "", stage: "", follow_up: "", property_address: "", price: "", closing_date: "" };
@@ -179,7 +179,7 @@ export default function Shortcuts({ wantsBlog, wantsPeople }) {
       {added && (
         <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-400" role="status">
           Added {added.name} to {KINDS[added.kind].where}.{" "}
-          <Link to={`/dashboard/people/${BOARD_ROUTES[added.kind]}`} className="font-semibold underline">
+          <Link to={boardPath(added.kind)} className="font-semibold underline">
             Open {KINDS[added.kind].where}
           </Link>
         </p>

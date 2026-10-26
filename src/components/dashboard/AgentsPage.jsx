@@ -186,6 +186,7 @@ export default function AgentsPage() {
               <AgentRow
                 key={a.id}
                 agent={a}
+                allAgents={agents}
                 isSelf={a.id === user?.id}
                 expanded={expandedId === a.id}
                 onToggle={() => setExpandedId((id) => (id === a.id ? null : a.id))}

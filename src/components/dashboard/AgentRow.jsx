@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import ImageUploadField from "./ImageUploadField";
 
@@ -15,8 +15,44 @@ const sectionTitle = "text-xs font-semibold uppercase tracking-wider text-[#1c1a
 // (typed fields when you leave them, dropdowns and switches instantly) —
 // the same direct profiles update an admin was already allowed to make
 // (profiles_update_own_or_admin), no service role needed.
+// A transaction coordinator's agents: tick the agents this person works with.
+function CoordinatorAgents({ tc, agents, onError }) {
+  const [ids, setIds] = useState(null);
+  useEffect(() => {
+    supabase.from("deal_team").select("agent_id").eq("tc_id", tc.id).then(({ data }) => setIds(new Set((data || []).map((r) => r.agent_id))));
+  }, [tc.id]);
+  const toggle = async (agentId, on) => {
+    setIds((cur) => {
+      const next = new Set(cur);
+      on ? next.add(agentId) : next.delete(agentId);
+      return next;
+    });
+    const { error } = on
+      ? await supabase.from("deal_team").insert({ tc_id: tc.id, agent_id: agentId, org_id: tc.org_id })
+      : await supabase.from("deal_team").delete().eq("tc_id", tc.id).eq("agent_id", agentId);
+    if (error) onError(error.message);
+  };
+  if (!ids) return null;
+  const others = agents.filter((a) => a.id !== tc.id && a.people_enabled);
+  return (
+    <fieldset className="space-y-1.5">
+      <legend className={labelClass}>Works with these agents' deals</legend>
+      {others.length === 0 && <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">No agents have the People module on yet.</p>}
+      <div className="max-h-44 overflow-y-auto space-y-1 rounded-lg border border-black/10 dark:border-white/15 p-2">
+        {others.map((a) => (
+          <label key={a.id} className="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="checkbox" checked={ids.has(a.id)} onChange={(e) => toggle(a.id, e.target.checked)} />
+            {a.full_name}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 export default function AgentRow({
   agent,
+  allAgents = [],
   isSelf,
   expanded,
   onToggle,
@@ -158,7 +194,7 @@ export default function AgentRow({
               >
                 <option value="full">Full — every part of their site</option>
                 <option value="limited">Limited — blog posts only</option>
-                <option value="none">None — no website (Listings, Upcoming and People only)</option>
+                <option value="none">None — no website (Listings, Upcoming, People and Deals only)</option>
               </select>
             </div>
             <label className="flex items-start gap-2.5 text-sm cursor-pointer">
@@ -171,10 +207,26 @@ export default function AgentRow({
               <span>
                 <span className="font-medium">People module</span>
                 <span className="block text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
-                  Leads, Pipeline and Transactions. Private to this agent — even admins can't see their people.
+                  Leads, Pipeline and Deals. Private to this agent — even admins can't see their people.
                 </span>
               </span>
             </label>
+            <div>
+              <label className={labelClass}>Deals role</label>
+              <select
+                value={agent.deals_role || ""}
+                onChange={(e) => patch({ deals_role: e.target.value || null })}
+                className={inputClass}
+              >
+                <option value="">None (an agent's own deals only, with the People module)</option>
+                <option value="tc">Transaction coordinator: works on selected agents' deals</option>
+                <option value="compliance">Compliance: sees every deal in the office and reviews documents</option>
+              </select>
+              <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-1">
+                Leads, Pipeline, notes and contacts stay private either way. Admins don't see deals unless they give themselves the compliance role.
+              </p>
+            </div>
+            {agent.deals_role === "tc" && <CoordinatorAgents tc={agent} agents={allAgents} onError={onError} />}
             <div>
               <label className={labelClass}>Role</label>
               <select

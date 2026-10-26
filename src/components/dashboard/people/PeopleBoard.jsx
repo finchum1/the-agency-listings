@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ComplianceChip } from "./DealCompliance";
 import { createPortal } from "react-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS } from "../../../lib/peopleStages";
@@ -65,6 +66,9 @@ function PersonCardBody({ p, group, progress, today }) {
           <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${SIDE_TAGS[p.side].className}`}>{SIDE_TAGS[p.side].label}</span>
         )}
       </div>
+      {group === "transaction" && p.compliance_status && p.compliance_status !== "none" && (
+        <ComplianceChip status={p.compliance_status} />
+      )}
       {group === "transaction" && (
         <div className="space-y-0.5">
           {p.property_address && (
@@ -550,7 +554,7 @@ export default function PeopleBoard({ group }) {
         <div className="min-w-0">
           <h1 className="text-2xl font-display font-semibold">{board.title}</h1>
           <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
-            {active.length} {active.length === 1 ? "person" : "people"} · drag cards between columns, drag a column's ⋮⋮ grip (or use ⋯) to reorder, click a title to rename it, or use + to add someone.
+            {active.length} {group === "transaction" ? (active.length === 1 ? "deal" : "deals") : active.length === 1 ? "person" : "people"} · drag cards between columns, drag a column's ⋮⋮ grip (or use ⋯) to reorder, click a title to rename it, or use + to add someone.
           </p>
         </div>
         {/* Add-column lives up here rather than as a tile at the end of the

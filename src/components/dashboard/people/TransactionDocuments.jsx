@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { supabase } from "../../../lib/supabaseClient";
 import { Link } from "react-router-dom";
 import { useTransactionDocuments } from "../../../hooks/useTransactionDocuments";
 import { SIDE_LABELS, loadDocumentTemplate } from "../../../lib/checklists";
@@ -10,8 +11,22 @@ const smallInput =
 // The deal's document checklist — the paperwork to collect for a buyer or
 // seller/listing deal. Mirrors TransactionChecklist (sections, completed
 // toggle) without due dates.
-export default function TransactionDocuments({ person, side, onSummary }) {
-  const { docs, loading, error, applyTemplate, addDoc, updateDoc, removeDoc, clearAll } = useTransactionDocuments(person.id);
+//
+// viewer: "owner" (the agent), "tc" (their coordinator: can tick and edit) or "compliance" (reads the list and marks each
+// document OK or needs fixing). Everyone sees those marks.
+export default function TransactionDocuments({ person, side, onSummary, viewer = "owner" }) {
+  const { docs, loading, error, applyTemplate, addDoc, updateDoc, removeDoc, clearAll, reload } = useTransactionDocuments(person.id);
+  const reviewer = viewer === "compliance";
+  const canTemplate = viewer === "owner";
+  const [flagging, setFlagging] = useState(null); // { id, note } while compliance types why a document needs fixing
+  const [markError, setMarkError] = useState("");
+  const mark = async (id, status, note = "") => {
+    setMarkError("");
+    const { error: err } = await supabase.rpc("deal_mark_document", { p_doc: id, p_status: status, p_note: note });
+    if (err) setMarkError(err.message);
+    setFlagging(null);
+    reload();
+  };
   const [collapsed, setCollapsed] = useState({});
   const [completedShown, setCompletedShown] = useState({});
   const [addingTo, setAddingTo] = useState(null);
@@ -31,7 +46,7 @@ export default function TransactionDocuments({ person, side, onSummary }) {
   docsRef.current = docs;
   useEffect(() => {
     const prev = prevSide.current;
-    if (loading || prev === side) return;
+    if (loading || prev === side || !canTemplate) return;
     prevSide.current = side;
     if (!side) return;
     const current = docsRef.current;
@@ -111,40 +126,104 @@ export default function TransactionDocuments({ person, side, onSummary }) {
   };
 
   const renderDoc = (d) => (
-    <li key={d.id} className="flex items-start gap-2 rounded-lg px-1 py-1.5 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]">
-      <input
-        type="checkbox"
-        checked={d.done}
-        onChange={(e) =>
-          updateDoc(d.id, { done: e.target.checked, done_at: e.target.checked ? new Date().toISOString() : null })
-        }
-        className="mt-1 h-4 w-4 shrink-0 accent-[#ed2127]"
-      />
-      <textarea
-        defaultValue={d.text}
-        rows={Math.max(1, Math.ceil(d.text.length / 42))}
-        onBlur={(e) => {
-          const v = e.target.value.trim();
-          if (!v) e.target.value = d.text;
-          else if (v !== d.text) updateDoc(d.id, { text: v });
-        }}
-        className={`min-w-0 flex-1 resize-none bg-transparent text-sm leading-snug focus:outline-none focus:bg-black/[0.03] dark:focus:bg-white/[0.05] rounded ${
-          d.done ? "line-through opacity-50" : ""
-        }`}
-      />
-      <button
-        type="button"
-        onClick={() => removeDoc(d.id)}
-        aria-label="Delete document"
-        className="shrink-0 px-1 text-[#1c1a17]/30 dark:text-[#faf9f7]/30 hover:text-red-600 dark:hover:text-red-400"
-      >
-        ✕
-      </button>
+    <li key={d.id} className="rounded-lg px-1 py-1.5 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]">
+      <div className="flex items-start gap-2">
+        <input
+          type="checkbox"
+          checked={d.done}
+          disabled={reviewer}
+          onChange={(e) =>
+            updateDoc(d.id, { done: e.target.checked, done_at: e.target.checked ? new Date().toISOString() : null })
+          }
+          className="mt-1 h-4 w-4 shrink-0 accent-[#ed2127]"
+        />
+        <textarea
+          defaultValue={d.text}
+          readOnly={reviewer}
+          rows={Math.max(1, Math.ceil(d.text.length / 42))}
+          onBlur={(e) => {
+            const v = e.target.value.trim();
+            if (!v) e.target.value = d.text;
+            else if (v !== d.text && !reviewer) updateDoc(d.id, { text: v });
+          }}
+          className={`min-w-0 flex-1 resize-none bg-transparent text-sm leading-snug focus:outline-none focus:bg-black/[0.03] dark:focus:bg-white/[0.05] rounded ${
+            d.done ? "line-through opacity-50" : ""
+          }`}
+        />
+        {d.review_status === "ok" && (
+          <span title="Compliance marked this OK" className="shrink-0 mt-0.5 rounded-full bg-emerald-100 dark:bg-emerald-400/15 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 text-[11px] font-semibold">
+            OK
+          </span>
+        )}
+        {d.review_status === "issue" && (
+          <span title="Compliance flagged this" className="shrink-0 mt-0.5 rounded-full bg-red-100 dark:bg-red-400/15 text-red-800 dark:text-red-300 px-2 py-0.5 text-[11px] font-semibold">
+            Needs fixing
+          </span>
+        )}
+        {!reviewer && (
+          <button
+            type="button"
+            onClick={() => removeDoc(d.id)}
+            aria-label="Delete document"
+            className="shrink-0 px-1 text-[#1c1a17]/30 dark:text-[#faf9f7]/30 hover:text-red-600 dark:hover:text-red-400"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+      {d.review_status === "issue" && d.review_note && (
+        <p className="ml-6 mt-1 text-xs text-red-700 dark:text-red-300">{d.review_note}</p>
+      )}
+      {reviewer && (
+        <div className="ml-6 mt-1.5 flex flex-wrap items-center gap-2">
+          {flagging?.id === d.id ? (
+            <form
+              className="flex w-full items-center gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                mark(d.id, "issue", flagging.note);
+              }}
+            >
+              <input
+                autoFocus
+                value={flagging.note}
+                onChange={(e) => setFlagging({ id: d.id, note: e.target.value })}
+                placeholder="What needs fixing?"
+                aria-label="What needs fixing"
+                className={`${smallInput} min-w-0 flex-1 py-1.5`}
+              />
+              <button type="submit" className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b]">Flag</button>
+              <button type="button" onClick={() => setFlagging(null)} className={`text-xs ${muted}`}>Cancel</button>
+            </form>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => mark(d.id, d.review_status === "ok" ? null : "ok")}
+                className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
+                  d.review_status === "ok" ? "border-emerald-600 bg-emerald-600 text-white" : "border-black/15 dark:border-white/20 hover:bg-black/5 dark:hover:bg-white/10"
+                }`}
+              >
+                {d.review_status === "ok" ? "Marked OK" : "Mark OK"}
+              </button>
+              <button
+                type="button"
+                onClick={() => (d.review_status === "issue" ? mark(d.id, null) : setFlagging({ id: d.id, note: "" }))}
+                className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${
+                  d.review_status === "issue" ? "border-red-600 bg-red-600 text-white" : "border-black/15 dark:border-white/20 hover:bg-black/5 dark:hover:bg-white/10"
+                }`}
+              >
+                {d.review_status === "issue" ? "Flagged · clear" : "Flag a problem"}
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </li>
   );
 
   const addForm = (title) =>
-    addingTo === title ? (
+    reviewer ? null : addingTo === title ? (
       <form onSubmit={(e) => submitNew(e, title)} className="flex items-center gap-2 ml-1">
         <input
           autoFocus
@@ -175,11 +254,16 @@ export default function TransactionDocuments({ person, side, onSummary }) {
 
   return (
     <div className="space-y-3">
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {(error || markError) && <p className="text-sm text-red-600 dark:text-red-400">{error || markError}</p>}
 
       {docs.length === 0 ? (
         <div className="space-y-2">
-          {side ? (
+          {!canTemplate ? (
+            <>
+              <p className={`text-sm ${muted}`}>No documents on this deal yet.</p>
+              {addForm("Documents")}
+            </>
+          ) : side ? (
             <>
               <p className={`text-sm ${muted}`}>No documents on this deal yet.</p>
               <div className="flex items-center gap-3 flex-wrap">
@@ -208,9 +292,11 @@ export default function TransactionDocuments({ person, side, onSummary }) {
       ) : (
         <div className="space-y-4">
           {sections.map((sec) => {
-            const openDocs = sec.docs.filter((d) => !d.done);
-            const doneDocs = sec.docs.filter((d) => d.done);
-            const open = collapsed[sec.title] === undefined ? doneDocs.length < sec.docs.length : !collapsed[sec.title];
+            // A reviewer sees every document in the section, collected or not, and sections start open.
+            const collected = sec.docs.filter((d) => d.done).length;
+            const openDocs = reviewer ? sec.docs : sec.docs.filter((d) => !d.done);
+            const doneDocs = reviewer ? [] : sec.docs.filter((d) => d.done);
+            const open = collapsed[sec.title] === undefined ? reviewer || collected < sec.docs.length : !collapsed[sec.title];
             const completedOpen = !!completedShown[sec.title];
             return (
               <div key={sec.title} className="space-y-1.5">
@@ -233,7 +319,7 @@ export default function TransactionDocuments({ person, side, onSummary }) {
                     <span className="text-sm font-semibold truncate">{sec.title}</span>
                   </span>
                   <span className={`text-xs shrink-0 ${muted}`}>
-                    {doneDocs.length}/{sec.docs.length}
+                    {collected}/{sec.docs.length}
                   </span>
                 </button>
                 {open && (
@@ -267,14 +353,16 @@ export default function TransactionDocuments({ person, side, onSummary }) {
               </div>
             );
           })}
-          <button
-            type="button"
-            onClick={handleClear}
-            disabled={working}
-            className={`text-xs hover:text-red-600 dark:hover:text-red-400 ${muted}`}
-          >
-            Remove document list
-          </button>
+          {canTemplate && (
+            <button
+              type="button"
+              onClick={handleClear}
+              disabled={working}
+              className={`text-xs hover:text-red-600 dark:hover:text-red-400 ${muted}`}
+            >
+              Remove document list
+            </button>
+          )}
         </div>
       )}
     </div>

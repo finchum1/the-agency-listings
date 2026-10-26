@@ -22,7 +22,11 @@ const openPicker = (e) => {
 
 // `dates` is the deal's live form values, so due dates update the moment a
 // contract / inspection / closing date is typed in above.
-export default function TransactionChecklist({ person, side, dates, onSummary }) {
+// viewer: "owner" (the agent), "tc" (their coordinator: can tick and edit, but the agent's templates stay the agent's) or
+// "compliance" (read only).
+export default function TransactionChecklist({ person, side, dates, onSummary, viewer = "owner" }) {
+  const readOnly = viewer === "compliance";
+  const canTemplate = viewer === "owner";
   const { tasks, loading, error, applyTemplate, addTask, updateTask, removeTask, clearAll } = useTransactionTasks(person.id);
   const [collapsed, setCollapsed] = useState({});
   const [completedShown, setCompletedShown] = useState({});
@@ -44,7 +48,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
   tasksRef.current = tasks;
   useEffect(() => {
     const prev = prevSide.current;
-    if (loading || prev === side) return;
+    if (loading || prev === side || !canTemplate) return;
     prevSide.current = side;
     if (!side) return;
     const current = tasksRef.current;
@@ -131,6 +135,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
         <input
           type="checkbox"
           checked={t.done}
+          disabled={readOnly}
           onChange={(e) =>
             updateTask(t.id, {
               done: e.target.checked,
@@ -142,11 +147,12 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
         <div className="min-w-0 flex-1 space-y-1">
           <textarea
             defaultValue={t.text}
+            readOnly={readOnly}
             rows={Math.max(1, Math.ceil(t.text.length / 42))}
             onBlur={(e) => {
               const v = e.target.value.trim();
               if (!v) e.target.value = t.text;
-              else if (v !== t.text) updateTask(t.id, { text: v });
+              else if (v !== t.text && !readOnly) updateTask(t.id, { text: v });
             }}
             className={`w-full resize-none bg-transparent text-sm leading-snug focus:outline-none focus:bg-black/[0.03] dark:focus:bg-white/[0.05] rounded ${
               t.done ? "line-through opacity-50" : ""
@@ -156,12 +162,13 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
             <input
               type="date"
               value={due || ""}
+              disabled={readOnly}
               onChange={(e) => updateTask(t.id, { due_override: e.target.value || null })}
               onClick={openPicker}
               title={due ? "Click to set a specific due date" : "Add the date this is based on to get an automatic due date"}
               className={`${smallInput} cursor-pointer ${overdue ? "text-red-600 dark:text-red-400 border-red-300" : ""}`}
             />
-            {t.due_override ? (
+            {readOnly ? null : t.due_override ? (
               <button
                 type="button"
                 onClick={() => updateTask(t.id, { due_override: null })}
@@ -176,14 +183,16 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
             ) : null}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => removeTask(t.id)}
-          aria-label="Delete task"
-          className="shrink-0 px-1 text-[#1c1a17]/30 dark:text-[#faf9f7]/30 hover:text-red-600 dark:hover:text-red-400"
-        >
-          ✕
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => removeTask(t.id)}
+            aria-label="Delete task"
+            className="shrink-0 px-1 text-[#1c1a17]/30 dark:text-[#faf9f7]/30 hover:text-red-600 dark:hover:text-red-400"
+          >
+            ✕
+          </button>
+        )}
       </li>
     );
   };
@@ -194,7 +203,9 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
 
       {tasks.length === 0 ? (
         <div className="space-y-2">
-          {side ? (
+          {!canTemplate ? (
+            <p className={`text-sm ${muted}`}>No checklist on this deal yet.</p>
+          ) : side ? (
             <>
               <p className={`text-sm ${muted}`}>No checklist on this deal yet.</p>
               <button
@@ -246,7 +257,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
                   <>
                     <p className={`text-[11px] ml-4 ${muted}`}>{ruleLabel(sec.anchor, sec.offset_days)}</p>
                     <ul className="space-y-1">{openTasks.map(renderTask)}</ul>
-                    {addingTo === sec.title ? (
+                    {readOnly ? null : addingTo === sec.title ? (
                       <form onSubmit={(e) => submitNewTask(e, sec)} className="flex items-center gap-2 ml-1">
                         <input
                           autoFocus
@@ -301,14 +312,16 @@ export default function TransactionChecklist({ person, side, dates, onSummary })
               </div>
             );
           })}
-          <button
-            type="button"
-            onClick={handleClear}
-            disabled={working}
-            className={`text-xs hover:text-red-600 dark:hover:text-red-400 ${muted}`}
-          >
-            Remove checklist
-          </button>
+          {canTemplate && (
+            <button
+              type="button"
+              onClick={handleClear}
+              disabled={working}
+              className={`text-xs hover:text-red-600 dark:hover:text-red-400 ${muted}`}
+            >
+              Remove checklist
+            </button>
+          )}
         </div>
       )}
     </div>

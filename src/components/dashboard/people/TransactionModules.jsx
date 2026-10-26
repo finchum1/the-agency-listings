@@ -44,7 +44,7 @@ function Module({ title, summary, unit, children }) {
 
 // The deal's Tasks and Documents, side by side under the contact info and
 // Details. Each reports its done/total up here for the progress ring and bar.
-export default function TransactionModules({ person, side, dates }) {
+export default function TransactionModules({ person, side, dates, viewer = "owner" }) {
   const [summary, setSummary] = useState({});
   const report = (key) => (s) =>
     setSummary((prev) => (prev[key]?.done === s.done && prev[key]?.total === s.total ? prev : { ...prev, [key]: s }));
@@ -52,10 +52,10 @@ export default function TransactionModules({ person, side, dates }) {
   return (
     <div className="grid gap-6 lg:grid-cols-2 items-start">
       <Module title="Tasks" unit="done" summary={summary.tasks}>
-        <TransactionChecklist person={person} side={side} dates={dates} onSummary={report("tasks")} />
+        <TransactionChecklist person={person} side={side} dates={dates} onSummary={report("tasks")} viewer={viewer} />
       </Module>
       <Module title="Documents" unit="collected" summary={summary.documents}>
-        <TransactionDocuments person={person} side={side} onSummary={report("documents")} />
+        <TransactionDocuments person={person} side={side} onSummary={report("documents")} viewer={viewer} />
       </Module>
     </div>
   );

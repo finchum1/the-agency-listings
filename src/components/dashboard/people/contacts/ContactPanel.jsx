@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { boardPath } from "../../../../lib/deals";
 import { Link } from "react-router-dom";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useAuth } from "../../../../hooks/useAuth";
@@ -243,9 +244,9 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
           <section className="space-y-2.5">
             <h3 className={heading}>On your boards</h3>
             <div className="flex flex-wrap items-center gap-2">
-              {myCards.length === 0 && <span className={`text-sm ${muted}`}>Not on Leads, Pipeline or Transactions.</span>}
+              {myCards.length === 0 && <span className={`text-sm ${muted}`}>Not on Leads, Pipeline or Deals.</span>}
               {myCards.map((c) => (
-                <Link key={c.id} to={`/dashboard/people/${{ lead: "leads", pipeline: "pipeline", transaction: "transactions" }[c.stage_group]}`} className={pill}>
+                <Link key={c.id} to={boardPath(c.stage_group)} className={pill}>
                   {BOARDS[c.stage_group].title} · {c.stage}
                 </Link>
               ))}
@@ -352,7 +353,7 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
               <button
                 type="button"
                 onClick={async () => {
-                  if (confirm(`Permanently delete ${fullName(contact)}, their activity and tags? Their Leads / Pipeline / Transactions cards stay. This can't be undone.`)) {
+                  if (confirm(`Permanently delete ${fullName(contact)}, their activity and tags? Their Leads / Pipeline / Deals cards stay. This can't be undone.`)) {
                     await onDelete(contact.id);
                     onClose();
                   }

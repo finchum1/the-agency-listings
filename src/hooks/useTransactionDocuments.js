@@ -73,5 +73,5 @@ export function useTransactionDocuments(personId) {
     await load();
   };
 
-  return { docs, loading, error, applyTemplate, addDoc, updateDoc, removeDoc, clearAll };
+  return { docs, loading, error, applyTemplate, addDoc, updateDoc, removeDoc, clearAll, reload: load };
 }

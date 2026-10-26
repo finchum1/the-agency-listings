@@ -12,7 +12,7 @@ export default function SettingsPage() {
         <Link to="/dashboard/profile" className="text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
           ← My Profile
         </Link>
-        <h1 className="text-2xl font-display font-semibold mt-2">Transactions Checklist</h1>
+        <h1 className="text-2xl font-display font-semibold mt-2">Deal Checklists</h1>
         <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
           Your buyer and seller task and document lists. When you add one to a deal, it copies the list for that side —
           editing it here never changes deals already in progress.
