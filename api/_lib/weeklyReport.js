@@ -36,7 +36,7 @@ export function buildWeeklyEmail({ listing, agentName, orgName, week, two, dashb
   ];
   if (top.length) lines.push("", "Where they came from:", ...top.map((x) => `  ${sourceLabel(x.source)}: ${x.views}`));
   if (city) lines.push("", `Top city: ${[city.city, city.region].filter(Boolean).join(", ")}`);
-  if (tracked > 0) lines.push("", `${pct(e.gallery_opens || 0, tracked)}% opened the photos, ${e.phone_clicks || 0} tapped your phone number, ${e.form_starts || 0} started the inquiry form.`);
+  if (tracked > 0) lines.push("", `${pct(e.gallery_opens || 0, tracked)}% opened the photos, ${e.video_gallery || e.video_plays ? `${pct(e.video_plays || 0, tracked)}% played the video, ` : ""}${e.phone_clicks || 0} tapped your phone number, ${e.form_starts || 0} started the inquiry form.`);
   if (s.views === 0) lines.push("", "No visits yet this week. Share the listing's tagged links from its Analytics page to get it in front of people.");
   lines.push("", `Open the full report, or send your seller their private link: ${dashboardUrl}`, "", "You get this because weekly reports are on for this listing. Turn them off on the listing's Analytics page.");
   const text = lines.join("\n");

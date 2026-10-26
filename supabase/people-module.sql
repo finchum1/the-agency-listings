@@ -2154,3 +2154,26 @@ create policy deal_team_agent_read on public.deal_team for select to authenticat
 
 -- 45. Email a coordinator when an agent picks them on a deal (api/deal-notify.js action "tc_assigned"); emailed_at keeps it to once per pick.
 alter table public.deal_tcs add column if not exists emailed_at timestamptz;
+
+-- ============================================================================
+-- 46. Video plays on property sites. listing_events gains 'video_play' (detail: where it played, "gallery"); listing_analytics()
+--     reports engagement.video_plays (visits that pressed play) and engagement.video_gallery (whether this listing has a video
+--     in the gallery spot, so the dashboard knows to show the row even at zero).
+-- ============================================================================
+alter table public.listing_events drop constraint if exists listing_events_type_check;
+alter table public.listing_events add constraint listing_events_type_check
+  check (type in ('gallery_open', 'photo_view', 'phone_click', 'email_click', 'form_start', 'section', 'video_play'));
+
+do $$
+declare def text;
+begin
+  def := pg_get_functiondef('public.listing_analytics(uuid, integer, text)'::regprocedure);
+  if def like '%video_plays%' then return; end if;
+  def := replace(def,
+    '''form_starts'', (select count(distinct view_id) from ev where type = ''form_start''),',
+    '''form_starts'', (select count(distinct view_id) from ev where type = ''form_start''),
+      ''video_plays'', (select count(distinct view_id) from ev where type = ''video_play''),
+      ''video_gallery'', coalesce((select hero_video_url is not null and video_placement in (''gallery'', ''both'') from public.listings where id = p_listing_id), false),');
+  if def not like '%video_plays%' then raise exception 'listing_analytics was not changed'; end if;
+  execute def;
+end $$;

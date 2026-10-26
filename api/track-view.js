@@ -13,7 +13,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 const VALID_TYPES = new Set(["listing", "agent_site", "agent_post", "brokerage_site", "brokerage_post"]);
-const LISTING_EVENTS = new Set(["gallery_open", "photo_view", "phone_click", "email_click", "form_start", "section"]);
+const LISTING_EVENTS = new Set(["gallery_open", "photo_view", "phone_click", "email_click", "form_start", "section", "video_play"]);
 const SITE_EVENTS = new Set(["phone_click", "email_click", "form_start", "section", "listing_click", "social_click", "blog_click"]);
 const SITE_PAGES = new Set(["home", "about", "listings", "areas", "area", "blog", "contact", "agents", "search", "home-valuation"]);
 const DETAILED = new Set(["listing", "agent_site", "agent_post", "brokerage_site", "brokerage_post"]); // the targets that record who visited, from where, and on what

@@ -1,5 +1,6 @@
 import { useListingContext } from "../../context/ListingContext";
 import { formatPrice } from "../../lib/format";
+import { embedUrl } from "../../lib/videoEmbed";
 
 // The classic property-site hero is two layers (see ListingSitePage.jsx): the photo or video is pinned in place behind
 // the page (HeroBackdrop), and the text (status, MLS number, address, price, tour button) is the page's first block of
@@ -10,10 +11,27 @@ export function HeroBackdrop() {
   const { listing } = useListingContext();
   const hero = listing.images[0];
   const video = listing.heroVideo;
+  const embed = listing.heroEmbed;
 
   return (
     <div className="sticky top-0 z-0 w-full overflow-hidden" style={{ height: HERO_HEIGHT }}>
-      {video ? (
+      {embed ? (
+        // A YouTube or Vimeo video, silent and looping, scaled up to fill the hero like a photo would (the player is 16:9, so it
+        // is made at least as wide as the hero and as tall as it, and centered). The photo shows until the video starts.
+        <>
+          {hero?.url && <img src={hero.url} alt="" className="absolute inset-0 h-full w-full object-cover" />}
+          <iframe
+            src={embedUrl(embed, { background: true })}
+            title=""
+            aria-hidden="true"
+            tabIndex={-1}
+            allow="autoplay; encrypted-media"
+            referrerPolicy="strict-origin-when-cross-origin"
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border-0"
+            style={{ width: `max(100%, calc(${HERO_HEIGHT} * 16 / 9))`, aspectRatio: "16 / 9" }}
+          />
+        </>
+      ) : video ? (
         <video className="absolute inset-0 h-full w-full object-cover" src={video} poster={hero?.url} autoPlay muted loop playsInline />
       ) : (
         <img src={hero?.url} alt={hero?.alt} className="absolute inset-0 h-full w-full object-cover" />

@@ -1,6 +1,54 @@
 import { useCallback, useEffect, useState } from "react";
 import { useListingContext } from "../../context/ListingContext";
 import { trackListingEvent } from "../../lib/trackView";
+import { embedUrl } from "../../lib/videoEmbed";
+
+// The video above the photo gallery: an uploaded file plays in a normal player; a YouTube or Vimeo link shows the photo with a
+// play button and only loads the player when pressed (faster page, no tracking cookies until someone chooses to watch). Either way,
+// the first press of play is counted in the listing's analytics.
+function GalleryVideo({ file, embed, poster, spaced }) {
+  const [playing, setPlaying] = useState(false);
+  const frame = `overflow-hidden rounded-2xl bg-black shadow-lg shadow-black/10 aspect-video ${spaced ? "mb-3" : ""}`;
+  if (embed && playing) {
+    return (
+      <div className={frame}>
+        <iframe
+          className="h-full w-full"
+          src={embedUrl(embed, { autoplay: true })}
+          title="Video tour"
+          allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+          allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      </div>
+    );
+  }
+  if (embed) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          trackListingEvent("video_play", "gallery");
+          setPlaying(true);
+        }}
+        aria-label="Play the video tour"
+        className={`group relative block w-full ${frame}`}
+      >
+        {poster && <img src={poster} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100" />}
+        <span className="absolute inset-0 bg-black/20" />
+        <span className="absolute left-1/2 top-1/2 grid h-20 w-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/95 text-black shadow-xl transition-transform group-hover:scale-105">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>
+        </span>
+        <span className="absolute bottom-4 left-5 text-sm font-semibold uppercase tracking-wider-plus text-white drop-shadow">Video tour</span>
+      </button>
+    );
+  }
+  return (
+    <div className={frame}>
+      <video className="h-full w-full object-contain" src={file} poster={poster} controls playsInline preload="metadata" aria-label="Video tour" onPlay={() => trackListingEvent("video_play", "gallery")} />
+    </div>
+  );
+}
 
 export default function Gallery() {
   const { listing } = useListingContext();
@@ -35,7 +83,8 @@ export default function Gallery() {
   }, [activeIndex]);
 
   const video = listing.galleryVideo;
-  if (images.length === 0 && !video) return null;
+  const embed = listing.galleryEmbed;
+  if (images.length === 0 && !video && !embed) return null;
 
   return (
     <section id="gallery" className="px-6 lg:px-10 py-24 bg-[var(--ls-bg-alt)]">
@@ -45,11 +94,7 @@ export default function Gallery() {
         </p>
         <h2 className="text-3xl sm:text-4xl font-semibold mb-10 text-[var(--ls-text)]">Take a look inside</h2>
 
-        {video && (
-          <div className={`overflow-hidden rounded-2xl bg-black shadow-lg shadow-black/10 aspect-video ${images.length ? "mb-3" : ""}`}>
-            <video className="h-full w-full object-contain" src={video} poster={images[0]?.url} controls playsInline preload="metadata" aria-label="Video tour" />
-          </div>
-        )}
+        {(video || embed) && <GalleryVideo file={video} embed={embed} poster={images[0]?.url} spaced={images.length > 0} />}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 auto-rows-[160px] sm:auto-rows-[200px]">
           {images.map((img, i) => (

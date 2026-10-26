@@ -1,4 +1,5 @@
 import { brandFromOrg } from "./brand";
+import { parseVideoLink } from "./videoEmbed";
 import { STATUS_LABELS } from "./format";
 
 // Shapes a Supabase `listings` row (+ agent profile + photos) into the
@@ -64,8 +65,9 @@ export function adaptListing({ listing, agent, photos }) {
       query: `${listing.address_line1}, ${listing.city}, ${listing.state} ${listing.zip}`,
     },
     // One video file, shown in the hero, above the photo gallery, or both (listings.video_placement; older listings are "hero").
-    heroVideo: listing.hero_video_url && listing.video_placement !== "gallery" ? listing.hero_video_url : null,
-    galleryVideo: listing.hero_video_url && ["gallery", "both"].includes(listing.video_placement) ? listing.hero_video_url : null,
+    // A YouTube or Vimeo link is an embed: it can play silently behind the classic hero, but not drive the Luxury scroll effect
+    // (that needs a real file), so on the Luxury template an embed set for the hero is shown above the gallery instead.
+    ...videoSpots(listing),
     agent: {
       name: agent?.full_name || "",
       title: agent?.title || "Real Estate Agent",
@@ -75,4 +77,18 @@ export function adaptListing({ listing, agent, photos }) {
       photo: agent?.photo_url || "",
     },
   };
+}
+
+function videoSpots(listing) {
+  const url = listing.hero_video_url || "";
+  const placement = listing.video_placement || "hero";
+  const embed = parseVideoLink(url);
+  const inHero = placement !== "gallery";
+  const inGallery = placement === "gallery" || placement === "both";
+  if (!url) return { heroVideo: null, heroEmbed: null, galleryVideo: null, galleryEmbed: null };
+  if (embed) {
+    const luxury = listing.site_template === "luxury";
+    return { heroVideo: null, heroEmbed: inHero && !luxury ? embed : null, galleryVideo: null, galleryEmbed: inGallery || (inHero && luxury) ? embed : null };
+  }
+  return { heroVideo: inHero ? url : null, heroEmbed: null, galleryVideo: inGallery ? url : null, galleryEmbed: null };
 }

@@ -96,6 +96,7 @@ export default function ListingAnalyticsView({ data, loading }) {
     .map((k) => ({ label: SECTION_LABELS[k], value: e.sections[k] || 0, note: `${pct(e.sections[k] || 0, tracked)}%` }));
   const actions = [
     { label: "Opened a photo", value: e.gallery_opens, note: `${pct(e.gallery_opens, tracked)}%` },
+    ...(e.video_gallery || e.video_plays > 0 ? [{ label: "Played the video", value: e.video_plays || 0, note: `${pct(e.video_plays || 0, tracked)}%` }] : []),
     { label: "Tapped the agent's phone number", value: e.phone_clicks, note: `${pct(e.phone_clicks, tracked)}%` },
     { label: "Tapped the agent's email", value: e.email_clicks, note: `${pct(e.email_clicks, tracked)}%` },
     { label: "Started the inquiry form", value: e.form_starts, note: `${pct(e.form_starts, tracked)}%` },

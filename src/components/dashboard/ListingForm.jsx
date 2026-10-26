@@ -6,6 +6,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { normalizeDomain } from "../../lib/normalizeDomain";
 import StatusSelect from "./StatusSelect";
 import VideoUploadField from "./VideoUploadField";
+import { parseVideoLink } from "../../lib/videoEmbed";
 import FormSaveBar from "./FormSaveBar";
 
 // Structural site templates — distinct from THEMES below (which are
@@ -726,7 +727,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
           <VideoUploadField
             bucket="listing-photos"
             folder={listing.id}
-            value={form.hero_video_url}
+            value={parseVideoLink(form.hero_video_url) ? "" : form.hero_video_url}
             onChange={(url) => setForm((f) => ({ ...f, hero_video_url: url || "" }))}
             label="Video file"
           />
@@ -736,13 +737,20 @@ export default function ListingForm({ mode, listing, onSaved }) {
           </p>
         )}
         <div>
-          <label className={labelClass}>Or paste an already-hosted video URL</label>
+          <label className={labelClass}>Or paste a YouTube or Vimeo link, or an already-hosted video URL</label>
           <input
             value={form.hero_video_url}
             onChange={update("hero_video_url")}
             className={inputClass}
-            placeholder="/video/hero.mp4 or a full URL"
+            placeholder="https://youtu.be/… or https://vimeo.com/… or a video file address"
           />
+          {parseVideoLink(form.hero_video_url) && (
+            <p className="mt-1.5 text-xs text-[#1c1a17]/55 dark:text-[#faf9f7]/55">
+              {parseVideoLink(form.hero_video_url).provider === "youtube" ? "YouTube" : "Vimeo"} link recognized. In the hero it plays silently on a loop; above the
+              gallery it shows a play button and visitors watch it with sound.
+              {form.site_template === "luxury" ? " The Luxury hero's scroll effect needs an uploaded video file, so with a link the video is shown above the gallery instead." : ""}
+            </p>
+          )}
         </div>
       </div>
 
