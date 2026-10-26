@@ -2151,3 +2151,6 @@ $$;
 drop policy if exists deal_team_agent_read on public.deal_team;
 create policy deal_team_agent_read on public.deal_team for select to authenticated
   using (agent_id = auth.uid() or public.deal_access(agent_id, null::uuid) = 'compliance');
+
+-- 45. Email a coordinator when an agent picks them on a deal (api/deal-notify.js action "tc_assigned"); emailed_at keeps it to once per pick.
+alter table public.deal_tcs add column if not exists emailed_at timestamptz;

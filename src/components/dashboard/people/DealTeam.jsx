@@ -14,6 +14,7 @@ export default function DealTeam({ person }) {
   const [always, setAlways] = useState([]); // names of agent-wide coordinators
   const [options, setOptions] = useState([]); // every TC in the office
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
     const [{ data: rows }, { data: all }, { data: wide }] = await Promise.all([
@@ -30,11 +31,29 @@ export default function DealTeam({ person }) {
     load();
   }, [load]);
 
+  // The pick is already saved; the email is a courtesy, so a failure only shows a note.
+  const emailPick = async (tcId) => {
+    const name = options.find((o) => o.id === tcId)?.full_name || "The coordinator";
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/deal-notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ personId: person.id, action: "tc_assigned", tcId }),
+      });
+      const json = await res.json().catch(() => ({}));
+      setNotice(res.ok ? `${name} was emailed.` : `Added, but the email didn't go out: ${json.error || "unknown error"}`);
+    } catch {
+      setNotice("Added, but the email didn't go out. They'll still see the deal in Deals.");
+    }
+  };
   const add = async (tcId) => {
     if (!tcId) return;
     setError("");
+    setNotice("");
     const { error: err } = await supabase.from("deal_tcs").insert({ person_id: person.id, tc_id: tcId });
     if (err) setError(err.message);
+    else emailPick(tcId);
     load();
   };
   const remove = async (tcId) => {
@@ -75,6 +94,7 @@ export default function DealTeam({ person }) {
       {options.length === 0 && <p className={`text-sm ${muted}`}>Your office has no transaction coordinators set up yet. An admin can add one on the Agents page.</p>}
       {assigned.length === 0 && always.length === 0 && options.length > 0 && <p className={`text-xs ${muted}`}>Doing this one yourself? Leave it empty. A coordinator you pick sees and works on this deal only.</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {notice && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">{notice}</p>}
     </section>
   );
 }
