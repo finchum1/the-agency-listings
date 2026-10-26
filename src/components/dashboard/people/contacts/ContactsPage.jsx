@@ -143,8 +143,19 @@ export default function ContactsPage() {
   const visible = filtered.slice(0, shown);
   const picked = filtered.filter((c) => selected.has(c.id));
   const open = contacts.find((c) => c.id === openId);
-  const active = contacts.filter((c) => !c.archived);
+  const active = useMemo(() => contacts.filter((c) => !c.archived), [contacts]);
   const dueCount = active.filter(touchDue).length;
+  // How many people each relationship and tag has, shown in the filter menus so you know the size before you pick one.
+  const relCounts = useMemo(() => {
+    const c = {};
+    for (const p of active) c[p.relationship] = (c[p.relationship] || 0) + 1;
+    return c;
+  }, [active]);
+  const tagCounts = useMemo(() => {
+    const c = new Map();
+    for (const p of active) for (const id of ctx.tagsByContact.get(p.id) || []) c.set(id, (c.get(id) || 0) + 1);
+    return c;
+  }, [active, ctx]);
   const filtersOn = hasFilters(filters);
   const set = (patch) => {
     setFilters((f) => ({ ...f, ...patch }));
@@ -201,8 +212,21 @@ export default function ContactsPage() {
         <div>
           <h1 className="text-2xl font-display font-semibold">Contacts</h1>
           <p className={`text-sm mt-1 ${muted}`}>
-            {loading ? "Loading…" : `${active.length.toLocaleString()} ${active.length === 1 ? "person" : "people"} in your database`}
-            {dueCount > 0 && (
+            {loading ? (
+              "Loading…"
+            ) : filtersOn || activeList ? (
+              <>
+                <b className="text-lg font-semibold text-[#1c1a17] dark:text-[#faf9f7]" data-testid="match-count">{filtered.length.toLocaleString()}</b>{" "}
+                {filtered.length === 1 ? "person matches" : "people match"}
+                {activeList ? ` “${lists.find((l) => l.id === activeList)?.name || "this list"}”` : " these filters"} · of {active.length.toLocaleString()} total ·{" "}
+                <button type="button" onClick={() => { setFilters(EMPTY_FILTERS); setActiveList(""); setShown(PAGE); }} className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                  Clear filters
+                </button>
+              </>
+            ) : (
+              `${active.length.toLocaleString()} ${active.length === 1 ? "person" : "people"} in your database`
+            )}
+            {dueCount > 0 && !(filtersOn || activeList) && (
               <>
                 {" · "}
                 <button type="button" onClick={() => openWith({ touch: true })} className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
@@ -255,13 +279,13 @@ export default function ContactsPage() {
         <select value={filters.relationship} onChange={(e) => set({ relationship: e.target.value })} aria-label="Relationship" className={select}>
           <option value="">Any relationship</option>
           {RELATIONSHIPS.map((r) => (
-            <option key={r.value} value={r.value}>{r.label}</option>
+            <option key={r.value} value={r.value}>{r.label} ({(relCounts[r.value] || 0).toLocaleString()})</option>
           ))}
         </select>
         <select value={filters.tags[0] || ""} onChange={(e) => set({ tags: e.target.value ? [e.target.value] : [] })} aria-label="Tag" className={select}>
           <option value="">Any tag</option>
           {tags.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
+            <option key={t.id} value={t.id}>{t.name} ({(tagCounts.get(t.id) || 0).toLocaleString()})</option>
           ))}
         </select>
         <select value={filters.board} onChange={(e) => set({ board: e.target.value })} aria-label="On a board" className={select}>
