@@ -20,6 +20,7 @@ import UpcomingModule from "./components/dashboard/UpcomingModule";
 import VendorsPage from "./components/dashboard/VendorsPage";
 import ListingAnalyticsPage from "./components/dashboard/ListingAnalyticsPage";
 import OfficeAnalyticsPage from "./components/dashboard/OfficeAnalyticsPage";
+import ContactsPage from "./components/dashboard/people/contacts/ContactsPage";
 import ListingReportPage from "./pages/ListingReportPage";
 import TransactionTimelinePage from "./pages/TransactionTimelinePage";
 import VendorSharePage from "./pages/VendorSharePage";
@@ -388,6 +389,7 @@ export default function App() {
         <Route path="people" element={<PeopleGate />}>
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<PeopleOverview />} />
+          <Route path="contacts" element={<ContactsPage />} />
           <Route path="leads" element={<PeopleBoard group="lead" />} />
           <Route path="pipeline" element={<PeopleBoard group="pipeline" />} />
           <Route path="transactions" element={<PeopleBoard group="transaction" />} />

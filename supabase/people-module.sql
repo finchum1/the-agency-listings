@@ -1512,3 +1512,285 @@ end;
 $$;
 revoke all on function public.revoke_timeline_link(uuid) from public, anon;
 grant execute on function public.revoke_timeline_link(uuid) to authenticated;
+
+-- ============================================================================
+-- 41. Contacts CRM. One private record per person in an agent's database (People > Contacts): details, tags, an activity log,
+--     follow-up to-dos, and links to the Leads / Pipeline / Transactions cards they appear on. Strictly private to the agent,
+--     like People. Cards (people rows) now point at their contact (people.contact_id) and stay in step with it: name, email and
+--     phone changed on either side are copied to the other.
+-- ============================================================================
+create or replace function public.split_person_name(p_name text, out first_name text, out last_name text)
+language plpgsql immutable as $$
+declare
+  n text := btrim(regexp_replace(coalesce(p_name, ''), '\s+', ' ', 'g'));
+  i integer;
+begin
+  i := length(n) - position(' ' in reverse(n)) + 1;
+  if n = '' or position(' ' in n) = 0 then
+    first_name := n;
+    last_name := '';
+  else
+    first_name := left(n, i - 1);
+    last_name := substr(n, i + 1);
+  end if;
+end;
+$$;
+
+create table if not exists public.contacts (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  first_name text not null default '',
+  last_name text not null default '',
+  company text not null default '',
+  email text not null default '',
+  phone text not null default '',
+  other_emails text[] not null default '{}',
+  other_phones text[] not null default '{}',
+  address_line1 text not null default '',
+  city text not null default '',
+  state text not null default '',
+  zip text not null default '',
+  birthday date,
+  home_anniversary date,
+  relationship text not null default 'other' check (relationship in ('client', 'past_client', 'lead', 'sphere', 'referral_partner', 'vendor', 'agent', 'lender', 'other')),
+  source text not null default '',
+  about text not null default '',
+  touch_every_days integer check (touch_every_days is null or touch_every_days between 1 and 1095),
+  last_contacted_at timestamptz,
+  do_not_contact boolean not null default false,
+  archived boolean not null default false,
+  search_text text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint contacts_has_a_name check (btrim(first_name || last_name || company) <> '')
+);
+create index if not exists contacts_owner_idx on public.contacts (owner_id, archived);
+create index if not exists contacts_owner_email_idx on public.contacts (owner_id, lower(email)) where email <> '';
+
+create or replace function public.contacts_before_write() returns trigger
+language plpgsql as $$
+begin
+  new.updated_at := now();
+  new.search_text := lower(concat_ws(' ', new.first_name, new.last_name, new.company, new.email, new.phone,
+    array_to_string(new.other_emails, ' '), array_to_string(new.other_phones, ' '),
+    regexp_replace(new.phone, '\D', '', 'g'), regexp_replace(array_to_string(new.other_phones, ' '), '\D', '', 'g'),
+    new.address_line1, new.city, new.state, new.zip, new.source, new.about));
+  return new;
+end;
+$$;
+drop trigger if exists contacts_before_write on public.contacts;
+create trigger contacts_before_write before insert or update on public.contacts for each row execute function public.contacts_before_write();
+
+create table if not exists public.contact_tags (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  name text not null check (length(btrim(name)) between 1 and 40),
+  color text not null default 'gray' check (color in ('gray', 'red', 'orange', 'amber', 'green', 'teal', 'blue', 'violet', 'pink')),
+  created_at timestamptz not null default now()
+);
+create unique index if not exists contact_tags_owner_name_idx on public.contact_tags (owner_id, lower(name));
+create table if not exists public.contact_tag_links (
+  contact_id uuid not null references public.contacts(id) on delete cascade,
+  tag_id uuid not null references public.contact_tags(id) on delete cascade,
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  primary key (contact_id, tag_id)
+);
+create index if not exists contact_tag_links_tag_idx on public.contact_tag_links (tag_id);
+
+create table if not exists public.contact_notes (
+  id uuid primary key default gen_random_uuid(),
+  contact_id uuid not null references public.contacts(id) on delete cascade,
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  kind text not null default 'note' check (kind in ('note', 'call', 'text', 'email', 'meeting', 'showing', 'other')),
+  body text not null default '' check (length(body) <= 5000),
+  occurred_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+create index if not exists contact_notes_contact_idx on public.contact_notes (contact_id, occurred_at desc);
+
+-- A call, text, email, meeting or showing counts as being in touch.
+create or replace function public.contact_note_touch() returns trigger
+language plpgsql as $$
+begin
+  if new.kind in ('call', 'text', 'email', 'meeting', 'showing') then
+    update public.contacts set last_contacted_at = greatest(coalesce(last_contacted_at, new.occurred_at), new.occurred_at) where id = new.contact_id;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists contact_note_touch on public.contact_notes;
+create trigger contact_note_touch after insert on public.contact_notes for each row execute function public.contact_note_touch();
+
+create table if not exists public.contact_smart_lists (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null default auth.uid() references public.profiles(id) on delete cascade,
+  name text not null check (length(btrim(name)) between 1 and 60),
+  filters jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+alter table public.agent_tasks add column if not exists contact_id uuid references public.contacts(id) on delete set null;
+create index if not exists agent_tasks_contact_idx on public.agent_tasks (contact_id) where contact_id is not null;
+alter table public.people add column if not exists contact_id uuid references public.contacts(id) on delete set null;
+create index if not exists people_contact_idx on public.people (contact_id) where contact_id is not null;
+
+-- Private to the agent (and only while People is on for them), like the rest of People.
+alter table public.contacts enable row level security;
+alter table public.contact_tags enable row level security;
+alter table public.contact_tag_links enable row level security;
+alter table public.contact_notes enable row level security;
+alter table public.contact_smart_lists enable row level security;
+
+drop policy if exists contacts_owner_all on public.contacts;
+create policy contacts_owner_all on public.contacts for all
+  using (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled))
+  with check (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled));
+drop policy if exists contact_tags_owner_all on public.contact_tags;
+create policy contact_tags_owner_all on public.contact_tags for all
+  using (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled))
+  with check (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled));
+drop policy if exists contact_tag_links_owner_all on public.contact_tag_links;
+create policy contact_tag_links_owner_all on public.contact_tag_links for all
+  using (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled))
+  with check (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled)
+    and exists (select 1 from public.contacts c where c.id = contact_id and c.owner_id = auth.uid())
+    and exists (select 1 from public.contact_tags t where t.id = tag_id and t.owner_id = auth.uid()));
+drop policy if exists contact_notes_owner_all on public.contact_notes;
+create policy contact_notes_owner_all on public.contact_notes for all
+  using (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled))
+  with check (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled)
+    and exists (select 1 from public.contacts c where c.id = contact_id and c.owner_id = auth.uid()));
+drop policy if exists contact_smart_lists_owner_all on public.contact_smart_lists;
+create policy contact_smart_lists_owner_all on public.contact_smart_lists for all
+  using (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled))
+  with check (owner_id = auth.uid() and exists (select 1 from public.profiles p where p.id = auth.uid() and p.people_enabled));
+
+-- Every new Leads / Pipeline / Transactions card gets a contact: an existing one with the same email, or a new one. This covers
+-- cards made in the app, by the bot and from website inquiries alike.
+create or replace function public.people_ensure_contact() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  cid uuid;
+  nm record;
+begin
+  if new.contact_id is not null then
+    return new;
+  end if;
+  if btrim(coalesce(new.email, '')) <> '' then
+    select id into cid from public.contacts where owner_id = new.owner_id and lower(email) = lower(btrim(new.email)) order by created_at limit 1;
+  end if;
+  if cid is null then
+    select * into nm from public.split_person_name(new.name);
+    insert into public.contacts (owner_id, first_name, last_name, email, phone, relationship, source)
+    values (new.owner_id, case when nm.first_name = '' and nm.last_name = '' then 'Unnamed' else nm.first_name end, nm.last_name, btrim(coalesce(new.email, '')), coalesce(new.phone, ''), case when new.stage_group = 'transaction' then 'client' else 'lead' end, coalesce(new.source, ''))
+    returning id into cid;
+  end if;
+  new.contact_id := cid;
+  return new;
+end;
+$$;
+drop trigger if exists people_ensure_contact on public.people;
+create trigger people_ensure_contact before insert on public.people for each row execute function public.people_ensure_contact();
+
+-- Name, email and phone stay the same on a card and its contact. pg_trigger_depth() stops the two from echoing back and forth.
+create or replace function public.people_push_to_contact() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  nm record;
+begin
+  if pg_trigger_depth() > 1 or new.contact_id is null then
+    return new;
+  end if;
+  select * into nm from public.split_person_name(new.name);
+  update public.contacts
+     set first_name = nm.first_name, last_name = nm.last_name, email = btrim(coalesce(new.email, '')), phone = coalesce(new.phone, '')
+   where id = new.contact_id and owner_id = new.owner_id
+     and (first_name, last_name, email, phone) is distinct from (nm.first_name, nm.last_name, btrim(coalesce(new.email, '')), coalesce(new.phone, ''));
+  return new;
+end;
+$$;
+drop trigger if exists people_push_to_contact on public.people;
+create trigger people_push_to_contact after update of name, email, phone on public.people for each row execute function public.people_push_to_contact();
+
+create or replace function public.contact_push_to_people() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if pg_trigger_depth() > 1 then
+    return new;
+  end if;
+  update public.people
+     set name = btrim(new.first_name || ' ' || new.last_name), email = new.email, phone = new.phone
+   where contact_id = new.id and btrim(new.first_name || ' ' || new.last_name) <> ''
+     and (name, email, phone) is distinct from (btrim(new.first_name || ' ' || new.last_name), new.email, new.phone);
+  return new;
+end;
+$$;
+drop trigger if exists contact_push_to_people on public.contacts;
+create trigger contact_push_to_people after update of first_name, last_name, email, phone on public.contacts for each row execute function public.contact_push_to_people();
+
+-- One-time: a contact for every existing card (cards with the same email share one).
+alter table public.people disable trigger touch_people_updated_at;
+do $$
+declare
+  r record;
+  cid uuid;
+  nm record;
+begin
+  for r in select * from public.people where contact_id is null order by created_at loop
+    cid := null;
+    if btrim(r.email) <> '' then
+      select id into cid from public.contacts where owner_id = r.owner_id and lower(email) = lower(btrim(r.email)) order by created_at limit 1;
+    end if;
+    if cid is null then
+      select * into nm from public.split_person_name(r.name);
+      insert into public.contacts (owner_id, first_name, last_name, email, phone, relationship, source, created_at)
+      values (r.owner_id, case when nm.first_name = '' and nm.last_name = '' then 'Unnamed' else nm.first_name end, nm.last_name, btrim(r.email), r.phone, case when r.stage_group = 'transaction' then 'client' else 'lead' end, r.source, r.created_at)
+      returning id into cid;
+    end if;
+    update public.people set contact_id = cid where id = r.id;
+  end loop;
+end $$;
+alter table public.people enable trigger touch_people_updated_at;
+
+-- Merge a duplicate into the contact you keep: everything attached to it moves over, blanks on the kept one are filled in.
+create or replace function public.merge_contacts(p_keep uuid, p_remove uuid) returns void
+language plpgsql set search_path = public as $$
+declare
+  k public.contacts;
+  d public.contacts;
+begin
+  if p_keep = p_remove then
+    raise exception 'Pick two different contacts.';
+  end if;
+  select * into k from public.contacts where id = p_keep and owner_id = auth.uid();
+  select * into d from public.contacts where id = p_remove and owner_id = auth.uid();
+  if k.id is null or d.id is null then
+    raise exception 'Those contacts aren''t yours to merge.';
+  end if;
+  update public.contact_notes set contact_id = k.id where contact_id = d.id;
+  insert into public.contact_tag_links (contact_id, tag_id) select k.id, tag_id from public.contact_tag_links where contact_id = d.id on conflict do nothing;
+  update public.agent_tasks set contact_id = k.id where contact_id = d.id;
+  update public.people set contact_id = k.id where contact_id = d.id;
+  update public.contacts set
+    company = case when k.company = '' then d.company else k.company end,
+    email = case when k.email = '' then d.email else k.email end,
+    phone = case when k.phone = '' then d.phone else k.phone end,
+    other_emails = (select coalesce(array_agg(distinct x), '{}') from unnest(k.other_emails || d.other_emails || case when k.email <> '' and d.email <> '' and lower(k.email) <> lower(d.email) then array[d.email] else '{}'::text[] end) x where x <> '' and lower(x) <> lower(case when k.email = '' then d.email else k.email end)),
+    other_phones = (select coalesce(array_agg(distinct x), '{}') from unnest(k.other_phones || d.other_phones || case when k.phone <> '' and d.phone <> '' and k.phone <> d.phone then array[d.phone] else '{}'::text[] end) x where x <> '' and x <> case when k.phone = '' then d.phone else k.phone end),
+    address_line1 = case when k.address_line1 = '' then d.address_line1 else k.address_line1 end,
+    city = case when k.address_line1 = '' and k.city = '' then d.city else k.city end,
+    state = case when k.address_line1 = '' and k.state = '' then d.state else k.state end,
+    zip = case when k.address_line1 = '' and k.zip = '' then d.zip else k.zip end,
+    birthday = coalesce(k.birthday, d.birthday),
+    home_anniversary = coalesce(k.home_anniversary, d.home_anniversary),
+    source = case when k.source = '' then d.source else k.source end,
+    about = case when k.about = '' then d.about when d.about = '' then k.about else k.about || E'\n\n' || d.about end,
+    touch_every_days = coalesce(k.touch_every_days, d.touch_every_days),
+    last_contacted_at = greatest(k.last_contacted_at, d.last_contacted_at),
+    do_not_contact = k.do_not_contact or d.do_not_contact
+  where id = k.id;
+  delete from public.contacts where id = d.id;
+end;
+$$;
+revoke all on function public.merge_contacts(uuid, uuid) from public, anon;
+grant execute on function public.merge_contacts(uuid, uuid) to authenticated;

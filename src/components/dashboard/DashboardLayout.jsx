@@ -99,6 +99,7 @@ const SITE_ITEMS = [
 // governs website editing. Shown as a collapsible group.
 const PEOPLE_ITEMS = [
   { to: "/dashboard/people/overview", label: "Overview" },
+  { to: "/dashboard/people/contacts", label: "Contacts" },
   { to: "/dashboard/people/leads", label: "Leads" },
   { to: "/dashboard/people/pipeline", label: "Pipeline" },
   { to: "/dashboard/people/transactions", label: "Transactions" },

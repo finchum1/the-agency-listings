@@ -38,7 +38,7 @@ export function useAgentTasks(userId) {
     }
   };
 
-  const add = async ({ title, due_date, recurrence, start_time, duration_min, list, checklist }) => {
+  const add = async ({ title, due_date, recurrence, start_time, duration_min, list, checklist, contact_id }) => {
     const rule = recurrence || "none";
     // A repeating task needs a date to repeat from: default to today.
     const due = due_date || (rule !== "none" ? toKey(new Date()) : null);
@@ -54,6 +54,7 @@ export function useAgentTasks(userId) {
         duration_min: due && start_time ? duration_min || 60 : null,
         list: cleanList(list),
         checklist: cleanSteps(checklist),
+        ...(contact_id ? { contact_id } : {}),
       })
       .select()
       .single();
