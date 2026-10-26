@@ -41,7 +41,7 @@ const listingFields = {
   open_houses: { type: "array", items: obj({ starts_at: str("ISO date-time"), ends_at: str("ISO date-time"), notes: str("") }, ["starts_at"]) },
   site_template: str("", { enum: ["classic", "luxury"] }), theme: str("", { enum: ["classic", "dark", "sand", "red", "linen"] }),
   header_style: str("", { enum: ["classic", "floating"] }), header_label: str("Text beside the logo, e.g. Nichols Hills"), custom_domain: str(""),
-  hero_video_url: str(""), seo_title: str(""), seo_description: str(""), slug: str(""),
+  hero_video_url: str(""), video_placement: str("Where the video plays: the hero, above the photo gallery, or both.", { enum: ["hero", "gallery", "both"] }), seo_title: str(""), seo_description: str(""), slug: str(""),
 };
 
 const postFields = {

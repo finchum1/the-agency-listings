@@ -144,6 +144,7 @@ const emptyListing = {
   garage: "",
   property_type: "Single Family Home",
   hero_video_url: "",
+  video_placement: "hero",
   site_template: "classic",
   header_style: "classic",
   header_label: "",
@@ -210,6 +211,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
         garage: listing.garage || "",
         property_type: listing.property_type || "Single Family Home",
         hero_video_url: listing.hero_video_url || "",
+        video_placement: listing.video_placement || "hero",
         site_template: listing.site_template || "classic",
         header_style: listing.header_style || "classic",
         header_label: listing.header_label || "",
@@ -697,13 +699,29 @@ export default function ListingForm({ mode, listing, onSaved }) {
 
       <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-3">
         <h2 className="font-display text-lg font-semibold">
-          Hero Video {form.site_template === "luxury" ? "" : "(optional)"}
+          Video {form.site_template === "luxury" ? "" : "(optional)"}
         </h2>
         <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
           {form.site_template === "luxury"
-            ? "This is what the Luxury template's scroll effect plays through — leave it unset and the hero falls back to a static photo instead."
+            ? "In the hero, the Luxury template's scroll effect plays through this video. Leave it unset and the hero falls back to a static photo instead."
             : "Leave unset to use the hero photo instead."}
         </p>
+        <fieldset className="space-y-1.5">
+          <legend className={labelClass}>Where should the video play?</legend>
+          {[
+            ["hero", "In the hero", "The top of the page, behind the address and price."],
+            ["gallery", "Above the photo gallery", "A player with controls and sound, right above the pictures."],
+            ["both", "Both", "In the hero and above the photo gallery."],
+          ].map(([value, label, hint]) => (
+            <label key={value} className="flex items-start gap-2.5 text-sm cursor-pointer">
+              <input type="radio" name="video_placement" value={value} checked={form.video_placement === value} onChange={update("video_placement")} className="mt-1" />
+              <span>
+                <span className="font-medium">{label}</span>
+                <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{hint}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
         {mode === "edit" ? (
           <VideoUploadField
             bucket="listing-photos"

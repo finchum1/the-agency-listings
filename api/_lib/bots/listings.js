@@ -58,6 +58,7 @@ function readFields(body, create) {
   set("garage", text(body, "garage", { max: 40 }));
   set("property_type", text(body, "property_type", { max: 60 }));
   set("hero_video_url", url(body, "hero_video_url"));
+  set("video_placement", oneOf(body, "video_placement", ["hero", "gallery", "both"]));
   set("seo_title", text(body, "seo_title", { max: 120 }));
   set("seo_description", text(body, "seo_description", { max: 300 }));
   set("site_template", oneOf(body, "site_template", ["classic", "luxury"]));
@@ -143,7 +144,7 @@ export async function getListing(ctx, id, req) {
     ctx.client.from("listing_photos").select("id", { count: "exact", head: true }).eq("listing_id", id),
     ctx.client.from("open_houses").select("starts_at, ends_at, notes").eq("listing_id", id).order("starts_at"),
   ]);
-  return { listing: { ...listingView(l, req), description: l.description, features: l.features, hero_video_url: l.hero_video_url, photo_count: count ?? 0, open_houses: houses || [] } };
+  return { listing: { ...listingView(l, req), description: l.description, features: l.features, hero_video_url: l.hero_video_url, video_placement: l.video_placement, photo_count: count ?? 0, open_houses: houses || [] } };
 }
 
 export async function createListing(ctx, body, req) {

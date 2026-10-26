@@ -34,7 +34,8 @@ export default function Gallery() {
     trackListingEvent("photo_view", activeIndex + 1);
   }, [activeIndex]);
 
-  if (images.length === 0) return null;
+  const video = listing.galleryVideo;
+  if (images.length === 0 && !video) return null;
 
   return (
     <section id="gallery" className="px-6 lg:px-10 py-24 bg-[var(--ls-bg-alt)]">
@@ -43,6 +44,12 @@ export default function Gallery() {
           Gallery
         </p>
         <h2 className="text-3xl sm:text-4xl font-semibold mb-10 text-[var(--ls-text)]">Take a look inside</h2>
+
+        {video && (
+          <div className={`overflow-hidden rounded-2xl bg-black shadow-lg shadow-black/10 aspect-video ${images.length ? "mb-3" : ""}`}>
+            <video className="h-full w-full object-contain" src={video} poster={images[0]?.url} controls playsInline preload="metadata" aria-label="Video tour" />
+          </div>
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 auto-rows-[160px] sm:auto-rows-[200px]">
           {images.map((img, i) => (

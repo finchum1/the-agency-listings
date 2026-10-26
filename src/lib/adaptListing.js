@@ -63,7 +63,9 @@ export function adaptListing({ listing, agent, photos }) {
     map: {
       query: `${listing.address_line1}, ${listing.city}, ${listing.state} ${listing.zip}`,
     },
-    heroVideo: listing.hero_video_url || null,
+    // One video file, shown in the hero, above the photo gallery, or both (listings.video_placement; older listings are "hero").
+    heroVideo: listing.hero_video_url && listing.video_placement !== "gallery" ? listing.hero_video_url : null,
+    galleryVideo: listing.hero_video_url && ["gallery", "both"].includes(listing.video_placement) ? listing.hero_video_url : null,
     agent: {
       name: agent?.full_name || "",
       title: agent?.title || "Real Estate Agent",
