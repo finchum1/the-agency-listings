@@ -186,6 +186,8 @@ export const IMPORT_FIELDS = [
   { key: "state", label: "State", guess: /^state|province/i },
   { key: "zip", label: "Zip", guess: /zip|postal/i },
   { key: "birthday", label: "Birthday", guess: /birth/i },
+  { key: "home_anniversary", label: "Housiversary (home anniversary)", guess: /housiversary|anniversar|home ?purchase|purchase ?date|closed? ?(on|date)|closing ?date/i },
+  { key: "relationship", label: "Relationship (client, past client, lead…)", guess: /^relationship$|^(contact[ _-]*)?(type|category)$/i },
   { key: "source", label: "Source", guess: /source|lead source/i },
   { key: "tags", label: "Tags (separated by ; or ,)", guess: /^tags?$|labels?|groups?/i },
   { key: "about", label: "Notes", guess: /notes?|comments?|about/i },
@@ -203,12 +205,38 @@ export function guessMapping(headers) {
   return map;
 }
 
+// A date typed in a spreadsheet: 2019-03-15, 3/15/2019, 3/15/19 or "March 15, 2019". Read by hand where the format is known so a
+// day never slips across a time zone (new Date("2019-03-15") is midnight UTC, which is the 14th in Oklahoma).
 const toIsoDate = (s) => {
   const t = String(s || "").trim();
   if (!t) return null;
+  const pad = (n) => String(n).padStart(2, "0");
+  const valid = (y, m, d) => {
+    const dt = new Date(y, m - 1, d);
+    return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d ? `${y}-${pad(m)}-${pad(d)}` : null;
+  };
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ].*)?$/);
+  if (m) return valid(+m[1], +m[2], +m[3]);
+  m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+  if (m) return valid(m[3].length === 2 ? 2000 + +m[3] - (+m[3] > 30 ? 100 : 0) : +m[3], +m[1], +m[2]);
   const d = new Date(t);
-  return Number.isNaN(d.getTime()) ? null : toKey(d);
+  return Number.isNaN(d.getTime()) ? null : valid(d.getFullYear(), d.getMonth() + 1, d.getDate());
 };
+
+/** "Past Client", "past_client", "Lender"... -> a relationship value, or "" when it isn't one we know. */
+export function parseRelationship(s) {
+  const t = String(s || "").trim().toLowerCase();
+  if (!t) return "";
+  if (/past|former|previous/.test(t)) return "past_client";
+  if (/referral/.test(t)) return "referral_partner";
+  if (/lender|loan|mortgage/.test(t)) return "lender";
+  if (/vendor|contractor|inspector|title|insurance/.test(t)) return "vendor";
+  if (/agent|realtor|broker/.test(t)) return "agent";
+  if (/client|buyer|seller/.test(t)) return "client";
+  if (/lead|prospect/.test(t)) return "lead";
+  if (/sphere|soi|friend|family|neighbor/.test(t)) return "sphere";
+  return "other";
+}
 
 /** One CSV row -> a contact insert (without owner), or null when it has no usable name. */
 export function rowToContact(row, map, defaults) {
@@ -234,9 +262,10 @@ export function rowToContact(row, map, defaults) {
     state: get("state"),
     zip: get("zip"),
     birthday: toIsoDate(get("birthday")),
+    home_anniversary: toIsoDate(get("home_anniversary")),
     source: get("source") || defaults.source || "",
     about: get("about"),
-    relationship: defaults.relationship,
+    relationship: parseRelationship(get("relationship")) || defaults.relationship,
     tagNames: get("tags").split(/[;,|]/).map((t) => t.trim()).filter(Boolean),
   };
 }

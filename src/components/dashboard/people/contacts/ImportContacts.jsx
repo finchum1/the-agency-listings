@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
-import { IMPORT_FIELDS, RELATIONSHIPS, digits, guessMapping, parseCsv, rowToContact } from "../../../../lib/contacts";
+import { IMPORT_FIELDS, RELATIONSHIPS, digits, guessMapping, parseCsv, relationshipLabel, rowToContact } from "../../../../lib/contacts";
 
 const input = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm";
 
@@ -9,7 +9,7 @@ const input = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-
 export default function ImportContacts({ existing, tags, ensureTag, onClose, onDone }) {
   const [rows, setRows] = useState(null);
   const [map, setMap] = useState({});
-  const [relationship, setRelationship] = useState("sphere");
+  const [relationship, setRelationship] = useState("other");
   const [extraTag, setExtraTag] = useState("");
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
@@ -122,18 +122,21 @@ export default function ImportContacts({ existing, tags, ensureTag, onClose, onD
             </div>
             <div className="grid sm:grid-cols-2 gap-3">
               <label className="text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60">
-                Mark everyone as
+                {map.relationship >= 0 ? "For rows where the relationship column is empty or unclear" : "Relationship for everyone (no column picked above)"}
                 <select value={relationship} onChange={(e) => setRelationship(e.target.value)} className={`${input} mt-1 font-normal`}>
                   {RELATIONSHIPS.map((r) => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
+                    <option key={r.value} value={r.value}>{r.value === "other" ? "Other (decide later)" : r.label}</option>
                   ))}
                 </select>
               </label>
               <label className="text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60">
-                Add a tag to all of them (optional)
-                <input value={extraTag} onChange={(e) => setExtraTag(e.target.value)} placeholder="e.g. Imported Oct 2026" className={`${input} mt-1 font-normal`} />
+                Also tag everyone with one tag (optional)
+                <input value={extraTag} onChange={(e) => setExtraTag(e.target.value)} placeholder="Leave empty to tag only from your Tags column" className={`${input} mt-1 font-normal`} />
               </label>
             </div>
+            <p className="-mt-2 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+              To give different people different tags or relationships, add a Tags column and a Relationship column to your file and pick them above. Each row uses its own.
+            </p>
             <div>
               <h3 className="text-sm font-semibold mb-2">Preview</h3>
               {needsName ? (
@@ -145,6 +148,9 @@ export default function ImportContacts({ existing, tags, ensureTag, onClose, onD
                       <li key={i} className="px-3 py-2">
                         <span className="font-medium">{[c.first_name, c.last_name].filter(Boolean).join(" ") || c.company}</span>
                         <span className="text-[#1c1a17]/55 dark:text-[#faf9f7]/55"> · {[c.email, c.phone, c.city].filter(Boolean).join(" · ") || "no contact details"}</span>
+                        <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+                          {[relationshipLabel(c.relationship), c.tagNames.length ? `Tags: ${c.tagNames.join(", ")}` : "", c.birthday ? `Birthday ${c.birthday}` : "", c.home_anniversary ? `Housiversary ${c.home_anniversary}` : ""].filter(Boolean).join(" · ")}
+                        </span>
                       </li>
                     ))}
                     {fresh.length === 0 && <li className="px-3 py-3 text-[#1c1a17]/55 dark:text-[#faf9f7]/55">Nobody new to import.</li>}
