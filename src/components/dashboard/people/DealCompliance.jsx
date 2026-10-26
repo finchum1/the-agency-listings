@@ -79,6 +79,21 @@ export default function DealCompliance({ person, viewer, onChanged }) {
 
   // Sending a deal back also emails the agent (and their coordinator). The send-back itself has already been saved by then, so a
   // failed email only means a note here: they still see it in Deals.
+  const emailSubmitted = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/deal-notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ personId: person.id, action: "submitted" }),
+      });
+      const json = await res.json().catch(() => ({}));
+      setNotice(res.ok ? (json.sent ? "Submitted. Compliance was emailed." : "Submitted.") : `Submitted, but the email didn't go out: ${json.error || "unknown error"}`);
+    } catch {
+      setNotice("Submitted, but the email didn't go out. Compliance will still see it in Deals.");
+    }
+  };
+
   const emailSentBack = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -94,7 +109,10 @@ export default function DealCompliance({ person, viewer, onChanged }) {
     }
   };
 
-  const submit = () => run(() => supabase.rpc("deal_submit_review", { p_person: person.id, p_note: reviewNote }), true);
+  const submit = async () => {
+    const ok = await run(() => supabase.rpc("deal_submit_review", { p_person: person.id, p_note: reviewNote }), true);
+    if (ok) await emailSubmitted();
+  };
   const decide = async (decision) => {
     const ok = await run(() => supabase.rpc("deal_review", { p_person: person.id, p_decision: decision, p_message: reviewNote }), true);
     if (ok && decision === "needs_changes") await emailSentBack();
