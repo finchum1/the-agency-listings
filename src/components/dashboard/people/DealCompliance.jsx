@@ -29,6 +29,7 @@ export default function DealCompliance({ person, viewer, onChanged }) {
   const [reviewNote, setReviewNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const endRef = useRef(null);
   const status = person.compliance_status || "none";
   const reviewer = viewer === "compliance";
@@ -62,17 +63,42 @@ export default function DealCompliance({ person, viewer, onChanged }) {
   const run = async (fn, clearNote = false) => {
     setBusy(true);
     setError("");
+    setNotice("");
     const { error: err } = await fn();
     setBusy(false);
-    if (err) return setError(err.message);
+    if (err) {
+      setError(err.message);
+      return false;
+    }
     if (clearNote) setReviewNote("");
     await load();
     await markRead();
     onChanged?.();
+    return true;
+  };
+
+  // Sending a deal back also emails the agent (and their coordinator). The send-back itself has already been saved by then, so a
+  // failed email only means a note here: they still see it in Deals.
+  const emailSentBack = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/deal-notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ personId: person.id }),
+      });
+      const json = await res.json().catch(() => ({}));
+      setNotice(res.ok ? (json.sent ? "Sent back. The agent was emailed." : "Sent back.") : `Sent back, but the email didn't go out: ${json.error || "unknown error"}`);
+    } catch {
+      setNotice("Sent back, but the email didn't go out. They'll still see it in Deals.");
+    }
   };
 
   const submit = () => run(() => supabase.rpc("deal_submit_review", { p_person: person.id, p_note: reviewNote }), true);
-  const decide = (decision) => run(() => supabase.rpc("deal_review", { p_person: person.id, p_decision: decision, p_message: reviewNote }), true);
+  const decide = async (decision) => {
+    const ok = await run(() => supabase.rpc("deal_review", { p_person: person.id, p_decision: decision, p_message: reviewNote }), true);
+    if (ok && decision === "needs_changes") await emailSentBack();
+  };
   const send = async (e) => {
     e.preventDefault();
     if (!text.trim()) return;
@@ -115,6 +141,7 @@ export default function DealCompliance({ person, viewer, onChanged }) {
       )}
       {!reviewer && status === "submitted" && <p className={`text-sm ${muted}`}>Waiting on compliance. You can keep adding documents; message them below if something changes.</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {notice && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">{notice}</p>}
 
       <div className="rounded-2xl border border-black/10 dark:border-white/10">
         <ul className="max-h-72 space-y-3 overflow-y-auto p-3" aria-label="Messages">

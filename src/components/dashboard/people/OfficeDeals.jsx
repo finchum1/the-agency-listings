@@ -28,7 +28,7 @@ export default function OfficeDeals({ viewer }) {
   const [agent, setAgent] = useState("");
   const [showClosed, setShowClosed] = useState(false);
   const [q, setQ] = useState("");
-  const [openId, setOpenId] = useState(null);
+  const [openId, setOpenId] = useState(() => new URLSearchParams(window.location.search).get("deal"));
   const { progress, reload: reloadProgress } = useTransactionProgress(true);
   const [unread, setUnread] = useState({});
 

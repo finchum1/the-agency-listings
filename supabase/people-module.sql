@@ -2040,3 +2040,9 @@ $$;
 
 revoke all on function public.deal_mark_read(uuid), public.deal_submit_review(uuid, text), public.deal_review(uuid, text, text), public.deal_mark_document(uuid, text, text), public.deal_attention() from public, anon;
 grant execute on function public.deal_mark_read(uuid), public.deal_submit_review(uuid, text), public.deal_review(uuid, text, text), public.deal_mark_document(uuid, text, text), public.deal_attention() to authenticated;
+
+-- ============================================================================
+-- 43. Email when compliance sends a deal back. api/deal-notify.js emails the agent (and their coordinators) once per send-back;
+--     emailed_at marks the message as handled so a retry or a second click never sends it twice.
+-- ============================================================================
+alter table public.deal_messages add column if not exists emailed_at timestamptz;

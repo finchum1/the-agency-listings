@@ -235,7 +235,7 @@ export default function PeopleBoard({ group }) {
   const nextStageNames = board.next ? allStages[board.next.group] : null;
   const prevStageNames = board.prev ? allStages[board.prev.group] : null;
 
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState(() => (group === "transaction" ? new URLSearchParams(window.location.search).get("deal") : null));
   const peek = usePeekWidth(group === "transaction");
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [addingStage, setAddingStage] = useState(null);
