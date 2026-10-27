@@ -145,7 +145,7 @@ export default function DealsPage() {
           ))}
         </select>
       )}
-      {tcMode && (
+      {access.mine && (
         <button type="button" onClick={() => setStarting(true)} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-4 py-2 hover:bg-[#1c1a17]/90">
           + Start a deal
         </button>
@@ -213,6 +213,7 @@ export default function DealsPage() {
 
       {starting && (
         <StartDealModal
+          coordinator={tcMode}
           onClose={() => setStarting(false)}
           onStarted={async (id, note, own) => {
             setStarting(false);

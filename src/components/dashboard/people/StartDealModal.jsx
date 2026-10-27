@@ -12,15 +12,16 @@ const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9
 // the agent gets an email; deal_start_for_agent in the database does the work and checks who may), or for themselves (a plain deal of their own,
 // the same as adding one to a column of their own board).
 const ME = "me";
-export default function StartDealModal({ onClose, onStarted }) {
+// Anyone with Deals can start one of their own; only a coordinator (`coordinator`) also gets to pick an agent to start it for.
+export default function StartDealModal({ onClose, onStarted, coordinator = false }) {
   const { profile } = useAuth();
   const [agents, setAgents] = useState(null);
   const { stages: myStages } = usePeopleStages();
   const columns = myStages.transaction; // the coordinator's own board columns
   const [f, setF] = useState(() => {
-    let agent = "";
+    let agent = coordinator ? "" : ME;
     try {
-      agent = localStorage.getItem(LAST_AGENT) || "";
+      if (coordinator) agent = localStorage.getItem(LAST_AGENT) || "";
     } catch {
       /* the remembered agent is a convenience */
     }
@@ -30,7 +31,7 @@ export default function StartDealModal({ onClose, onStarted }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!profile?.org_id) return;
+    if (!coordinator || !profile?.org_id) return;
     supabase
       .from("profiles")
       .select("id, full_name")
@@ -42,7 +43,7 @@ export default function StartDealModal({ onClose, onStarted }) {
         setAgents(data || []);
         setF((cur) => (cur.agent === ME || data?.some((a) => a.id === cur.agent) ? cur : { ...cur, agent: "" }));
       });
-  }, [profile?.org_id, profile?.id]);
+  }, [coordinator, profile?.org_id, profile?.id]);
 
   const set = (k) => (e) => setF((cur) => ({ ...cur, [k]: e.target.value }));
   const own = f.agent === ME;
@@ -130,18 +131,20 @@ export default function StartDealModal({ onClose, onStarted }) {
           <button type="button" onClick={onClose} disabled={busy} aria-label="Close" className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50">✕</button>
         </div>
 
-        <div>
-          <label className={labelClass} htmlFor="sd-agent">Who is this deal for?</label>
-          <select id="sd-agent" value={f.agent} onChange={set("agent")} className={inputClass} disabled={!agents}>
-            <option value="">{agents ? "Choose…" : "Loading…"}</option>
-            <option value={ME}>Me (my own deal)</option>
-            {(agents || []).map((a) => (
-              <option key={a.id} value={a.id}>{a.full_name}</option>
-            ))}
-          </select>
-          {agents && agents.length === 0 && <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">No agents in your office have Deals turned on yet.</p>}
-          <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{own ? "It goes on your own Deals board." : "An agent's deal goes on their Deals board, with you as the coordinator. They get an email."}</p>
-        </div>
+        {coordinator && (
+          <div>
+            <label className={labelClass} htmlFor="sd-agent">Who is this deal for?</label>
+            <select id="sd-agent" value={f.agent} onChange={set("agent")} className={inputClass} disabled={!agents}>
+              <option value="">{agents ? "Choose…" : "Loading…"}</option>
+              <option value={ME}>Me (my own deal)</option>
+              {(agents || []).map((a) => (
+                <option key={a.id} value={a.id}>{a.full_name}</option>
+              ))}
+            </select>
+            {agents && agents.length === 0 && <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">No agents in your office have Deals turned on yet.</p>}
+            <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{own ? "It goes on your own Deals board." : "An agent's deal goes on their Deals board, with you as the coordinator. They get an email."}</p>
+          </div>
+        )}
 
         {columns.length > 0 && (
           <div>
