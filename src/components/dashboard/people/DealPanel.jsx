@@ -4,6 +4,9 @@ import { BOARDS } from "../../../lib/peopleStages";
 import TransactionModules from "./TransactionModules";
 import DealCompliance, { ComplianceChip } from "./DealCompliance";
 import DealSignatures from "./DealSignatures";
+import DealTabs, { dealTabs } from "./DealTabs";
+import DealOverview from "./DealOverview";
+import { useDealSummary } from "../../../hooks/useDealSummary";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
 import { useAuth } from "../../../hooks/useAuth";
 
@@ -21,12 +24,19 @@ const NUMBERS = [["price", "Price"], ["commission", "Commission"]];
 // work the checklists; compliance reads them, marks documents, and approves or sends the deal back.
 export default function DealPanel({ deal, agentName, viewer, onClose, onChanged }) {
   const edit = viewer === "tc";
+  const [tab, setTab] = useState("overview");
   const { user } = useAuth();
   const { stages: myStages } = usePeopleStages();
   const myColumns = myStages.transaction;
   const [form, setForm] = useState(() => toForm(deal));
   const [error, setError] = useState("");
   const [fresh, setFresh] = useState(deal);
+  const dealDates = { contract_date: fresh.contract_date || "", inspection_date: fresh.inspection_date || "", closing_date: fresh.closing_date || "" };
+  const summary = useDealSummary(deal.id, dealDates);
+  useEffect(() => {
+    summary.reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
   const [tcNames, setTcNames] = useState([]);
   const [agentEmail, setAgentEmail] = useState("");
   useEffect(() => {
@@ -83,6 +93,12 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
   });
 
   const baseStages = agentStages || BOARDS.transaction.stages;
+  const changeDate = (key, v) => {
+    setForm((f) => ({ ...f, [key]: v }));
+    const val = v || null;
+    setFresh((f) => ({ ...f, [key]: val }));
+    save({ [key]: val });
+  };
   const stages = baseStages.includes(fresh.stage) ? baseStages : [fresh.stage, ...baseStages];
   const side = fresh.side === "both" ? "" : fresh.side;
 
@@ -105,11 +121,14 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
           <button type="button" onClick={onClose} aria-label="Close" className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">✕</button>
         </div>
 
+        <DealTabs tabs={dealTabs(summary, fresh)} active={tab} onChange={setTab} />
         <div className="@container space-y-8 px-5 py-6">
-          <div className="grid gap-8 lg:grid-cols-2">
-            <div className="min-w-0 space-y-6">
-              <DealCompliance person={fresh} viewer={viewer} onChanged={refresh} />
-            </div>
+          {tab === "overview" && <DealOverview person={fresh} summary={summary} dates={dealDates} onTab={setTab} onDate={edit ? changeDate : undefined} />}
+          {tab === "checklists" && <TransactionModules person={fresh} side={side} viewer={viewer} dates={dealDates} />}
+          {tab === "signatures" && <DealSignatures person={fresh} viewer={viewer} agent={{ name: agentName || "", email: agentEmail }} />}
+          {tab === "messages" && <DealCompliance person={fresh} viewer={viewer} onChanged={() => { refresh(); summary.reload(); }} />}
+          {tab === "details" && (
+            <div className="space-y-8">
             <section className="min-w-0 space-y-4">
               <h3 className="font-display text-base font-semibold">Details</h3>
               {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
@@ -217,14 +236,8 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
                 ))}
               </div>
             </section>
-          </div>
-          <TransactionModules
-            person={fresh}
-            side={side}
-            viewer={viewer}
-            dates={{ contract_date: fresh.contract_date || "", inspection_date: fresh.inspection_date || "", closing_date: fresh.closing_date || "" }}
-          />
-          <DealSignatures person={fresh} viewer={viewer} agent={{ name: agentName || "", email: agentEmail }} />
+            </div>
+          )}
         </div>
       </aside>
     </div>

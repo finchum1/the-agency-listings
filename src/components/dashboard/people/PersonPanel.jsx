@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS, ARCHIVE_REASONS, SOURCES } from "../../../lib/peopleStages";
 import ContactButtons from "./ContactButtons";
@@ -10,6 +11,11 @@ import TransactionModules from "./TransactionModules";
 import DealCompliance from "./DealCompliance";
 import DealTeam from "./DealTeam";
 import DealSignatures from "./DealSignatures";
+import DealTabs, { dealTabs } from "./DealTabs";
+import DealOverview from "./DealOverview";
+import { ComplianceChip } from "./DealCompliance";
+import { useDealSummary } from "../../../hooks/useDealSummary";
+import { dayLabel, toKey } from "../../../lib/homeDates";
 import { useAuth } from "../../../hooks/useAuth";
 
 const inputClass =
@@ -81,6 +87,18 @@ export default function PersonPanel({
   const [moveStage, setMoveStage] = useState(() => (board.next?.group === "transaction" ? nextStageNames?.find((s) => /^pending$/i.test(s)) : null) || nextStageNames?.[0] || ""); // a person who has a contract lands in Pending, not in Listings
   const [backStage, setBackStage] = useState(prevStageNames?.[prevStageNames.length - 1] || "");
   const [archiveReason, setArchiveReason] = useState(ARCHIVE_REASONS[0]);
+
+  // A deal opens on a short Overview with the rest behind tabs; the other boards keep the plain form.
+  const isDeal = person.stage_group === "transaction";
+  const [tab, setTab] = useState("overview");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [dealModal, setDealModal] = useState(null); // share | back | archive
+  const dealDates = { contract_date: form.contract_date, inspection_date: form.inspection_date, closing_date: form.closing_date };
+  const summary = useDealSummary(isDeal ? person.id : null, dealDates);
+  useEffect(() => {
+    if (isDeal) summary.reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   const flush = useCallback(async () => {
     clearTimeout(timerRef.current);
@@ -434,6 +452,112 @@ export default function PersonPanel({
     },
   };
 
+  // ---- A deal's panel: summary header, tabs, and a menu for the rare actions -------------------------------------------------
+  const dealSide = form.side === "both" ? "" : form.side;
+  const sideLabel = dealSide === "buyer" ? "Buyer" : dealSide === "seller" ? "Seller (listing)" : "";
+  const closingDiff = form.closing_date ? Math.round((new Date(`${form.closing_date}T12:00:00`) - new Date(`${toKey(new Date())}T12:00:00`)) / 86400000) : null;
+  const tabsBar = <DealTabs tabs={dealTabs(summary, person)} active={tab} onChange={setTab} />;
+
+  const dealMenu = (
+    <div className="relative">
+      <button type="button" onClick={() => setMenuOpen((v) => !v)} aria-label="More actions" aria-haspopup="menu" aria-expanded={menuOpen} className="grid h-7 w-7 place-items-center rounded-full text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/5 dark:hover:bg-white/10">
+        <span aria-hidden="true" className="text-lg leading-none">⋯</span>
+      </button>
+      {menuOpen && (
+        <>
+          <button type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)} className="fixed inset-0 z-[55] cursor-default" />
+          <div role="menu" className="absolute right-0 z-[60] mt-1 w-64 rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1f1f1f] py-1 shadow-xl">
+            {[
+              ["Share a timeline with the client", () => setDealModal("share")],
+              ...(board.prev && !person.archived ? [[board.prev.label, () => setDealModal("back")]] : []),
+              person.archived ? [`Restore to ${board.title}`, handleRestore] : ["Archive", () => setDealModal("archive")],
+              ["Delete permanently", handleDelete, true],
+            ].map(([label, fn, danger]) => (
+              <button
+                key={label}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  fn();
+                }}
+                className={`block w-full px-3.5 py-2 text-left text-sm hover:bg-black/5 dark:hover:bg-white/10 ${danger ? "text-red-600 dark:text-red-400" : ""}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  const dealModals =
+    dealModal &&
+    createPortal(
+      <div className="fixed inset-0 z-[80] grid place-items-center bg-black/40 px-4" onPointerDown={(e) => e.target === e.currentTarget && setDealModal(null)}>
+        <div role="dialog" aria-label="Deal action" className="w-full max-w-md max-h-[88vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#1a1a1a] p-6 text-[#1c1a17] dark:text-[#faf9f7] shadow-2xl">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display text-xl font-semibold">{dealModal === "share" ? "Share with the client" : dealModal === "back" ? board.prev?.label : "Archive this deal"}</h2>
+            <button type="button" onClick={() => setDealModal(null)} aria-label="Close" className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50">✕</button>
+          </div>
+          {dealModal === "share" && <ClientTimelineCard person={person} dates={dealDates} />}
+          {dealModal === "back" && (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <select value={backStage} onChange={(e) => setBackStage(e.target.value)} className={`${inputClass} !w-auto`}>
+                  {prevStageNames.map((st) => (
+                    <option key={st} value={st}>{st}</option>
+                  ))}
+                </select>
+                <button type="button" onClick={handleMoveBack} className={primaryBtn}>{board.prev.label}</button>
+              </div>
+              <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">For a deal that fell through. Their deal details and notes are kept in case it comes back.</p>
+            </div>
+          )}
+          {dealModal === "archive" && (
+            <div className="space-y-3">
+              <select value={archiveReason} onChange={(e) => setArchiveReason(e.target.value)} className={inputClass}>
+                {ARCHIVE_REASONS.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+              <button type="button" onClick={handleArchive} className={primaryBtn}>Archive</button>
+            </div>
+          )}
+        </div>
+      </div>,
+      document.body,
+    );
+
+  const dealChips = (
+    <div className="flex flex-wrap items-center gap-2">
+      <select
+        value={person.stage}
+        onChange={(e) => patch({ stage: e.target.value })}
+        aria-label="Stage"
+        className="rounded-full border border-black/10 dark:border-white/15 bg-transparent px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
+      >
+        {stageNames.map((st) => (
+          <option key={st} value={st}>{st}</option>
+        ))}
+      </select>
+      {closingDiff != null && (
+        <span className="rounded-full bg-black/[0.06] dark:bg-white/10 px-2.5 py-1 text-xs font-medium">
+          {closingDiff > 0 ? `Closes ${dayLabel(form.closing_date, toKey(new Date()))} · in ${closingDiff} days` : closingDiff === 0 ? "Closes today" : `Closed ${-closingDiff} days ago`}
+        </span>
+      )}
+      {summary.loaded && (summary.tasksTotal > 0 || summary.docsTotal > 0) && (
+        <span className="text-xs text-[#1c1a17]/55 dark:text-[#faf9f7]/55">
+          {summary.tasksTotal > 0 && `Tasks ${summary.tasksDone}/${summary.tasksTotal}`}
+          {summary.tasksTotal > 0 && summary.docsTotal > 0 && " · "}
+          {summary.docsTotal > 0 && `Docs ${summary.docsDone}/${summary.docsTotal}`}
+        </span>
+      )}
+      {person.compliance_status && person.compliance_status !== "none" && <ComplianceChip status={person.compliance_status} />}
+    </div>
+  );
+
   const panelHeader = (
       <div className="shrink-0 px-6 pt-4 md:pt-5 pb-4 space-y-4 border-b border-black/5 dark:border-white/10">
         <div className="flex items-center justify-between gap-3">
@@ -478,6 +602,7 @@ export default function PersonPanel({
               </div>
             )}
             <span className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 min-w-12 text-right">{status}</span>
+            {isDeal && dealMenu}
             <button type="button" onClick={onClose} className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]" aria-label="Close panel">
               ✕
             </button>
@@ -485,13 +610,26 @@ export default function PersonPanel({
         </div>
 
         <div className="min-w-0">
-          <h2 className="font-display text-xl font-semibold truncate">{form.name || person.name}</h2>
-          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5">
-            {board.title} · {person.stage}
-            {person.archived && " · Archived"}
-          </p>
+          {isDeal ? (
+            <>
+              <h2 className="font-display text-xl font-semibold truncate">{form.property_address || form.name || person.name}</h2>
+              <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 truncate">
+                {[form.property_address ? form.name || person.name : "", sideLabel, form.price ? `$${Number(form.price).toLocaleString()}` : ""].filter(Boolean).join(" · ") || "Deal"}
+                {person.archived && " · Archived"}
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="font-display text-xl font-semibold truncate">{form.name || person.name}</h2>
+              <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5">
+                {board.title} · {person.stage}
+                {person.archived && " · Archived"}
+              </p>
+            </>
+          )}
         </div>
 
+        {isDeal && dealChips}
         <ContactButtons person={{ ...person, phone: form.phone, email: form.email }} />
       </div>
   );
@@ -500,8 +638,9 @@ export default function PersonPanel({
     <div className="px-5 pt-1 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-display text-xl font-semibold truncate">{form.name || person.name}</h2>
-          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5">
+          <h2 className="font-display text-xl font-semibold truncate">{isDeal ? form.property_address || form.name || person.name : form.name || person.name}</h2>
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 truncate">
+            {isDeal && form.property_address ? `${form.name || person.name} · ` : ""}
             {board.title} · {person.stage}
             {person.archived && " · Archived"}
           </p>
@@ -538,11 +677,8 @@ export default function PersonPanel({
     </div>
   );
 
-  const panelBody = (
-      <div className={`@container flex-1 min-h-0 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] overscroll-contain ${sheet && snap === "peek" ? "overflow-hidden" : "overflow-y-auto"}`} onFocusCapture={() => sheet && snap === "peek" && setSnap("full")}>
-      <div className={`grid gap-y-6 ${isTransaction ? "@3xl:grid-cols-2 @3xl:gap-x-8" : ""}`}>
-        <div className="min-w-0 space-y-6">
-        <OutreachDrafts person={person} onLogged={loadNotes} onCount={setDraftCount} />
+  const changeDate = (key, value) => setField(key, true)({ target: { value } });
+  const contactFields = (
         <div className="space-y-3">
           <div>
             <label className={labelClass}>Name</label>
@@ -618,7 +754,9 @@ export default function PersonPanel({
           )}
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         </div>
+  );
 
+  const notesSection = (
         <section className="min-w-0 space-y-3">
           <h3 className="font-display text-base font-semibold">Notes</h3>
           <form onSubmit={addNote} className="space-y-2">
@@ -651,44 +789,50 @@ export default function PersonPanel({
             </ul>
           )}
         </section>
-        </div>
+  );
 
-        {isTransaction && (
-          <div className="min-w-0 space-y-6">
-            <DealTeam person={person} />
-            <DealCompliance person={person} viewer="owner" onChanged={onChanged} />
-          </div>
-        )}
 
-        {isTransaction && (
+  const dealBody = (
+    <div className={`@container flex-1 min-h-0 px-6 pt-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] overscroll-contain ${sheet && snap === "peek" ? "overflow-hidden" : "overflow-y-auto"}`} onFocusCapture={() => sheet && snap === "peek" && setSnap("full")}>
+      {tab === "overview" && (
+        <DealOverview
+          person={person}
+          summary={summary}
+          dates={dealDates}
+          onTab={setTab}
+          onDate={changeDate}
+        >
+          {{
+            top: <OutreachDrafts person={person} onLogged={loadNotes} onCount={setDraftCount} />,
+            bottom: notesSection,
+          }}
+        </DealOverview>
+      )}
+      {tab === "checklists" && <TransactionModules person={person} side={dealSide} dates={dealDates} />}
+      {tab === "signatures" && <DealSignatures person={person} viewer="owner" agent={{ name: signedInName, email: signedInEmail }} />}
+      {tab === "messages" && <DealCompliance person={person} viewer="owner" onChanged={() => { onChanged(); summary.reload(); }} />}
+      {tab === "details" && (
+        <div className="space-y-8">
+          {contactFields}
+          <DealTeam person={person} />
           <section className="min-w-0 space-y-3">
-            <h3 className="font-display text-base font-semibold">Details</h3>
+            <h3 className="font-display text-base font-semibold">Deal details</h3>
             {transactionDetails}
           </section>
-        )}
+        </div>
+      )}
+    </div>
+  );
 
-        {isTransaction && (
-          <section className="min-w-0">
-            <ClientTimelineCard person={person} dates={{ contract_date: form.contract_date, inspection_date: form.inspection_date, closing_date: form.closing_date }} />
-          </section>
-        )}
+  const panelBody = (
+      <div className={`@container flex-1 min-h-0 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] overscroll-contain ${sheet && snap === "peek" ? "overflow-hidden" : "overflow-y-auto"}`} onFocusCapture={() => sheet && snap === "peek" && setSnap("full")}>
+      <div className={`grid gap-y-6 ${isTransaction ? "@3xl:grid-cols-2 @3xl:gap-x-8" : ""}`}>
+        <div className="min-w-0 space-y-6">
+        <OutreachDrafts person={person} onLogged={loadNotes} onCount={setDraftCount} />
+        {contactFields}
 
-        {isTransaction && (
-          <div className="min-w-0 @3xl:col-span-2">
-            <TransactionModules
-              person={person}
-              side={form.side === "both" ? "" : form.side}
-              dates={{
-                contract_date: form.contract_date,
-                inspection_date: form.inspection_date,
-                closing_date: form.closing_date,
-              }}
-            />
-            <div className="mt-6">
-              <DealSignatures person={person} viewer="owner" agent={{ name: signedInName, email: signedInEmail }} />
-            </div>
-          </div>
-        )}
+        {notesSection}
+        </div>
 
         <div className="contents">
 
@@ -794,7 +938,9 @@ export default function PersonPanel({
           <span className={`absolute inset-y-0 left-[5px] w-0.5 transition-colors ${peek?.resizing ? "bg-[#ed2127]/70 dark:bg-[#f2454b]/70" : "bg-transparent group-hover:bg-[#ed2127]/40 dark:group-hover:bg-[#f2454b]/40"}`} />
         </div>
         {panelHeader}
-        {panelBody}
+        {isDeal && tabsBar}
+        {isDeal ? dealBody : panelBody}
+        {dealModals}
       </aside>
     );
   }
@@ -835,7 +981,9 @@ export default function PersonPanel({
           </div>
           {snap === "peek" ? compactHeader : panelHeader}
         </div>
-        {panelBody}
+        {isDeal && snap === "full" && tabsBar}
+        {isDeal ? dealBody : panelBody}
+        {dealModals}
       </div>
     </>
   );
