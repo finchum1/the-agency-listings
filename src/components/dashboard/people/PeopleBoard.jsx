@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ComplianceChip } from "./DealCompliance";
 import { createPortal } from "react-dom";
 import { supabase } from "../../../lib/supabaseClient";
@@ -285,6 +285,10 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
   }, [selectedId]);
   const ownPeek = usePeekWidth(group === "transaction");
   const peek = peekProp || ownPeek; // Deals passes one shared width, so a coordinated deal's panel opens as wide as your own
+  // The side peek is pinned to the window's edge, but the page content sits inset from it (more on a wide screen, where the content is
+  // centered). The board only needs to give up the part of the peek that overlaps it, or the inset shows as dead space beside the peek.
+  const rootRef = useRef(null);
+  const [inset, setInset] = useState(0);
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [addingStage, setAddingStage] = useState(null);
   const [newPerson, setNewPerson] = useState({ name: "", phone: "", email: "", side: "" });
@@ -611,15 +615,29 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
     runStageChange(() => removeStage(group, stage, count));
   };
 
+  // Measured once the board is on screen (not while it is still loading), again whenever the peek opens or the window changes size.
+  const peekOpen = !!selected;
+  useLayoutEffect(() => {
+    const measure = () => {
+      const parent = rootRef.current?.parentElement;
+      if (!parent) return;
+      const right = parent.getBoundingClientRect().right - (parseFloat(getComputedStyle(parent).paddingRight) || 0);
+      setInset(Math.max(0, Math.round(document.documentElement.clientWidth - right)));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [loading, peekOpen]);
+
   if (loading) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
 
   // With the side peek open the board shrinks to the space left of it; with the phone sheet peeking it gets room below.
-  const peekOpen = !!selected;
   return (
     <div
+      ref={rootRef}
       className={`space-y-4 transition-[margin,padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${peek.resizing ? "!transition-none" : ""}`}
       style={{
-        marginRight: peekOpen && isDesktop ? peek.css : undefined,
+        marginRight: peekOpen && isDesktop ? `max(0px, calc(${peek.css} - ${inset}px))` : undefined,
         paddingBottom: peekOpen && !isDesktop ? "14rem" : undefined,
       }}
     >
