@@ -3,6 +3,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import { dealAccess } from "../../../lib/deals";
 import { useDealAttention } from "../../../hooks/useDealAttention";
 import { useCoordinatedDeals } from "../../../hooks/useCoordinatedDeals";
+import { supabase } from "../../../lib/supabaseClient";
 import PeopleBoard from "./PeopleBoard";
 import OfficeDeals from "./OfficeDeals";
 import DealsHome from "./DealsHome";
@@ -78,6 +79,23 @@ export default function DealsPage() {
   const foreignShown = tcMode && effectiveMode !== "mine" ? coordinated.deals : [];
   const openForeign = coordinated.deals.find((d) => d.id === openForeignId);
 
+  // Dragging a deal you coordinate to another column changes its stage on the agent's board, so it has to be one of THEIR columns.
+  const moveForeign = async (id, stage) => {
+    const deal = coordinated.deals.find((x) => x.id === id);
+    if (!deal) return null;
+    const { data: names } = await supabase.rpc("deal_stage_names", { p_person: id });
+    const exact = (names || []).find((n) => n.toLowerCase() === stage.toLowerCase());
+    if (!exact) return `${deal._agent || "That agent"}'s Deals board doesn't have a “${stage}” column, so this deal can't go there. Open the deal and pick one of their columns instead.`;
+    if (exact === deal.stage) return null;
+    coordinated.setDeals((list) => list.map((x) => (x.id === id ? { ...x, stage: exact } : x)));
+    const { error } = await supabase.from("people").update({ stage: exact }).eq("id", id);
+    if (error) {
+      coordinated.reload();
+      return error.message;
+    }
+    return null;
+  };
+
   const toolbar = ({ ownCount }) => (
     <>
       <div className={seg} role="group" aria-label="View">
@@ -115,6 +133,7 @@ export default function DealsPage() {
         showOwn={effectiveMode !== "tc"}
         foreignDeals={foreignShown}
         onOpenForeign={setOpenForeignId}
+        onMoveForeign={moveForeign}
         toolbarLeft={toolbar}
         renderList={(props) => <DealsList {...props} agentName="You" />}
         renderOverview={(props) => {

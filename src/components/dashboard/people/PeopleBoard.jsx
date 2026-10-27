@@ -235,7 +235,7 @@ function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleCl
 // coordinator panel through `onOpenForeign`, can't be dragged) shown after the agent's own cards in the column with the same name, or in an
 // extra column of their own when the owner's stage name isn't one of ours. `showOwn` hides the agent's own cards (the "TC deals" filter),
 // `toolbarLeft` is the view/filter controls, and `view="list"` swaps the columns for whatever `renderList` draws.
-export default function PeopleBoard({ group, renderOverview, foreignDeals = [], onOpenForeign, toolbarLeft, view = "board", showOwn = true, renderList }) {
+export default function PeopleBoard({ group, renderOverview, foreignDeals = [], onOpenForeign, onMoveForeign, toolbarLeft, view = "board", showOwn = true, renderList }) {
   const board = BOARDS[group];
   const { people, setPeople, loading, error, refresh } = usePeople();
   const { progress, reload: reloadProgress } = useTransactionProgress(group === "transaction");
@@ -295,8 +295,8 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
     const d = dragRef.current;
     if (!d || !d.started) return;
     const els = document.elementsFromPoint(d.cx, d.cy);
-    // A column of someone else's deals can't be dropped on: letting go there puts the card back where it was.
-    const colEl = els.find((el) => el.dataset && el.dataset.stage !== undefined && el.dataset.foreign === undefined);
+    // Your own cards can't be dropped on a column of other agents' stage names (it would put them in a column you don't have); a deal you coordinate can.
+    const colEl = els.find((el) => el.dataset && el.dataset.stage !== undefined && (el.dataset.foreign === undefined || d.foreign));
     const stage = colEl ? colEl.dataset.stage : d.origin; // let go outside the board: it goes back where it was
     let index;
     if (!colEl) {
@@ -333,8 +333,9 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
     const rect = e.currentTarget.getBoundingClientRect();
     const d = {
       id: p.id,
-      origin: p.stage,
-      originIndex: sortCol(active.filter((x) => x.stage === p.stage)).findIndex((x) => x.id === p.id),
+      foreign: Boolean(p._foreign),
+      origin: columnOf(p),
+      originIndex: p._foreign ? 0 : sortCol(active.filter((x) => x.stage === p.stage)).findIndex((x) => x.id === p.id),
       hoverStage: p.stage,
       hoverIndex: 0,
       pointerId: e.pointerId,
@@ -428,7 +429,7 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
     function onUp(ev) {
       if (ev.pointerId !== d.pointerId) return;
       const { moveCard } = latest.current;
-      const moved = d.started && !d.cancelled && (d.hoverStage !== d.origin || d.hoverIndex !== d.originIndex);
+      const moved = d.started && !d.cancelled && (d.hoverStage !== d.origin || (!d.foreign && d.hoverIndex !== d.originIndex));
       const { id, hoverStage, hoverIndex } = d;
       cleanup();
       if (moved) moveCard(id, hoverStage, hoverIndex);
@@ -512,7 +513,15 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
   // Puts a person at `index` in a column (counting the column without them) and saves the whole column's order.
   const moveCard = async (personId, stage, index) => {
     const person = people.find((p) => p.id === personId);
-    if (!person) return;
+    if (!person) {
+      // A deal you coordinate: only its stage changes (to one of the owning agent's own columns), and its place in the column is theirs to order.
+      if (foreign.some((p) => p.id === personId)) {
+        setBoardError("");
+        const err = await onMoveForeign?.(personId, stage);
+        if (err) setBoardError(err);
+      }
+      return;
+    }
     const target = sortCol(active.filter((p) => p.stage === stage && p.id !== personId));
     const at = Math.max(0, Math.min(index, target.length));
     const ordered = [...target.slice(0, at), person, ...target.slice(at)];
@@ -641,7 +650,7 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
           const col = [...(showOwn && !isForeignCol ? sortCol(active.filter((p) => p.stage === stage)) : []), ...sortCol(foreign.filter((p) => columnOf(p) === stage))];
           const isCollapsed = collapsed.includes(stage);
           // While a card is lifted it leaves its column; the column it would land in shows a placeholder as tall as the card.
-          const lifted = drag ? people.find((x) => x.id === drag.id) : null;
+          const lifted = drag ? people.find((x) => x.id === drag.id) || foreign.find((x) => x.id === drag.id) : null;
           const others = lifted ? col.filter((x) => x.id !== lifted.id) : col;
           const showPlaceholder = !!(drag && lifted && drag.hoverStage === stage);
           const placeholderAt = showPlaceholder ? Math.min(drag.hoverIndex, others.length) : -1;
@@ -832,12 +841,13 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
                       data-person-id={p.id}
                       data-foreign-card={p._foreign ? "" : undefined}
                       hidden={isLifted}
-                      onPointerDown={p._foreign ? undefined : (e) => onCardPointerDown(e, p)}
+                      onPointerDown={(e) => onCardPointerDown(e, p)}
                       onClick={() => {
+                        if (suppressClickRef.current) return;
                         if (p._foreign) onOpenForeign?.(p.id);
-                        else if (!suppressClickRef.current) setSelectedId(p.id);
+                        else setSelectedId(p.id);
                       }}
-                      className={`${CARD_CLASS} ${p._foreign ? "cursor-pointer" : "cursor-grab"} hover:shadow-sm transition-shadow`}
+                      className={`${CARD_CLASS} cursor-grab hover:shadow-sm transition-shadow`}
                     >
                       <PersonCardBody p={p} group={group} progress={progress} today={today} />
                       {!p._foreign && <DraftBadge count={draftCounts[p.id]} />}
@@ -859,7 +869,7 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
       </div>
       )}
 
-      {drag && inGroup.some((x) => x.id === drag.id) &&
+      {drag && (inGroup.some((x) => x.id === drag.id) || foreign.some((x) => x.id === drag.id)) &&
         createPortal(
           <div
             ref={floatRef}
@@ -871,8 +881,8 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
               transform: dragRef.current ? floatTransform(dragRef.current) : undefined,
             }}
           >
-            <PersonCardBody p={people.find((x) => x.id === drag.id)} group={group} progress={progress} today={today} />
-            <DraftBadge count={draftCounts[drag.id]} />
+            <PersonCardBody p={people.find((x) => x.id === drag.id) || foreign.find((x) => x.id === drag.id)} group={group} progress={progress} today={today} />
+            {!foreign.some((x) => x.id === drag.id) && <DraftBadge count={draftCounts[drag.id]} />}
           </div>,
           document.body,
         )}

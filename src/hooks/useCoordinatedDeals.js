@@ -35,5 +35,5 @@ export function useCoordinatedDeals(enabled) {
     reload();
   }, [reload]);
 
-  return { deals, loading, reload };
+  return { deals, setDeals, loading, reload };
 }
