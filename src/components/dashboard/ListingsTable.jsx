@@ -18,15 +18,18 @@ export default function ListingsTable() {
     ready: !authLoading,
   });
   const [filter, setFilter] = useState("all");
+  const [domainFilter, setDomainFilter] = useState("all"); // all | with | without
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
     return listings.filter(
       (l) =>
         (filter === "all" || l.status === filter) &&
+        (domainFilter === "all" || (domainFilter === "with") === Boolean(l.custom_domain)) &&
         matchesSearch([l.address_line1, l.city, l.state, l.zip, l.mls_number, l.agent?.full_name, l.agent?.email, STATUS_LABELS[l.status], l.price, l.custom_domain], query),
     );
-  }, [listings, filter, query]);
+  }, [listings, filter, domainFilter, query]);
+  const withDomain = listings.filter((l) => l.custom_domain).length;
 
   const handleStatusChange = async (id, status) => {
     const { error } = await supabase.from("listings").update({ status }).eq("id", id);
@@ -45,6 +48,7 @@ export default function ListingsTable() {
           <h1 className="text-2xl font-display font-semibold">Listings</h1>
           <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
             {listings.length} listing{listings.length === 1 ? "" : "s"}
+            {!loading && listings.length > 0 && <> · {withDomain} with a custom domain</>}
           </p>
         </div>
         <Link
@@ -64,7 +68,7 @@ export default function ListingsTable() {
           aria-label="Search listings"
           className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
         />
-        {(query.trim() || filter !== "all") && !loading && (
+        {(query.trim() || filter !== "all" || domainFilter !== "all") && !loading && (
           <span className="shrink-0 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
             {filtered.length} of {listings.length}
           </span>
@@ -93,6 +97,27 @@ export default function ListingsTable() {
         ))}
       </div>
 
+      <div className="flex items-center gap-2 mb-5 flex-wrap" role="group" aria-label="Custom domain">
+        <span className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mr-1">Custom domain</span>
+        {[
+          ["all", "Any"],
+          ["with", `Has one (${withDomain})`],
+          ["without", `Doesn't (${listings.length - withDomain})`],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setDomainFilter(value)}
+            aria-pressed={domainFilter === value}
+            className={`text-xs font-semibold rounded-full px-3 py-1.5 transition-colors ${
+              domainFilter === value ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/10 dark:hover:bg-white/15"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {error && <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>}
       {loading ? (
         <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>
@@ -104,7 +129,7 @@ export default function ListingsTable() {
             ) : (
               <>
                 No listings match.{" "}
-                <button type="button" onClick={() => { setQuery(""); setFilter("all"); }} className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                <button type="button" onClick={() => { setQuery(""); setFilter("all"); setDomainFilter("all"); }} className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
                   Clear search
                 </button>
               </>

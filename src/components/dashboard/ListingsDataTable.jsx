@@ -15,6 +15,7 @@ export default function ListingsDataTable({ rows, onStatusChange }) {
             <th className="px-5 py-3 font-medium">Agent</th>
             <th className="px-5 py-3 font-medium">Price</th>
             <th className="px-5 py-3 font-medium">Status</th>
+            <th className="px-5 py-3 font-medium">Domain</th>
             <th className="px-5 py-3 font-medium">Updated</th>
             <th className="px-5 py-3 font-medium"></th>
           </tr>
@@ -34,6 +35,22 @@ export default function ListingsDataTable({ rows, onStatusChange }) {
               <td className="px-5 py-4 text-[#1c1a17]/70 dark:text-[#faf9f7]/70">{formatPrice(listing.price)}</td>
               <td className="px-5 py-4">
                 <StatusSelect value={listing.status} onChange={(status) => onStatusChange(listing.id, status)} />
+              </td>
+              <td className="px-5 py-4 text-xs">
+                {listing.custom_domain ? (
+                  <a
+                    href={`https://${listing.custom_domain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="This property site has its own domain"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-400/15 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 font-semibold hover:underline"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
+                    {listing.custom_domain}
+                  </a>
+                ) : (
+                  <span className="text-[#1c1a17]/35 dark:text-[#faf9f7]/35">None</span>
+                )}
               </td>
               <td className="px-5 py-4 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 text-xs">
                 {new Date(listing.updated_at).toLocaleDateString()}
