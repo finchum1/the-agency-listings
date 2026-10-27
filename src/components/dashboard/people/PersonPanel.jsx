@@ -103,7 +103,7 @@ export default function PersonPanel({
   const [menuOpen, setMenuOpen] = useState(false);
   const [dealModal, setDealModal] = useState(null); // share | back | archive
   const [editingDetails, setEditingDetails] = useState(false); // the Details tab reads like a summary until Edit is pressed
-  const dealDates = { contract_date: form.contract_date, inspection_date: form.inspection_date, closing_date: form.closing_date };
+  const dealDates = { contract_date: form.contract_date, inspection_date: form.inspection_date, appraisal_date: form.appraisal_date, financing_deadline: form.financing_deadline, closing_date: form.closing_date };
   const summary = useDealSummary(isDeal ? person.id : null, dealDates);
   useEffect(() => {
     if (isDeal) summary.reload();
