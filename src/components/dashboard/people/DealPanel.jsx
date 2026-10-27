@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { supabase } from "../../../lib/supabaseClient";
-import { BOARDS } from "../../../lib/peopleStages";
+import { BOARDS, ARCHIVE_REASONS } from "../../../lib/peopleStages";
 import TransactionModules from "./TransactionModules";
 import DealCompliance, { ComplianceChip } from "./DealCompliance";
 import DealSignatures from "./DealSignatures";
@@ -39,7 +39,9 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
   const peek = peekProp || ownPeek;
   const [entered, setEntered] = useState(false);
   const asideRef = useRef(null);
-  const [shareOpen, setShareOpen] = useState(false);
+  const [modal, setModal] = useState(null); // share | archive
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [archiveReason, setArchiveReason] = useState(ARCHIVE_REASONS[0]);
   // A coordinator opens on the Overview, like the agent does; compliance opens on Documents, which is what they review.
   const [tab, setTab] = useState(viewer === "compliance" ? "documents" : "overview");
   const [editingDetails, setEditingDetails] = useState(false); // read like a summary until Edit is pressed (coordinators only)
@@ -150,6 +152,56 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
     onBlur: () => edit && commit(key, kind),
   });
 
+  // The three-dot menu (a coordinator's, like the agent's own): archive takes the deal off the agent's board too, since it is the agent's deal;
+  // delete removes it, and everything on it, for good.
+  const handleArchive = async () => {
+    const { error: err } = await supabase.from("people").update({ archived: true, archived_reason: archiveReason, archived_at: new Date().toISOString() }).eq("id", deal.id);
+    if (err) return setError(err.message);
+    setModal(null);
+    onChanged?.();
+    onClose();
+  };
+  const handleDelete = async () => {
+    const where = fresh.property_address || fresh.name;
+    if (!confirm(`Permanently delete ${where}${agentName ? ` for ${agentName}` : ""}?\n\nIt disappears from ${agentName ? `${agentName}'s` : "the agent's"} board too, with its tasks, documents, messages and signatures. This can't be undone. (Archive keeps everything.)`)) return;
+    const { error: err } = await supabase.rpc("delete_coordinated_deal", { p_person_id: deal.id });
+    if (err) return setError(err.message);
+    onChanged?.();
+    onClose();
+  };
+  const menu = edit ? (
+    <div className="relative">
+      <button type="button" onClick={() => setMenuOpen((v) => !v)} aria-label="More actions" aria-haspopup="menu" aria-expanded={menuOpen} className="grid h-7 w-7 place-items-center rounded-full text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/5 dark:hover:bg-white/10">
+        <span aria-hidden="true" className="text-lg leading-none">⋯</span>
+      </button>
+      {menuOpen && (
+        <>
+          <button type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)} className="fixed inset-0 z-[55] cursor-default" />
+          <div role="menu" className="absolute right-0 z-[60] mt-1 w-64 rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1f1f1f] text-[#1c1a17] dark:text-[#faf9f7] py-1 shadow-xl">
+            {[
+              ["Share a timeline with the client", () => setModal("share")],
+              ["Archive", () => setModal("archive")],
+              ["Delete permanently", handleDelete, true],
+            ].map(([label, fn, danger]) => (
+              <button
+                key={label}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  fn();
+                }}
+                className={`block w-full px-3.5 py-2 text-left text-sm hover:bg-black/5 dark:hover:bg-white/10 ${danger ? "text-red-600 dark:text-red-400" : ""}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  ) : null;
+
   const baseStages = agentStages || BOARDS.transaction.stages;
   const changeDate = (key, v) => {
     setForm((f) => ({ ...f, [key]: v }));
@@ -192,6 +244,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
               </button>
             ))}
           </div>
+          {menu}
           <button type="button" onClick={onClose} aria-label="Close panel" className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">✕</button>
         </div>
       </div>
@@ -238,7 +291,10 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
         </div>
         {meta}
       </div>
-      <button type="button" onClick={onClose} aria-label="Close" className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">✕</button>
+      <div className="flex items-center gap-2">
+        {menu}
+        <button type="button" onClick={onClose} aria-label="Close" className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">✕</button>
+      </div>
     </div>
   );
 
@@ -280,12 +336,13 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
 
         <DealTabs tabs={dealTabs(summary, fresh)} active={tab} onChange={setTab} />
         <div className="@container min-h-0 flex-1 space-y-8 overflow-y-auto overscroll-contain px-6 pt-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+          {error && tab !== "details" && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           {tab === "overview" && <DealOverview person={fresh} summary={summary} dates={dealDates} onTab={setTab} onDate={edit ? changeDate : undefined} onCheckTask={edit ? summary.completeTask : undefined}>
             {{
               top: edit ? (
                 <div className="flex flex-wrap items-center gap-3">
                   <SendAgentUpdate person={fresh} agentName={agentName} />
-                  <button type="button" onClick={() => setShareOpen(true)} className="rounded-full border border-black/10 dark:border-white/15 px-4 py-2 text-sm font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.05]">
+                  <button type="button" onClick={() => setModal("share")} className="rounded-full border border-black/10 dark:border-white/15 px-4 py-2 text-sm font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.05]">
                     Share with {(fresh.name || "the client").split(/[ &]/)[0]}
                   </button>
                 </div>
@@ -420,15 +477,28 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
             </div>
           )}
         </div>
-      {shareOpen &&
+      {modal &&
         createPortal(
-        <div className="fixed inset-0 z-[80] grid place-items-center bg-black/40 px-4" onPointerDown={(e) => e.target === e.currentTarget && setShareOpen(false)}>
-          <div role="dialog" aria-label="Share with the client" className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#1c1c1c] text-[#1c1a17] dark:text-[#faf9f7] p-5 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-black/40 px-4" onPointerDown={(e) => e.target === e.currentTarget && setModal(null)}>
+          <div role="dialog" aria-label={modal === "share" ? "Share with the client" : "Archive this deal"} className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#1c1c1c] text-[#1c1a17] dark:text-[#faf9f7] p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-xl font-semibold">Share with the client</h2>
-              <button type="button" onClick={() => setShareOpen(false)} aria-label="Close" className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50">✕</button>
+              <h2 className="font-display text-xl font-semibold">{modal === "share" ? "Share with the client" : "Archive this deal"}</h2>
+              <button type="button" onClick={() => setModal(null)} aria-label="Close" className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50">✕</button>
             </div>
-            <ClientTimelineCard person={fresh} dates={dealDates} agentName={agentName || "the agent"} />
+            {modal === "share" ? (
+              <ClientTimelineCard person={fresh} dates={dealDates} agentName={agentName || "the agent"} />
+            ) : (
+              <div className="space-y-3">
+                <select value={archiveReason} onChange={(e) => setArchiveReason(e.target.value)} className={inputClass}>
+                  {ARCHIVE_REASONS.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">It is {agentName ? `${agentName}'s` : "the agent's"} deal, so it leaves their board too. Nothing is deleted.</p>
+                <button type="button" onClick={handleArchive} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5">Archive</button>
+                {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+              </div>
+            )}
           </div>
         </div>,
         document.body,
