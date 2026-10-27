@@ -4,6 +4,9 @@ import { Link } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS } from "../../../lib/peopleStages";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
+import { useAuth } from "../../../hooks/useAuth";
+import { dealAccess } from "../../../lib/deals";
+import StartDealModal from "../people/StartDealModal";
 import { card } from "./styles";
 
 const inputClass =
@@ -13,18 +16,18 @@ const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9
 const KINDS = {
   lead: { label: "Add lead", title: "Add a lead", where: "Leads" },
   pipeline: { label: "Add to pipeline", title: "Add to your pipeline", where: "Pipeline" },
-  transaction: { label: "Add deal", title: "Add a deal", where: "Deals" },
 };
+// Deals are started the same way here as on the Deals page (people/StartDealModal): the same window, and a coordinator can also pick an agent.
+const DEAL = { where: "Deals" };
 
-const EMPTY = { name: "", phone: "", email: "", side: "", stage: "", follow_up: "", property_address: "", price: "", closing_date: "" };
+const EMPTY = { name: "", phone: "", email: "", side: "", stage: "", follow_up: "" };
 
-// A new lead, pipeline contact or transaction without leaving the home page.
+// A new lead or pipeline contact without leaving the home page.
 function QuickAddModal({ kind, onClose, onAdded }) {
   const { stages } = usePeopleStages();
   const [f, setF] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const isDeal = kind === "transaction";
   const stageNames = stages[kind] || BOARDS[kind].stages;
   const set = (patch) => setF((prev) => ({ ...prev, ...patch }));
 
@@ -47,10 +50,7 @@ function QuickAddModal({ kind, onClose, onAdded }) {
       stage: f.stage || stageNames[0],
       source: "Added manually",
       ...(f.side ? { side: f.side } : {}),
-      ...(!isDeal && f.follow_up ? { next_follow_up: f.follow_up } : {}),
-      ...(isDeal && f.property_address.trim() ? { property_address: f.property_address.trim() } : {}),
-      ...(isDeal && f.price !== "" ? { price: Number(f.price) } : {}),
-      ...(isDeal && f.closing_date ? { closing_date: f.closing_date } : {}),
+      ...(f.follow_up ? { next_follow_up: f.follow_up } : {}),
     };
     const { error: err } = await supabase.from("people").insert(row);
     setSaving(false);
@@ -86,10 +86,10 @@ function QuickAddModal({ kind, onClose, onAdded }) {
           <div>
             <label className={labelClass}>Buyer or seller</label>
             <select value={f.side} onChange={(e) => set({ side: e.target.value })} className={inputClass}>
-              <option value="">{isDeal ? "Select…" : "Not set"}</option>
+              <option value="">Not set</option>
               <option value="buyer">Buyer</option>
               <option value="seller">Seller</option>
-              {!isDeal && <option value="both">Both</option>}
+              <option value="both">Both</option>
             </select>
           </div>
           <div>
@@ -103,27 +103,10 @@ function QuickAddModal({ kind, onClose, onAdded }) {
             </select>
           </div>
         </div>
-        {isDeal ? (
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div className="sm:col-span-2">
-              <label className={labelClass}>Property address</label>
-              <input value={f.property_address} onChange={(e) => set({ property_address: e.target.value })} className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Price ($)</label>
-              <input type="number" min="0" step="any" inputMode="decimal" value={f.price} onChange={(e) => set({ price: e.target.value })} className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Closing date</label>
-              <input type="date" value={f.closing_date} onChange={(e) => set({ closing_date: e.target.value })} className={inputClass} />
-            </div>
-          </div>
-        ) : (
-          <div>
-            <label className={labelClass}>Follow up on (optional)</label>
-            <input type="date" value={f.follow_up} onChange={(e) => set({ follow_up: e.target.value })} className={inputClass} />
-          </div>
-        )}
+        <div>
+          <label className={labelClass}>Follow up on (optional)</label>
+          <input type="date" value={f.follow_up} onChange={(e) => set({ follow_up: e.target.value })} className={inputClass} />
+        </div>
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <div className="flex items-center gap-3 pt-1">
           <button type="submit" disabled={saving || !f.name.trim()} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-2.5 disabled:opacity-60">
@@ -141,9 +124,12 @@ function QuickAddModal({ kind, onClose, onAdded }) {
 const chip =
   "inline-flex items-center justify-center rounded-full text-sm font-semibold px-5 py-2.5 transition-colors whitespace-nowrap";
 
-// One-click starts for the things done most: a blog post, and a new lead, pipeline contact or transaction.
+const placeOf = (kind) => (kind === "transaction" ? DEAL.where : KINDS[kind].where);
+
+// One-click starts for the things done most: a blog post, and a new lead, pipeline contact or deal.
 export default function Shortcuts({ wantsBlog, wantsPeople }) {
-  const [open, setOpen] = useState(null);
+  const { profile } = useAuth();
+  const [open, setOpen] = useState(null); // lead | pipeline | transaction
   const [added, setAdded] = useState(null);
   useEffect(() => {
     if (!added) return;
@@ -172,19 +158,42 @@ export default function Shortcuts({ wantsBlog, wantsPeople }) {
               }}
               className={`${chip} border border-black/10 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/10`}
             >
-              + {k.label.replace(/^Add /, "Add ")}
+              + {k.label}
             </button>
           ))}
+        {wantsPeople && (
+          <button
+            type="button"
+            onClick={() => {
+              setAdded(null);
+              setOpen("transaction");
+            }}
+            className={`${chip} border border-black/10 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/10`}
+          >
+            + Start a deal
+          </button>
+        )}
       </div>
       {added && (
         <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-400" role="status">
-          Added {added.name} to {KINDS[added.kind].where}.{" "}
+          Added {added.name} to {placeOf(added.kind)}.{" "}
           <Link to={boardPath(added.kind)} className="font-semibold underline">
-            Open {KINDS[added.kind].where}
+            Open {placeOf(added.kind)}
           </Link>
+          {added.note && <span className="block mt-1 text-amber-700 dark:text-amber-400">{added.note}</span>}
         </p>
       )}
-      {open && (
+      {open === "transaction" && (
+        <StartDealModal
+          coordinator={dealAccess(profile).isTc}
+          onClose={() => setOpen(null)}
+          onStarted={(id, note, own, name) => {
+            setOpen(null);
+            setAdded({ name: name || "the deal", kind: "transaction", note });
+          }}
+        />
+      )}
+      {open && open !== "transaction" && (
         <QuickAddModal
           kind={open}
           onClose={() => setOpen(null)}

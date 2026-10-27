@@ -164,6 +164,7 @@ export default function OfficeDeals({ viewer, excludeOwn = false }) {
 
       {starting && (
         <StartDealModal
+          coordinator
           onClose={() => setStarting(false)}
           onStarted={async (id, note) => {
             setStarting(false);

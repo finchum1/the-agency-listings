@@ -82,7 +82,7 @@ export default function StartDealModal({ onClose, onStarted, coordinator = false
         /* ignore */
       }
       setBusy(false);
-      return onStarted(row.id, "", true);
+      return onStarted(row.id, "", true, f.name.trim());
     }
     const { data: id, error: err } = await supabase.rpc("deal_start_for_agent", {
       p_agent: f.agent,
@@ -120,7 +120,7 @@ export default function StartDealModal({ onClose, onStarted, coordinator = false
       note = "The deal was started, but the email to the agent didn't go out.";
     }
     setBusy(false);
-    onStarted(id, note);
+    onStarted(id, note, false, f.name.trim());
   };
 
   return (
@@ -136,7 +136,7 @@ export default function StartDealModal({ onClose, onStarted, coordinator = false
             <label className={labelClass} htmlFor="sd-agent">Who is this deal for?</label>
             <select id="sd-agent" value={f.agent} onChange={set("agent")} className={inputClass} disabled={!agents}>
               <option value="">{agents ? "Choose…" : "Loading…"}</option>
-              <option value={ME}>Me (my own deal)</option>
+              {profile?.people_enabled && <option value={ME}>Me (my own deal)</option>}
               {(agents || []).map((a) => (
                 <option key={a.id} value={a.id}>{a.full_name}</option>
               ))}
