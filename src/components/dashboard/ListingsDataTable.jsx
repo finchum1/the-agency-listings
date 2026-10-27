@@ -5,7 +5,7 @@ import StatusSelect from "./StatusSelect";
 // Pulled out of ListingsTable.jsx so the exact same markup can be reused
 // for a marketing screenshot (see UpcomingListingsTable.jsx/
 // BuyerNeedsTable.jsx for the same pattern already established there).
-export default function ListingsDataTable({ rows, onStatusChange }) {
+export default function ListingsDataTable({ rows, onStatusChange, domainChecks = {}, checking = false }) {
   return (
     <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl overflow-hidden overflow-x-auto">
       <table className="w-full text-sm">
@@ -38,16 +38,37 @@ export default function ListingsDataTable({ rows, onStatusChange }) {
               </td>
               <td className="px-5 py-4 text-xs">
                 {listing.custom_domain ? (
-                  <a
-                    href={`https://${listing.custom_domain}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title="This property site has its own domain"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-400/15 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 font-semibold hover:underline"
-                  >
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
-                    {listing.custom_domain}
-                  </a>
+                  (() => {
+                    const check = domainChecks[listing.id];
+                    const bad = check && check.status !== "ok";
+                    return (
+                      <div className="space-y-1">
+                        <a
+                          href={`https://${listing.custom_domain}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={bad ? check.label : check ? "Live: this domain is serving the property site" : "This property site has its own domain"}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold hover:underline ${
+                            bad
+                              ? "bg-red-100 dark:bg-red-400/15 text-red-800 dark:text-red-300"
+                              : check
+                                ? "bg-emerald-100 dark:bg-emerald-400/15 text-emerald-800 dark:text-emerald-300"
+                                : "bg-black/[0.06] dark:bg-white/10 text-[#1c1a17]/70 dark:text-[#faf9f7]/70"
+                          }`}
+                        >
+                          {bad ? (
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 5v8M12 18v.5" /></svg>
+                          ) : check ? (
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7" /></svg>
+                          ) : (
+                            <span className={`h-2 w-2 rounded-full bg-current ${checking ? "animate-pulse" : "opacity-40"}`} aria-hidden="true" />
+                          )}
+                          {listing.custom_domain}
+                        </a>
+                        {bad && <p className="max-w-[16rem] text-[11px] leading-snug text-red-700 dark:text-red-300">{check.label}</p>}
+                      </div>
+                    );
+                  })()
                 ) : (
                   <span className="text-[#1c1a17]/35 dark:text-[#faf9f7]/35">None</span>
                 )}

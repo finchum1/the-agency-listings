@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useListings } from "../../hooks/useListings";
@@ -18,18 +18,49 @@ export default function ListingsTable() {
     ready: !authLoading,
   });
   const [filter, setFilter] = useState("all");
-  const [domainFilter, setDomainFilter] = useState("all"); // all | with | without
+  const [domainFilter, setDomainFilter] = useState("all"); // all | with | without | down
+  const [domainChecks, setDomainChecks] = useState({}); // listingId -> { status, label, domain }
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
     return listings.filter(
       (l) =>
         (filter === "all" || l.status === filter) &&
-        (domainFilter === "all" || (domainFilter === "with") === Boolean(l.custom_domain)) &&
+        (domainFilter === "all" || (domainFilter === "down" ? domainChecks[l.id] && domainChecks[l.id].status !== "ok" && Boolean(l.custom_domain) : (domainFilter === "with") === Boolean(l.custom_domain))) &&
         matchesSearch([l.address_line1, l.city, l.state, l.zip, l.mls_number, l.agent?.full_name, l.agent?.email, STATUS_LABELS[l.status], l.price, l.custom_domain], query),
     );
-  }, [listings, filter, domainFilter, query]);
+  }, [listings, filter, domainFilter, domainChecks, query]);
   const withDomain = listings.filter((l) => l.custom_domain).length;
+
+  // Is each custom domain actually serving this app? Checked by the server (api/domain-check.js) once the list loads, and again on demand.
+  const [checking, setChecking] = useState(false);
+  const [checkError, setCheckError] = useState("");
+  const domainKey = listings.filter((l) => l.custom_domain).map((l) => `${l.id}:${l.custom_domain}`).join("|");
+  const runChecks = useCallback(async () => {
+    if (!domainKey) return;
+    setChecking(true);
+    setCheckError("");
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const res = await fetch("/api/domain-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ ids: domainKey.split("|").map((p) => p.split(":")[0]) }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "The check didn't run.");
+      setDomainChecks(json.results || {});
+    } catch (e) {
+      setCheckError(e.message || "The check didn't run.");
+    }
+    setChecking(false);
+  }, [domainKey]);
+  useEffect(() => {
+    if (!loading) runChecks();
+  }, [loading, runChecks]);
+  const down = listings.filter((l) => l.custom_domain && domainChecks[l.id] && domainChecks[l.id].status !== "ok");
 
   const handleStatusChange = async (id, status) => {
     const { error } = await supabase.from("listings").update({ status }).eq("id", id);
@@ -49,6 +80,14 @@ export default function ListingsTable() {
           <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
             {listings.length} listing{listings.length === 1 ? "" : "s"}
             {!loading && listings.length > 0 && <> · {withDomain} with a custom domain</>}
+            {down.length > 0 && (
+              <>
+                {" · "}
+                <button type="button" onClick={() => setDomainFilter("down")} className="font-semibold text-red-600 dark:text-red-400 hover:underline">
+                  {down.length} not responding
+                </button>
+              </>
+            )}
           </p>
         </div>
         <Link
@@ -103,6 +142,7 @@ export default function ListingsTable() {
           ["all", "Any"],
           ["with", `Has one (${withDomain})`],
           ["without", `Doesn't (${listings.length - withDomain})`],
+          ...(down.length ? [["down", `Not responding (${down.length})`]] : []),
         ].map(([value, label]) => (
           <button
             key={value}
@@ -116,6 +156,12 @@ export default function ListingsTable() {
             {label}
           </button>
         ))}
+        {withDomain > 0 && (
+          <button type="button" onClick={runChecks} disabled={checking} className="ml-1 text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline disabled:opacity-60">
+            {checking ? "Checking domains…" : "Check domains again"}
+          </button>
+        )}
+        {checkError && <span className="text-xs text-red-600 dark:text-red-400">{checkError}</span>}
       </div>
 
       {error && <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>}
@@ -137,7 +183,7 @@ export default function ListingsTable() {
           </p>
         </div>
       ) : (
-        <ListingsDataTable rows={filtered} onStatusChange={handleStatusChange} />
+        <ListingsDataTable rows={filtered} onStatusChange={handleStatusChange} domainChecks={domainChecks} checking={checking} />
       )}
     </div>
   );
