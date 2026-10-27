@@ -827,6 +827,7 @@ export default function PersonPanel({
           dates={dealDates}
           onTab={setTab}
           onDate={changeDate}
+          onCheckTask={summary.completeTask}
         >
           {{
             top: <OutreachDrafts person={person} onLogged={loadNotes} onCount={setDraftCount} />,

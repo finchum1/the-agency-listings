@@ -11,9 +11,10 @@ const DATES = [
 
 const shortDate = (key) => new Date(`${key}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
-function Row({ onClick, title, note, tone }) {
+function Row({ onClick, title, note, tone, onCheck }) {
   return (
-    <li>
+    <li className={onCheck ? "flex items-center gap-2.5" : undefined}>
+      {onCheck && <input type="checkbox" checked={false} onChange={onCheck} aria-label={`Mark done: ${title}`} className="h-4 w-4 shrink-0 accent-[#ed2127] cursor-pointer" />}
       <button type="button" onClick={onClick} className="flex w-full items-center justify-between gap-3 rounded-xl border border-black/10 dark:border-white/15 px-3 py-2.5 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
         <span className="min-w-0 truncate text-sm">{title}</span>
         <span className={`shrink-0 text-xs ${tone === "alert" ? "font-semibold text-red-600 dark:text-red-400" : muted}`}>{note}</span>
@@ -26,11 +27,12 @@ function Row({ onClick, title, note, tone }) {
 // by the panel around it (`children`).
 //   summary   from useDealSummary          onTab(tab) jumps to another tab
 //   dates     the deal's live key dates    onDate(key, value) changes one (omit for read-only)
-export default function DealOverview({ person, summary, dates, onTab, onDate, children }) {
+//   onCheckTask(task)  ticks a task off right here, from the overdue and coming-up lists (omit for read-only)
+export default function DealOverview({ person, summary, dates, onTab, onDate, onCheckTask, children }) {
   const today = toKey(new Date());
   const needs = [];
   if (person.compliance_status === "needs_changes") needs.push({ key: "sb", title: "Compliance sent this deal back", note: "Read the note", tone: "alert", tab: "messages" });
-  for (const t of summary.overdue.slice(0, 3)) needs.push({ key: `t${t.id}`, title: t.text, note: `due ${dayLabel(t.due, today)}`, tone: "alert", tab: "tasks" });
+  for (const t of summary.overdue.slice(0, 3)) needs.push({ key: `t${t.id}`, title: t.text, note: `due ${dayLabel(t.due, today)}`, tone: "alert", tab: "tasks", task: t });
   if (summary.overdue.length > 3) needs.push({ key: "more", title: `${summary.overdue.length - 3} more overdue tasks`, note: "See all", tone: "alert", tab: "tasks" });
   for (const s of summary.signaturesOut) {
     const waiting = (s.recipients || []).filter((r) => r.signing_status === "NOT_SIGNED" && r.role !== "CC").map((r) => r.name || r.email);
@@ -53,7 +55,7 @@ export default function DealOverview({ person, summary, dates, onTab, onDate, ch
         ) : (
           <ul className="space-y-1.5">
             {needs.map((n) => (
-              <Row key={n.key} onClick={() => onTab(n.tab)} title={n.title} note={n.note} tone={n.tone} />
+              <Row key={n.key} onClick={() => onTab(n.tab)} title={n.title} note={n.note} tone={n.tone} onCheck={n.task && onCheckTask ? () => onCheckTask(n.task) : undefined} />
             ))}
           </ul>
         )}
@@ -62,7 +64,7 @@ export default function DealOverview({ person, summary, dates, onTab, onDate, ch
             <p className={`mb-1.5 text-xs font-medium ${muted}`}>Coming up</p>
             <ul className="space-y-1.5">
               {summary.soon.map((t) => (
-                <Row key={t.id} onClick={() => onTab("tasks")} title={t.text} note={dayLabel(t.due, today)} />
+                <Row key={t.id} onClick={() => onTab("tasks")} title={t.text} note={dayLabel(t.due, today)} onCheck={onCheckTask ? () => onCheckTask(t) : undefined} />
               ))}
             </ul>
           </div>

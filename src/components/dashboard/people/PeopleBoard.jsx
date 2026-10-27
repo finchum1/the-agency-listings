@@ -258,7 +258,7 @@ function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleCl
 // coordinator panel through `onOpenForeign`, can't be dragged) shown after the agent's own cards in the column with the same name, or in an
 // extra column of their own when the owner's stage name isn't one of ours. `showOwn` hides the agent's own cards (the "TC deals" filter),
 // `toolbarLeft` is the view/filter controls, and `view="list"` swaps the columns for whatever `renderList` draws.
-export default function PeopleBoard({ group, renderOverview, foreignDeals = [], onOpenForeign, onMoveForeign, toolbarLeft, view = "board", showOwn = true, renderList, personFilter, cardExtra, onPeopleChanged, foreignOpenId, onOwnOpened }) {
+export default function PeopleBoard({ group, renderOverview, foreignDeals = [], onOpenForeign, onMoveForeign, toolbarLeft, view = "board", showOwn = true, renderList, personFilter, cardExtra, onPeopleChanged, foreignOpenId, onOwnOpened, peek: peekProp }) {
   const board = BOARDS[group];
   const { people, setPeople, loading, error, refresh } = usePeople();
   const { progress, reload: reloadProgress } = useTransactionProgress(group === "transaction");
@@ -283,7 +283,8 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
     if (selectedId) onOwnOpened?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
-  const peek = usePeekWidth(group === "transaction");
+  const ownPeek = usePeekWidth(group === "transaction");
+  const peek = peekProp || ownPeek; // Deals passes one shared width, so a coordinated deal's panel opens as wide as your own
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [addingStage, setAddingStage] = useState(null);
   const [newPerson, setNewPerson] = useState({ name: "", phone: "", email: "", side: "" });

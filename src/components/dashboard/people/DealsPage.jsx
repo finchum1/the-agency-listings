@@ -3,6 +3,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import { dealAccess } from "../../../lib/deals";
 import { useDealAttention } from "../../../hooks/useDealAttention";
 import { useCoordinatedDeals } from "../../../hooks/useCoordinatedDeals";
+import { usePeekWidth } from "../../../hooks/usePeekWidth";
 import { supabase } from "../../../lib/supabaseClient";
 import PeopleBoard from "./PeopleBoard";
 import OfficeDeals from "./OfficeDeals";
@@ -46,6 +47,7 @@ export default function DealsPage() {
   const [mode, setMode] = useRemembered("dealsFilter", "all", ["all", "mine", "tc"]);
   const coordinated = useCoordinatedDeals(access.mine && access.isTc);
   const [openForeignId, setOpenForeignId] = useState(null);
+  const peek = usePeekWidth(true);
   const [starting, setStarting] = useState(false);
   const [startNote, setStartNote] = useState("");
   const viewer = access.isCompliance ? "compliance" : "tc";
@@ -129,6 +131,7 @@ export default function DealsPage() {
         foreignDeals={foreignShown}
         onOpenForeign={setOpenForeignId}
         foreignOpenId={openForeignId}
+        peek={peek}
         onOwnOpened={() => {
           if (openForeignId) {
             setOpenForeignId(null);
@@ -191,6 +194,7 @@ export default function DealsPage() {
           deal={openForeign}
           agentName={openForeign._agent}
           viewer="tc"
+          peek={peek}
           onClose={() => {
             setOpenForeignId(null);
             coordinated.reload();

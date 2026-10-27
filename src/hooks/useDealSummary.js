@@ -29,12 +29,22 @@ export function useDealSummary(personId, dates) {
     reload();
   }, [reload]);
 
+  // Tick a task off from the overview. It leaves the lists at once; a failed save brings it back.
+  const completeTask = async (task) => {
+    const done_at = new Date().toISOString();
+    setData((d) => ({ ...d, tasks: d.tasks.map((t) => (t.id === task.id ? { ...t, done: true, done_at } : t)) }));
+    const { error } = await supabase.from("transaction_tasks").update({ done: true, done_at }).eq("id", task.id);
+    if (error) reload();
+    return !error;
+  };
+
   const today = toKey(new Date());
   const withDue = data.tasks.map((t) => ({ ...t, due: effectiveDue(t, dates || {}) }));
   const open = withDue.filter((t) => !t.done);
   return {
     ...data,
     reload,
+    completeTask,
     tasksDone: data.tasks.filter((t) => t.done).length,
     tasksTotal: data.tasks.length,
     docsDone: data.docs.filter((d) => d.done).length,
