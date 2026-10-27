@@ -55,7 +55,7 @@ const COLLAPSED_KEY = (group) => `peopleCollapsedColumns:${group}`;
 
 // What's inside a person's card: the same markup is used for the card in its column and for the card floating under
 // the pointer while it is being dragged.
-function PersonCardBody({ p, group, progress, today }) {
+function PersonCardBody({ p, group, progress, today, extra }) {
   const overdue = p.next_follow_up && p.next_follow_up < today;
   const dueToday = p.next_follow_up === today;
   return (
@@ -104,6 +104,7 @@ function PersonCardBody({ p, group, progress, today }) {
           {overdue && " · overdue"}
         </p>
       )}
+      {extra}
       {group === "transaction" && (
         <div className="flex items-center gap-3 pt-0.5">
           {[
@@ -186,8 +187,10 @@ const ExpandIcon = () => (
 const menuItem =
   "w-full text-left px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40 disabled:hover:bg-transparent";
 
-function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleClosed, onDelete }) {
+function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleClosed, onDelete, cadence, onCadence }) {
   const [open, setOpen] = useState(false);
+  const [days, setDays] = useState(String(cadence || ""));
+  useEffect(() => setDays(String(cadence || "")), [cadence]);
   const run = (fn) => () => {
     setOpen(false);
     fn();
@@ -213,6 +216,26 @@ function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleCl
             <button type="button" className={menuItem} disabled={index === count - 1} onClick={run(() => onMove(index + 1))}>
               Move right →
             </button>
+            {onCadence && (
+              <form
+                className="border-t border-black/5 dark:border-white/10 px-3 py-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setOpen(false);
+                  onCadence(days);
+                }}
+              >
+                <label className="block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60">
+                  Follow up every
+                  <span className="mt-1 flex items-center gap-2">
+                    <input type="number" min="0" max="1095" inputMode="numeric" value={days} onChange={(e) => setDays(e.target.value)} placeholder="–" aria-label="Days between follow-ups" className="w-16 rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-sm" />
+                    <span className="text-sm font-normal text-[#1c1a17] dark:text-[#faf9f7]">days</span>
+                    <button type="submit" className="ml-auto rounded-full bg-[#1c1a17] dark:bg-[#faf9f7] px-3 py-1 text-xs font-semibold text-white dark:text-[#1c1a17]">Save</button>
+                  </span>
+                </label>
+                <span className="mt-1 block text-[11px] leading-snug text-[#1c1a17]/50 dark:text-[#faf9f7]/50">When someone lands in this column their next follow-up is set that many days out. Leave blank for none.</span>
+              </form>
+            )}
             {isTransactions && (
               <button type="button" className={menuItem} disabled={isClosed} onClick={run(onToggleClosed)}>
                 {isClosed ? "✓ Counts as closed deals" : "Count as closed deals"}
@@ -235,12 +258,12 @@ function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleCl
 // coordinator panel through `onOpenForeign`, can't be dragged) shown after the agent's own cards in the column with the same name, or in an
 // extra column of their own when the owner's stage name isn't one of ours. `showOwn` hides the agent's own cards (the "TC deals" filter),
 // `toolbarLeft` is the view/filter controls, and `view="list"` swaps the columns for whatever `renderList` draws.
-export default function PeopleBoard({ group, renderOverview, foreignDeals = [], onOpenForeign, onMoveForeign, toolbarLeft, view = "board", showOwn = true, renderList }) {
+export default function PeopleBoard({ group, renderOverview, foreignDeals = [], onOpenForeign, onMoveForeign, toolbarLeft, view = "board", showOwn = true, renderList, personFilter, cardExtra, onPeopleChanged }) {
   const board = BOARDS[group];
   const { people, setPeople, loading, error, refresh } = usePeople();
   const { progress, reload: reloadProgress } = useTransactionProgress(group === "transaction");
   const { draftCounts, reloadDrafts } = usePeopleDrafts();
-  const { stages: allStages, closedStage, renameStage, addStage, moveStage, removeStage, setClosedStage } = usePeopleStages();
+  const { stages: allStages, closedStage, cadenceFor, setCadence, renameStage, addStage, moveStage, removeStage, setClosedStage } = usePeopleStages();
   const stages = allStages[group];
   const nextStageNames = board.next ? allStages[board.next.group] : null;
   const prevStageNames = board.prev ? allStages[board.prev.group] : null;
@@ -463,7 +486,7 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
   );
 
   const inGroup = people.filter((p) => p.stage_group === group);
-  const active = inGroup.filter((p) => !p.archived);
+  const active = inGroup.filter((p) => !p.archived && (!personFilter || personFilter(p)));
   const archived = inGroup.filter((p) => p.archived);
   const selected = people.find((p) => p.id === selectedId) || null;
   const today = todayKey();
@@ -534,6 +557,10 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
     if (err) {
       setBoardError(err.message);
       refresh();
+    } else if (person.stage !== stage && group !== "transaction") {
+      // Landing in a column can set the next follow-up (the column's cadence); show what the database chose.
+      const { data } = await supabase.from("people").select("next_follow_up").eq("id", personId).maybeSingle();
+      if (data) setPeople((list) => list.map((p) => (p.id === personId ? { ...p, next_follow_up: data.next_follow_up } : p)));
     }
   };
 
@@ -645,7 +672,7 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
           height (not just as tall as the shortest column), so the horizontal
           scrollbar stays pinned near the bottom of the screen. */}
       {view === "list" && renderList ? (
-        renderList({ own: showOwn ? active : [], foreign, progress, closedStage, stages, openDeal: setSelectedId, openForeign: onOpenForeign })
+        renderList({ own: showOwn ? active : [], foreign, progress, closedStage, stages, openDeal: setSelectedId, openForeign: onOpenForeign, cadenceFor })
       ) : (
       <div ref={boardRef} className="flex gap-3 overflow-x-auto overflow-y-hidden h-[calc(100vh-14rem)] min-h-[26rem] -mx-1 px-1 pb-1">
         {displayStages.map((stage, stageIndex) => {
@@ -749,9 +776,16 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
                     onMove={(to) => runStageChange(() => moveStage(group, stage, to))}
                     onToggleClosed={() => runStageChange(() => setClosedStage(stage))}
                     onDelete={() => handleDeleteColumn(stage)}
+                    cadence={group === "transaction" ? null : cadenceFor(group, stage)}
+                    onCadence={group === "transaction" ? undefined : (d) => runStageChange(() => setCadence(group, stage, d))}
                   />
                 </div>
               </div>
+              )}
+              {group !== "transaction" && !isForeignCol && (
+                <p className="shrink-0 px-1.5 text-[11px] text-[#1c1a17]/45 dark:text-[#faf9f7]/45" title="Set in the column's ⋯ menu">
+                  {cadenceFor(group, stage) ? `↻ Follow up every ${cadenceFor(group, stage) === 1 ? "day" : `${cadenceFor(group, stage)} days`}` : "No follow-up reminder"}
+                </p>
               )}
 
               {/* Each column scrolls on its own, so a long list never spills past
@@ -852,7 +886,7 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
                       }}
                       className={`${CARD_CLASS} cursor-grab hover:shadow-sm transition-shadow`}
                     >
-                      <PersonCardBody p={p} group={group} progress={progress} today={today} />
+                      <PersonCardBody p={p} group={group} progress={progress} today={today} extra={cardExtra?.(p)} />
                       {!p._foreign && <DraftBadge count={draftCounts[p.id]} />}
                     </div>,
                   );
@@ -884,7 +918,7 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
               transform: dragRef.current ? floatTransform(dragRef.current) : undefined,
             }}
           >
-            <PersonCardBody p={people.find((x) => x.id === drag.id) || foreign.find((x) => x.id === drag.id)} group={group} progress={progress} today={today} />
+            <PersonCardBody p={people.find((x) => x.id === drag.id) || foreign.find((x) => x.id === drag.id)} group={group} progress={progress} today={today} extra={cardExtra?.(people.find((x) => x.id === drag.id))} />
             {!foreign.some((x) => x.id === drag.id) && <DraftBadge count={draftCounts[drag.id]} />}
           </div>,
           document.body,
@@ -940,7 +974,9 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
           onChanged={() => {
             refresh();
             reloadProgress();
+            onPeopleChanged?.();
           }}
+          cadence={group === "transaction" ? null : cadenceFor(group, selected.stage)}
         />
       )}
     </div>

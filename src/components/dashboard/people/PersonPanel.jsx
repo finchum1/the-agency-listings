@@ -14,9 +14,15 @@ import DealTeam from "./DealTeam";
 import DealSignatures from "./DealSignatures";
 import DealTabs, { dealTabs } from "./DealTabs";
 import DealOverview from "./DealOverview";
+import ProspectOverview, { followUpState } from "./ProspectOverview";
+import ProspectActivity, { useProspectActivity } from "./ProspectActivity";
+import { useContactCard } from "../../../hooks/useContactCard";
+import { TagChip } from "./contacts/TagParts";
+import { relationshipLabel } from "../../../lib/contacts";
+import { useNavigate } from "react-router-dom";
 import { ComplianceChip } from "./DealCompliance";
 import { useDealSummary } from "../../../hooks/useDealSummary";
-import { dayLabel, toKey } from "../../../lib/homeDates";
+import { addDays, dayLabel, toKey } from "../../../lib/homeDates";
 import { useAuth } from "../../../hooks/useAuth";
 
 const inputClass =
@@ -68,8 +74,10 @@ export default function PersonPanel({
   onClose,
   onChanged,
   peek,
+  cadence = null,
 }) {
   const board = BOARDS[person.stage_group];
+  const navigate = useNavigate();
   const { profile } = useAuth();
   const signedInName = profile?.full_name || "";
   const signedInEmail = profile?.email || "";
@@ -101,6 +109,11 @@ export default function PersonPanel({
     if (isDeal) summary.reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
+
+  // Leads and Pipeline: the contact behind the card, and one list of everything that has happened with them.
+  const [activityKey, setActivityKey] = useState(0);
+  const activity = useProspectActivity(person, activityKey, !isDeal);
+  const contactCard = useContactCard(isDeal ? null : person.contact_id, () => onChangedRef.current());
 
   const flush = useCallback(async () => {
     clearTimeout(timerRef.current);
@@ -438,7 +451,13 @@ export default function PersonPanel({
   const dealSide = form.side === "both" ? "" : form.side;
   const sideLabel = dealSide === "buyer" ? "Buyer" : dealSide === "seller" ? "Seller (listing)" : "";
   const closingDiff = form.closing_date ? Math.round((new Date(`${form.closing_date}T12:00:00`) - new Date(`${toKey(new Date())}T12:00:00`)) / 86400000) : null;
-  const tabsBar = <DealTabs tabs={dealTabs(summary, person)} active={tab} onChange={setTab} />;
+  const fu = followUpState(form.next_follow_up);
+  const prospectTabs = [
+    { key: "overview", label: "Overview", badge: fu.tone === "alert" ? "overdue" : fu.tone === "due" ? "due today" : null, tone: fu.tone === "alert" ? "alert" : "info" },
+    { key: "activity", label: "Activity", badge: draftCount ? `${draftCount} draft${draftCount === 1 ? "" : "s"}` : null, tone: "info" },
+    { key: "details", label: "Details" },
+  ];
+  const tabsBar = <DealTabs tabs={isDeal ? dealTabs(summary, person) : prospectTabs} active={tab} onChange={setTab} />;
 
   const dealMenu = (
     <div className="relative">
@@ -450,8 +469,8 @@ export default function PersonPanel({
           <button type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)} className="fixed inset-0 z-[55] cursor-default" />
           <div role="menu" className="absolute right-0 z-[60] mt-1 w-64 rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1f1f1f] py-1 shadow-xl">
             {[
-              ["Share a timeline with the client", () => setDealModal("share")],
-              ...(board.prev && !person.archived ? [[board.prev.label, () => setDealModal("back")]] : []),
+              ...(isDeal ? [["Share a timeline with the client", () => setDealModal("share")]] : person.contact_id ? [["Open in Contacts", () => navigate(`/dashboard/people/contacts?contact=${person.contact_id}`)]] : []),
+              ...(isDeal && board.prev && !person.archived ? [[board.prev.label, () => setDealModal("back")]] : []),
               person.archived ? [`Restore to ${board.title}`, handleRestore] : ["Archive", () => setDealModal("archive")],
               ["Delete permanently", handleDelete, true],
             ].map(([label, fn, danger]) => (
@@ -480,7 +499,7 @@ export default function PersonPanel({
       <div className="fixed inset-0 z-[80] grid place-items-center bg-black/40 px-4" onPointerDown={(e) => e.target === e.currentTarget && setDealModal(null)}>
         <div role="dialog" aria-label="Deal action" className="w-full max-w-md max-h-[88vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#1a1a1a] p-6 text-[#1c1a17] dark:text-[#faf9f7] shadow-2xl">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-xl font-semibold">{dealModal === "share" ? "Share with the client" : dealModal === "back" ? board.prev?.label : "Archive this deal"}</h2>
+            <h2 className="font-display text-xl font-semibold">{dealModal === "share" ? "Share with the client" : dealModal === "back" ? board.prev?.label : isDeal ? "Archive this deal" : `Archive ${person.name}`}</h2>
             <button type="button" onClick={() => setDealModal(null)} aria-label="Close" className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50">✕</button>
           </div>
           {dealModal === "share" && <ClientTimelineCard person={person} dates={dealDates} />}
@@ -540,6 +559,26 @@ export default function PersonPanel({
     </div>
   );
 
+  const prospectChips = (
+    <div className="flex flex-wrap items-center gap-2">
+      <select
+        value={person.stage}
+        onChange={(e) => patch({ stage: e.target.value })}
+        aria-label="Stage"
+        className="rounded-full border border-black/10 dark:border-white/15 bg-transparent px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
+      >
+        {stageNames.map((st) => (
+          <option key={st} value={st}>{st}</option>
+        ))}
+      </select>
+      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${fu.tone === "alert" ? "bg-red-100 dark:bg-red-400/15 text-red-800 dark:text-red-300" : fu.tone === "due" ? "bg-amber-100 dark:bg-amber-400/15 text-amber-900 dark:text-amber-300" : "bg-black/[0.06] dark:bg-white/10"}`}>{fu.label}</span>
+      {contactCard.contact && <span className="rounded-full bg-black/[0.06] dark:bg-white/10 px-2.5 py-1 text-xs font-medium">{relationshipLabel(contactCard.contact.relationship)}</span>}
+      {contactCard.tagIds.slice(0, 3).map((id) => (
+        <TagChip key={id} tag={contactCard.tagById.get(id)} size="sm" />
+      ))}
+    </div>
+  );
+
   const panelHeader = (
       <div className="shrink-0 px-6 pt-4 md:pt-5 pb-4 space-y-4 border-b border-black/5 dark:border-white/10">
         <div className="flex items-center justify-between gap-3">
@@ -584,7 +623,7 @@ export default function PersonPanel({
               </div>
             )}
             <span className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 min-w-12 text-right">{status}</span>
-            {isDeal && dealMenu}
+            {dealMenu}
             <button type="button" onClick={onClose} className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]" aria-label="Close panel">
               ✕
             </button>
@@ -611,7 +650,7 @@ export default function PersonPanel({
           )}
         </div>
 
-        {isDeal && dealChips}
+        {isDeal ? dealChips : prospectChips}
         <ContactButtons person={{ ...person, phone: form.phone, email: form.email }} />
       </div>
   );
@@ -660,6 +699,11 @@ export default function PersonPanel({
   );
 
   const changeDate = (key, value) => setField(key, true)({ target: { value } });
+  // Being in touch (a call, text, email... logged) moves the next follow-up along, but only when one is due or none is set.
+  const afterTouch = () => {
+    const today = toKey(new Date());
+    if (cadence && (!form.next_follow_up || form.next_follow_up <= today)) changeDate("next_follow_up", toKey(addDays(new Date(), cadence)));
+  };
   const contactFields = (
         <div className="space-y-3">
           <div>
@@ -846,94 +890,104 @@ export default function PersonPanel({
     </div>
   );
 
-  const panelBody = (
-      <div className={`@container flex-1 min-h-0 px-6 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] overscroll-contain ${sheet && snap === "peek" ? "overflow-hidden" : "overflow-y-auto"}`} onFocusCapture={() => sheet && snap === "peek" && setSnap("full")}>
-      <div className={`grid gap-y-6 ${isTransaction ? "@3xl:grid-cols-2 @3xl:gap-x-8" : ""}`}>
-        <div className="min-w-0 space-y-6">
-        <OutreachDrafts person={person} onLogged={loadNotes} onCount={setDraftCount} />
-        {contactFields}
+  // ---- A lead's or pipeline person's panel: Overview, Activity, Details --------------------------------------------------------
+  const moveBlock =
+    board.next && !person.archived ? (
+      <section className="flex flex-wrap items-center gap-2 border-t border-black/5 dark:border-white/10 pt-5">
+        <select value={moveStage} onChange={(e) => setMoveStage(e.target.value)} aria-label={`Column on the ${BOARDS[board.next.group].title} board`} className={`${inputClass} !w-auto`}>
+          {nextStageNames.map((st) => (
+            <option key={st} value={st}>
+              {st}
+            </option>
+          ))}
+        </select>
+        <button type="button" onClick={handleMove} className={primaryBtn}>
+          {board.next.label}
+        </button>
+      </section>
+    ) : null;
 
-        {notesSection}
-        </div>
-
-        <div className="contents">
-
-        <section
-          className={`min-w-0 space-y-3 pt-4 border-t border-black/5 dark:border-white/10 ${
-            isTransaction ? "@3xl:col-span-2" : ""
-          }`}
-        >
-          {board.next && !person.archived && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <select value={moveStage} onChange={(e) => setMoveStage(e.target.value)} className={`${inputClass} !w-auto`}>
-                {nextStageNames.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-              <button type="button" onClick={handleMove} className={primaryBtn}>
-                {board.next.label}
-              </button>
-            </div>
-          )}
-          {board.prev && !person.archived && (
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                <select value={backStage} onChange={(e) => setBackStage(e.target.value)} className={`${inputClass} !w-auto`}>
-                  {prevStageNames.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={handleMoveBack}
-                  className="rounded-full border border-black/10 dark:border-white/15 text-sm font-semibold px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/10"
-                >
-                  {board.prev.label}
-                </button>
-              </div>
-              <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
-                For a deal that fell through. Their deal details and notes are kept in case it comes back.
-              </p>
-            </div>
-          )}
-          {person.archived ? (
-            <div className="space-y-2">
-              {person.archived_reason && (
-                <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Reason: {person.archived_reason}</p>
-              )}
-              <button type="button" onClick={handleRestore} className={primaryBtn}>
-                Restore to {board.title}
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 flex-wrap">
-              <select value={archiveReason} onChange={(e) => setArchiveReason(e.target.value)} className={`${inputClass} !w-auto`}>
-                {ARCHIVE_REASONS.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={handleArchive}
-                className="rounded-full border border-black/10 dark:border-white/15 text-sm font-semibold px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/10"
-              >
-                Archive
-              </button>
-            </div>
-          )}
-          <button type="button" onClick={handleDelete} className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400">
-            Delete permanently
+  const archiveBlock = (
+    <section className="space-y-3 border-t border-black/5 dark:border-white/10 pt-5">
+      {person.archived ? (
+        <div className="space-y-2">
+          {person.archived_reason && <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Reason: {person.archived_reason}</p>}
+          <button type="button" onClick={handleRestore} className={primaryBtn}>
+            Restore to {board.title}
           </button>
-        </section>
         </div>
-      </div>
-      </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2">
+          <select value={archiveReason} onChange={(e) => setArchiveReason(e.target.value)} aria-label="Why" className={`${inputClass} !w-auto`}>
+            {ARCHIVE_REASONS.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+          <button type="button" onClick={handleArchive} className="rounded-full border border-black/10 dark:border-white/15 text-sm font-semibold px-5 py-2.5 hover:bg-black/5 dark:hover:bg-white/10">
+            Archive
+          </button>
+        </div>
+      )}
+      <button type="button" onClick={handleDelete} className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400">
+        Delete permanently
+      </button>
+    </section>
+  );
+
+  const panelBody = (
+    <div className={`@container flex-1 min-h-0 px-6 pt-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] overscroll-contain ${sheet && snap === "peek" ? "overflow-hidden" : "overflow-y-auto"}`} onFocusCapture={() => sheet && snap === "peek" && setSnap("full")}>
+      {tab === "overview" && (
+        <ProspectOverview
+          person={person}
+          nextFollowUp={form.next_follow_up}
+          cadence={cadence}
+          columnName={person.stage}
+          onFollowUp={(key) => changeDate("next_follow_up", key || "")}
+          card={contactCard}
+          activity={activity}
+          onTab={setTab}
+        >
+          {{
+            top: <OutreachDrafts person={person} onLogged={() => setActivityKey((k) => k + 1)} onCount={setDraftCount} />,
+            bottom: moveBlock,
+          }}
+        </ProspectOverview>
+      )}
+      {tab === "activity" && (
+        <div className="space-y-6">
+          <OutreachDrafts person={person} onLogged={() => setActivityKey((k) => k + 1)} onCount={setDraftCount} />
+          <ProspectActivity person={person} activity={activity} onTouch={afterTouch} onError={setError} />
+        </div>
+      )}
+      {tab === "details" && (
+        <div className="space-y-8">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="font-display text-base font-semibold">Details</h3>
+            <EditToggle editing={editingDetails} onToggle={() => { flush(); setEditingDetails((v) => !v); }} />
+          </div>
+          {editingDetails ? (
+            contactFields
+          ) : (
+            <DetailGroup
+              title="Contact"
+              rows={[
+                { label: "Name", value: form.name },
+                { label: "Phone", value: form.phone, href: form.phone ? `tel:${form.phone.replace(/[^\d+]/g, "")}` : undefined },
+                { label: "Email", value: form.email, href: form.email ? `mailto:${form.email}` : undefined },
+                { label: "Next follow-up", value: form.next_follow_up ? dayLabel(form.next_follow_up, toKey(new Date())) : "" },
+                { label: "Source", value: form.source },
+                { label: "Stage", value: person.stage },
+                { label: "Buyer or seller", value: form.side === "both" ? "Both" : form.side === "buyer" ? "Buyer" : form.side === "seller" ? "Seller" : "" },
+              ]}
+            />
+          )}
+          {!editingDetails && error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {archiveBlock}
+        </div>
+      )}
+    </div>
   );
 
   const surface = "bg-white dark:bg-[#1a1a1a] text-[#1c1a17] dark:text-[#faf9f7]";
@@ -960,7 +1014,7 @@ export default function PersonPanel({
           <span className={`absolute inset-y-0 left-[5px] w-0.5 transition-colors ${peek?.resizing ? "bg-[#ed2127]/70 dark:bg-[#f2454b]/70" : "bg-transparent group-hover:bg-[#ed2127]/40 dark:group-hover:bg-[#f2454b]/40"}`} />
         </div>
         {panelHeader}
-        {isDeal && tabsBar}
+        {tabsBar}
         {isDeal ? dealBody : panelBody}
         {dealModals}
       </aside>
@@ -1003,7 +1057,7 @@ export default function PersonPanel({
           </div>
           {snap === "peek" ? compactHeader : panelHeader}
         </div>
-        {isDeal && snap === "full" && tabsBar}
+        {snap === "full" && tabsBar}
         {isDeal ? dealBody : panelBody}
         {dealModals}
       </div>

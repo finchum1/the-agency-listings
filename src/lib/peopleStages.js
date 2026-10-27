@@ -20,6 +20,13 @@ export const BOARDS = {
   },
 };
 
+// How often to follow up with someone sitting in a Leads / Pipeline column, in days. The agent changes these per column (people_settings.cadence);
+// the database applies them when someone lands in a column (see people_apply_cadence), so these must match the defaults in that function.
+export const DEFAULT_CADENCE = {
+  lead: { New: 1, Contacted: 3, Nurturing: 14, Qualified: 3 },
+  pipeline: { "12+ Months": 90, "6+ Months": 60, "3-6 Months": 30, "Coming Soon": 7, Active: 3 },
+};
+
 export const ARCHIVE_REASONS = [
   "Deal fell through",
   "Went with another agent",

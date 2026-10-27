@@ -50,7 +50,7 @@ import BrokeragePostPage from "./pages/BrokeragePostPage";
 import BrokerageAreaPage from "./pages/BrokerageAreaPage";
 import BrokerageSiteEditor from "./components/dashboard/BrokerageSiteEditor";
 import PeopleGate from "./components/dashboard/people/PeopleGate";
-import PeopleBoard from "./components/dashboard/people/PeopleBoard";
+import ProspectsPage from "./components/dashboard/people/ProspectsPage";
 import PeopleOverview from "./components/dashboard/people/PeopleOverview";
 import SettingsPage from "./components/dashboard/people/SettingsPage";
 import BrandSettingsPage from "./components/dashboard/BrandSettingsPage";
@@ -392,8 +392,8 @@ export default function App() {
           <Route index element={<Navigate to="overview" replace />} />
           <Route path="overview" element={<PeopleOverview />} />
           <Route path="contacts" element={<ContactsPage />} />
-          <Route path="leads" element={<PeopleBoard group="lead" />} />
-          <Route path="pipeline" element={<PeopleBoard group="pipeline" />} />
+          <Route path="leads" element={<ProspectsPage group="lead" />} />
+          <Route path="pipeline" element={<ProspectsPage group="pipeline" />} />
           <Route path="transactions" element={<Navigate to="/dashboard/deals" replace />} />
         </Route>
         <Route path="deals" element={<DealsGate />}>

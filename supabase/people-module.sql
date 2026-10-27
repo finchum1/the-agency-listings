@@ -2535,3 +2535,54 @@ drop policy if exists deal_update_log_read on public.deal_update_log;
 create policy deal_update_log_read on public.deal_update_log for select to authenticated using (public.deal_person_access(person_id) is not null);
 
 alter table public.agent_notification_settings add column if not exists deal_updates_auto boolean not null default true;
+
+-- ============================================================================
+-- 56. Follow-up cadence by column. Each Leads / Pipeline column can say "follow up every N days" (people_settings.cadence, {group: {column: days}};
+--     0 means none). When a person is added to a column or moved into one, their next follow-up becomes today + N, unless the same save set a date by
+--     hand. Columns the agent hasn't set use the defaults below; custom columns have none until set.
+-- ============================================================================
+alter table public.people_settings add column if not exists cadence jsonb not null default '{}'::jsonb;
+
+create or replace function public.people_cadence_days(p_owner uuid, p_group text, p_stage text) returns integer
+language sql stable security definer set search_path = public as $$
+  select case
+    when jsonb_exists(s.cadence -> p_group, p_stage) then nullif((s.cadence -> p_group ->> p_stage)::int, 0)
+    when p_group = 'lead' then case p_stage when 'New' then 1 when 'Contacted' then 3 when 'Nurturing' then 14 when 'Qualified' then 3 end
+    when p_group = 'pipeline' then case p_stage when '12+ Months' then 90 when '6+ Months' then 60 when '3-6 Months' then 30 when 'Coming Soon' then 7 when 'Active' then 3 end
+  end
+  from (select 1) x left join public.people_settings s on s.owner_id = p_owner;
+$$;
+revoke all on function public.people_cadence_days(uuid, text, text) from public, anon, authenticated;
+
+create or replace function public.people_apply_cadence() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare d integer;
+begin
+  if new.stage_group not in ('lead', 'pipeline') or new.archived or current_setting('app.skip_cadence', true) = '1' then return new; end if;
+  if tg_op = 'UPDATE' then
+    if new.stage is not distinct from old.stage and new.stage_group is not distinct from old.stage_group then return new; end if;
+    if new.next_follow_up is distinct from old.next_follow_up then return new; end if; -- a date chosen by hand in this save wins
+  elsif new.next_follow_up is not null then
+    return new;
+  end if;
+  d := public.people_cadence_days(new.owner_id, new.stage_group, new.stage);
+  if d is not null then new.next_follow_up := (now() at time zone 'America/Chicago')::date + d; end if;
+  return new;
+end;
+$$;
+revoke all on function public.people_apply_cadence() from public, anon, authenticated;
+drop trigger if exists people_apply_cadence on public.people;
+create trigger people_apply_cadence before insert or update of stage, stage_group on public.people
+  for each row execute function public.people_apply_cadence();
+
+-- Renaming a column is not a move: everyone in it keeps their follow-up date.
+create or replace function public.rename_people_stage(p_group text, p_old text, p_new text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is null then raise exception 'Not signed in.'; end if;
+  perform set_config('app.skip_cadence', '1', true);
+  update public.people set stage = p_new where owner_id = auth.uid() and stage_group = p_group and stage = p_old;
+end;
+$$;
+revoke all on function public.rename_people_stage(text, text, text) from public, anon;
+grant execute on function public.rename_people_stage(text, text, text) to authenticated;
