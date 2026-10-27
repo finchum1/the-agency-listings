@@ -117,7 +117,12 @@ export default function DealsPage() {
         onOpenForeign={setOpenForeignId}
         toolbarLeft={toolbar}
         renderList={(props) => <DealsList {...props} agentName="You" />}
-        renderOverview={(props) => (
+        renderOverview={(props) => {
+          // The overview follows the All / Mine / TC deals filter, so its numbers match what the board below shows. Opening a deal you coordinate
+          // goes to the coordinator panel; your own open in the board's panel.
+          const foreignIds = new Set(foreignShown.map((d) => d.id));
+          const merged = { ...props, deals: [...(effectiveMode !== "tc" ? props.deals : []), ...foreignShown], openDeal: (id) => (foreignIds.has(id) ? setOpenForeignId(id) : props.openDeal(id)) };
+          return (
           <>
             {waiting > 0 && (
               <button
@@ -131,9 +136,10 @@ export default function DealsPage() {
                 <span className="shrink-0 font-semibold text-[#ed2127] dark:text-[#f2454b]">Review ↓</span>
               </button>
             )}
-            <DealsHome {...props} />
+            <DealsHome {...merged} />
           </>
-        )}
+          );
+        }}
       />
 
       {access.isCompliance && (

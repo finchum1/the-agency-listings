@@ -91,8 +91,12 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
   const year = now.getFullYear();
 
   const openDeals = deals.filter((p) => p.stage !== closedStage);
+  // Commission is the agent's money: only deals that are yours count toward it, even when the numbers above include deals you coordinate.
+  const ownOpen = openDeals.filter((p) => !p._foreign);
+  const hasForeign = deals.some((p) => p._foreign);
   const closed = deals.filter((p) => p.stage === closedStage && Number((p.closing_date || p.updated_at || "").slice(0, 4)) === year);
   const byId = new Map(deals.map((p) => [p.id, p]));
+  const where = (p) => (p._foreign ? ` · ${p._agent || "another agent"}` : "");
   const closingSoon = openDeals.filter((p) => p.closing_date && p.closing_date >= today && p.closing_date <= soon).sort((a, b) => a.closing_date.localeCompare(b.closing_date));
 
   const sentBack = openDeals.filter((p) => p.compliance_status === "needs_changes");
@@ -112,8 +116,8 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
   upcoming.sort((a, b) => a.date.localeCompare(b.date) || a.label.localeCompare(b.label));
 
   const needs = [
-    ...sentBack.map((p) => ({ key: `sb-${p.id}`, person: p, primary: title(p), secondary: "Sent back by compliance. Fix it and resubmit.", right: <ComplianceChip status="needs_changes" />, urgent: true })),
-    ...overdue.map((o) => ({ key: `t-${o.task.id}`, person: o.person, primary: o.task.text, secondary: `${title(o.person)} · due ${dayLabel(o.due, today)}`, urgent: true })),
+    ...sentBack.map((p) => ({ key: `sb-${p.id}`, person: p, primary: title(p), secondary: `Sent back by compliance${where(p)}. Fix it and resubmit.`, right: <ComplianceChip status="needs_changes" />, urgent: true })),
+    ...overdue.map((o) => ({ key: `t-${o.task.id}`, person: o.person, primary: o.task.text, secondary: `${title(o.person)}${where(o.person)} · due ${dayLabel(o.due, today)}`, urgent: true })),
     ...waitingDrafts.map((d) => ({ key: `d-${d.id}`, person: byId.get(d.person_id), primary: `Draft ${d.channel === "email" ? "email" : d.channel === "text" ? "text" : "call"} waiting`, secondary: `${title(byId.get(d.person_id))}${d.subject ? ` · ${d.subject}` : ""}` })),
   ];
 
@@ -122,7 +126,7 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
       <div className={`${card} flex flex-wrap items-center justify-between gap-3 px-4 py-3`}>
         <p className="text-sm">
           <span className="font-semibold">{openDeals.length}</span> <span className={muted}>open · </span>
-          <span className="font-semibold">{compact.format(sum(openDeals, "commission"))}</span> <span className={muted}>expected commission</span>
+          <span className="font-semibold">{compact.format(sum(ownOpen, "commission"))}</span> <span className={muted}>expected commission</span>
           {attention > 0 && <span className="font-semibold text-red-600 dark:text-red-400"> · {attention} need{attention === 1 ? "s" : ""} you</span>}
         </p>
         <button type="button" onClick={toggle} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
@@ -151,7 +155,7 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
   };
 
   // Key dates grouped by day, flattened to rows that show the day beside each item.
-  const dateItems = upcoming.map((u, i) => ({ key: `${u.person.id}-${u.label}-${i}`, person: u.person, primary: `${u.label} · ${title(u.person)}`, secondary: u.person.property_address ? u.person.name : "", right: <span className={`shrink-0 text-xs font-medium ${u.date === today ? "text-amber-700 dark:text-amber-400" : muted}`}>{dayLabel(u.date, today)}</span> }));
+  const dateItems = upcoming.map((u, i) => ({ key: `${u.person.id}-${u.label}-${i}`, person: u.person, primary: `${u.label} · ${title(u.person)}`, secondary: `${u.person.property_address ? u.person.name : ""}${where(u.person)}`.replace(/^ · /, ""), right: <span className={`shrink-0 text-xs font-medium ${u.date === today ? "text-amber-700 dark:text-amber-400" : muted}`}>{dayLabel(u.date, today)}</span> }));
 
   return (
     <section className="space-y-4" aria-label="Deals overview">
@@ -163,8 +167,8 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Tile label="Open deals" value={openDeals.length} sub={`${money.format(sum(openDeals, "price"))} volume`} />
-        <Tile label="Expected commission" value={money.format(sum(openDeals, "commission"))} sub="From open deals" />
+        <Tile label="Open deals" value={openDeals.length} sub={`${money.format(sum(openDeals, "price"))} volume${hasForeign ? ` · ${openDeals.length - ownOpen.length} coordinated` : ""}`} />
+        <Tile label="Expected commission" value={hasForeign && ownOpen.length === 0 ? "–" : money.format(sum(ownOpen, "commission"))} sub={hasForeign ? "Your own deals only" : "From open deals"} />
         <Tile label="Closing in 30 days" value={closingSoon.length} sub={closingSoon[0] ? `Next: ${title(closingSoon[0])}, ${dayLabel(closingSoon[0].closing_date, today)}` : "Nothing scheduled"} />
         <Tile label="Needs you" value={attention} tone={attention ? "alert" : undefined} sub={attention ? [sentBack.length && `${sentBack.length} sent back`, overdue.length && `${overdue.length} overdue`, waitingDrafts.length && `${waitingDrafts.length} draft${waitingDrafts.length === 1 ? "" : "s"}`].filter(Boolean).join(" · ") : "All caught up"} />
       </div>
@@ -181,7 +185,7 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
       </div>
 
       <p className={`text-xs ${muted}`}>
-        Closed in {year}: <span className="font-semibold text-[#1c1a17] dark:text-[#faf9f7]">{closed.length}</span> · {money.format(sum(closed, "price"))} volume · {money.format(sum(closed, "commission"))} commission earned
+        Closed in {year}: <span className="font-semibold text-[#1c1a17] dark:text-[#faf9f7]">{closed.length}</span> · {money.format(sum(closed, "price"))} volume · {money.format(sum(closed.filter((p) => !p._foreign), "commission"))} commission earned{hasForeign ? " on your own deals" : ""}
       </p>
     </section>
   );
