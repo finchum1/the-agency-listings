@@ -12,6 +12,7 @@ const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9
 export default function StartDealModal({ onClose, onStarted }) {
   const { profile } = useAuth();
   const [agents, setAgents] = useState(null);
+  const [columns, setColumns] = useState([]); // the chosen agent's own Deals columns
   const [f, setF] = useState(() => {
     let agent = "";
     try {
@@ -19,7 +20,7 @@ export default function StartDealModal({ onClose, onStarted }) {
     } catch {
       /* the remembered agent is a convenience */
     }
-    return { agent, name: "", side: "", property_address: "", phone: "", email: "", price: "", contract_date: "", closing_date: "" };
+    return { agent, stage: "", name: "", side: "", property_address: "", phone: "", email: "", price: "", contract_date: "", closing_date: "" };
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -39,6 +40,23 @@ export default function StartDealModal({ onClose, onStarted }) {
       });
   }, [profile?.org_id, profile?.id]);
 
+  // Which columns this agent has, so the deal can be put in the right one (for example Listings while a listing is being put together).
+  useEffect(() => {
+    if (!f.agent) {
+      setColumns([]);
+      return;
+    }
+    let active = true;
+    supabase.rpc("agent_deal_stages", { p_agent: f.agent }).then(({ data }) => {
+      if (!active) return;
+      setColumns(data || []);
+      setF((cur) => (cur.agent === f.agent ? { ...cur, stage: data?.includes(cur.stage) ? cur.stage : "" } : cur));
+    });
+    return () => {
+      active = false;
+    };
+  }, [f.agent]);
+
   const set = (k) => (e) => setF((cur) => ({ ...cur, [k]: e.target.value }));
   const ready = f.agent && f.name.trim() && f.side;
 
@@ -57,6 +75,7 @@ export default function StartDealModal({ onClose, onStarted }) {
       p_price: f.price === "" ? null : Number(f.price),
       p_contract_date: f.contract_date || null,
       p_closing_date: f.closing_date || null,
+      p_stage: f.stage || null,
     });
     if (err) {
       setBusy(false);
@@ -105,17 +124,30 @@ export default function StartDealModal({ onClose, onStarted }) {
           <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">It goes on their Deals board, with you as the coordinator. They get an email.</p>
         </div>
 
+        {columns.length > 0 && (
+          <div>
+            <label className={labelClass} htmlFor="sd-stage">Which column?</label>
+            <select id="sd-stage" value={f.stage} onChange={set("stage")} className={inputClass}>
+              <option value="">{columns[0]} (their first column)</option>
+              {columns.slice(1).map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">For example, keep it in Listings while you help put the listing together.</p>
+          </div>
+        )}
+
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className={labelClass} htmlFor="sd-name">Client name</label>
             <input id="sd-name" value={f.name} onChange={set("name")} className={inputClass} placeholder="Jordan & Kim Park" />
           </div>
           <div>
-            <label className={labelClass} htmlFor="sd-side">Buyer or seller</label>
+            <label className={labelClass} htmlFor="sd-side">Buyer or seller (listing)</label>
             <select id="sd-side" value={f.side} onChange={set("side")} className={inputClass}>
               <option value="">Choose…</option>
               <option value="buyer">Buyer</option>
-              <option value="seller">Seller</option>
+              <option value="seller">Seller (listing)</option>
             </select>
           </div>
           <div className="sm:col-span-2">

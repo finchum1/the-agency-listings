@@ -26,7 +26,8 @@ const openPicker = (e) => {
 // "compliance" (read only).
 export default function TransactionChecklist({ person, side, dates, onSummary, viewer = "owner" }) {
   const readOnly = viewer === "compliance";
-  const canTemplate = viewer === "owner";
+  const canTemplate = viewer !== "compliance"; // a coordinator gets the agent's own template for the deal (see loadTemplate)
+  const forDeal = viewer === "tc" ? person.id : null;
   const { tasks, loading, error, applyTemplate, addTask, updateTask, removeTask, clearAll } = useTransactionTasks(person.id);
   const [collapsed, setCollapsed] = useState({});
   const [completedShown, setCompletedShown] = useState({});
@@ -57,7 +58,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary, v
     (async () => {
       setWorking(true);
       if (swap) await clearAll();
-      await applyTemplate(await loadTemplate(side));
+      await applyTemplate(await loadTemplate(side, forDeal));
       setWorking(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -108,7 +109,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary, v
 
   const handleApply = async () => {
     setWorking(true);
-    await applyTemplate(await loadTemplate(side));
+    await applyTemplate(await loadTemplate(side, forDeal));
     setWorking(false);
   };
 

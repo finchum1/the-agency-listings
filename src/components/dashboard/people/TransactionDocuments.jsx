@@ -17,7 +17,8 @@ const smallInput =
 export default function TransactionDocuments({ person, side, onSummary, viewer = "owner" }) {
   const { docs, loading, error, applyTemplate, addDoc, updateDoc, removeDoc, clearAll, reload } = useTransactionDocuments(person.id);
   const reviewer = viewer === "compliance";
-  const canTemplate = viewer === "owner";
+  const canTemplate = viewer !== "compliance"; // a coordinator gets the agent's own template for the deal (see loadDocumentTemplate)
+  const forDeal = viewer === "tc" ? person.id : null;
   const [flagging, setFlagging] = useState(null); // { id, note } while compliance types why a document needs fixing
   const [markError, setMarkError] = useState("");
   const mark = async (id, status, note = "") => {
@@ -55,7 +56,7 @@ export default function TransactionDocuments({ person, side, onSummary, viewer =
     (async () => {
       setWorking(true);
       if (swap) await clearAll();
-      await applyTemplate(await loadDocumentTemplate(side));
+      await applyTemplate(await loadDocumentTemplate(side, forDeal));
       setWorking(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -106,7 +107,7 @@ export default function TransactionDocuments({ person, side, onSummary, viewer =
 
   const handleApply = async () => {
     setWorking(true);
-    await applyTemplate(await loadDocumentTemplate(side));
+    await applyTemplate(await loadDocumentTemplate(side, forDeal));
     setWorking(false);
   };
 
@@ -277,13 +278,17 @@ export default function TransactionDocuments({ person, side, onSummary, viewer =
                 </button>
                 {addForm("Documents")}
               </div>
-              <p className={`text-xs ${muted}`}>
-                Set up your {SIDE_LABELS[side].toLowerCase()} document list in{" "}
-                <Link to="/dashboard/settings" className="underline hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
-                  Settings
-                </Link>
-                .
-              </p>
+              {viewer === "owner" ? (
+                <p className={`text-xs ${muted}`}>
+                  Set up your {SIDE_LABELS[side].toLowerCase()} document list in{" "}
+                  <Link to="/dashboard/settings" className="underline hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
+                    Settings
+                  </Link>
+                  .
+                </p>
+              ) : (
+                <p className={`text-xs ${muted}`}>Uses the agent's own {SIDE_LABELS[side].toLowerCase()} document list when they have one.</p>
+              )}
             </>
           ) : (
             <p className={`text-sm ${muted}`}>Choose Buyer or Seller in Details above and the document list is added automatically.</p>

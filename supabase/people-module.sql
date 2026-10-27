@@ -2328,3 +2328,78 @@ end;
 $$;
 revoke all on function public.deal_stage_names(uuid) from public, anon;
 grant execute on function public.deal_stage_names(uuid) to authenticated;
+
+-- ============================================================================
+-- 51. Coordinators and the agent's templates and columns.
+--     * agent_deal_stages(agent): the agent's own Deals column names, so a coordinator starting a deal can choose which column it goes in
+--       (for example "Listings" while the listing is being put together).
+--     * deal_start_for_agent() takes that column (p_stage; the agent's first column when empty).
+--     * deal_owner_template(person, side, kind): the agent's own checklist or document template for a side, so a coordinator who picks buyer or
+--       seller on a deal gets the agent's lists, not their own. Null when the agent hasn't saved one (the app falls back to the built-in list).
+-- ============================================================================
+create or replace function public.agent_deal_stages(p_agent uuid) returns text[]
+language plpgsql stable security definer set search_path = public as $$
+declare v_stages jsonb;
+begin
+  if not exists (select 1 from public.profiles me join public.profiles a on a.id = p_agent and a.org_id = me.org_id where me.id = auth.uid() and me.deals_role = 'tc') then return null; end if;
+  select stages -> 'transaction' into v_stages from public.people_settings where owner_id = p_agent;
+  if v_stages is null or jsonb_typeof(v_stages) <> 'array' or jsonb_array_length(v_stages) = 0 then return array['Pending', 'Closing Soon', 'Closed']; end if;
+  return array(select jsonb_array_elements_text(v_stages));
+end;
+$$;
+revoke all on function public.agent_deal_stages(uuid) from public, anon;
+grant execute on function public.agent_deal_stages(uuid) to authenticated;
+
+drop function if exists public.deal_start_for_agent(uuid, text, text, text, text, text, numeric, date, date);
+create or replace function public.deal_start_for_agent(
+  p_agent uuid, p_name text, p_side text, p_property_address text default '', p_phone text default '', p_email text default '',
+  p_price numeric default null, p_contract_date date default null, p_closing_date date default null, p_stage text default null
+) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare
+  me record;
+  v_stages text[];
+  v_stage text;
+  v_id uuid;
+begin
+  select id, org_id, full_name, deals_role into me from public.profiles where id = auth.uid();
+  if me.id is null or me.deals_role is distinct from 'tc' then raise exception 'Only a transaction coordinator can start a deal for an agent.'; end if;
+  if p_agent is null or p_agent = me.id or not exists (select 1 from public.profiles a where a.id = p_agent and a.org_id = me.org_id and a.people_enabled) then
+    raise exception 'Pick an agent in your office who uses Deals.';
+  end if;
+  if btrim(coalesce(p_name, '')) = '' then raise exception 'Add the client''s name.'; end if;
+  if p_side not in ('buyer', 'seller') then raise exception 'Choose buyer or seller.'; end if;
+  v_stages := public.agent_deal_stages(p_agent);
+  if nullif(btrim(coalesce(p_stage, '')), '') is null then
+    v_stage := v_stages[1];
+  else
+    select s into v_stage from unnest(v_stages) s where lower(s) = lower(btrim(p_stage)) limit 1;
+    if v_stage is null then raise exception 'That column isn''t one of this agent''s Deals columns.'; end if;
+  end if;
+  insert into public.people (owner_id, name, phone, email, stage_group, stage, side, property_address, price, contract_date, closing_date, source)
+  values (p_agent, btrim(p_name), btrim(coalesce(p_phone, '')), btrim(coalesce(p_email, '')), 'transaction', v_stage, p_side, btrim(coalesce(p_property_address, '')), p_price, p_contract_date, p_closing_date, '')
+  returning id into v_id;
+  insert into public.deal_tcs (person_id, tc_id, assigned_by, started_by_tc) values (v_id, me.id, me.id, true);
+  insert into public.deal_messages (person_id, author_id, kind, body) values (v_id, me.id, 'message', coalesce(me.full_name, 'The coordinator') || ' started this deal and is coordinating it.');
+  return v_id;
+end;
+$$;
+revoke all on function public.deal_start_for_agent(uuid, text, text, text, text, text, numeric, date, date, text) from public, anon;
+grant execute on function public.deal_start_for_agent(uuid, text, text, text, text, text, numeric, date, date, text) to authenticated;
+
+create or replace function public.deal_owner_template(p_person uuid, p_side text, p_kind text) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare v_owner uuid; v_sections jsonb;
+begin
+  if coalesce(public.deal_person_access(p_person), '') not in ('owner', 'tc') or p_side not in ('buyer', 'seller') then return null; end if;
+  select owner_id into v_owner from public.people where id = p_person;
+  if p_kind = 'documents' then
+    select sections into v_sections from public.document_templates where owner_id = v_owner and side = p_side;
+  else
+    select sections into v_sections from public.checklist_templates where owner_id = v_owner and side = p_side;
+  end if;
+  return case when v_sections is not null and jsonb_typeof(v_sections) = 'array' and jsonb_array_length(v_sections) > 0 then v_sections end;
+end;
+$$;
+revoke all on function public.deal_owner_template(uuid, text, text) from public, anon;
+grant execute on function public.deal_owner_template(uuid, text, text) to authenticated;

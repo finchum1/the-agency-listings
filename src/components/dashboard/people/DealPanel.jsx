@@ -113,6 +113,27 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
                   <p className="text-sm break-words">{[fresh.phone, fresh.email].filter(Boolean).join(" · ") || "–"}</p>
                 </div>
                 <div>
+                  <label className={labelClass}>Buyer or seller (listing)</label>
+                  {edit ? (
+                    <select
+                      value={fresh.side === "both" ? "" : fresh.side || ""}
+                      onChange={(e) => {
+                        const v = e.target.value || null;
+                        setFresh((f) => ({ ...f, side: v }));
+                        save({ side: v });
+                      }}
+                      className={inputClass}
+                    >
+                      <option value="">Choose…</option>
+                      <option value="buyer">Buyer</option>
+                      <option value="seller">Seller (listing)</option>
+                    </select>
+                  ) : (
+                    <p className="text-sm">{fresh.side === "buyer" ? "Buyer" : fresh.side === "seller" ? "Seller (listing)" : "Not set"}</p>
+                  )}
+                  {edit && <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Picking a side adds the agent's task and document checklists.</p>}
+                </div>
+                <div>
                   <label className={labelClass}>Stage</label>
                   <select
                     value={fresh.stage}
