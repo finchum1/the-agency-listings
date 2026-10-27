@@ -344,7 +344,8 @@ export default function PersonPanel({
     if (!isDesktop) return;
     const onDown = (e) => {
       if (e.button !== 0 || !(e.target instanceof Element)) return;
-      if (asideRef.current?.contains(e.target) || e.target.closest("[data-person-id]")) return;
+      // Another card swaps the peek; a window opened from it (share, archive...) lives outside the peek, so pressing in it isn't "outside" either.
+      if (asideRef.current?.contains(e.target) || e.target.closest("[data-person-id], [role=dialog]")) return;
       onClose();
     };
     document.addEventListener("pointerdown", onDown, true);
