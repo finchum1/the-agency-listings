@@ -2403,3 +2403,36 @@ end;
 $$;
 revoke all on function public.deal_owner_template(uuid, text, text) from public, anon;
 grant execute on function public.deal_owner_template(uuid, text, text) to authenticated;
+
+-- ============================================================================
+-- 52. Signatures in Deals (Documenso). One row per document sent for signature from a deal. Rows are written only by the server
+--     (api/deal-signatures.js sends and reminds, api/documenso-webhook.js records what Documenso reports); people who can see the deal can
+--     read them. Signed copies are kept in the private deal-documents bucket, read through a short-lived link the server hands out.
+-- ============================================================================
+create table if not exists public.deal_signatures (
+  id uuid primary key default gen_random_uuid(),
+  person_id uuid not null references public.people(id) on delete cascade,
+  org_id uuid,
+  requested_by uuid default auth.uid() references public.profiles(id) on delete set null,
+  title text not null,
+  template_id integer,
+  envelope_id text,
+  status text not null default 'sending' check (status in ('sending', 'pending', 'completed', 'rejected', 'cancelled', 'failed')),
+  recipients jsonb not null default '[]'::jsonb,
+  checklist_doc_id uuid references public.transaction_documents(id) on delete set null,
+  error text,
+  signed_path text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  completed_at timestamptz,
+  notified_at timestamptz
+);
+create index if not exists deal_signatures_person_idx on public.deal_signatures (person_id, created_at desc);
+create unique index if not exists deal_signatures_envelope_idx on public.deal_signatures (envelope_id) where envelope_id is not null;
+alter table public.deal_signatures enable row level security;
+revoke all on public.deal_signatures from anon, authenticated;
+grant select on public.deal_signatures to authenticated;
+drop policy if exists deal_signatures_read on public.deal_signatures;
+create policy deal_signatures_read on public.deal_signatures for select to authenticated using (public.deal_person_access(person_id) is not null);
+
+insert into storage.buckets (id, name, public) values ('deal-documents', 'deal-documents', false) on conflict (id) do nothing;

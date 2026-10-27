@@ -3,6 +3,7 @@ import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS } from "../../../lib/peopleStages";
 import TransactionModules from "./TransactionModules";
 import DealCompliance, { ComplianceChip } from "./DealCompliance";
+import DealSignatures from "./DealSignatures";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const inputClass =
@@ -22,6 +23,10 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
   const [error, setError] = useState("");
   const [fresh, setFresh] = useState(deal);
   const [tcNames, setTcNames] = useState([]);
+  const [agentEmail, setAgentEmail] = useState("");
+  useEffect(() => {
+    supabase.from("profiles").select("email").eq("id", deal.owner_id).maybeSingle().then(({ data }) => setAgentEmail(data?.email || ""));
+  }, [deal.owner_id]);
   const [agentStages, setAgentStages] = useState(null); // the deal owner's own Deals column names
   useEffect(() => {
     supabase.rpc("deal_stage_names", { p_person: deal.id }).then(({ data }) => setAgentStages(data || null));
@@ -192,6 +197,7 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
             viewer={viewer}
             dates={{ contract_date: fresh.contract_date || "", inspection_date: fresh.inspection_date || "", closing_date: fresh.closing_date || "" }}
           />
+          <DealSignatures person={fresh} viewer={viewer} agent={{ name: agentName || "", email: agentEmail }} />
         </div>
       </aside>
     </div>

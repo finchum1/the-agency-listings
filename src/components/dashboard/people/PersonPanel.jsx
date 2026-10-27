@@ -9,6 +9,8 @@ import { PEEK_WIDTHS } from "../../../hooks/usePeekWidth";
 import TransactionModules from "./TransactionModules";
 import DealCompliance from "./DealCompliance";
 import DealTeam from "./DealTeam";
+import DealSignatures from "./DealSignatures";
+import { useAuth } from "../../../hooks/useAuth";
 
 const inputClass =
   "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -61,6 +63,9 @@ export default function PersonPanel({
   peek,
 }) {
   const board = BOARDS[person.stage_group];
+  const { profile } = useAuth();
+  const signedInName = profile?.full_name || "";
+  const signedInEmail = profile?.email || "";
   const [form, setForm] = useState(() => toForm(person));
   const formRef = useRef(form);
   const savedRef = useRef(form);
@@ -679,6 +684,9 @@ export default function PersonPanel({
                 closing_date: form.closing_date,
               }}
             />
+            <div className="mt-6">
+              <DealSignatures person={person} viewer="owner" agent={{ name: signedInName, email: signedInEmail }} />
+            </div>
           </div>
         )}
 

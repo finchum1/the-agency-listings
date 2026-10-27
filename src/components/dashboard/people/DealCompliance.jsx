@@ -167,7 +167,7 @@ export default function DealCompliance({ person, viewer, onChanged }) {
           {messages.map((m) => (
             <li key={m.id} className="text-sm">
               <div className={`flex items-center gap-2 text-[11px] ${muted}`}>
-                <span className="font-semibold text-[#1c1a17]/80 dark:text-[#faf9f7]/80">{names[m.author_id] || "Someone"}</span>
+                <span className="font-semibold text-[#1c1a17]/80 dark:text-[#faf9f7]/80">{m.author_id ? names[m.author_id] || "Someone" : "Documenso"}</span>
                 <span>{stamp(m.created_at)}</span>
                 {m.kind !== "message" && <span className={`rounded-full px-2 py-px font-semibold ${COMPLIANCE_TONES[m.kind === "approved" ? "green" : m.kind === "changes" ? "red" : "amber"]}`}>{KIND_LABEL[m.kind]}</span>}
               </div>
