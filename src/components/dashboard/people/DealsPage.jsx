@@ -128,6 +128,13 @@ export default function DealsPage() {
         showOwn={effectiveMode !== "tc"}
         foreignDeals={foreignShown}
         onOpenForeign={setOpenForeignId}
+        foreignOpenId={openForeignId}
+        onOwnOpened={() => {
+          if (openForeignId) {
+            setOpenForeignId(null);
+            coordinated.reload();
+          }
+        }}
         onMoveForeign={moveForeign}
         toolbarLeft={toolbar}
         renderList={(props) => <DealsList {...props} agentName="You" />}
