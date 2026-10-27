@@ -86,7 +86,8 @@ export default function TransactionTimelinePage() {
     );
   }
 
-  const { deal, agent, org, message, today } = state.data;
+  const { deal, agent, org, message, message_from: messageFrom, today } = state.data;
+  const author = messageFrom || agent;
   const brand = brandFromOrg(org);
   const { milestones, fill, closed, closing } = buildTimeline(deal, today);
   const upcoming = milestones.filter((m) => m.days >= 0);
@@ -94,7 +95,7 @@ export default function TransactionTimelinePage() {
   const daysToClose = closing ? closing.days : null;
   const span = first && closing ? Math.max(1, daysBetween(first.date, closing.date)) : 1;
   const overall = first && closing ? Math.max(0, Math.min(1, daysBetween(first.date, today) / span)) : 0;
-  const firstName = (agent?.full_name || "").split(" ")[0];
+  const firstName = (author?.full_name || "").split(" ")[0];
   const team = [
     deal.lender && ["Lender", deal.lender],
     deal.title_company && ["Title company", deal.title_company],
@@ -145,7 +146,7 @@ export default function TransactionTimelinePage() {
       <main className="mx-auto max-w-5xl px-5 py-8 space-y-10">
         {message && (
           <div className="rounded-2xl bg-white border border-black/[0.06] p-5 flex gap-4 items-start">
-            {agent?.photo_url && <img src={agent.photo_url} alt="" className="h-14 w-14 rounded-full object-cover shrink-0" />}
+            {author?.photo_url && <img src={author.photo_url} alt="" className="h-14 w-14 rounded-full object-cover shrink-0" />}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-[#1c1a17]/50">A note from {firstName || "your agent"}</p>
               <p className="mt-1 text-[15px] leading-relaxed whitespace-pre-wrap">{message}</p>

@@ -24,17 +24,23 @@ export default async function handler(req, res) {
   const token = String(req.query?.token || "");
   if (!TOKEN.test(token)) return res.status(404).json({ error: "This link isn't valid anymore." });
   const hash = crypto.createHash("sha256").update(token).digest("hex");
-  const { data: link } = await admin.from("transaction_timeline_links").select("id, person_id, message, expires_at, revoked_at, view_count").eq("token_hash", hash).maybeSingle();
+  const { data: link } = await admin.from("transaction_timeline_links").select("id, person_id, created_by, message, expires_at, revoked_at, view_count").eq("token_hash", hash).maybeSingle();
   if (!link || link.revoked_at || new Date(link.expires_at) < new Date()) return res.status(404).json({ error: "This link isn't valid anymore." });
 
   const { data: person } = await admin
     .from("people")
-    .select("name, side, stage, stage_group, property_address, other_agent, title_company, lender, contract_date, inspection_date, appraisal_date, financing_deadline, closing_date, owner:profiles!people_owner_id_fkey(full_name, title, license, phone, email, photo_url, org:organizations(id, slug, name, brand, address_line1, city, state, zip, disclaimer))")
+    .select("owner_id, name, side, stage, stage_group, property_address, other_agent, title_company, lender, contract_date, inspection_date, appraisal_date, financing_deadline, closing_date, owner:profiles!people_owner_id_fkey(full_name, title, license, phone, email, photo_url, org:organizations(id, slug, name, brand, address_line1, city, state, zip, disclaimer))")
     .eq("id", link.person_id)
     .maybeSingle();
   if (!person) return res.status(404).json({ error: "This link isn't valid anymore." });
 
   await admin.from("transaction_timeline_links").update({ last_viewed_at: new Date().toISOString(), view_count: (link.view_count || 0) + 1 }).eq("id", link.id);
-  const { owner, ...deal } = person;
-  return res.status(200).json({ deal, agent: owner ? { full_name: owner.full_name, title: owner.title, license: owner.license, phone: owner.phone, email: owner.email, photo_url: owner.photo_url } : null, org: owner?.org || null, message: link.message, today: todayInChicago(), expires_at: link.expires_at });
+  // A note written by a coordinator is signed by them; the page itself stays branded with the agent who owns the deal.
+  let messageFrom = null;
+  if (link.message && link.created_by && link.created_by !== person.owner_id) {
+    const { data: author } = await admin.from("profiles").select("full_name, photo_url").eq("id", link.created_by).maybeSingle();
+    messageFrom = author || null;
+  }
+  const { owner, owner_id: _ownerId, ...deal } = person;
+  return res.status(200).json({ deal, agent: owner ? { full_name: owner.full_name, title: owner.title, license: owner.license, phone: owner.phone, email: owner.email, photo_url: owner.photo_url } : null, org: owner?.org || null, message: link.message, message_from: messageFrom, today: todayInChicago(), expires_at: link.expires_at });
 }

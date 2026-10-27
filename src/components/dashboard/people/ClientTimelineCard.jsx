@@ -4,8 +4,9 @@ import { supabase } from "../../../lib/supabaseClient";
 const btn = "rounded-full border border-black/10 dark:border-white/15 px-3 py-1.5 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 
 // Share a private closing timeline with the buyer or seller (/timeline/<token>, see src/pages/TransactionTimelinePage.jsx). It
-// shows the deal's key dates, what's coming and who's helping, never the price, commission or the agent's checklist.
-export default function ClientTimelineCard({ person, dates }) {
+// shows the deal's key dates, what's coming and who's helping, never the price, commission or the agent's checklist. A coordinator can make one
+// for a deal they coordinate (`agentName` set): the page and the link's address are still the deal's agent's, not theirs.
+export default function ClientTimelineCard({ person, dates, agentName }) {
   const [links, setLinks] = useState([]);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -77,7 +78,7 @@ export default function ClientTimelineCard({ person, dates }) {
   return (
     <div className="space-y-3">
       <h3 className="font-display text-base font-semibold">Client timeline</h3>
-      <p className="text-xs text-[#1c1a17]/55 dark:text-[#faf9f7]/55">A private page for {first || "your client"} with the key dates, what's still coming, and who's helping. Branded with your photo and contact info. It never shows price, commission or your checklist.</p>
+      <p className="text-xs text-[#1c1a17]/55 dark:text-[#faf9f7]/55">A private page for {first || "your client"} with the key dates, what's still coming, and who's helping. {agentName ? `Branded with ${agentName}'s photo and contact info, since it's their client.` : "Branded with your photo and contact info."} It never shows price, commission or the checklist.</p>
       {!hasDates && <p className="text-xs rounded-lg bg-amber-500/10 text-amber-800 dark:text-amber-300 px-3 py-2">Add the contract, inspection and closing dates above and the timeline fills in on its own.</p>}
       <textarea
         value={note}
