@@ -80,6 +80,14 @@ export default function ListingsTable() {
           <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
             {listings.length} listing{listings.length === 1 ? "" : "s"}
             {!loading && listings.length > 0 && <> · {withDomain} with a custom domain</>}
+            {withDomain > 0 && (
+              <>
+                {" · "}
+                <button type="button" onClick={runChecks} disabled={checking} className="hover:underline disabled:opacity-60">
+                  {checking ? "Checking domains…" : "Check domains"}
+                </button>
+              </>
+            )}
             {down.length > 0 && (
               <>
                 {" · "}
@@ -98,15 +106,28 @@ export default function ListingsTable() {
         </Link>
       </div>
 
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={isAdmin ? "Search by address, city, zip, MLS number, or agent" : "Search by address, city, zip, or MLS number"}
           aria-label="Search listings"
-          className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+          className="min-w-0 flex-1 basis-64 rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
         />
+        {withDomain > 0 && (
+          <select
+            value={domainFilter}
+            onChange={(e) => setDomainFilter(e.target.value)}
+            aria-label="Custom domain"
+            className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+          >
+            <option value="all">Any domain</option>
+            <option value="with">Has a custom domain ({withDomain})</option>
+            <option value="without">No custom domain ({listings.length - withDomain})</option>
+            {down.length > 0 && <option value="down">Domain not responding ({down.length})</option>}
+          </select>
+        )}
         {(query.trim() || filter !== "all" || domainFilter !== "all") && !loading && (
           <span className="shrink-0 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
             {filtered.length} of {listings.length}
@@ -136,34 +157,7 @@ export default function ListingsTable() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2 mb-5 flex-wrap" role="group" aria-label="Custom domain">
-        <span className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mr-1">Custom domain</span>
-        {[
-          ["all", "Any"],
-          ["with", `Has one (${withDomain})`],
-          ["without", `Doesn't (${listings.length - withDomain})`],
-          ...(down.length ? [["down", `Not responding (${down.length})`]] : []),
-        ].map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setDomainFilter(value)}
-            aria-pressed={domainFilter === value}
-            className={`text-xs font-semibold rounded-full px-3 py-1.5 transition-colors ${
-              domainFilter === value ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "bg-black/5 dark:bg-white/10 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/10 dark:hover:bg-white/15"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-        {withDomain > 0 && (
-          <button type="button" onClick={runChecks} disabled={checking} className="ml-1 text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline disabled:opacity-60">
-            {checking ? "Checking domains…" : "Check domains again"}
-          </button>
-        )}
-        {checkError && <span className="text-xs text-red-600 dark:text-red-400">{checkError}</span>}
-      </div>
-
+      {checkError && <p className="text-sm text-red-600 dark:text-red-400 mb-4">{checkError}</p>}
       {error && <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>}
       {loading ? (
         <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>
