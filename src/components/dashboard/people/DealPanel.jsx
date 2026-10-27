@@ -22,6 +22,10 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
   const [error, setError] = useState("");
   const [fresh, setFresh] = useState(deal);
   const [tcNames, setTcNames] = useState([]);
+  const [agentStages, setAgentStages] = useState(null); // the deal owner's own Deals column names
+  useEffect(() => {
+    supabase.rpc("deal_stage_names", { p_person: deal.id }).then(({ data }) => setAgentStages(data || null));
+  }, [deal.id]);
   useEffect(() => {
     (async () => {
       const [{ data: per }, { data: wide }] = await Promise.all([
@@ -68,7 +72,8 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
     onBlur: () => edit && commit(key, kind),
   });
 
-  const stages = BOARDS.transaction.stages.includes(fresh.stage) ? BOARDS.transaction.stages : [fresh.stage, ...BOARDS.transaction.stages];
+  const baseStages = agentStages || BOARDS.transaction.stages;
+  const stages = baseStages.includes(fresh.stage) ? baseStages : [fresh.stage, ...baseStages];
   const side = fresh.side === "both" ? "" : fresh.side;
 
   return (

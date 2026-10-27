@@ -60,6 +60,9 @@ function PersonCardBody({ p, group, progress, today }) {
   const dueToday = p.next_follow_up === today;
   return (
     <>
+      {p._foreign && (
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#1c1a17]/45 dark:text-[#faf9f7]/45 truncate">TC for {p._agent || "another agent"}</p>
+      )}
       <div className="flex items-center justify-between gap-2 min-w-0">
         <p className="text-sm font-medium truncate">{p.name}</p>
         {group !== "transaction" && SIDE_TAGS[p.side] && (
@@ -227,7 +230,12 @@ function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleCl
 
 // `renderOverview` (used by Deals) draws something between the board header and the columns, and is handed what it needs to open any
 // deal in the same side panel a card opens.
-export default function PeopleBoard({ group, renderOverview }) {
+//
+// For Deals, the board can also carry the deals this agent coordinates for other agents (`foreignDeals`): read-only cards (they open in the
+// coordinator panel through `onOpenForeign`, can't be dragged) shown after the agent's own cards in the column with the same name, or in an
+// extra column of their own when the owner's stage name isn't one of ours. `showOwn` hides the agent's own cards (the "TC deals" filter),
+// `toolbarLeft` is the view/filter controls, and `view="list"` swaps the columns for whatever `renderList` draws.
+export default function PeopleBoard({ group, renderOverview, foreignDeals = [], onOpenForeign, toolbarLeft, view = "board", showOwn = true, renderList }) {
   const board = BOARDS[group];
   const { people, setPeople, loading, error, refresh } = usePeople();
   const { progress, reload: reloadProgress } = useTransactionProgress(group === "transaction");
@@ -287,7 +295,8 @@ export default function PeopleBoard({ group, renderOverview }) {
     const d = dragRef.current;
     if (!d || !d.started) return;
     const els = document.elementsFromPoint(d.cx, d.cy);
-    const colEl = els.find((el) => el.dataset && el.dataset.stage !== undefined);
+    // A column of someone else's deals can't be dropped on: letting go there puts the card back where it was.
+    const colEl = els.find((el) => el.dataset && el.dataset.stage !== undefined && el.dataset.foreign === undefined);
     const stage = colEl ? colEl.dataset.stage : d.origin; // let go outside the board: it goes back where it was
     let index;
     if (!colEl) {
@@ -301,7 +310,7 @@ export default function PeopleBoard({ group, renderOverview }) {
       for (const child of list ? list.children : []) {
         if (child.hidden) continue;
         const isPlaceholder = child.dataset.placeholder !== undefined;
-        if (!isPlaceholder && child.dataset.personId === undefined) continue;
+        if (!isPlaceholder && (child.dataset.personId === undefined || child.dataset.foreignCard !== undefined)) continue;
         const r = child.getBoundingClientRect();
         if (d.cy < r.top + r.height / 2) {
           index = cardsBefore;
@@ -458,6 +467,16 @@ export default function PeopleBoard({ group, renderOverview }) {
   const selected = people.find((p) => p.id === selectedId) || null;
   const today = todayKey();
 
+  const foreign = group === "transaction" ? foreignDeals : [];
+  const mineByName = new Map(stages.map((s) => [s.toLowerCase(), s]));
+  const columnOf = (p) => (p._foreign ? mineByName.get(String(p.stage || "").toLowerCase()) || p.stage : p.stage);
+  const foreignStages = [];
+  for (const p of foreign) {
+    const c = columnOf(p);
+    if (!stages.includes(c) && !foreignStages.includes(c)) foreignStages.push(c);
+  }
+  const displayStages = [...stages, ...foreignStages];
+
   const siblings = selected && !selected.archived ? sortCol(active.filter((p) => p.stage === selected.stage)) : [];
   const siblingIdx = selected ? siblings.findIndex((p) => p.id === selected.id) : -1;
 
@@ -556,14 +575,22 @@ export default function PeopleBoard({ group, renderOverview }) {
         <div className="min-w-0">
           <h1 className="text-2xl font-display font-semibold">{board.title}</h1>
           <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
-            {active.length} {group === "transaction" ? (active.length === 1 ? "deal" : "deals") : active.length === 1 ? "person" : "people"} · drag cards between columns, drag a column's ⋮⋮ grip (or use ⋯) to reorder, click a title to rename it, or use + to add someone.
+            {active.length + foreign.length} {group === "transaction" ? (active.length + foreign.length === 1 ? "deal" : "deals") : active.length === 1 ? "person" : "people"} · drag cards between columns, drag a column's ⋮⋮ grip (or use ⋯) to reorder, click a title to rename it, or use + to add someone.
           </p>
         </div>
-        {/* Add-column lives up here rather than as a tile at the end of the
-            board — a trailing tile made the board wider than its columns
-            need. */}
-        {addingColumn ? (
-          <form onSubmit={handleAddColumn} className="flex items-center gap-2 shrink-0">
+      </div>
+
+      {(error || boardError) && <p className="text-sm text-red-600 dark:text-red-400">{error || boardError}</p>}
+
+      {renderOverview && !loading && renderOverview({ deals: active, progress, closedStage, openDeal: setSelectedId, selectedId })}
+
+      {/* The controls that belong to the board itself, right above it: view and filter on the left, adding a column on the right. */}
+      <div className="flex flex-wrap items-center gap-3">
+        {typeof toolbarLeft === "function" ? toolbarLeft({ ownCount: active.length }) : toolbarLeft}
+        {view === "board" && (
+          <>
+            {addingColumn ? (
+          <form onSubmit={handleAddColumn} className="flex items-center gap-2 shrink-0 sm:ml-auto">
             <input
               autoFocus
               value={newColumnName}
@@ -592,24 +619,26 @@ export default function PeopleBoard({ group, renderOverview }) {
           <button
             type="button"
             onClick={() => setAddingColumn(true)}
-            className="shrink-0 rounded-full border border-black/15 dark:border-white/20 px-4 py-2 text-sm font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            className="shrink-0 sm:ml-auto rounded-full border border-black/15 dark:border-white/20 px-4 py-2 text-sm font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
             + Add column
           </button>
         )}
+          </>
+        )}
       </div>
-
-      {(error || boardError) && <p className="text-sm text-red-600 dark:text-red-400">{error || boardError}</p>}
-
-      {renderOverview && !loading && renderOverview({ deals: active, progress, closedStage, openDeal: setSelectedId, selectedId })}
 
       {/* The board is a fixed-height strip: it scrolls sideways, and each
           column scrolls up and down on its own. The strip is the full board
           height (not just as tall as the shortest column), so the horizontal
           scrollbar stays pinned near the bottom of the screen. */}
+      {view === "list" && renderList ? (
+        renderList({ own: showOwn ? active : [], foreign, progress, closedStage, stages, openDeal: setSelectedId, openForeign: onOpenForeign })
+      ) : (
       <div ref={boardRef} className="flex gap-3 overflow-x-auto overflow-y-hidden h-[calc(100vh-14rem)] min-h-[26rem] -mx-1 px-1 pb-1">
-        {stages.map((stage, stageIndex) => {
-          const col = sortCol(active.filter((p) => p.stage === stage));
+        {displayStages.map((stage, stageIndex) => {
+          const isForeignCol = stageIndex >= stages.length;
+          const col = [...(showOwn && !isForeignCol ? sortCol(active.filter((p) => p.stage === stage)) : []), ...sortCol(foreign.filter((p) => columnOf(p) === stage))];
           const isCollapsed = collapsed.includes(stage);
           // While a card is lifted it leaves its column; the column it would land in shows a placeholder as tall as the card.
           const lifted = drag ? people.find((x) => x.id === drag.id) : null;
@@ -622,6 +651,7 @@ export default function PeopleBoard({ group, renderOverview }) {
             <div
               key={stage}
               data-stage={stage}
+              data-foreign={isForeignCol ? "" : undefined}
               onDragOver={(e) => {
                 e.preventDefault();
                 setDragOver(stage);
@@ -657,6 +687,12 @@ export default function PeopleBoard({ group, renderOverview }) {
                 </button>
               ) : (
               <>
+              {isForeignCol ? (
+                <div className="shrink-0 flex items-center justify-between gap-2 px-1.5 pt-1" title="Stage name used by the agent these deals belong to">
+                  <span className="truncate text-xs font-semibold uppercase tracking-wide text-[#1c1a17]/70 dark:text-[#faf9f7]/70">{stage}</span>
+                  <span className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">{shownCount}</span>
+                </div>
+              ) : (
               <div className="shrink-0 flex items-center justify-between gap-2 px-1.5 pt-1">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span
@@ -704,6 +740,7 @@ export default function PeopleBoard({ group, renderOverview }) {
                   />
                 </div>
               </div>
+              )}
 
               {/* Each column scrolls on its own, so a long list never spills past
                   the bottom of the column or pushes the others around. */}
@@ -793,15 +830,17 @@ export default function PeopleBoard({ group, renderOverview }) {
                     <div
                       key={p.id}
                       data-person-id={p.id}
+                      data-foreign-card={p._foreign ? "" : undefined}
                       hidden={isLifted}
-                      onPointerDown={(e) => onCardPointerDown(e, p)}
+                      onPointerDown={p._foreign ? undefined : (e) => onCardPointerDown(e, p)}
                       onClick={() => {
-                        if (!suppressClickRef.current) setSelectedId(p.id);
+                        if (p._foreign) onOpenForeign?.(p.id);
+                        else if (!suppressClickRef.current) setSelectedId(p.id);
                       }}
-                      className={`${CARD_CLASS} cursor-grab hover:shadow-sm transition-shadow`}
+                      className={`${CARD_CLASS} ${p._foreign ? "cursor-pointer" : "cursor-grab"} hover:shadow-sm transition-shadow`}
                     >
                       <PersonCardBody p={p} group={group} progress={progress} today={today} />
-                      <DraftBadge count={draftCounts[p.id]} />
+                      {!p._foreign && <DraftBadge count={draftCounts[p.id]} />}
                     </div>,
                   );
                 }
@@ -818,6 +857,7 @@ export default function PeopleBoard({ group, renderOverview }) {
           );
         })}
       </div>
+      )}
 
       {drag && inGroup.some((x) => x.id === drag.id) &&
         createPortal(

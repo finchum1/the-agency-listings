@@ -2306,3 +2306,25 @@ end;
 $$;
 revoke all on function public.deal_start_for_agent(uuid, text, text, text, text, text, numeric, date, date) from public, anon;
 grant execute on function public.deal_start_for_agent(uuid, text, text, text, text, text, numeric, date, date) to authenticated;
+
+-- ============================================================================
+-- 50. A coordinator moving a deal between stages must use the agent's own stage names (an agent's board only shows stages it knows),
+--     and the coordinator can't read the agent's settings. This returns the deal owner's Deals column names to anyone with access to the deal.
+-- ============================================================================
+create or replace function public.deal_stage_names(p_person uuid) returns text[]
+language plpgsql stable security definer set search_path = public as $$
+declare
+  v_owner uuid;
+  v_stages jsonb;
+begin
+  if public.deal_person_access(p_person) is null then return null; end if;
+  select owner_id into v_owner from public.people where id = p_person;
+  select stages -> 'transaction' into v_stages from public.people_settings where owner_id = v_owner;
+  if v_stages is null or jsonb_typeof(v_stages) <> 'array' or jsonb_array_length(v_stages) = 0 then
+    return array['Pending', 'Closing Soon', 'Closed'];
+  end if;
+  return array(select jsonb_array_elements_text(v_stages));
+end;
+$$;
+revoke all on function public.deal_stage_names(uuid) from public, anon;
+grant execute on function public.deal_stage_names(uuid) to authenticated;
