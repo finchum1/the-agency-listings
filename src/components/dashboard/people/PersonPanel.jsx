@@ -790,8 +790,13 @@ export default function PersonPanel({
           }}
         </DealOverview>
       )}
-      {tab === "checklists" && <TransactionModules person={person} side={dealSide} dates={dealDates} />}
-      {tab === "signatures" && <DealSignatures person={person} viewer="owner" agent={{ name: signedInName, email: signedInEmail }} />}
+      {tab === "tasks" && <TransactionModules person={person} side={dealSide} dates={dealDates} show="tasks" />}
+      {tab === "documents" && (
+        <div className="space-y-6">
+          <DealSignatures person={person} viewer="owner" agent={{ name: signedInName, email: signedInEmail }} />
+          <TransactionModules person={person} side={dealSide} dates={dealDates} show="documents" />
+        </div>
+      )}
       {tab === "messages" && <DealCompliance person={person} viewer="owner" onChanged={() => { onChanged(); summary.reload(); }} />}
       {tab === "details" && (
         <div className="space-y-8">

@@ -151,6 +151,7 @@ export default function DealSignatures({ person, viewer = "owner", agent }) {
   const [sending, setSending] = useState(false);
   const [note, setNote] = useState("");
   const [busyId, setBusyId] = useState(null);
+  const [showAll, setShowAll] = useState(false);
   const canSend = viewer !== "compliance";
 
   const load = useCallback(async () => {
@@ -205,7 +206,7 @@ export default function DealSignatures({ person, viewer = "owner", agent }) {
         configured !== false && <p className={`text-sm ${muted}`}>Nothing sent for signature yet.</p>
       ) : (
         <ul className="space-y-2.5">
-          {rows.map((r) => {
+          {(showAll ? rows : rows.slice(0, 3)).map((r) => {
             const [label, tone] = STATUS[r.status] || STATUS.pending;
             return (
               <li key={r.id} className="rounded-xl border border-black/10 dark:border-white/15 p-3">
@@ -241,6 +242,12 @@ export default function DealSignatures({ person, viewer = "owner", agent }) {
             );
           })}
         </ul>
+      )}
+
+      {rows.length > 3 && (
+        <button type="button" onClick={() => setShowAll((v) => !v)} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+          {showAll ? "Show fewer" : `Show all ${rows.length}`}
+        </button>
       )}
 
       {sending && (

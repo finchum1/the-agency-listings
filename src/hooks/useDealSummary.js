@@ -15,7 +15,7 @@ export function useDealSummary(personId, dates) {
     if (!personId) return;
     const [{ data: tasks }, { data: docs }, { data: sigs }, { data: msgs }, { data: read }] = await Promise.all([
       supabase.from("transaction_tasks").select("*").eq("person_id", personId).order("position"),
-      supabase.from("transaction_documents").select("id, done, text").eq("person_id", personId),
+      supabase.from("transaction_documents").select("id, done, text, review_status").eq("person_id", personId),
       supabase.from("deal_signatures").select("id, title, status, recipients").eq("person_id", personId).order("created_at", { ascending: false }),
       supabase.from("deal_messages").select("author_id, created_at").eq("person_id", personId),
       supabase.from("deal_reads").select("read_at").eq("person_id", personId).maybeSingle(),
@@ -41,6 +41,7 @@ export function useDealSummary(personId, dates) {
     docsTotal: data.docs.length,
     overdue: open.filter((t) => t.due && t.due < today).sort((a, b) => a.due.localeCompare(b.due)),
     soon: open.filter((t) => t.due && t.due >= today).sort((a, b) => a.due.localeCompare(b.due)).slice(0, 3),
+    flagged: data.docs.filter((d) => d.review_status === "issue"),
     signaturesOut: data.sigs.filter((s) => s.status === "pending" || s.status === "sending"),
   };
 }

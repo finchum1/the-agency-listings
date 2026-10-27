@@ -33,8 +33,13 @@ export function dealTabs(summary, person) {
   const sentBack = person.compliance_status === "needs_changes";
   return [
     { key: "overview", label: "Overview" },
-    { key: "checklists", label: "Checklists", badge: summary.overdue.length ? `${summary.overdue.length} overdue` : null, tone: "alert" },
-    { key: "signatures", label: "Signatures", badge: summary.signaturesOut.length ? `${summary.signaturesOut.length} out` : null },
+    { key: "tasks", label: "Tasks", badge: summary.overdue.length ? `${summary.overdue.length} overdue` : null, tone: "alert" },
+    {
+      key: "documents",
+      label: "Documents",
+      badge: summary.flagged.length ? `${summary.flagged.length} flagged` : summary.signaturesOut.length ? `${summary.signaturesOut.length} out` : null,
+      tone: summary.flagged.length ? "alert" : "none",
+    },
     { key: "messages", label: "Messages", badge: sentBack ? "sent back" : summary.unread ? `${summary.unread} new` : null, tone: sentBack ? "alert" : "info" },
     { key: "details", label: "Details" },
   ];

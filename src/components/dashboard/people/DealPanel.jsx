@@ -126,8 +126,13 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
         <DealTabs tabs={dealTabs(summary, fresh)} active={tab} onChange={setTab} />
         <div className="@container space-y-8 px-5 py-6">
           {tab === "overview" && <DealOverview person={fresh} summary={summary} dates={dealDates} onTab={setTab} onDate={edit ? changeDate : undefined} />}
-          {tab === "checklists" && <TransactionModules person={fresh} side={side} viewer={viewer} dates={dealDates} />}
-          {tab === "signatures" && <DealSignatures person={fresh} viewer={viewer} agent={{ name: agentName || "", email: agentEmail }} />}
+          {tab === "tasks" && <TransactionModules person={fresh} side={side} viewer={viewer} dates={dealDates} show="tasks" />}
+          {tab === "documents" && (
+            <div className="space-y-6">
+              <DealSignatures person={fresh} viewer={viewer} agent={{ name: agentName || "", email: agentEmail }} />
+              <TransactionModules person={fresh} side={side} viewer={viewer} dates={dealDates} show="documents" />
+            </div>
+          )}
           {tab === "messages" && <DealCompliance person={fresh} viewer={viewer} onChanged={() => { refresh(); summary.reload(); }} />}
           {tab === "details" && (
             <div className="space-y-8">
