@@ -153,7 +153,7 @@
     },
     {
       "path": "/api/domain-monitor",
-      "schedule": "0 13 * * *"
+      "schedule": "*/15 * * * *"
     }
   ],
   "functions": {

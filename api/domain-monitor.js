@@ -1,4 +1,4 @@
-// GET /api/domain-monitor: run by the Vercel cron (vercel.json) every morning. Checks every property site's custom domain and
+// GET /api/domain-monitor: run by the Vercel cron (vercel.json) every 15 minutes. Checks every property site's custom domain and
 // emails the admins who turned on domain alerts if one that was working has stopped responding (or has come back). If CRON_SECRET
 // is set, the call must carry it.
 import { serviceClient } from "./_lib/authUser.js";

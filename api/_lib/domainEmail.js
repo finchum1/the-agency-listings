@@ -1,14 +1,7 @@
 // The email sent when a property site's custom domain stops responding, or comes back (api/_lib/domainCheck.js).
+import { FIX } from "./domainInfo.js";
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-const FIX = {
-  no_dns: "Check the domain's DNS records at the registrar. The domain may have expired, or its records may have been changed or removed.",
-  not_attached: "Add the domain to the Vercel project (Settings, then Domains). The DNS is pointed at Vercel but Vercel doesn't know which project it belongs to.",
-  elsewhere: "Check where the domain's DNS now points. It should point at Vercel, and may have been moved to another host or a parking page.",
-  tls: "Vercel is usually still issuing the certificate. If it doesn't clear within an hour, check the domain in the Vercel project.",
-  timeout: "This is often temporary. You'll get another email when it answers again.",
-  unreachable: "This is often temporary. You'll get another email when it answers again.",
-};
 
 const since = (iso) => (iso ? new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago" }) : "");
 const where = (l) => (l ? `${l.address_line1}${l.city ? `, ${l.city}` : ""}${l.agent?.full_name ? ` (${l.agent.full_name})` : ""}` : "");

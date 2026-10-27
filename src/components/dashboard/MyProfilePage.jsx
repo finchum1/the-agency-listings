@@ -236,7 +236,7 @@ export default function MyProfilePage() {
             <span>
               <span className="font-medium">Email me when a property site's custom domain stops responding</span>
               <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
-                Every domain is checked each morning (and whenever the Listings page is opened). You get one email when a working domain goes down, with what to check, and one when it's back.
+                Every domain is checked every 15 minutes (and whenever the Listings page is opened). You get one email when a working domain goes down, with what to check, and one when it's back.
               </span>
             </span>
           </label>

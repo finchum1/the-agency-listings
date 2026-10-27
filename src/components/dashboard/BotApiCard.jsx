@@ -7,6 +7,7 @@ const SCOPES = [
   { key: "sites", label: "Agent websites", hint: "Create and change agent websites, areas and testimonials" },
   { key: "listings", label: "Listings", hint: "Create and change property listings, from a link, an MLS number or details" },
   { key: "people", label: "People (your leads, pipeline and deals)", hint: "Add leads, notes, pipeline moves, transactions and to-dos in your own People. Messages are drafts you approve; nothing is sent or deleted" },
+  { key: "monitoring", label: "Monitoring (what's wrong)", hint: "See which property-site domains aren't responding, and get a webhook the moment one stops. It can fix a mistyped domain on a listing if it also has Listings" },
 ];
 const inputClass =
   "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -46,11 +47,17 @@ export default function BotApiCard() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [fresh, setFresh] = useState(null);
+  const [hooks, setHooks] = useState({}); // token id -> { url, last_status, last_attempt_at }
+  const [hookDraft, setHookDraft] = useState({}); // token id -> text being typed
+  const [hookSecret, setHookSecret] = useState(null); // { tokenId, secret } shown once
+  const [hookError, setHookError] = useState("");
   const base = `${window.location.origin}/v1`;
 
   const load = useCallback(async () => {
     const { data } = await supabase.from("api_tokens").select("id, name, scopes, token_hint, created_at, last_used_at, revoked_at").is("revoked_at", null).order("created_at", { ascending: false });
     setTokens(data || []);
+    const { data: wh } = await supabase.from("api_token_webhooks").select("token_id, url, last_status, last_attempt_at");
+    setHooks(Object.fromEntries((wh || []).map((h) => [h.token_id, h])));
   }, []);
   useEffect(() => {
     load();
@@ -79,6 +86,15 @@ export default function BotApiCard() {
     if (!confirm(`Revoke “${t.name}”? The bot using it will stop working right away.`)) return;
     await supabase.rpc("revoke_api_token", { p_id: t.id });
     if (fresh && fresh.token.endsWith(t.token_hint)) setFresh(null);
+    load();
+  };
+
+  const saveHook = async (t, url) => {
+    setHookError("");
+    const { data, error: err } = await supabase.rpc("set_token_webhook", { p_token: t.id, p_url: url });
+    if (err) return setHookError(err.message);
+    setHookSecret(url ? { tokenId: t.id, secret: data } : null);
+    setHookDraft((d) => ({ ...d, [t.id]: undefined }));
     load();
   };
 
@@ -141,6 +157,52 @@ export default function BotApiCard() {
               <button type="button" onClick={() => revoke(t)} className="ml-auto text-xs font-semibold text-red-600 dark:text-red-400 hover:underline">
                 Revoke
               </button>
+              {t.scopes.includes("monitoring") && (
+                <div className="basis-full mt-2 rounded-lg bg-black/[0.03] dark:bg-white/[0.04] p-3 space-y-2">
+                  <p className="text-xs font-medium text-[#1c1a17]/70 dark:text-[#faf9f7]/70">Tell this bot right away when something breaks (webhook)</p>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      saveHook(t, (hookDraft[t.id] ?? hooks[t.id]?.url ?? "").trim());
+                    }}
+                    className="flex flex-wrap items-center gap-2"
+                  >
+                    <input
+                      value={hookDraft[t.id] ?? hooks[t.id]?.url ?? ""}
+                      onChange={(e) => setHookDraft((d) => ({ ...d, [t.id]: e.target.value }))}
+                      placeholder="https://your-bot.example.com/webhook"
+                      aria-label={`Webhook address for ${t.name}`}
+                      className={`${inputClass} !py-2 flex-1 min-w-[16rem]`}
+                    />
+                    <button type="submit" className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-4 py-2">
+                      {hooks[t.id] ? "Save (new secret)" : "Save webhook"}
+                    </button>
+                    {hooks[t.id] && (
+                      <button type="button" onClick={() => saveHook(t, "")} className="text-xs font-semibold text-red-600 dark:text-red-400 hover:underline">
+                        Remove
+                      </button>
+                    )}
+                  </form>
+                  {hooks[t.id]?.last_status && (
+                    <p className="text-xs text-[#1c1a17]/55 dark:text-[#faf9f7]/55">
+                      Last delivery: {hooks[t.id].last_status}
+                      {hooks[t.id].last_attempt_at ? ` · ${new Date(hooks[t.id].last_attempt_at).toLocaleString()}` : ""}
+                    </p>
+                  )}
+                  {hookSecret?.tokenId === t.id && (
+                    <div className="space-y-2">
+                      <CopyBox title="Signing secret (shown once). The bot uses it to check each event really came from here." text={hookSecret.secret} />
+                      <button type="button" onClick={() => setHookSecret(null)} className="text-xs font-semibold text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:underline">
+                        I've saved it, hide this
+                      </button>
+                    </div>
+                  )}
+                  {hookError && <p className="text-xs text-red-600 dark:text-red-400">{hookError}</p>}
+                  <p className="text-xs text-[#1c1a17]/45 dark:text-[#faf9f7]/45">
+                    Events: domain.down and domain.recovered. The bot can try it with POST /v1/alerts/test, and read everything wrong right now with GET /v1/alerts.
+                  </p>
+                </div>
+              )}
             </li>
           ))}
         </ul>

@@ -12,20 +12,14 @@
 import { assertPublicUrl } from "./safeFetch.js";
 import { sendNotification } from "./inquiry.js";
 import { buildDomainAlertEmail } from "./domainEmail.js";
+import { FIX, LABELS } from "./domainInfo.js";
+import { sendToOrgBots } from "./webhooks.js";
 import { SITE_ORIGIN } from "../../src/lib/seo.js";
 
 const MARKER = "agency-listings-ok";
 const TIMEOUT_MS = 6000;
 
-export const LABELS = {
-  ok: "Live",
-  no_dns: "No DNS record found for this domain.",
-  not_attached: "The domain points at Vercel, but hasn't been added to the project.",
-  elsewhere: "The domain loads, but not from this app. It may still point at an old host or a parking page.",
-  tls: "The security certificate isn't ready yet. This can take a few minutes after connecting.",
-  timeout: "The domain didn't answer in time.",
-  unreachable: "The domain couldn't be reached.",
-};
+export { LABELS };
 
 export async function checkDomain(domain) {
   try {
@@ -119,26 +113,52 @@ export async function recordHealth(admin, items, { confirmDelayMs = 8000 } = {})
     const p = prevOf(it);
     if (it.status !== "ok" && p?.last_ok_at && !p.alerted_at) {
       const { data } = await admin.from("domain_health").update({ alerted_at: now }).eq("listing_id", it.id).is("alerted_at", null).select("listing_id");
-      if (data?.length) down.push(it);
+      if (data?.length) down.push({ ...it, down_since: p.down_since || now, last_checked_at: now });
     } else if (it.status === "ok" && p?.alerted_at) {
       const { data } = await admin.from("domain_health").update({ alerted_at: null }).eq("listing_id", it.id).not("alerted_at", "is", null).select("listing_id");
-      if (data?.length) back.push({ ...it, down_since: p.down_since });
+      if (data?.length) back.push({ ...it, down_since: p.down_since, last_checked_at: now });
     }
   }
   if (down.length || back.length) await sendDomainAlerts(admin, down, back);
   return { down: down.length, back: back.length };
 }
 
+/** One alert as a bot (or an email) sees it. `row` is a domain_health row or a checked item; `listing` the listings row with its agent. */
+export function alertView(row, listing, severity) {
+  const status = row.status;
+  return {
+    id: `domain:${row.listing_id || row.id}`,
+    type: "domain",
+    // "down": it was working and stopped. "setup": it has never worked yet (probably still being connected).
+    severity,
+    domain: row.domain,
+    site_url: `https://${row.domain}`,
+    status,
+    reason: LABELS[status] || status,
+    suggested_fix: FIX[status] || "",
+    listing: listing ? { id: listing.id, address: listing.address_line1, city: listing.city, slug: listing.slug, agent: listing.agent?.full_name || null } : { id: row.listing_id || row.id },
+    down_since: row.down_since || null,
+    last_checked_at: row.last_checked_at || null,
+  };
+}
+
 async function sendDomainAlerts(admin, down, back) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return;
   const all = [...down, ...back];
   const [{ data: listings }, { data: optedIn }] = await Promise.all([
-    admin.from("listings").select("id, address_line1, city, agent:profiles(full_name)").in("id", all.map((i) => i.id)),
+    admin.from("listings").select("id, address_line1, city, slug, agent:profiles(full_name)").in("id", all.map((i) => i.id)),
     admin.from("agent_notification_settings").select("agent_id").eq("domain_alerts", true),
   ]);
   const byId = new Map((listings || []).map((l) => [l.id, l]));
   const orgs = [...new Set(all.map((i) => i.org_id).filter(Boolean))];
+
+  // Bots first: a webhook is how a bot hears about it right away.
+  for (const org of orgs) {
+    for (const it of down.filter((i) => i.org_id === org)) await sendToOrgBots(admin, org, "domain.down", alertView({ ...it, listing_id: it.id }, byId.get(it.id), "down"));
+    for (const it of back.filter((i) => i.org_id === org)) await sendToOrgBots(admin, org, "domain.recovered", alertView({ ...it, listing_id: it.id }, byId.get(it.id), "down"));
+  }
+
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
   const { data: admins } = optedIn?.length && orgs.length ? await admin.from("profiles").select("id, email, org_id").in("id", optedIn.map((o) => o.agent_id)).eq("role", "admin").in("org_id", orgs) : { data: [] };
   const view = (it) => ({ domain: it.domain, status: it.status, label: LABELS[it.status], down_since: it.down_since, listing: byId.get(it.id) });
   for (const a of admins || []) {

@@ -2197,3 +2197,73 @@ alter table public.domain_health enable row level security;
 revoke all on public.domain_health from anon, authenticated;
 
 alter table public.agent_notification_settings add column if not exists domain_alerts boolean not null default false;
+
+-- ============================================================================
+-- 48. Monitoring for bots. A 'monitoring' scope lets a bot read what is wrong (GET /v1/alerts, currently property-site domains that
+--     aren't responding) and, optionally, be told the moment something breaks: a token can have a webhook address, and when a working
+--     domain stops responding (or returns) the server POSTs a signed JSON event there (api/_lib/webhooks.js). The signing secret is
+--     shown once when the webhook is set and is never readable by the dashboard (no column grant), only by the server.
+-- ============================================================================
+alter table public.api_tokens drop constraint if exists api_tokens_scopes_check;
+alter table public.api_tokens add constraint api_tokens_scopes_check check (scopes <@ array['blog', 'agents', 'sites', 'listings', 'people', 'monitoring']::text[] and cardinality(scopes) > 0);
+
+create or replace function public.create_api_token(p_name text, p_scopes text[]) returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  v_token text;
+begin
+  if auth.uid() is null or not exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin') then
+    raise exception 'Only an admin can create an API token.';
+  end if;
+  if p_scopes is null or cardinality(p_scopes) = 0 or not (p_scopes <@ array['blog', 'agents', 'sites', 'listings', 'people', 'monitoring']::text[]) then
+    raise exception 'Choose at least one valid scope.';
+  end if;
+  if (select count(*) from public.api_tokens where owner_id = auth.uid() and revoked_at is null) >= 20 then
+    raise exception 'You already have 20 active API tokens. Revoke one first.';
+  end if;
+  v_token := 'lp_' || replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
+  insert into public.api_tokens (owner_id, name, scopes, token_hash, token_hint)
+  values (auth.uid(), btrim(p_name), p_scopes, encode(sha256(convert_to(v_token, 'utf8')), 'hex'), right(v_token, 4));
+  return v_token;
+end;
+$$;
+
+create table if not exists public.api_token_webhooks (
+  token_id uuid primary key references public.api_tokens(id) on delete cascade,
+  url text not null check (url ~ '^https://' and length(url) <= 500),
+  secret text not null,
+  last_status text,
+  last_attempt_at timestamptz,
+  created_at timestamptz not null default now()
+);
+alter table public.api_token_webhooks enable row level security;
+revoke all on public.api_token_webhooks from anon, authenticated;
+grant select (token_id, url, last_status, last_attempt_at, created_at) on public.api_token_webhooks to authenticated;
+drop policy if exists api_token_webhooks_owner_read on public.api_token_webhooks;
+create policy api_token_webhooks_owner_read on public.api_token_webhooks for select to authenticated
+  using (exists (select 1 from public.api_tokens t where t.id = token_id and t.owner_id = auth.uid()));
+
+-- Set (or, with an empty address, remove) a token's webhook. Returns the signing secret, shown once; setting it again makes a new secret.
+create or replace function public.set_token_webhook(p_token uuid, p_url text) returns text
+language plpgsql security definer set search_path = public as $$
+declare
+  v_secret text;
+  v_url text := btrim(coalesce(p_url, ''));
+begin
+  if not exists (select 1 from public.api_tokens t join public.profiles p on p.id = t.owner_id
+                 where t.id = p_token and t.owner_id = auth.uid() and t.revoked_at is null and p.role = 'admin' and 'monitoring' = any(t.scopes)) then
+    raise exception 'That token can''t have a webhook (it needs the monitoring scope and to be yours).';
+  end if;
+  if v_url = '' then
+    delete from public.api_token_webhooks where token_id = p_token;
+    return null;
+  end if;
+  if v_url !~ '^https://[^\s]+$' or length(v_url) > 500 then raise exception 'The webhook address must start with https:// and be under 500 characters.'; end if;
+  v_secret := 'whsec_' || replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', '');
+  insert into public.api_token_webhooks (token_id, url, secret) values (p_token, v_url, v_secret)
+  on conflict (token_id) do update set url = excluded.url, secret = excluded.secret, last_status = null, last_attempt_at = null;
+  return v_secret;
+end;
+$$;
+revoke all on function public.set_token_webhook(uuid, text) from public, anon;
+grant execute on function public.set_token_webhook(uuid, text) to authenticated;

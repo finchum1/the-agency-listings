@@ -1,6 +1,6 @@
 // The bot API, served at /v1/... (vercel.json rewrites /v1/:path* here). Scoped personal tokens (made under My Profile >
 // Bot API access) let automations such as Grok bots add and edit blog posts, add agents, create agent websites and create
-// property listings, and (scope "people") run the People module: leads, pipeline, transactions, notes, drafted messages and to-dos. Admin-only, draft-first, no deletes, every call logged in api_audit_log. The full description is the
+// property listings, and (scope "people") run the People module: leads, pipeline, transactions, notes, drafted messages and to-dos, and (scope "monitoring") read what is wrong (alerts) and receive webhooks. Admin-only, draft-first, no deletes, every call logged in api_audit_log. The full description is the
 // OpenAPI document at /v1/openapi.json (api/_lib/bots/openapi.js).
 import { isAppHost } from "../src/lib/appHosts.js";
 import { audit, authenticateBot } from "./_lib/bots/context.js";
@@ -11,6 +11,7 @@ import * as sites from "./_lib/bots/sites.js";
 import * as posts from "./_lib/bots/posts.js";
 import * as listings from "./_lib/bots/listings.js";
 import * as people from "./_lib/bots/people.js";
+import * as alerts from "./_lib/bots/alerts.js";
 import { importListing } from "./_lib/bots/importListing.js";
 
 const send = (res, status, payload) => {
@@ -60,6 +61,9 @@ const ROUTES = [
   ["GET", "/tasks", (ctx, p, b, q) => people.listTasks(ctx, q)],
   ["POST", "/tasks", (ctx, p, body) => people.createTask(ctx, body)],
   ["PATCH", "/tasks/:id", (ctx, p, body) => people.updateTask(ctx, p.id, body)],
+  ["GET", "/alerts", (ctx) => alerts.listAlerts(ctx)],
+  ["POST", "/alerts/check", (ctx) => alerts.checkNow(ctx)],
+  ["POST", "/alerts/test", (ctx) => alerts.testWebhook(ctx)],
 ];
 
 function match(method, path) {
