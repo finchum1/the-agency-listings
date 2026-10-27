@@ -5,7 +5,7 @@
 //   POST /api/weekly-reports {listingId} the listing's own agent (or an admin) asking for this week's report right now.
 //                                       Signed in; the email goes to the listing's agent; it doesn't count as the weekly one.
 import { authenticate, serviceClient } from "./_lib/authUser.js";
-import { sendNotification } from "./_lib/inquiry.js";
+import { fromAs, sendNotification } from "./_lib/inquiry.js";
 import { buildWeeklyEmail } from "./_lib/weeklyReport.js";
 import { SITE_ORIGIN } from "../src/lib/seo.js";
 
@@ -22,7 +22,7 @@ async function emailFor(admin, listing, { dryRun } = {}) {
   if (dryRun) return { ...mail, to: agent.email };
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return { skipped: "email isn't configured" };
-  const ok = await sendNotification(apiKey, { from: process.env.LEAD_FROM_EMAIL || "Listing Reports <onboarding@resend.dev>", to: [agent.email], subject: mail.subject, text: mail.text, html: mail.html });
+  const ok = await sendNotification(apiKey, { from: fromAs("Listing Reports"), to: [agent.email], subject: mail.subject, text: mail.text, html: mail.html });
   return ok ? { sent: true } : { skipped: "the email service refused it" };
 }
 

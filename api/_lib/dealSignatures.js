@@ -1,7 +1,7 @@
 // Brings a deal_signatures row up to date with what Documenso says about its envelope, and does the follow-up when it completes: keeps
 // the signed copy, ticks the checklist document it was for, tells the deal's thread and emails the agent (and their coordinators) once.
 import { downloadSigned, getEnvelope, slimRecipient, statusOf } from "./documenso.js";
-import { sendNotification } from "./inquiry.js";
+import { fromAs, sendNotification } from "./inquiry.js";
 import { SITE_ORIGIN } from "../../src/lib/seo.js";
 
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -52,5 +52,5 @@ async function onCompleted(admin, row) {
   const subject = `Signed: ${row.title} (${where})`;
   const text = `Everyone has signed “${row.title}” for ${where}.\n\nThe signed copy is on the deal: ${url}`;
   const html = `<!doctype html><html><body style="margin:0;background:#f7f4ee"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px"><table role="presentation" width="600" style="max-width:600px;width:100%"><tr><td style="padding:0 6px 14px"><div style="font:600 11px Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#d3181d">Signed by everyone</div><div style="margin-top:6px;font:600 24px Georgia,serif;color:#1c1a17">${esc(row.title)}</div><div style="margin-top:4px;font:14px Arial,sans-serif;color:#57534b">${esc(where)}</div></td></tr><tr><td style="padding:12px 6px"><a href="${esc(url)}" style="display:inline-block;background:#1c1a17;color:#ffffff;text-decoration:none;font:600 14px Arial,sans-serif;padding:13px 22px;border-radius:999px">Open the deal</a></td></tr></table></td></tr></table></body></html>`;
-  await sendNotification(apiKey, { from: process.env.LEAD_FROM_EMAIL || "Deals <onboarding@resend.dev>", to, subject, text, html });
+  await sendNotification(apiKey, { from: fromAs("Deals"), to, subject, text, html });
 }

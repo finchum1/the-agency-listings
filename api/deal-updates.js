@@ -3,12 +3,13 @@
 // approved), and on Mondays one weekly summary per agent of their coordinated deals that have something overdue or coming up. Each milestone goes
 // out once per deal (deal_update_log). A coordinator can turn this off in My Profile; if CRON_SECRET is set, the call must carry it.
 import { serviceClient } from "./_lib/authUser.js";
-import { sendNotification } from "./_lib/inquiry.js";
+import { fromAs, sendNotification, viaOrg } from "./_lib/inquiry.js";
 import { buildAgentUpdate, gatherDeal, milestonesFor, summarize, todayKey } from "./_lib/dealUpdate.js";
 import { SITE_ORIGIN } from "../src/lib/seo.js";
 
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-const FROM = () => process.env.LEAD_FROM_EMAIL || "Deals <onboarding@resend.dev>";
+// Sent as the coordinator the update is from ("Terrence Finchum via The Agency Oklahoma"); replies go to them.
+const FROM = (coordinator, org) => fromAs(viaOrg(coordinator, org), "Deals");
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
@@ -64,7 +65,7 @@ export default async function handler(req, res) {
           // Claim the milestones first, so an overlapping run can't send the same one twice.
           const { error } = await admin.from("deal_update_log").insert(send.map((m) => ({ person_id: id, key: m.key, kind: "milestone" })));
           if (!error) {
-            const ok = await sendNotification(apiKey, { from: FROM(), to: [data.owner.email], replyTo: tc.email || undefined, subject: mail.subject, text: mail.text, html: mail.html });
+            const ok = await sendNotification(apiKey, { from: FROM(tc.full_name, data.owner?.org?.name), to: [data.owner.email], replyTo: tc.email || undefined, subject: mail.subject, text: mail.text, html: mail.html });
             if (!ok) await admin.from("deal_update_log").delete().eq("person_id", id).in("key", send.map((m) => m.key));
             else sentLog.push({ deal: where, keys: send.map((m) => m.key) });
           }
@@ -112,7 +113,7 @@ export default async function handler(req, res) {
       continue;
     }
     for (const d of fresh) await admin.from("deal_update_log").insert({ person_id: d.data.deal.id, key: keyWeek, kind: "weekly" });
-    const ok = await sendNotification(apiKey, { from: FROM(), to: [entry.owner.email], replyTo: entry.tc.email || undefined, subject, text, html });
+    const ok = await sendNotification(apiKey, { from: FROM(entry.tc.full_name, entry.owner?.org?.name), to: [entry.owner.email], replyTo: entry.tc.email || undefined, subject, text, html });
     if (!ok) for (const d of fresh) await admin.from("deal_update_log").delete().eq("person_id", d.data.deal.id).eq("key", keyWeek);
     else sentLog.push({ weekly: entry.owner.full_name, deals: fresh.length });
   }

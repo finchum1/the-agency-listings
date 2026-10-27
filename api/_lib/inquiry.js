@@ -120,6 +120,17 @@ const STAGE_GROUP_LABELS = { lead: "Leads", pipeline: "Pipeline", transaction: "
 export const describePerson = (p) =>
   `${STAGE_GROUP_LABELS[p.stage_group] || p.stage_group} › ${p.stage}${p.archived ? " (archived)" : ""}`;
 
+// The From line for a system email: the address configured in LEAD_FROM_EMAIL (the one the email service is set up to send from), under a display
+// name that says what the email really is. The configured name ("Website Inquiries") is right for a visitor's inquiry and wrong for everything
+// else, so a deal email is sent as the person it is from ("Terrence Finchum via The Agency Oklahoma") and replies go to that person.
+export function fromAs(displayName, fallback = "The Agency") {
+  const raw = process.env.LEAD_FROM_EMAIL || "onboarding@resend.dev";
+  const address = (raw.match(/<([^>]+)>/) || [])[1] || raw.trim();
+  const name = String(displayName || "").replace(/["<>\r\n]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || fallback;
+  return `${name} <${address}>`;
+}
+export const viaOrg = (person, org) => (person ? (org ? `${person} via ${org}` : person) : org || "");
+
 async function resendSend(apiKey, payload) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",

@@ -14,7 +14,7 @@
 // agent and any coordinator assigned to them. Safe to call twice: each send-back message is claimed (emailed_at) before sending.
 // Only the person who wrote the send-back can trigger it, and the email text comes from the stored message, never from the request.
 import { authenticate, serviceClient } from "./_lib/authUser.js";
-import { sendNotification } from "./_lib/inquiry.js";
+import { fromAs, sendNotification, viaOrg } from "./_lib/inquiry.js";
 import { buildAgentUpdate, gatherDeal } from "./_lib/dealUpdate.js";
 import { buildDealStartedEmail, buildSentBackEmail, buildSubmittedEmail, buildTcAssignedEmail } from "./_lib/dealEmail.js";
 import { SITE_ORIGIN } from "../src/lib/seo.js";
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     const keyMail = process.env.RESEND_API_KEY;
     if (!keyMail) return res.status(502).json({ error: "Email isn't set up, so the update wasn't sent." });
     if (!data.owner?.email) return res.status(502).json({ error: "That agent has no email address on file." });
-    const okU = await sendNotification(keyMail, { from: process.env.LEAD_FROM_EMAIL || "Deals <onboarding@resend.dev>", to: [data.owner.email], replyTo: me?.email || undefined, subject: mail.subject, text: mail.text, html: mail.html });
+    const okU = await sendNotification(keyMail, { from: fromAs(viaOrg(me?.full_name, data.owner?.org?.name), "Deals"), to: [data.owner.email], replyTo: me?.email || undefined, subject: mail.subject, text: mail.text, html: mail.html });
     if (!okU) return res.status(502).json({ error: "The email service refused it, so nothing was sent." });
     await admin.from("deal_update_log").insert({ person_id: personId, key: `manual-${new Date().toISOString()}`, kind: "manual", sent_by: auth.user.id });
     await admin.from("deal_messages").insert({ person_id: personId, author_id: auth.user.id, kind: "message", body: `Sent ${data.owner.full_name || "the agent"} an update.${note ? `\n\n${note}` : ""}` });
@@ -75,7 +75,7 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: "That agent has no email address on file." });
     }
     const mail = buildDealStartedEmail({ deal, tcName: tc?.full_name || "", agentName: agent.full_name || "", orgName: agent.org?.name, url: `${SITE_ORIGIN}/dashboard/deals?deal=${deal.id}` });
-    const okD = await sendNotification(key, { from: process.env.LEAD_FROM_EMAIL || "Deals <onboarding@resend.dev>", to: [agent.email], replyTo: tc?.email || undefined, subject: mail.subject, text: mail.text, html: mail.html });
+    const okD = await sendNotification(key, { from: fromAs(viaOrg(tc?.full_name, agent.org?.name), "Deals"), to: [agent.email], replyTo: tc?.email || undefined, subject: mail.subject, text: mail.text, html: mail.html });
     if (!okD) {
       await release();
       return res.status(502).json({ error: "The email service refused it. The deal is still on the agent's board." });
@@ -128,7 +128,7 @@ export default async function handler(req, res) {
       orgName: agent?.org?.name,
       url: `${SITE_ORIGIN}/dashboard/deals?deal=${deal.id}`,
     });
-    const okS = await sendNotification(apiKeyS, { from: process.env.LEAD_FROM_EMAIL || "Deals <onboarding@resend.dev>", to, replyTo: submitter?.email || undefined, subject: mail.subject, text: mail.text, html: mail.html });
+    const okS = await sendNotification(apiKeyS, { from: fromAs(viaOrg(submitter?.full_name, agent?.org?.name), "Deals"), to, replyTo: submitter?.email || undefined, subject: mail.subject, text: mail.text, html: mail.html });
     if (!okS) {
       await release();
       return res.status(502).json({ error: "The email service refused it. Compliance will still see it in Deals." });
@@ -155,7 +155,7 @@ export default async function handler(req, res) {
       return res.status(502).json({ error: "That coordinator has no email address on file." });
     }
     const mail = buildTcAssignedEmail({ deal, agentName: agent?.full_name || "", tcName: tc.full_name || "", orgName: agent?.org?.name, url: `${SITE_ORIGIN}/dashboard/deals?deal=${deal.id}` });
-    const sentTc = await sendNotification(apiKeyTc, { from: process.env.LEAD_FROM_EMAIL || "Deals <onboarding@resend.dev>", to: [tc.email], replyTo: agent?.email || undefined, subject: mail.subject, text: mail.text, html: mail.html });
+    const sentTc = await sendNotification(apiKeyTc, { from: fromAs(viaOrg(agent?.full_name, agent?.org?.name), "Deals"), to: [tc.email], replyTo: agent?.email || undefined, subject: mail.subject, text: mail.text, html: mail.html });
     if (!sentTc) {
       await release();
       return res.status(502).json({ error: "The email service refused it. The coordinator will still see the deal in Deals." });
@@ -200,7 +200,7 @@ export default async function handler(req, res) {
     url: `${SITE_ORIGIN}/dashboard/deals?deal=${deal.id}`,
   });
   const ok = await sendNotification(apiKey, {
-    from: process.env.LEAD_FROM_EMAIL || "Deals <onboarding@resend.dev>",
+    from: fromAs(viaOrg(reviewer?.full_name, owner?.org?.name), "Deals"),
     to,
     replyTo: reviewer?.email || undefined,
     subject: mail.subject,

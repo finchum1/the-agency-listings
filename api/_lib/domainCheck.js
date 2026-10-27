@@ -10,7 +10,7 @@
 //   tls           the security certificate isn't ready yet (often just a few minutes after connecting)
 //   timeout / unreachable   it didn't answer in time / couldn't be reached
 import { assertPublicUrl } from "./safeFetch.js";
-import { sendNotification } from "./inquiry.js";
+import { fromAs, sendNotification } from "./inquiry.js";
 import { buildDomainAlertEmail } from "./domainEmail.js";
 import { FIX, LABELS } from "./domainInfo.js";
 import { sendToOrgBots } from "./webhooks.js";
@@ -167,6 +167,6 @@ async function sendDomainAlerts(admin, down, back) {
     const mineBack = back.filter((i) => i.org_id === a.org_id).map(view);
     if (!mineDown.length && !mineBack.length) continue;
     const mail = buildDomainAlertEmail({ down: mineDown, back: mineBack, url: `${SITE_ORIGIN}/dashboard/listings` });
-    await sendNotification(apiKey, { from: process.env.LEAD_FROM_EMAIL || "Domain Alerts <onboarding@resend.dev>", to: [a.email], subject: mail.subject, text: mail.text, html: mail.html });
+    await sendNotification(apiKey, { from: fromAs("Domain Alerts"), to: [a.email], subject: mail.subject, text: mail.text, html: mail.html });
   }
 }
