@@ -13,7 +13,7 @@ export default function VendorSharePage() {
   const [state, setState] = useState({ loading: true });
 
   useEffect(() => {
-    document.title = "Recommended vendors";
+    document.title = "Recommended Vendors";
     const meta = document.createElement("meta");
     meta.name = "robots";
     meta.content = "noindex, nofollow";
