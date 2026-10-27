@@ -2,17 +2,20 @@ import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { formatPrice, STATUS_LABELS } from "../../lib/format";
 import { agentSiteHref } from "../../lib/agentSiteLinks";
 import { LAYOUT_SECTIONS } from "./layouts";
+import SoldHomes from "./SoldHomes";
 
 export default function FeaturedListings() {
   const { site, isStandalonePage } = useAgentSiteContext();
   const Variant = LAYOUT_SECTIONS[site.layout]?.Listings;
-  if (Variant) return <Variant />;
-  if (site.listings.length === 0) return null;
+  // The past sales sit right under the current listings, whichever layout draws them.
+  if (Variant) return <><Variant /><SoldHomes /></>;
+  if (site.listings.length === 0) return <SoldHomes />;
   // See Bio.jsx's comment — Home already has an H1 from Hero.jsx, but
   // this section IS the page at standalone /listings.
   const Heading = isStandalonePage ? "h1" : "h2";
 
   return (
+    <>
     <section id="listings" className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
       <div className="mx-auto max-w-7xl">
         <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">
@@ -50,5 +53,7 @@ export default function FeaturedListings() {
         </div>
       </div>
     </section>
+    <SoldHomes />
+    </>
   );
 }

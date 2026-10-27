@@ -69,16 +69,17 @@ export default async function handler(req, res) {
   // GET: the site and everything it renders.
   const { data: site } = await admin.from("agent_sites").select("*, agent:profiles(id, full_name, title, license, phone, email, photo_url), org:organizations(*)").eq("id", link.agent_site_id).maybeSingle();
   if (!site) return res.status(404).json({ error: "This site no longer exists." });
-  const [{ data: testimonials }, { data: areas }, { data: posts }, { data: listings }] = await Promise.all([
+  const [{ data: testimonials }, { data: areas }, { data: posts }, { data: listings }, { data: sales }] = await Promise.all([
     admin.from("agent_site_testimonials").select("*").eq("agent_site_id", site.id).order("sort_order"),
     admin.from("agent_site_areas").select("*").eq("agent_site_id", site.id).order("sort_order"),
     admin.from("agent_site_posts").select("*").eq("agent_site_id", site.id).or(publishedOrDueFilter()).order("post_date", { ascending: false }),
     admin.from("listings").select("*, listing_photos(url, is_hero)").eq("agent_id", site.agent_id).neq("status", "draft"),
+    admin.from("agent_site_sales").select("*").eq("agent_site_id", site.id),
   ]);
 
   const last = link.last_viewed_at ? new Date(link.last_viewed_at).getTime() : 0;
   if (Date.now() - last > 60 * 1000) await admin.from("site_preview_links").update({ last_viewed_at: new Date().toISOString() }).eq("id", link.id);
 
   const { agent, ...siteRow } = site;
-  return res.status(200).json({ site: siteRow, agent, testimonials: testimonials || [], areas: areas || [], posts: posts || [], listings: listings || [] });
+  return res.status(200).json({ site: siteRow, agent, testimonials: testimonials || [], areas: areas || [], posts: posts || [], listings: listings || [], sales: sales || [] });
 }

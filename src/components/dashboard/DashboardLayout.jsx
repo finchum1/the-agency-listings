@@ -95,6 +95,7 @@ const SITE_ITEMS = [
   { to: "/dashboard/site/compare", label: "Compare Templates" },
   { to: "/dashboard/site/testimonials", label: "Testimonials" },
   { to: "/dashboard/site/areas", label: "Areas of Expertise" },
+  { to: "/dashboard/site/sales", label: "Past Sales" },
   { to: "/dashboard/site/blog", label: "Blog Posts" },
   { to: "/dashboard/site/redirects", label: "Redirects" },
 ];

@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 // Fetches one agent's public site — by slug (normal /sites/:slug path) or
 // customDomain (the site's own attached domain, see App.jsx's host-based
 // routing) — plus everything it needs to render: the agent's profile,
-// testimonials, areas, published posts, and their non-draft listings. RLS
+// testimonials, areas, published posts, their past sales, and their non-draft listings. RLS
 // handles visibility (draft sites/posts are invisible to anyone but the
 // owner/admin).
 export function useAgentSite({ slug, customDomain, previewToken } = {}) {
@@ -14,6 +14,7 @@ export function useAgentSite({ slug, customDomain, previewToken } = {}) {
   const [areas, setAreas] = useState([]);
   const [posts, setPosts] = useState([]);
   const [listings, setListings] = useState([]);
+  const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -33,6 +34,7 @@ export function useAgentSite({ slug, customDomain, previewToken } = {}) {
         setTestimonials(data.testimonials || []);
         setAreas(data.areas || []);
         setPosts(data.posts || []);
+        setSales(data.sales || []);
         setListings((data.listings || []).map((l) => ({ ...l, hero_photo_url: l.listing_photos?.find((p) => p.is_hero)?.url || l.listing_photos?.[0]?.url || null })));
       } catch {
         setSite(null);
@@ -57,7 +59,7 @@ export function useAgentSite({ slug, customDomain, previewToken } = {}) {
       return;
     }
 
-    const [{ data: t }, { data: a }, { data: p }, { data: l }] = await Promise.all([
+    const [{ data: t }, { data: a }, { data: p }, { data: l }, { data: sl }] = await Promise.all([
       supabase
         .from("agent_site_testimonials")
         .select("*")
@@ -79,6 +81,8 @@ export function useAgentSite({ slug, customDomain, previewToken } = {}) {
         .select("*, listing_photos(url, is_hero)")
         .eq("agent_id", siteRow.agent_id)
         .neq("status", "draft"),
+      // No rows (and no error shown) until the past-sales table exists in this database.
+      supabase.from("agent_site_sales").select("*").eq("agent_site_id", siteRow.id),
     ]);
 
     setSite(siteRow);
@@ -86,6 +90,7 @@ export function useAgentSite({ slug, customDomain, previewToken } = {}) {
     setTestimonials(t || []);
     setAreas(a || []);
     setPosts(p || []);
+    setSales(sl || []);
     setListings(
       (l || []).map((listing) => ({
         ...listing,
@@ -126,10 +131,15 @@ export function useAgentSite({ slug, customDomain, previewToken } = {}) {
         { event: "*", schema: "public", table: "agent_site_posts", filter: `agent_site_id=eq.${site.id}` },
         refresh,
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "agent_site_sales", filter: `agent_site_id=eq.${site.id}` },
+        refresh,
+      )
       .subscribe();
     return () => supabase.removeChannel(channel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site?.id]);
 
-  return { site, agent, testimonials, areas, posts, listings, loading, notFound, refresh };
+  return { site, agent, testimonials, areas, posts, listings, sales, loading, notFound, refresh };
 }

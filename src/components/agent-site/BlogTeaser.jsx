@@ -1,12 +1,15 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import SiteLink from "./SiteLink";
 import { LAYOUT_SECTIONS } from "./layouts";
+import FeaturedTag from "./FeaturedTag";
 
 // On Home, only a taste — the 6 most recent (posts already arrive sorted
 // newest-first, see useAgentSite.js's own `order("post_date", {ascending:
 // false})`) — with a Read More button down to the real, unrestricted
 // /blog page. The standalone /blog page (isStandalonePage) is that real
-// page, so it keeps showing every post, no cap.
+// page, so it keeps showing every post, no cap — with the agent's pinned
+// posts (up to 3, agent_site_posts.featured_order) first, tagged Featured.
+// Home stays the newest posts whatever is pinned.
 const HOME_PREVIEW_COUNT = 6;
 
 export default function BlogTeaser() {
@@ -15,7 +18,8 @@ export default function BlogTeaser() {
   // See Bio.jsx's comment — Home already has an H1 from Hero.jsx, but
   // this section IS the page at standalone /blog.
   const Heading = isStandalonePage ? "h1" : "h2";
-  const posts = isStandalonePage ? site.posts : site.posts.slice(0, HOME_PREVIEW_COUNT);
+  const pinned = site.posts.filter((p) => p.featured_order).sort((a, b) => a.featured_order - b.featured_order).map((p) => ({ ...p, featured: true }));
+  const posts = isStandalonePage ? [...pinned, ...site.posts.filter((p) => !p.featured_order)] : site.posts.slice(0, HOME_PREVIEW_COUNT);
   const hasMore = !isStandalonePage && site.posts.length > HOME_PREVIEW_COUNT;
 
 
@@ -35,7 +39,8 @@ export default function BlogTeaser() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {posts.map((post) => (
             <SiteLink key={post.id} slug={site.slug} path={`/blog/${post.slug}`} className="group block">
-              <div className="overflow-hidden bg-[var(--as-surface)] aspect-[4/3]">
+              <div className="relative overflow-hidden bg-[var(--as-surface)] aspect-[4/3]">
+                {post.featured && <FeaturedTag />}
                 {post.image_url && (
                   <img
                     src={post.image_url}

@@ -3,6 +3,7 @@ import { formatPrice, STATUS_LABELS } from "../../../lib/format";
 import { agentSiteHref } from "../../../lib/agentSiteLinks";
 import { sanitizeHtml } from "../../../lib/sanitizeHtml";
 import SiteLink from "../SiteLink";
+import FeaturedTag from "../FeaturedTag";
 
 // "Minimal editorial" layout (agent_sites.layout = 'editorial'). The same sections and data as the classic layout,
 // arranged like a magazine: light and airy, big quiet serif type, thin rules, photos captioned underneath instead of
@@ -201,7 +202,8 @@ export function EditorialBlog({ posts, hasMore, standalone }) {
                 {post.category && <p className="text-[11px] font-medium tracked-wide uppercase text-[var(--as-accent)]">{post.category}</p>}
                 <p className="mt-2 font-display text-2xl sm:text-3xl leading-snug text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{post.title}</p>
               </div>
-              <div className="overflow-hidden bg-[var(--as-surface)] aspect-[4/3] order-first sm:order-none">
+              <div className="relative overflow-hidden bg-[var(--as-surface)] aspect-[4/3] order-first sm:order-none">
+                {post.featured && <FeaturedTag />}
                 {post.image_url && <img src={post.image_url} alt={post.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />}
               </div>
             </SiteLink>

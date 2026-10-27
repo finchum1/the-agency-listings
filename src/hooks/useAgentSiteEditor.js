@@ -12,7 +12,7 @@ function slugify(str) {
 }
 
 // Loads (and lazily creates, since a site is 1:1 with an agent) the
-// agent_sites row for a given agent, plus its testimonials/areas/posts.
+// agent_sites row for a given agent, plus its testimonials/areas/posts/past sales.
 // Used both for "My Site" (agentId = the logged-in user) and, for admins,
 // editing any other agent's site.
 export function useAgentSiteEditor(agentId, fallbackNameForNewSlug) {
@@ -20,6 +20,7 @@ export function useAgentSiteEditor(agentId, fallbackNameForNewSlug) {
   const [testimonials, setTestimonials] = useState([]);
   const [areas, setAreas] = useState([]);
   const [posts, setPosts] = useState([]);
+  const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -66,7 +67,7 @@ export function useAgentSiteEditor(agentId, fallbackNameForNewSlug) {
 
     setSite(siteRow);
 
-    const [{ data: t }, { data: a }, { data: p }] = await Promise.all([
+    const [{ data: t }, { data: a }, { data: p }, { data: sl }] = await Promise.all([
       supabase
         .from("agent_site_testimonials")
         .select("*")
@@ -82,10 +83,12 @@ export function useAgentSiteEditor(agentId, fallbackNameForNewSlug) {
         .select("*")
         .eq("agent_site_id", siteRow.id)
         .order("post_date", { ascending: false }),
+      supabase.from("agent_site_sales").select("*").eq("agent_site_id", siteRow.id),
     ]);
     setTestimonials(t || []);
     setAreas(a || []);
     setPosts(p || []);
+    setSales(sl || []);
     setLoading(false);
   }, [agentId, fallbackNameForNewSlug]);
 
@@ -93,5 +96,5 @@ export function useAgentSiteEditor(agentId, fallbackNameForNewSlug) {
     refresh();
   }, [refresh]);
 
-  return { site, testimonials, areas, posts, loading, error, refresh };
+  return { site, testimonials, areas, posts, sales, loading, error, refresh };
 }

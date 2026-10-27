@@ -2,9 +2,11 @@ import { brandFromOrg } from "./brand";
 import { paragraphsToHtml } from "./richTextFallback";
 
 // Shapes a Supabase agent_sites row (+ profile + testimonials + areas +
-// posts + the agent's own listings) into one convenient object for the
+// posts + the agent's own listings + past sales) into one convenient object for the
 // public site components — same idea as adaptListing.js.
-export function adaptAgentSite({ site, agent, testimonials, areas, posts, listings }) {
+export function adaptAgentSite({ site, agent, testimonials, areas, posts, listings, sales }) {
+  // A closed listing the agent copied into their past sales shows there, not in the current listings too.
+  const soldListingIds = new Set((sales || []).map((s) => s.listing_id).filter(Boolean));
   const brokerage = brandFromOrg(site.org);
   return {
     brand: {
@@ -77,6 +79,8 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     testimonials: testimonials || [],
     areas: areas || [],
     posts: posts || [],
-    listings: listings || [],
+    listings: (listings || []).filter((l) => !soldListingIds.has(l.id)),
+    // Newest sale first; sales with no date go last.
+    sales: [...(sales || [])].sort((a, b) => (b.sold_on || "").localeCompare(a.sold_on || "") || a.sort_order - b.sort_order),
   };
 }

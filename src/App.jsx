@@ -380,6 +380,7 @@ export default function App() {
         <Route path="site/details" element={<MySitePage section="details" />} />
         <Route path="site/testimonials" element={<MySitePage section="testimonials" />} />
         <Route path="site/areas" element={<MySitePage section="areas" />} />
+        <Route path="site/sales" element={<MySitePage section="sales" />} />
         <Route path="site/blog" element={<MySitePage section="blog" />} />
         <Route path="site/compare" element={<MySitePage section="compare" />} />
         <Route path="site/redirects" element={<MySitePage section="redirects" />} />

@@ -3,6 +3,7 @@ import { formatPrice, STATUS_LABELS } from "../../../lib/format";
 import { agentSiteHref } from "../../../lib/agentSiteLinks";
 import { sanitizeHtml } from "../../../lib/sanitizeHtml";
 import SiteLink from "../SiteLink";
+import FeaturedTag from "../FeaturedTag";
 
 // "Portrait split" layout (agent_sites.layout = 'portrait'). Leads with the agent: a tall portrait next to their name,
 // tagline and a way to connect, then warm, card-based sections underneath. Colors come from the same --as-* theme
@@ -192,7 +193,8 @@ export function PortraitBlog({ posts, hasMore, standalone }) {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {posts.map((post) => (
             <SiteLink key={post.id} slug={site.slug} path={`/blog/${post.slug}`} className="group block bg-[var(--as-bg)] border border-[var(--as-text)]/10 transition-shadow hover:shadow-[0_18px_40px_-22px_rgba(0,0,0,0.45)]">
-              <div className="overflow-hidden bg-[var(--as-surface)] aspect-[16/10]">
+              <div className="relative overflow-hidden bg-[var(--as-surface)] aspect-[16/10]">
+                {post.featured && <FeaturedTag />}
                 {post.image_url && <img src={post.image_url} alt={post.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}
               </div>
               <div className="p-5">

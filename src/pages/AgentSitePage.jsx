@@ -26,6 +26,7 @@ export default function AgentSitePage({
   areas,
   posts,
   listings,
+  sales,
   loading,
   notFound,
   pageTitle,
@@ -37,7 +38,7 @@ export default function AgentSitePage({
   const overrides = useMemo(() => (site ? readPreviewOverrides(location.search, getPreviewBase() ? "share" : site.slug) : null), [site, location.search]);
   const previewing = Boolean(overrides) || Boolean(getPreviewBase());
   const shown = site && overrides ? { ...site, ...(overrides.layout ? { layout: overrides.layout } : {}), ...(overrides.theme ? { theme: overrides.theme } : {}) } : site;
-  const adapted = shown ? adaptAgentSite({ site: shown, agent, testimonials, areas, posts, listings }) : null;
+  const adapted = shown ? adaptAgentSite({ site: shown, agent, testimonials, areas, posts, listings, sales }) : null;
   // "about" | "listings" | "areas" | "blog" | "contact" | undefined (Home)
   // — matches buildAgentSitePageMeta's page keys 1:1 since pageTitle is
   // always one of "About"/"Listings"/"Areas"/"Blog"/"Contact" (App.jsx).

@@ -3,6 +3,7 @@ import { formatPrice, STATUS_LABELS } from "../../../lib/format";
 import { agentSiteHref } from "../../../lib/agentSiteLinks";
 import { sanitizeHtml } from "../../../lib/sanitizeHtml";
 import SiteLink from "../SiteLink";
+import FeaturedTag from "../FeaturedTag";
 
 // "Bold statement" layout (agent_sites.layout = 'bold'). The same sections and data as the classic layout with the
 // volume turned up: oversized uppercase type, full-bleed photos with text laid over them, solid blocks of the theme's
@@ -207,6 +208,7 @@ export function BoldBlog({ posts, hasMore, standalone }) {
           {posts.map((post, i) => (
             <SiteLink key={post.id} slug={site.slug} path={`/blog/${post.slug}`} className="group block">
               <div className="relative overflow-hidden bg-[var(--as-surface)] aspect-[4/3]">
+                {post.featured && <FeaturedTag />}
                 {post.image_url && <img src={post.image_url} alt={post.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}
                 <span className="absolute bottom-0 left-0 bg-[var(--as-accent)] text-white font-display text-2xl font-bold px-4 py-2">{String(i + 1).padStart(2, "0")}</span>
               </div>

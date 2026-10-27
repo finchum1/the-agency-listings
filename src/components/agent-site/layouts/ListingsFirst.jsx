@@ -4,6 +4,7 @@ import { formatPrice, STATUS_LABELS } from "../../../lib/format";
 import { agentSiteHref } from "../../../lib/agentSiteLinks";
 import { sanitizeHtml } from "../../../lib/sanitizeHtml";
 import SiteLink from "../SiteLink";
+import FeaturedTag from "../FeaturedTag";
 
 // "Listings first" layout (agent_sites.layout = 'listings'). For agents who sell a lot of homes: a short banner hero,
 // then the listings straight away (HomeSections moves them to the top of the page), with the first one as a big
@@ -227,7 +228,7 @@ export function ListingsBlog({ posts, hasMore, standalone }) {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {shown.map((post) => (
             <SiteLink key={post.id} slug={site.slug} path={`/blog/${post.slug}`} className="group flex gap-4">
-              <div className="w-28 shrink-0 overflow-hidden bg-[var(--as-surface)] aspect-square">{post.image_url && <img src={post.image_url} alt={post.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}</div>
+              <div className="relative w-28 shrink-0 overflow-hidden bg-[var(--as-surface)] aspect-square">{post.featured && <FeaturedTag />}{post.image_url && <img src={post.image_url} alt={post.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}</div>
               <div className="min-w-0">
                 {post.category && <p className="text-[11px] font-medium tracked-wide uppercase text-[var(--as-accent)]">{post.category}</p>}
                 <p className="mt-1.5 font-medium leading-snug text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{post.title}</p>

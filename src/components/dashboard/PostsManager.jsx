@@ -182,6 +182,22 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
     onChanged?.();
   };
 
+  // Pinned posts lead the list, in pin order; the rest stay newest first.
+  const listed = [...posts].sort((a, b) => (a.featured_order || 9) - (b.featured_order || 9));
+
+  // Pin a post to the top of the blog page (up to 3, in the order they were pinned) or take it back off.
+  const togglePin = async (post) => {
+    setError("");
+    let slot = null;
+    if (!post.featured_order) {
+      slot = [1, 2, 3].find((n) => !posts.some((p) => p.featured_order === n));
+      if (!slot) return setError("Three posts are already pinned. Unpin one first.");
+    }
+    const { error: err } = await supabase.from("agent_site_posts").update({ featured_order: slot }).eq("id", post.id);
+    if (err) return setError(err.message);
+    onChanged?.();
+  };
+
   const remove = async (post) => {
     if (!confirm(`Delete "${post.title}"?`)) return;
     await supabase.from("agent_site_posts").delete().eq("id", post.id);
@@ -387,13 +403,20 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
 
       {editingId === null && view === "list" && posts.length > 0 && (
         <div className="space-y-2">
-          {(showAll ? posts : posts.slice(0, COLLAPSED_COUNT)).map((post) => {
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+            Pin up to 3 posts to the top of your blog page. Your home page keeps showing your newest posts.
+          </p>
+          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {(showAll ? listed : listed.slice(0, COLLAPSED_COUNT)).map((post) => {
             const isDue = post.status === "scheduled" && post.scheduled_at && new Date(post.scheduled_at) <= new Date();
             const isLive = post.status === "published" || isDue;
             return (
             <div key={post.id} className="border border-black/10 dark:border-white/15 rounded-xl p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{post.title}</p>
+                <p className="text-sm font-medium truncate">
+                  {post.featured_order ? <span className="mr-1.5 rounded-full bg-[#ed2127]/10 dark:bg-[#f2454b]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#ed2127] dark:text-[#f2454b]">Pinned {post.featured_order}</span> : null}
+                  {post.title}
+                </p>
                 <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
                   {post.category} · {post.post_date} ·{" "}
                   <span
@@ -424,6 +447,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
                 </p>
               </div>
               <div className="flex items-center gap-3 shrink-0 text-xs">
+                <button onClick={() => togglePin(post)} className={post.featured_order ? "font-semibold text-[#ed2127] dark:text-[#f2454b]" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"}>{post.featured_order ? "Unpin" : "Pin"}</button>
                 <button onClick={() => startEdit(post)} className="text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">Edit</button>
                 <button onClick={() => remove(post)} className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400">✕</button>
               </div>
