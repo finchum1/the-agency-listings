@@ -5,6 +5,7 @@ import { BOARDS, ARCHIVE_REASONS, SOURCES } from "../../../lib/peopleStages";
 import ContactButtons from "./ContactButtons";
 import OutreachDrafts from "./OutreachDrafts";
 import ClientTimelineCard from "./ClientTimelineCard";
+import { DetailGroup, EditToggle, money } from "./DealDetailList";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { PEEK_WIDTHS } from "../../../hooks/usePeekWidth";
 import TransactionModules from "./TransactionModules";
@@ -93,6 +94,7 @@ export default function PersonPanel({
   const [tab, setTab] = useState("overview");
   const [menuOpen, setMenuOpen] = useState(false);
   const [dealModal, setDealModal] = useState(null); // share | back | archive
+  const [editingDetails, setEditingDetails] = useState(false); // the Details tab reads like a summary until Edit is pressed
   const dealDates = { contract_date: form.contract_date, inspection_date: form.inspection_date, closing_date: form.closing_date };
   const summary = useDealSummary(isDeal ? person.id : null, dealDates);
   useEffect(() => {
@@ -264,26 +266,6 @@ export default function PersonPanel({
             <label className={labelClass}>Lender</label>
             <input value={form.lender} onChange={setField("lender")} onBlur={flush} className={inputClass} />
           </div>
-        </div>
-        <div className="grid @md:grid-cols-2 gap-3">
-          {[
-            ["contract_date", "Contract date"],
-            ["inspection_date", "Inspection"],
-            ["appraisal_date", "Appraisal"],
-            ["financing_deadline", "Financing deadline"],
-            ["closing_date", "Closing"],
-          ].map(([key, label]) => (
-            <div key={key}>
-              <label className={labelClass}>{label}</label>
-              <input
-                type="date"
-                value={form[key]}
-                onChange={setField(key, true)}
-                onClick={openPicker}
-                className={`${inputClass} cursor-pointer`}
-              />
-            </div>
-          ))}
         </div>
     </div>
   );
@@ -813,12 +795,47 @@ export default function PersonPanel({
       {tab === "messages" && <DealCompliance person={person} viewer="owner" onChanged={() => { onChanged(); summary.reload(); }} />}
       {tab === "details" && (
         <div className="space-y-8">
-          {contactFields}
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="font-display text-base font-semibold">Details</h3>
+            <EditToggle editing={editingDetails} onToggle={() => { flush(); setEditingDetails((v) => !v); }} />
+          </div>
+          {editingDetails ? (
+            <>
+              {contactFields}
+              <section className="min-w-0 space-y-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wide text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Deal</h4>
+                {transactionDetails}
+              </section>
+              <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Contract, inspection, appraisal, financing and closing dates are on the Overview tab.</p>
+            </>
+          ) : (
+            <>
+              <DetailGroup
+                title="Contact"
+                rows={[
+                  { label: "Client", value: form.name },
+                  { label: "Phone", value: form.phone, href: form.phone ? `tel:${form.phone.replace(/[^\d+]/g, "")}` : undefined },
+                  { label: "Email", value: form.email, href: form.email ? `mailto:${form.email}` : undefined },
+                  { label: "Next follow-up", value: form.next_follow_up ? dayLabel(form.next_follow_up, toKey(new Date())) : "" },
+                  { label: "Source", value: form.source },
+                  { label: "Stage", value: person.stage },
+                ]}
+              />
+              <DetailGroup
+                title="Deal"
+                rows={[
+                  { label: "Buyer or seller", value: sideLabel },
+                  { label: "Property", value: form.property_address, wide: true },
+                  { label: "Price", value: money(form.price) },
+                  { label: "Commission", value: money(form.commission) },
+                  { label: "Other agent", value: form.other_agent },
+                  { label: "Title company", value: form.title_company },
+                  { label: "Lender", value: form.lender },
+                ]}
+              />
+            </>
+          )}
           <DealTeam person={person} />
-          <section className="min-w-0 space-y-3">
-            <h3 className="font-display text-base font-semibold">Deal details</h3>
-            {transactionDetails}
-          </section>
         </div>
       )}
     </div>

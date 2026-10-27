@@ -38,6 +38,11 @@ export default function DealOverview({ person, summary, dates, onTab, onDate, ch
   }
   if (summary.unread > 0) needs.push({ key: "msg", title: `${summary.unread} new message${summary.unread === 1 ? "" : "s"}`, note: "Read", tab: "messages" });
 
+  // Where "today" falls along the five dates: before the first one still to come (or at the end when they're all past); nowhere when none are set.
+  const setDates = DATES.map(([key]) => dates[key] || "");
+  const nextIdx = setDates.findIndex((d) => d && d >= today);
+  const todayAt = setDates.some(Boolean) ? (nextIdx >= 0 ? nextIdx : 5) : -1;
+
   return (
     <div className="space-y-6">
       {children?.top}
@@ -66,6 +71,13 @@ export default function DealOverview({ person, summary, dates, onTab, onDate, ch
 
       <section aria-label="Key dates" className="space-y-2">
         <h3 className="font-display text-base font-semibold">Key dates</h3>
+        {todayAt >= 0 && (
+          <div className="relative h-4" aria-hidden="true">
+            <span className="absolute -translate-x-1/2 text-[10px] font-semibold text-[#ed2127] dark:text-[#f2454b]" style={{ left: `${(todayAt / 5) * 100}%` }}>
+              Today ▾
+            </span>
+          </div>
+        )}
         <div className="grid grid-cols-5 gap-1.5">
           {DATES.map(([key, label]) => {
             const value = dates[key] || "";

@@ -6,6 +6,7 @@ import DealCompliance, { ComplianceChip } from "./DealCompliance";
 import DealSignatures from "./DealSignatures";
 import DealTabs, { dealTabs } from "./DealTabs";
 import DealOverview from "./DealOverview";
+import { DetailGroup, EditToggle } from "./DealDetailList";
 import { useDealSummary } from "../../../hooks/useDealSummary";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
 import { useAuth } from "../../../hooks/useAuth";
@@ -25,6 +26,7 @@ const NUMBERS = [["price", "Price"], ["commission", "Commission"]];
 export default function DealPanel({ deal, agentName, viewer, onClose, onChanged }) {
   const edit = viewer === "tc";
   const [tab, setTab] = useState("overview");
+  const [editingDetails, setEditingDetails] = useState(false); // read like a summary until Edit is pressed (coordinators only)
   const { user } = useAuth();
   const { stages: myStages } = usePeopleStages();
   const myColumns = myStages.transaction;
@@ -130,9 +132,39 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
           {tab === "details" && (
             <div className="space-y-8">
             <section className="min-w-0 space-y-4">
-              <h3 className="font-display text-base font-semibold">Details</h3>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-display text-base font-semibold">Details</h3>
+                {edit && <EditToggle editing={editingDetails} onToggle={() => setEditingDetails((v) => !v)} />}
+              </div>
               {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-              <div className="grid gap-3 sm:grid-cols-2">
+              {!(edit && editingDetails) && (
+                <div className="space-y-6">
+                  <DetailGroup
+                    title="Contact"
+                    rows={[
+                      { label: "Client", value: fresh.name },
+                      { label: "Phone", value: fresh.phone, href: fresh.phone ? `tel:${fresh.phone.replace(/[^\d+]/g, "")}` : undefined },
+                      { label: "Email", value: fresh.email, href: fresh.email ? `mailto:${fresh.email}` : undefined },
+                    ]}
+                  />
+                  <DetailGroup
+                    title="Deal"
+                    rows={[
+                      { label: "Buyer or seller", value: fresh.side === "buyer" ? "Buyer" : fresh.side === "seller" ? "Seller (listing)" : "" },
+                      { label: deal._foreign ? "Agent's stage" : "Stage", value: fresh.stage },
+                      ...(deal._foreign ? [{ label: "Your board column", value: fresh._column }] : []),
+                      { label: "Property", value: fresh.property_address, wide: true },
+                      { label: "Price", value: fresh.price == null ? "" : money.format(fresh.price) },
+                      { label: "Commission", value: fresh.commission == null ? "" : money.format(fresh.commission) },
+                      { label: "Other agent", value: fresh.other_agent },
+                      { label: "Title company", value: fresh.title_company },
+                      { label: "Lender", value: fresh.lender },
+                    ]}
+                  />
+                  {edit && <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Dates are on the Overview tab.</p>}
+                </div>
+              )}
+              <div className={`grid gap-3 sm:grid-cols-2 ${edit && editingDetails ? "" : "hidden"}`}>
                 <div>
                   <label className={labelClass}>Client</label>
                   <p className="text-sm">{fresh.name}</p>
@@ -210,28 +242,6 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
                   <div key={key} className={key === "property_address" ? "sm:col-span-2" : ""}>
                     <label className={labelClass}>{label}</label>
                     {edit ? <input {...bind(key, "text")} className={inputClass} /> : <p className="text-sm">{fresh[key] || "–"}</p>}
-                  </div>
-                ))}
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {DATES.map(([key, label]) => (
-                  <div key={key}>
-                    <label className={labelClass}>{label}</label>
-                    {edit ? (
-                      <input
-                        type="date"
-                        value={form[key]}
-                        onChange={(e) => {
-                          setForm((f) => ({ ...f, [key]: e.target.value }));
-                          const v = e.target.value || null;
-                          setFresh((f) => ({ ...f, [key]: v }));
-                          save({ [key]: v });
-                        }}
-                        className={inputClass}
-                      />
-                    ) : (
-                      <p className="text-sm">{fresh[key] ? new Date(`${fresh[key]}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "–"}</p>
-                    )}
                   </div>
                 ))}
               </div>
