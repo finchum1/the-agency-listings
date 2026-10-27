@@ -470,7 +470,8 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
 
   const foreign = group === "transaction" ? foreignDeals : [];
   const mineByName = new Map(stages.map((s) => [s.toLowerCase(), s]));
-  const columnOf = (p) => (p._foreign ? mineByName.get(String(p.stage || "").toLowerCase()) || p.stage : p.stage);
+  // A deal you coordinate sits in the column you put it in (_column), else the one matching the agent's stage name.
+  const columnOf = (p) => (p._foreign ? mineByName.get(String(p._column || p.stage || "").toLowerCase()) || p._column || p.stage : p.stage);
   const foreignStages = [];
   for (const p of foreign) {
     const c = columnOf(p);
@@ -589,9 +590,11 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
         </div>
       </div>
 
-      {(error || boardError) && <p className="text-sm text-red-600 dark:text-red-400">{error || boardError}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {renderOverview && !loading && renderOverview({ deals: active, progress, closedStage, openDeal: setSelectedId, selectedId })}
+
+      {boardError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{boardError}</p>}
 
       {/* The controls that belong to the board itself, right above it: view and filter on the left, adding a column on the right. */}
       <div className="flex flex-wrap items-center gap-3">

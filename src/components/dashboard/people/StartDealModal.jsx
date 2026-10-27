@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuth } from "../../../hooks/useAuth";
+import { usePeopleStages } from "../../../hooks/usePeopleStages";
 
 const LAST_AGENT = "dealsLastAgent";
 const inputClass =
@@ -12,7 +13,8 @@ const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9
 export default function StartDealModal({ onClose, onStarted }) {
   const { profile } = useAuth();
   const [agents, setAgents] = useState(null);
-  const [columns, setColumns] = useState([]); // the chosen agent's own Deals columns
+  const { stages: myStages } = usePeopleStages();
+  const columns = myStages.transaction; // the coordinator's own board columns
   const [f, setF] = useState(() => {
     let agent = "";
     try {
@@ -39,23 +41,6 @@ export default function StartDealModal({ onClose, onStarted }) {
         setF((cur) => (data?.some((a) => a.id === cur.agent) ? cur : { ...cur, agent: "" }));
       });
   }, [profile?.org_id, profile?.id]);
-
-  // Which columns this agent has, so the deal can be put in the right one (for example Listings while a listing is being put together).
-  useEffect(() => {
-    if (!f.agent) {
-      setColumns([]);
-      return;
-    }
-    let active = true;
-    supabase.rpc("agent_deal_stages", { p_agent: f.agent }).then(({ data }) => {
-      if (!active) return;
-      setColumns(data || []);
-      setF((cur) => (cur.agent === f.agent ? { ...cur, stage: data?.includes(cur.stage) ? cur.stage : "" } : cur));
-    });
-    return () => {
-      active = false;
-    };
-  }, [f.agent]);
 
   const set = (k) => (e) => setF((cur) => ({ ...cur, [k]: e.target.value }));
   const ready = f.agent && f.name.trim() && f.side;
@@ -126,14 +111,14 @@ export default function StartDealModal({ onClose, onStarted }) {
 
         {columns.length > 0 && (
           <div>
-            <label className={labelClass} htmlFor="sd-stage">Which column?</label>
+            <label className={labelClass} htmlFor="sd-stage">Which column on your board?</label>
             <select id="sd-stage" value={f.stage} onChange={set("stage")} className={inputClass}>
-              <option value="">{columns[0]} (their first column)</option>
+              <option value="">{columns[0]} (your first column)</option>
               {columns.slice(1).map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">For example, keep it in Listings while you help put the listing together.</p>
+            <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">For example, keep it in Listings while you help put the listing together. This is your own board; it doesn't change the agent's.</p>
           </div>
         )}
 

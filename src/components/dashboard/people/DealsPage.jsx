@@ -39,7 +39,7 @@ const segBtn = (on) => `rounded-full px-3 py-1.5 text-xs font-semibold ${on ? "b
 // agents on that same board, with a filter for just those. A compliance reviewer with deals of their own gets the rest of the office as a
 // review section below; a coordinator or reviewer with no board of their own gets the office list.
 export default function DealsPage() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const access = dealAccess(profile);
   const attention = useDealAttention(access.any);
   const [view, setView] = useRemembered("dealsView", "board", ["board", "list"]);
@@ -79,16 +79,11 @@ export default function DealsPage() {
   const foreignShown = tcMode && effectiveMode !== "mine" ? coordinated.deals : [];
   const openForeign = coordinated.deals.find((d) => d.id === openForeignId);
 
-  // Dragging a deal you coordinate to another column changes its stage on the agent's board, so it has to be one of THEIR columns.
+  // Dragging a deal you coordinate to another column only changes where it sits on YOUR board; the agent's own board and stage are untouched.
   const moveForeign = async (id, stage) => {
-    const deal = coordinated.deals.find((x) => x.id === id);
-    if (!deal) return null;
-    const { data: names } = await supabase.rpc("deal_stage_names", { p_person: id });
-    const exact = (names || []).find((n) => n.toLowerCase() === stage.toLowerCase());
-    if (!exact) return `${deal._agent || "That agent"}'s Deals board doesn't have a “${stage}” column, so this deal can't go there. Open the deal and pick one of their columns instead.`;
-    if (exact === deal.stage) return null;
-    coordinated.setDeals((list) => list.map((x) => (x.id === id ? { ...x, stage: exact } : x)));
-    const { error } = await supabase.from("people").update({ stage: exact }).eq("id", id);
+    if (!coordinated.deals.some((x) => x.id === id)) return null;
+    coordinated.setDeals((list) => list.map((x) => (x.id === id ? { ...x, _column: stage } : x)));
+    const { error } = await supabase.from("deal_tc_stages").upsert({ person_id: id, tc_id: user.id, stage, updated_at: new Date().toISOString() }, { onConflict: "person_id,tc_id" });
     if (error) {
       coordinated.reload();
       return error.message;

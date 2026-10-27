@@ -2436,3 +2436,53 @@ drop policy if exists deal_signatures_read on public.deal_signatures;
 create policy deal_signatures_read on public.deal_signatures for select to authenticated using (public.deal_person_access(person_id) is not null);
 
 insert into storage.buckets (id, name, public) values ('deal-documents', 'deal-documents', false) on conflict (id) do nothing;
+
+-- ============================================================================
+-- 53. A coordinator's own board column for each deal. The deals a coordinator works for other agents sit on the coordinator's board, in
+--     the coordinator's own columns (for example Listings while they help put a listing together), independent of the agent's own stage
+--     (which an agent's board may not even have a column for). Only the coordinator can see or change their placement.
+--     deal_start_for_agent() now takes the coordinator's column (p_stage) and leaves the agent's own stage at the agent's first column.
+-- ============================================================================
+create table if not exists public.deal_tc_stages (
+  person_id uuid not null references public.people(id) on delete cascade,
+  tc_id uuid not null references public.profiles(id) on delete cascade,
+  stage text not null check (length(btrim(stage)) between 1 and 60),
+  updated_at timestamptz not null default now(),
+  primary key (person_id, tc_id)
+);
+alter table public.deal_tc_stages enable row level security;
+revoke all on public.deal_tc_stages from anon;
+drop policy if exists deal_tc_stages_own on public.deal_tc_stages;
+create policy deal_tc_stages_own on public.deal_tc_stages for all to authenticated
+  using (tc_id = auth.uid() and public.deal_person_access(person_id) = 'tc')
+  with check (tc_id = auth.uid() and public.deal_person_access(person_id) = 'tc');
+
+create or replace function public.deal_start_for_agent(
+  p_agent uuid, p_name text, p_side text, p_property_address text default '', p_phone text default '', p_email text default '',
+  p_price numeric default null, p_contract_date date default null, p_closing_date date default null, p_stage text default null
+) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare
+  me record;
+  v_stages text[];
+  v_id uuid;
+begin
+  select id, org_id, full_name, deals_role into me from public.profiles where id = auth.uid();
+  if me.id is null or me.deals_role is distinct from 'tc' then raise exception 'Only a transaction coordinator can start a deal for an agent.'; end if;
+  if p_agent is null or p_agent = me.id or not exists (select 1 from public.profiles a where a.id = p_agent and a.org_id = me.org_id and a.people_enabled) then
+    raise exception 'Pick an agent in your office who uses Deals.';
+  end if;
+  if btrim(coalesce(p_name, '')) = '' then raise exception 'Add the client''s name.'; end if;
+  if p_side not in ('buyer', 'seller') then raise exception 'Choose buyer or seller.'; end if;
+  v_stages := public.agent_deal_stages(p_agent);
+  insert into public.people (owner_id, name, phone, email, stage_group, stage, side, property_address, price, contract_date, closing_date, source)
+  values (p_agent, btrim(p_name), btrim(coalesce(p_phone, '')), btrim(coalesce(p_email, '')), 'transaction', v_stages[1], p_side, btrim(coalesce(p_property_address, '')), p_price, p_contract_date, p_closing_date, '')
+  returning id into v_id;
+  insert into public.deal_tcs (person_id, tc_id, assigned_by, started_by_tc) values (v_id, me.id, me.id, true);
+  if nullif(btrim(coalesce(p_stage, '')), '') is not null then
+    insert into public.deal_tc_stages (person_id, tc_id, stage) values (v_id, me.id, left(btrim(p_stage), 60));
+  end if;
+  insert into public.deal_messages (person_id, author_id, kind, body) values (v_id, me.id, 'message', coalesce(me.full_name, 'The coordinator') || ' started this deal and is coordinating it.');
+  return v_id;
+end;
+$$;

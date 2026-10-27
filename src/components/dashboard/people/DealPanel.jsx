@@ -4,6 +4,8 @@ import { BOARDS } from "../../../lib/peopleStages";
 import TransactionModules from "./TransactionModules";
 import DealCompliance, { ComplianceChip } from "./DealCompliance";
 import DealSignatures from "./DealSignatures";
+import { usePeopleStages } from "../../../hooks/usePeopleStages";
+import { useAuth } from "../../../hooks/useAuth";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const inputClass =
@@ -19,6 +21,9 @@ const NUMBERS = [["price", "Price"], ["commission", "Commission"]];
 // work the checklists; compliance reads them, marks documents, and approves or sends the deal back.
 export default function DealPanel({ deal, agentName, viewer, onClose, onChanged }) {
   const edit = viewer === "tc";
+  const { user } = useAuth();
+  const { stages: myStages } = usePeopleStages();
+  const myColumns = myStages.transaction;
   const [form, setForm] = useState(() => toForm(deal));
   const [error, setError] = useState("");
   const [fresh, setFresh] = useState(deal);
@@ -138,8 +143,30 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
                   )}
                   {edit && <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Picking a side adds the agent's task and document checklists.</p>}
                 </div>
+                {deal._foreign && edit && (
+                  <div>
+                    <label className={labelClass}>Your board column</label>
+                    <select
+                      value={fresh._column || (myColumns.find((c) => c.toLowerCase() === String(fresh.stage || "").toLowerCase()) || "")}
+                      onChange={async (e) => {
+                        const stage = e.target.value;
+                        if (!stage) return;
+                        setFresh((f) => ({ ...f, _column: stage }));
+                        const { error: err } = await supabase.from("deal_tc_stages").upsert({ person_id: deal.id, tc_id: user.id, stage, updated_at: new Date().toISOString() }, { onConflict: "person_id,tc_id" });
+                        if (err) setError(err.message);
+                      }}
+                      className={inputClass}
+                    >
+                      <option value="">Choose…</option>
+                      {[...new Set([fresh._column, ...myColumns].filter(Boolean))].map((c) => (
+                        <option key={c}>{c}</option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Where it sits on your board. It doesn't change the agent's board.</p>
+                  </div>
+                )}
                 <div>
-                  <label className={labelClass}>Stage</label>
+                  <label className={labelClass}>{deal._foreign ? "Agent's stage" : "Stage"}</label>
                   <select
                     value={fresh.stage}
                     disabled={!edit}

@@ -9,7 +9,7 @@ const SORTS = {
   closing: ["Closing date", (a, b) => (a.closing_date || "9999").localeCompare(b.closing_date || "9999")],
   newest: ["Recently updated", (a, b) => String(b.updated_at).localeCompare(String(a.updated_at))],
   price: ["Price, high to low", (a, b) => (Number(b.price) || 0) - (Number(a.price) || 0)],
-  stage: ["Stage", (a, b, order) => (order.indexOf(a.stage) + 1 || 99) - (order.indexOf(b.stage) + 1 || 99)],
+  stage: ["Stage", (a, b, order) => (order.indexOf(a._foreign ? a._column || a.stage : a.stage) + 1 || 99) - (order.indexOf(b._foreign ? b._column || b.stage : b.stage) + 1 || 99)],
 };
 
 // The Deals board as a list: your own deals and the ones you coordinate for other agents, one row each. Opening a row opens the same panel a
@@ -19,17 +19,18 @@ export default function DealsList({ own, foreign, progress, closedStage, stages,
   const [sort, setSort] = useState("closing");
   const [showClosed, setShowClosed] = useState(false);
   const today = toKey(new Date());
+  const colOf = (p) => (p._foreign ? p._column || p.stage : p.stage);
 
   const rows = useMemo(() => {
     const all = [...own.map((p) => ({ ...p, _agent: agentName })), ...foreign];
     const needle = q.trim().toLowerCase();
     return all
-      .filter((p) => (showClosed || p.stage !== closedStage) && (!needle || `${p.name} ${p.property_address} ${p._agent}`.toLowerCase().includes(needle)))
+      .filter((p) => (showClosed || colOf(p) !== closedStage) && (!needle || `${p.name} ${p.property_address} ${p._agent}`.toLowerCase().includes(needle)))
       .sort((a, b) => SORTS[sort][1](a, b, stages) || a.name.localeCompare(b.name));
   }, [own, foreign, q, sort, showClosed, closedStage, stages, agentName]);
 
   const open = (p) => (p._foreign ? openForeign?.(p.id) : openDeal(p.id));
-  const closing = (p) => (p.closing_date ? <span className={p.closing_date < today && p.stage !== closedStage ? "font-semibold text-red-600 dark:text-red-400" : ""}>{dayLabel(p.closing_date, today)}</span> : "–");
+  const closing = (p) => (p.closing_date ? <span className={p.closing_date < today && colOf(p) !== closedStage ? "font-semibold text-red-600 dark:text-red-400" : ""}>{dayLabel(p.closing_date, today)}</span> : "–");
   const prog = (p) => {
     const v = progress[p.id];
     return v ? `${v.tasks.done}/${v.tasks.total} · ${v.docs.done}/${v.docs.total}` : "–";
@@ -83,7 +84,7 @@ export default function DealsList({ own, foreign, progress, closedStage, stages,
                         <span className={muted}>{agentName}</span>
                       )}
                     </td>
-                    <td className={`px-3 py-3.5 text-xs whitespace-nowrap ${muted}`}>{p.stage}</td>
+                    <td className={`px-3 py-3.5 text-xs whitespace-nowrap ${muted}`}>{colOf(p)}</td>
                     <td className="px-3 py-3.5 text-xs whitespace-nowrap">{closing(p)}</td>
                     <td className={`px-3 py-3.5 text-xs whitespace-nowrap ${muted}`}>{p.price ? money.format(p.price) : "–"}</td>
                     <td className={`px-3 py-3.5 text-xs whitespace-nowrap ${muted}`}>{prog(p)}</td>
@@ -103,7 +104,7 @@ export default function DealsList({ own, foreign, progress, closedStage, stages,
                     <p className="font-medium leading-snug">{p.property_address || p.name}</p>
                     {p.price ? <p className="shrink-0 text-sm font-semibold">{money.format(p.price)}</p> : null}
                   </div>
-                  <p className={`mt-0.5 text-xs ${muted}`}>{p.property_address ? `${p.name} · ` : ""}{p.stage}</p>
+                  <p className={`mt-0.5 text-xs ${muted}`}>{p.property_address ? `${p.name} · ` : ""}{colOf(p)}</p>
                   <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                     <span className={muted}>Closing {closing(p)}</span>
                     <span className={muted}>Tasks · Docs {prog(p)}</span>

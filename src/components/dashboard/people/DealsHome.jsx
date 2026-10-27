@@ -90,11 +90,13 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
   const soon = toKey(addDays(now, 30));
   const year = now.getFullYear();
 
-  const openDeals = deals.filter((p) => p.stage !== closedStage);
+  // Where a deal sits on this board: a deal you coordinate sits where you put it.
+  const colOf = (p) => (p._foreign ? p._column || p.stage : p.stage);
+  const openDeals = deals.filter((p) => colOf(p) !== closedStage);
   // Commission is the agent's money: only deals that are yours count toward it, even when the numbers above include deals you coordinate.
   const ownOpen = openDeals.filter((p) => !p._foreign);
   const hasForeign = deals.some((p) => p._foreign);
-  const closed = deals.filter((p) => p.stage === closedStage && Number((p.closing_date || p.updated_at || "").slice(0, 4)) === year);
+  const closed = deals.filter((p) => colOf(p) === closedStage && Number((p.closing_date || p.updated_at || "").slice(0, 4)) === year);
   const byId = new Map(deals.map((p) => [p.id, p]));
   const where = (p) => (p._foreign ? ` · ${p._agent || "another agent"}` : "");
   const closingSoon = openDeals.filter((p) => p.closing_date && p.closing_date >= today && p.closing_date <= soon).sort((a, b) => a.closing_date.localeCompare(b.closing_date));
