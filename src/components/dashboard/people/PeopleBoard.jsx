@@ -258,7 +258,7 @@ function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleCl
 // coordinator panel through `onOpenForeign`, can't be dragged) shown after the agent's own cards in the column with the same name, or in an
 // extra column of their own when the owner's stage name isn't one of ours. `showOwn` hides the agent's own cards (the "TC deals" filter),
 // `toolbarLeft` is the view/filter controls, and `view="list"` swaps the columns for whatever `renderList` draws.
-export default function PeopleBoard({ group, renderOverview, foreignDeals = [], onOpenForeign, onMoveForeign, toolbarLeft, view = "board", showOwn = true, renderList, personFilter, cardExtra, onPeopleChanged, foreignOpenId, onOwnOpened, peek: peekProp }) {
+export default function PeopleBoard({ group, renderOverview, foreignDeals = [], onOpenForeign, onMoveForeign, toolbarLeft, view = "board", showOwn = true, renderList, personFilter, cardExtra, onPeopleChanged, foreignOpenId, onOwnOpened, peek: peekProp, initialOpenId }) {
   const board = BOARDS[group];
   const { people, setPeople, loading, error, refresh } = usePeople();
   const { progress, reload: reloadProgress } = useTransactionProgress(group === "transaction");
@@ -268,7 +268,7 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
   const nextStageNames = board.next ? allStages[board.next.group] : null;
   const prevStageNames = board.prev ? allStages[board.prev.group] : null;
 
-  const [selectedId, setSelectedId] = useState(() => (group === "transaction" ? new URLSearchParams(window.location.search).get("deal") : null));
+  const [selectedId, setSelectedId] = useState(() => (group === "transaction" ? initialOpenId || new URLSearchParams(window.location.search).get("deal") : null));
   // One side panel at a time: opening a deal you coordinate (the page's own panel, `foreignOpenId`) closes this one, and opening one of
   // yours here tells the page (`onOwnOpened`) to close that one.
   useEffect(() => {

@@ -49,6 +49,9 @@ export default function DealsPage() {
   const [openForeignId, setOpenForeignId] = useState(null);
   const peek = usePeekWidth(true);
   const [starting, setStarting] = useState(false);
+  const [agent, setAgent] = useState(""); // filter to one agent's coordinated deals
+  const [boardKey, setBoardKey] = useState(0); // bumped to reload the board after a deal of your own is started here
+  const [justStarted, setJustStarted] = useState(null);
   const [startNote, setStartNote] = useState("");
   const viewer = access.isCompliance ? "compliance" : "tc";
 
@@ -77,8 +80,13 @@ export default function DealsPage() {
   }
 
   const tcMode = access.isTc;
-  const effectiveMode = tcMode ? mode : "mine";
-  const foreignShown = tcMode && effectiveMode !== "mine" ? coordinated.deals : [];
+  // The agents you coordinate for, with how many deals each: the filter's choices. Picking one shows only their deals (yours step aside).
+  const agentCounts = new Map();
+  for (const d of coordinated.deals) if (d._agent) agentCounts.set(d.owner_id, { name: d._agent, n: (agentCounts.get(d.owner_id)?.n || 0) + 1 });
+  const agentOptions = [...agentCounts.entries()].sort((a, b) => a[1].name.localeCompare(b[1].name));
+  const agentOn = tcMode && agent && agentCounts.has(agent) ? agent : "";
+  const effectiveMode = tcMode ? (agentOn ? "tc" : mode) : "mine";
+  const foreignShown = tcMode && effectiveMode !== "mine" ? (agentOn ? coordinated.deals.filter((d) => d.owner_id === agentOn) : coordinated.deals) : [];
   const openForeign = coordinated.deals.find((d) => d.id === openForeignId);
 
   // Dragging a deal you coordinate to another column only changes where it sits on YOUR board; the agent's own board and stage are untouched.
@@ -106,15 +114,40 @@ export default function DealsPage() {
             ["mine", `Mine ${ownCount}`],
             ["tc", `TC deals ${coordinated.deals.length}`],
           ].map(([key, label]) => (
-            <button key={key} type="button" onClick={() => setMode(key)} aria-pressed={mode === key} className={segBtn(mode === key)}>
+            <button
+              key={key}
+              type="button"
+              onClick={() => {
+                setMode(key);
+                if (key !== "tc") setAgent("");
+              }}
+              aria-pressed={effectiveMode === key}
+              className={segBtn(effectiveMode === key)}
+            >
               {label}
             </button>
           ))}
         </div>
       )}
+      {tcMode && agentOptions.length > 0 && (
+        <select
+          value={agentOn}
+          onChange={(e) => {
+            setAgent(e.target.value);
+            if (e.target.value) setMode("tc");
+          }}
+          aria-label="Filter by agent"
+          className="rounded-full border border-black/10 dark:border-white/15 bg-transparent px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
+        >
+          <option value="">All agents</option>
+          {agentOptions.map(([id, a]) => (
+            <option key={id} value={id}>{a.name} ({a.n})</option>
+          ))}
+        </select>
+      )}
       {tcMode && (
         <button type="button" onClick={() => setStarting(true)} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-4 py-2 hover:bg-[#1c1a17]/90">
-          + Start a deal for an agent
+          + Start a deal
         </button>
       )}
       {startNote && <p role="status" className="basis-full text-sm text-amber-700 dark:text-amber-400">{startNote}</p>}
@@ -125,6 +158,8 @@ export default function DealsPage() {
   return (
     <div className="space-y-10">
       <PeopleBoard
+        key={boardKey}
+        initialOpenId={justStarted}
         group="transaction"
         view={view}
         showOwn={effectiveMode !== "tc"}
@@ -179,10 +214,17 @@ export default function DealsPage() {
       {starting && (
         <StartDealModal
           onClose={() => setStarting(false)}
-          onStarted={async (id, note) => {
+          onStarted={async (id, note, own) => {
             setStarting(false);
             setStartNote(note);
             setMode("all");
+            setAgent("");
+            if (own) {
+              // A deal of your own: reload the board and open the new deal on it.
+              setJustStarted(id);
+              setBoardKey((k) => k + 1);
+              return;
+            }
             await coordinated.reload();
             setOpenForeignId(id);
           }}

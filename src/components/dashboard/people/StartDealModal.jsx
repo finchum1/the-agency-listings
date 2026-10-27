@@ -8,8 +8,10 @@ const inputClass =
   "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
-// A transaction coordinator starts a deal for one of the agents. The deal lands on that agent's board with the coordinator already on it,
-// and the agent gets an email. (deal_start_for_agent in the database does the work and checks who may.)
+// "Start a deal", for a transaction coordinator: for one of the agents (the deal lands on that agent's board with the coordinator already on it, and
+// the agent gets an email; deal_start_for_agent in the database does the work and checks who may), or for themselves (a plain deal of their own,
+// the same as adding one to a column of their own board).
+const ME = "me";
 export default function StartDealModal({ onClose, onStarted }) {
   const { profile } = useAuth();
   const [agents, setAgents] = useState(null);
@@ -38,11 +40,12 @@ export default function StartDealModal({ onClose, onStarted }) {
       .order("full_name")
       .then(({ data }) => {
         setAgents(data || []);
-        setF((cur) => (data?.some((a) => a.id === cur.agent) ? cur : { ...cur, agent: "" }));
+        setF((cur) => (cur.agent === ME || data?.some((a) => a.id === cur.agent) ? cur : { ...cur, agent: "" }));
       });
   }, [profile?.org_id, profile?.id]);
 
   const set = (k) => (e) => setF((cur) => ({ ...cur, [k]: e.target.value }));
+  const own = f.agent === ME;
   const ready = f.agent && f.name.trim() && f.side;
 
   const submit = async (e) => {
@@ -50,6 +53,36 @@ export default function StartDealModal({ onClose, onStarted }) {
     if (!ready || busy) return;
     setBusy(true);
     setError("");
+    if (own) {
+      const { data: row, error: insertErr } = await supabase
+        .from("people")
+        .insert({
+          name: f.name.trim(),
+          side: f.side,
+          property_address: f.property_address.trim(),
+          phone: f.phone.trim(),
+          email: f.email.trim(),
+          price: f.price === "" ? null : Number(f.price),
+          contract_date: f.contract_date || null,
+          closing_date: f.closing_date || null,
+          stage_group: "transaction",
+          stage: f.stage || columns[0] || "Listings",
+          source: "Added manually",
+        })
+        .select("id")
+        .single();
+      if (insertErr) {
+        setBusy(false);
+        return setError(insertErr.message);
+      }
+      try {
+        localStorage.setItem(LAST_AGENT, ME);
+      } catch {
+        /* ignore */
+      }
+      setBusy(false);
+      return onStarted(row.id, "", true);
+    }
     const { data: id, error: err } = await supabase.rpc("deal_start_for_agent", {
       p_agent: f.agent,
       p_name: f.name,
@@ -98,27 +131,28 @@ export default function StartDealModal({ onClose, onStarted }) {
         </div>
 
         <div>
-          <label className={labelClass} htmlFor="sd-agent">Which agent is this for?</label>
+          <label className={labelClass} htmlFor="sd-agent">Who is this deal for?</label>
           <select id="sd-agent" value={f.agent} onChange={set("agent")} className={inputClass} disabled={!agents}>
-            <option value="">{agents ? "Choose an agent…" : "Loading…"}</option>
+            <option value="">{agents ? "Choose…" : "Loading…"}</option>
+            <option value={ME}>Me (my own deal)</option>
             {(agents || []).map((a) => (
               <option key={a.id} value={a.id}>{a.full_name}</option>
             ))}
           </select>
           {agents && agents.length === 0 && <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">No agents in your office have Deals turned on yet.</p>}
-          <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">It goes on their Deals board, with you as the coordinator. They get an email.</p>
+          <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{own ? "It goes on your own Deals board." : "An agent's deal goes on their Deals board, with you as the coordinator. They get an email."}</p>
         </div>
 
         {columns.length > 0 && (
           <div>
-            <label className={labelClass} htmlFor="sd-stage">Which column on your board?</label>
+            <label className={labelClass} htmlFor="sd-stage">{own ? "Which column?" : "Which column on your board?"}</label>
             <select id="sd-stage" value={f.stage} onChange={set("stage")} className={inputClass}>
               <option value="">{columns[0]} (your first column)</option>
               {columns.slice(1).map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">For example, keep it in Listings while you help put the listing together. This is your own board; it doesn't change the agent's.</p>
+            <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{own ? "Where it starts on your board." : "For example, keep it in Listings while you help put the listing together. This is your own board; it doesn't change the agent's."}</p>
           </div>
         )}
 
