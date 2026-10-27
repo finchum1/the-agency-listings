@@ -13,7 +13,8 @@ export const BOARDS = {
   },
   transaction: {
     title: "Deals",
-    stages: ["Pending", "Closing Soon", "Closed"],
+    // Listings first: where a deal sits while the listing is being put together, before there is a contract.
+    stages: ["Listings", "Pending", "Closing Soon", "Closed"],
     next: null,
     prev: { group: "pipeline", label: "Move back to Pipeline" },
   },

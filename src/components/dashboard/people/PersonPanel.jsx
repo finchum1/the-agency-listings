@@ -78,7 +78,7 @@ export default function PersonPanel({
   const [notes, setNotes] = useState([]);
   const [noteText, setNoteText] = useState("");
   const [addingNote, setAddingNote] = useState(false);
-  const [moveStage, setMoveStage] = useState(nextStageNames?.[0] || "");
+  const [moveStage, setMoveStage] = useState(() => (board.next?.group === "transaction" ? nextStageNames?.find((s) => /^pending$/i.test(s)) : null) || nextStageNames?.[0] || ""); // a person who has a contract lands in Pending, not in Listings
   const [backStage, setBackStage] = useState(prevStageNames?.[prevStageNames.length - 1] || "");
   const [archiveReason, setArchiveReason] = useState(ARCHIVE_REASONS[0]);
 

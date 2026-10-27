@@ -2486,3 +2486,31 @@ begin
   return v_id;
 end;
 $$;
+
+-- 54. Listings is a standard first Deals column for every agent (src/lib/peopleStages.js). The database's own fallbacks (used when an agent hasn't
+--     customized their columns) match.
+create or replace function public.agent_deal_stages(p_agent uuid) returns text[]
+language plpgsql stable security definer set search_path = public as $$
+declare v_stages jsonb;
+begin
+  if not exists (select 1 from public.profiles me join public.profiles a on a.id = p_agent and a.org_id = me.org_id where me.id = auth.uid() and me.deals_role = 'tc') then return null; end if;
+  select stages -> 'transaction' into v_stages from public.people_settings where owner_id = p_agent;
+  if v_stages is null or jsonb_typeof(v_stages) <> 'array' or jsonb_array_length(v_stages) = 0 then return array['Listings', 'Pending', 'Closing Soon', 'Closed']; end if;
+  return array(select jsonb_array_elements_text(v_stages));
+end;
+$$;
+create or replace function public.deal_stage_names(p_person uuid) returns text[]
+language plpgsql stable security definer set search_path = public as $$
+declare
+  v_owner uuid;
+  v_stages jsonb;
+begin
+  if public.deal_person_access(p_person) is null then return null; end if;
+  select owner_id into v_owner from public.people where id = p_person;
+  select stages -> 'transaction' into v_stages from public.people_settings where owner_id = v_owner;
+  if v_stages is null or jsonb_typeof(v_stages) <> 'array' or jsonb_array_length(v_stages) = 0 then
+    return array['Listings', 'Pending', 'Closing Soon', 'Closed'];
+  end if;
+  return array(select jsonb_array_elements_text(v_stages));
+end;
+$$;

@@ -43,7 +43,7 @@ function taskDue(task, person) {
 async function closedStage(sb, userId) {
   const { data } = await sb.from("people_settings").select("stages").eq("owner_id", userId).maybeSingle();
   const stages = data?.stages || {};
-  const list = stages.transaction || ["Pending", "Closing Soon", "Closed"];
+  const list = stages.transaction || ["Listings", "Pending", "Closing Soon", "Closed"];
   const named = stages.transaction_closed;
   return { closed: named && list.includes(named) ? named : list.includes("Closed") ? "Closed" : list[list.length - 1], stages };
 }
