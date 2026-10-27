@@ -32,6 +32,39 @@ export function parseInquiry(body) {
   return { data };
 }
 
+// The landing pages (Sellers, Buyers, Home Value) send what the visitor filled in as `details`. Only known fields are kept, each capped, and
+// the lot is turned into the readable note that goes in the lead, the alert email and the person's notes.
+export const LANDING_PAGES = {
+  sellers: { label: "listing consultation request", title: "Listing consultation request" },
+  buyers: { label: "buyer wish list", title: "Buyer wish list" },
+  home_value: { label: "home value request", title: "Home value request" },
+};
+const list = (v, max = 12) => (Array.isArray(v) ? v.slice(0, max).map((x) => oneLine(x, 60)).filter(Boolean) : []);
+
+export function describeLanding(page, details, { address, message }) {
+  const d = details && typeof details === "object" ? details : {};
+  const line = (label, value) => (value ? `${label}: ${value}` : "");
+  const lines = [LANDING_PAGES[page].title, line("Property", address)];
+  if (page === "home_value") {
+    const specs = [d.beds && `${oneLine(d.beds, 10)} bed`, d.baths && `${oneLine(d.baths, 10)} bath`, d.sqft && `${oneLine(d.sqft, 12)} sq ft`].filter(Boolean).join(" · ");
+    lines.push(specs, line("Condition", oneLine(d.condition, 40)), line("Thinking of selling", oneLine(d.timeline, 40)));
+  } else if (page === "sellers") {
+    lines.push(line("Thinking of selling", oneLine(d.timeline, 40)));
+  } else if (page === "buyers") {
+    lines.push(
+      line("Location", list(d.locations).join(", ")),
+      line("Home type", list(d.types).join(", ")),
+      line("Style", list(d.styles).join(", ")),
+      line("Must-haves", clean(d.must_haves, 1000)),
+      line("Would love", clean(d.would_love, 1000)),
+      line("Deal breakers", clean(d.deal_breakers, 1000)),
+      line("Needs to close", oneLine(d.close_by, 60)),
+    );
+  }
+  const body = lines.filter(Boolean).join("\n");
+  return message ? `${body}\n\n${message}` : body;
+}
+
 const MINUTE = 60 * 1000;
 const since = (ms) => new Date(Date.now() - ms).toISOString();
 
@@ -155,7 +188,7 @@ ${notice ? `<tr><td style="padding:8px 28px 0"><div style="background:#fbf3e4;bo
 // A short "we got it" note to the visitor. Never includes anything the
 // visitor typed except their first name, so the form can't be used to push
 // arbitrary text at someone else's inbox. Failures are logged, not fatal.
-export async function sendConfirmation(apiKey, { from, visitor, agentName, agentEmail, about }) {
+export async function sendConfirmation(apiKey, { from, visitor, agentName, agentEmail, about, when }) {
   try {
     const firstName = visitor.name.split(" ")[0];
     const who = agentName || "our team";
@@ -164,7 +197,7 @@ export async function sendConfirmation(apiKey, { from, visitor, agentName, agent
     const lines = [
       `Hi ${firstName},`,
       "",
-      `Thanks for reaching out! ${who} received your message${about ? ` about ${about}` : ""} and will be in touch shortly.`,
+      `Thanks for reaching out! ${who} received your message${about ? ` about ${about}` : ""} and will be in touch ${when || "shortly"}.`,
       "",
       agentEmail ? "If you need anything sooner, just reply to this email." : "",
       "",

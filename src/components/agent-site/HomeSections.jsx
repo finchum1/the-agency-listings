@@ -5,6 +5,7 @@ import Testimonials from "./Testimonials";
 import FeaturedListings from "./FeaturedListings";
 import ServiceAreas from "./ServiceAreas";
 import BlogTeaser from "./BlogTeaser";
+import LandingCards from "./landing/LandingCards";
 import Contact from "./Contact";
 import { LISTINGS_FIRST_LAYOUTS } from "./layouts";
 
@@ -21,6 +22,7 @@ const SECTION_COMPONENTS = {
   listings: FeaturedListings,
   areas: ServiceAreas,
   blog: BlogTeaser,
+  cards: LandingCards,
 };
 
 export default function HomeSections() {

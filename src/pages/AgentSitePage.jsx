@@ -42,7 +42,7 @@ export default function AgentSitePage({
   // "about" | "listings" | "areas" | "blog" | "contact" | undefined (Home)
   // — matches buildAgentSitePageMeta's page keys 1:1 since pageTitle is
   // always one of "About"/"Listings"/"Areas"/"Blog"/"Contact" (App.jsx).
-  const pageKey = pageTitle?.toLowerCase();
+  const pageKey = pageTitle?.toLowerCase().replace(/\s+/g, "-");
 
   useEffect(() => {
     if (!site) return;

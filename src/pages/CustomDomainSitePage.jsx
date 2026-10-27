@@ -33,6 +33,9 @@ import BrokerageContactCard from "../components/brokerage-site/ContactCard";
 import IdxListings from "../components/brokerage-site/IdxListings";
 import IdxListingDetail from "../components/brokerage-site/IdxListingDetail";
 import HomeValuation from "../components/brokerage-site/HomeValuation";
+import SellersPage from "../components/agent-site/landing/SellersPage";
+import BuyersPage from "../components/agent-site/landing/BuyersPage";
+import HomeValuePage from "../components/agent-site/landing/HomeValuePage";
 
 // "/" on a custom domain: try a listing first, then an agent site, then
 // the brokerage site — all three looked up by custom_domain instead of
@@ -93,6 +96,18 @@ function SharedCustomDomainPage({ agentPageTitle, agentChildren, brokeragePath, 
     <BrokerageSitePage customDomain={hostname} path={brokeragePath} pageTitle={brokeragePageTitle}>
       {brokerageChildren}
     </BrokerageSitePage>
+  );
+}
+
+// A page only an agent site has (Sellers, Buyers, Home Value): the agent site at this hostname, or a 404.
+function AgentOnlyCustomDomainPage({ pageTitle, children }) {
+  const result = useAgentSite({ customDomain: bareHost(window.location.hostname) });
+  if (result.loading) return null;
+  if (!result.site) return <NotFoundPage />;
+  return (
+    <AgentSitePage {...result} pageTitle={pageTitle}>
+      {children}
+    </AgentSitePage>
   );
 }
 
@@ -241,6 +256,9 @@ export default function CustomDomainSitePage() {
           />
         }
       />
+      <Route path="/sellers" element={<AgentOnlyCustomDomainPage pageTitle="Sellers"><SellersPage /></AgentOnlyCustomDomainPage>} />
+      <Route path="/buyers" element={<AgentOnlyCustomDomainPage pageTitle="Buyers"><BuyersPage /></AgentOnlyCustomDomainPage>} />
+      <Route path="/home-value" element={<AgentOnlyCustomDomainPage pageTitle="Home Value"><HomeValuePage /></AgentOnlyCustomDomainPage>} />
       <Route path="/blog/:postSlug" element={<SharedCustomDomainPostPage />} />
       <Route
         path="/search"

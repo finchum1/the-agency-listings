@@ -16,12 +16,13 @@ const moreButton = "as-btn inline-block text-xs font-medium tracked-wide upperca
 
 // The agent's past sales (agent_site_sales), shown right under their current listings in every layout. Nothing renders
 // until the agent has added one.
-export default function SoldHomes() {
+// `limit`: show just that many with no "more" button (the Home Value page shows a taste of the track record).
+export default function SoldHomes({ limit }) {
   const { site, isStandalonePage } = useAgentSiteContext();
   const [shown, setShown] = useState(PAGE_FIRST);
   if (site.sales.length === 0) return null;
-  const sales = site.sales.slice(0, isStandalonePage ? shown : HOME_COUNT);
-  const remaining = site.sales.length - sales.length;
+  const sales = site.sales.slice(0, limit || (isStandalonePage ? shown : HOME_COUNT));
+  const remaining = limit ? 0 : site.sales.length - sales.length;
   return (
     <section id="sold" className="px-6 lg:px-10 py-20 bg-[var(--as-bg)]">
       <div className="mx-auto max-w-7xl">

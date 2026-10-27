@@ -1,6 +1,7 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import SiteLink from "./SiteLink";
 import BrandLogo from "../BrandLogo";
+import { resolveLanding } from "../../lib/landingPages";
 
 // "Explore" column — only pages that actually exist today. label can read
 // the agent's first name for the About link. sectionKey mirrors
@@ -92,9 +93,13 @@ export default function Footer() {
   const { site } = useAgentSiteContext();
   const { agent, brokerage } = site;
   const firstName = agent.name.split(" ")[0];
-  const visibleLinks = EXPLORE_LINKS.filter(
+  const landing = resolveLanding(site.landing);
+  const landingLinks = site.homeSections.includes("cards") && landing.menu ? landing.cards.filter((c) => c.on).map((c) => ({ path: c.path, label: () => c.nav })) : [];
+  const baseLinks = EXPLORE_LINKS.filter(
     (link) => !link.sectionKey || site.homeSections.includes(link.sectionKey),
   );
+  // The three landing pages sit just before the last link (Let's Connect).
+  const visibleLinks = [...baseLinks.slice(0, -1), ...landingLinks, ...baseLinks.slice(-1)];
 
   return (
     <footer className="bg-[var(--as-dark)] text-[var(--as-on-dark)]/65 px-6 lg:px-10 py-16">

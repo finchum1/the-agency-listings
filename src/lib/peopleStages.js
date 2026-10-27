@@ -38,6 +38,9 @@ export const ARCHIVE_REASONS = [
 
 export const SOURCES = [
   "Website inquiry",
+  "Website: Sellers page",
+  "Website: Buyers page",
+  "Website: Home value",
   "Referral",
   "Past client",
   "Sphere of influence",

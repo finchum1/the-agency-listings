@@ -5,6 +5,7 @@ import { agentSiteHref } from "../../lib/agentSiteLinks";
 import SiteLink from "./SiteLink";
 import BrandLogo from "../BrandLogo";
 import { LIGHT_HERO_LAYOUTS } from "./layouts";
+import { resolveLanding } from "../../lib/landingPages";
 
 // sectionKey matches agent_sites.home_sections entries (see
 // HomeSections.jsx) — a page whose section an agent has turned off isn't
@@ -56,7 +57,11 @@ export default function Navbar() {
   // Some layouts open on a light page, not a photo, so their nav can't be clear-with-light-text at the top.
   const solid = scrolled || open || !isHome || LIGHT_HERO_LAYOUTS.includes(site.layout);
 
-  const visiblePages = PAGES.filter((page) => !page.sectionKey || site.homeSections.includes(page.sectionKey));
+  // Sellers / Home Value / Buyers join the menu, ahead of Contact, while the cards section is on and the agent keeps them in the menu.
+  const landing = resolveLanding(site.landing);
+  const landingPages = site.homeSections.includes("cards") && landing.menu ? landing.cards.filter((c) => c.on).map((c) => ({ path: c.path, label: c.nav })) : [];
+  const basePages = PAGES.filter((page) => !page.sectionKey || site.homeSections.includes(page.sectionKey));
+  const visiblePages = [...basePages.filter((p) => p.path !== "/contact"), ...landingPages, ...basePages.filter((p) => p.path === "/contact")];
 
   const contactCta = (className) =>
     site.agent.phone ? (

@@ -17,7 +17,9 @@
 
 import { createClient } from "@supabase/supabase-js";
 import {
+  LANDING_PAGES,
   checkRate,
+  describeLanding,
   describePerson,
   findExistingPerson,
   leadAlertContext,
@@ -40,7 +42,11 @@ export default async function handler(req, res) {
   if (!agentSiteId) {
     return res.status(400).json({ error: "Name, email, and agentSiteId are required." });
   }
-  const { name, email, phone, message } = parsed.data;
+  const { name, email, phone, address } = parsed.data;
+  // The Sellers, Buyers and Home Value pages send which page it was and what the visitor filled in; the note is built here from known fields only.
+  const page = Object.hasOwn(LANDING_PAGES, req.body.page) ? req.body.page : null;
+  const message = page ? describeLanding(page, req.body.details, { address, message: parsed.data.message }) : parsed.data.message;
+  const kind = page ? LANDING_PAGES[page].label : "website inquiry";
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
@@ -87,6 +93,7 @@ export default async function handler(req, res) {
       email,
       phone,
       message,
+      ...(page ? { page, address } : {}),
     });
     if (leadError) console.error("Failed to store lead:", leadError);
   }
@@ -107,22 +114,23 @@ export default async function handler(req, res) {
       from: fromEmail,
       to: alert.to,
       replyTo: email,
-      subject: `${existingPerson ? "Repeat website inquiry" : "New website inquiry"} from ${name}`,
+      subject: `${existingPerson ? "Repeat" : "New"} ${kind} from ${name}`,
       text: [
         ...(notice ? [notice, ""] : []),
         `Name: ${name}`,
         `Email: ${email}`,
         `Phone: ${phone || "—"}`,
+        ...(page && address ? [`Property: ${address}`] : []),
         "",
         message || "(no message)",
         "",
         `Open in your dashboard: ${alert.dashboardUrl}`,
       ].join("\n"),
       html: renderLeadEmailHtml({
-        heading: `${existingPerson ? "Repeat website inquiry" : "New website inquiry"} from ${name}`,
+        heading: `${existingPerson ? "Repeat" : "New"} ${kind} from ${name}`,
         agentName: site.agent.full_name,
         notice,
-        fields: [["Name", name], ["Email", email], ["Phone", phone || "—"]],
+        fields: [["Name", name], ["Email", email], ["Phone", phone || "—"], ...(page && address ? [["Property", address]] : [])],
         message,
         dashboardUrl: alert.dashboardUrl,
       }),
@@ -135,6 +143,7 @@ export default async function handler(req, res) {
         visitor: { name, email },
         agentName: site.agent.full_name,
         agentEmail: site.agent.email,
+        ...(page === "home_value" ? { about: "your home value", when: "within one business day" } : {}),
       });
     }
 

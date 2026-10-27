@@ -12,7 +12,7 @@ import { buildAgentSchema, buildBreadcrumbSchema } from "../src/lib/structuredDa
 import { brandFromOrg } from "../src/lib/brand.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
 
-const PAGE_LABELS = { about: "About", listings: "Listings", areas: "Areas", blog: "Blog", contact: "Contact" };
+const PAGE_LABELS = { about: "About", listings: "Listings", areas: "Areas", blog: "Blog", contact: "Contact", sellers: "Sellers", buyers: "Buyers", "home-value": "Home Value" };
 
 export default async function handler(req, res) {
   const slug = req.query.slug;

@@ -27,7 +27,7 @@ const siteFields = {
   font_pairing: str("Font pairing", { enum: ["playfair-jost", "fraunces-inter", "cormorant-worksans", "libre-karla", "bodoni-manrope", "dmserif-dmsans"] }),
   header_style: str("", { enum: ["classic", "floating"] }),
   button_style: str("", { enum: ["square", "pill"] }),
-  home_sections: { type: "array", items: { type: "string", enum: ["bio", "testimonials", "listings", "areas", "blog"] }, description: "Which home page sections show, in order" },
+  home_sections: { type: "array", items: { type: "string", enum: ["bio", "testimonials", "cards", "listings", "areas", "blog"] }, description: "Which home page sections show, in order. cards is the Sellers / Home Value / Buyers cards." },
   bio_markdown: str("The About text in markdown (headings, bold, italic, links)"),
   stats: { type: "array", maxItems: 6, items: obj({ label: str("e.g. Homes sold"), value: str("e.g. 150+") }, ["label", "value"]) },
   instagram_url: str(""), facebook_url: str(""), linkedin_url: str(""), tiktok_url: str(""), youtube_url: str(""), x_url: str(""),

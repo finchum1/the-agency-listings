@@ -7,6 +7,7 @@ import ImageUploadField from "./ImageUploadField";
 import RichTextEditor from "./RichTextEditor";
 import { paragraphsToHtml } from "../../lib/richTextFallback";
 import CollapsibleSection from "./CollapsibleSection";
+import LandingCardsEditor from "./LandingCardsEditor";
 import FormSaveBar from "./FormSaveBar";
 
 // Kept in sync with the CSS custom properties in src/index.css
@@ -134,12 +135,13 @@ const FONT_PAIRINGS = [
 const HOME_SECTION_LABELS = {
   bio: "About / Bio",
   testimonials: "Testimonials",
+  cards: "Buyer & seller cards",
   listings: "Featured Listings",
   areas: "Service Areas",
   blog: "Blog",
 };
 const ALL_SECTION_KEYS = Object.keys(HOME_SECTION_LABELS);
-const DEFAULT_HOME_SECTIONS = ["bio", "testimonials", "listings", "areas", "blog"];
+const DEFAULT_HOME_SECTIONS = ["bio", "testimonials", "cards", "listings", "areas", "blog"];
 
 // A tiny wireframe of each layout for the picker.
 function LayoutSketch({ kind }) {
@@ -211,6 +213,7 @@ export default function SiteForm({ site, onSaved }) {
       accent_color: s.accent_color || "",
       logo_variant: validLogoVariant(brand, s.logo_variant || "red"),
       home_sections: s.home_sections?.length ? s.home_sections : DEFAULT_HOME_SECTIONS,
+      landing: s.landing && typeof s.landing === "object" ? s.landing : {},
       idx_enabled: !!s.idx_enabled,
       secondary_logo_url: s.secondary_logo_url || "",
       hero_photo_url: s.hero_photo_url || "",
@@ -306,6 +309,7 @@ export default function SiteForm({ site, onSaved }) {
       accent_color: form.accent_color || null,
       logo_variant: form.logo_variant,
       home_sections: form.home_sections,
+      landing: form.landing,
       idx_enabled: form.idx_enabled,
       secondary_logo_url: form.secondary_logo_url || null,
       hero_photo_url: form.hero_photo_url || null,
@@ -637,6 +641,10 @@ export default function SiteForm({ site, onSaved }) {
               ))}
             </div>
           </div>
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Buyer & seller cards" description="The Sellers, Home Value and Buyers pages, and the cards that lead to them.">
+          <LandingCardsEditor siteId={site.id} siteSlug={site.slug} value={form.landing} onChange={(v) => set("landing", v)} />
         </CollapsibleSection>
 
         <CollapsibleSection title="Home Search (IDX)" description="Full MLS search on your area pages.">

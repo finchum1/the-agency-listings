@@ -43,7 +43,9 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     accentColor: site.accent_color || "",
     homeSections: site.home_sections?.length
       ? site.home_sections
-      : ["bio", "testimonials", "listings", "areas", "blog"],
+      : ["bio", "testimonials", "cards", "listings", "areas", "blog"],
+    // The Sellers / Home Value / Buyers pages and their cards (see lib/landingPages.js).
+    landing: site.landing && typeof site.landing === "object" ? site.landing : {},
     // Whether this agent opted in to the full MLS search block on their
     // own area pages (AgentAreaPage.jsx's "Search Homes in {Area}") — see
     // SiteForm.jsx's "Home Search (IDX)" toggle. Off by default for a new

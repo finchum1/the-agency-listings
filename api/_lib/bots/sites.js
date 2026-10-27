@@ -5,7 +5,7 @@ import { insertSales, saleView } from "./sales.js";
 const THEMES = ["classic", "dark", "sand", "red", "linen"];
 const LAYOUTS = ["classic", "editorial", "bold", "portrait", "listings"];
 const FONTS = ["playfair-jost", "fraunces-inter", "cormorant-worksans", "libre-karla", "bodoni-manrope", "dmserif-dmsans"];
-const SECTIONS = ["bio", "testimonials", "listings", "areas", "blog"];
+const SECTIONS = ["bio", "testimonials", "cards", "listings", "areas", "blog"];
 const BUCKET = "agent-site-photos";
 
 const siteUrl = (req, slug) => `https://${req.headers.host}/sites/${slug}`;
