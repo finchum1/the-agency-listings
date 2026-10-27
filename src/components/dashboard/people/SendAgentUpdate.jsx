@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { supabase } from "../../../lib/supabaseClient";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
-const pill = "rounded-full border border-black/10 dark:border-white/15 px-3 py-1.5 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
+const pill = "text-[#1c1a17] dark:text-[#faf9f7] rounded-full border border-black/10 dark:border-white/15 px-3 py-1.5 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 
 async function call(body) {
   const { data: { session } } = await supabase.auth.getSession();
@@ -120,7 +120,7 @@ export default function SendAgentUpdate({ person, agentName, onSent }) {
       {open &&
         createPortal(
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4" onPointerDown={(e) => e.target === e.currentTarget && !busy && setOpen(false)}>
-          <div role="dialog" aria-label="Update the agent" className="flex max-h-[90vh] w-full max-w-xl flex-col rounded-2xl bg-white dark:bg-[#1c1c1c] shadow-2xl">
+          <div role="dialog" aria-label="Update the agent" className="flex max-h-[90vh] w-full max-w-xl flex-col rounded-2xl bg-white dark:bg-[#1c1c1c] text-[#1c1a17] dark:text-[#faf9f7] shadow-2xl">
             <div className="border-b border-black/5 dark:border-white/10 px-5 py-4">
               <h3 className="font-display text-lg font-semibold">Update for {agentName || "the agent"}</h3>
               <p className={`mt-0.5 text-xs ${muted}`}>A private page with the key dates, tasks, documents and signatures. It's always current when they open it.</p>

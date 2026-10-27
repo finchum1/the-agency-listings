@@ -423,7 +423,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
       {shareOpen &&
         createPortal(
         <div className="fixed inset-0 z-[80] grid place-items-center bg-black/40 px-4" onPointerDown={(e) => e.target === e.currentTarget && setShareOpen(false)}>
-          <div role="dialog" aria-label="Share with the client" className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#1c1c1c] p-5 shadow-2xl space-y-4">
+          <div role="dialog" aria-label="Share with the client" className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#1c1c1c] text-[#1c1a17] dark:text-[#faf9f7] p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-display text-xl font-semibold">Share with the client</h2>
               <button type="button" onClick={() => setShareOpen(false)} aria-label="Close" className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50">✕</button>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 
-const btn = "rounded-full border border-black/10 dark:border-white/15 px-3 py-1.5 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
+const btn = "text-[#1c1a17] dark:text-[#faf9f7] rounded-full border border-black/10 dark:border-white/15 px-3 py-1.5 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 
 // Share a private closing timeline with the buyer or seller (/timeline/<token>, see src/pages/TransactionTimelinePage.jsx). It
 // shows the deal's key dates, what's coming and who's helping, never the price, commission or the agent's checklist. A coordinator can make one
