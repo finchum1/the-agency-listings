@@ -10,6 +10,13 @@ const free = { type: "object", additionalProperties: true };
 const errors = { 400: json(obj({ error: str("What was wrong") }), "Bad request"), 401: json(obj({ error: str("") }), "Missing or invalid token"), 403: json(obj({ error: str("") }), "The token lacks the needed scope"), 404: json(obj({ error: str("") }), "Not found"), 409: json(obj({ error: str("") }), "Conflict, for example a duplicate") };
 const op = (summary, scope, extra) => ({ summary, description: scope ? `Needs the \`${scope}\` scope.` : "Any valid token.", security: [{ bearer: [] }], responses: { 200: json(free), ...errors }, ...extra });
 
+const saleFields = {
+  address: str("Street address, e.g. 14 Willow Creek Ln. Required unless listing_id is sent."),
+  city: str(""), state: str("e.g. OK"), price: num("Sold price in dollars (optional)"), sold_on: str("YYYY-MM-DD, shown as a \"Sold Oct 2026\" tag"),
+  photo_url: str("A picture address to use as is"), photo_source_url: str("A public picture address to download and store"),
+  listing_id: str("One of this agent's listings (GET /listings) to copy the address, price and first photo from. Anything else you send wins. A closed listing copied this way no longer shows with the current listings.", { format: "uuid" }),
+};
+
 const siteFields = {
   slug: str("Web address name, e.g. terri-boushon. Made from the agent's name if omitted."),
   status: str("draft (default) or published", { enum: ["draft", "published"] }),
@@ -28,6 +35,7 @@ const siteFields = {
   seo_title: str(""), seo_description: str(""),
   areas: { type: "array", items: obj({ name: str(""), slug: str(""), blurb: str("One sentence"), description_markdown: str(""), photo_source_url: str("") }, ["name"]) },
   testimonials: { type: "array", items: obj({ quote: str(""), author: str("") }, ["quote", "author"]) },
+  sales: { type: "array", maxItems: 30, items: obj(saleFields), description: "Past sales to add (shown as Recently Sold under the listings)" },
 };
 
 const listingFields = {
@@ -49,6 +57,7 @@ const postFields = {
   excerpt: str("Defaults to the first lines of the body"), category: str("e.g. Market Update, Neighborhood Guide"), post_date: str("YYYY-MM-DD, defaults to today"),
   status: str("draft (default), published or scheduled", { enum: ["draft", "published", "scheduled"] }), scheduled_at: str("ISO date-time; required when scheduled"),
   image_url: str("A picture address to use as is"), image_source_url: str("A public picture address to download and store"), slug: str(""),
+  featured_order: { type: ["integer", "null"], minimum: 0, maximum: 3, description: "Pin to the top of the site's blog page: 1, 2 or 3 is its position (up to 3 pinned posts); null or 0 unpins. The home page keeps showing the newest posts. 409 if that slot is held by another post." },
 };
 
 
@@ -102,11 +111,20 @@ export function buildSpec(origin) {
         post: op("Create an agent's website (a draft unless status is published)", "sites", { requestBody: body(obj({ agent_id: str("From GET /agents", { format: "uuid" }), ...siteFields }, ["agent_id"]), { agent_id: "00000000-0000-4000-8000-000000000000", tagline: "Trusted guidance. Exceptional results.", region: "Oklahoma City Metro", layout: "editorial", bio_markdown: "I grew up here...\n\nWhen I'm not working..." }) }),
       },
       "/sites/{id}": {
-        get: op("One site with its areas and testimonials", null, { parameters: [idParam("id", "Site id")] }),
-        patch: op("Change a site (send only what changes; areas and testimonials are added)", "sites", { parameters: [idParam("id", "Site id")], requestBody: body(obj(siteFields)) }),
+        get: op("One site with its areas, testimonials and past sales", null, { parameters: [idParam("id", "Site id")] }),
+        patch: op("Change a site (send only what changes; areas, testimonials and sales are added)", "sites", { parameters: [idParam("id", "Site id")], requestBody: body(obj(siteFields)) }),
       },
       "/sites/{id}/areas": { post: op("Add areas of expertise", "sites", { parameters: [idParam("id", "Site id")], requestBody: body(obj({ areas: siteFields.areas }, ["areas"])) }) },
       "/sites/{id}/testimonials": { post: op("Add testimonials", "sites", { parameters: [idParam("id", "Site id")], requestBody: body(obj({ testimonials: siteFields.testimonials }, ["testimonials"])) }) },
+      "/sites/{id}/sales": {
+        get: op("List a site's past sales", null, { parameters: [idParam("id", "Site id")] }),
+        post: op("Add past sales (shown as Recently Sold right under the site's current listings)", "sites", {
+          description: "Needs the `sites` scope. Send one sale as the body, or several as `{ sales: [...] }` (up to 30). Each needs an address, or a `listing_id` to copy the address, price and first photo from.",
+          parameters: [idParam("id", "Site id")],
+          requestBody: body(obj({ ...saleFields, sales: { type: "array", maxItems: 30, items: obj(saleFields) } }), { sales: [{ address: "14 Willow Creek Ln", city: "Edmond", state: "OK", price: 412000, sold_on: "2026-09-18", photo_source_url: "https://example.com/front.jpg" }] }),
+        }),
+      },
+      "/sales/{id}": { patch: op("Edit a past sale (send only what changes)", "sites", { parameters: [idParam("id", "Sale id")], requestBody: body(obj(saleFields)) }) },
       "/sites/{id}/posts": {
         get: op("List a site's blog posts", null, { parameters: [idParam("id", "Site id"), { name: "status", in: "query", schema: { type: "string", enum: ["draft", "published", "scheduled"] } }, { name: "limit", in: "query", schema: { type: "integer" } }] }),
         post: op("Add a blog post (a draft unless status says otherwise)", "blog", { parameters: [idParam("id", "Site id")], requestBody: body(obj(postFields, ["title"]), { title: "Best Parks in Edmond", category: "Community Feature", body_markdown: "## Why parks matter\n\nEdmond has...", status: "draft" }) }),

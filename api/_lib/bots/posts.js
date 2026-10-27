@@ -1,4 +1,4 @@
-import { HttpError, bad, dateKey, downloadImage, excerptFrom, isUuid, oneOf, richBody, slugify, storeImage, text, url } from "./util.js";
+import { HttpError, bad, dateKey, downloadImage, excerptFrom, isUuid, number, oneOf, richBody, slugify, storeImage, text, url } from "./util.js";
 import { requireScope } from "./context.js";
 import { loadSite } from "./sites.js";
 
@@ -15,6 +15,7 @@ const view = (p, site, req) => ({
   excerpt: p.excerpt,
   image_url: p.image_url,
   status: p.status,
+  featured_order: p.featured_order ?? null,
   scheduled_at: p.scheduled_at,
   url: postUrl(req, site, p),
   updated_at: p.updated_at,
@@ -46,6 +47,16 @@ function readStatus(body, current) {
   if (scheduled_at !== undefined) out.scheduled_at = scheduled_at;
   if (status && status !== "scheduled" && scheduled_at === undefined) out.scheduled_at = null;
   return out;
+}
+
+// Pinning: 1 to 3 puts a post at the top of the site's blog page in that position; null (or 0) takes it off. A slot another post holds is a 409.
+async function pinFields(ctx, siteId, postId, body) {
+  const n = number(body, "featured_order", { min: 0, max: 3, integer: true });
+  if (n === undefined) return {};
+  if (!n) return { featured_order: null };
+  const { data: holder } = await ctx.client.from("agent_site_posts").select("id, title").eq("agent_site_id", siteId).eq("featured_order", n).neq("id", postId || "00000000-0000-0000-0000-000000000000").maybeSingle();
+  if (holder) throw new HttpError(409, `Slot ${n} is already pinned to "${holder.title}". Unpin it first (PATCH /v1/posts/${holder.id} with featured_order: null).`, { pinned_post_id: holder.id });
+  return { featured_order: n };
 }
 
 async function pictureFields(ctx, siteId, body) {
@@ -95,6 +106,7 @@ export async function createPost(ctx, siteId, body, req) {
     body_html: html,
     ...status,
     ...(await pictureFields(ctx, siteId, body)),
+    ...(await pinFields(ctx, siteId, null, body)),
   };
   if (body.related_listing_id !== undefined) row.related_listing_id = isUuid(body.related_listing_id) ? body.related_listing_id : null;
   const { data, error } = await ctx.client.from("agent_site_posts").insert(row).select("*").single();
@@ -116,7 +128,7 @@ export async function updatePost(ctx, id, body, req) {
     fields.body_html = html;
     if (body.excerpt === undefined && !post.excerpt) fields.excerpt = excerptFrom(html);
   }
-  Object.assign(fields, readStatus(body, post), await pictureFields(ctx, site.id, body));
+  Object.assign(fields, readStatus(body, post), await pictureFields(ctx, site.id, body), await pinFields(ctx, site.id, id, body));
   const slug = text(body, "slug", { max: 90 });
   if (slug !== undefined && slugify(slug) !== post.slug) {
     fields.slug = slugify(slug, post.slug);

@@ -9,6 +9,7 @@ import { buildSpec } from "./_lib/bots/openapi.js";
 import * as agents from "./_lib/bots/agents.js";
 import * as sites from "./_lib/bots/sites.js";
 import * as posts from "./_lib/bots/posts.js";
+import * as sales from "./_lib/bots/sales.js";
 import * as listings from "./_lib/bots/listings.js";
 import * as people from "./_lib/bots/people.js";
 import * as alerts from "./_lib/bots/alerts.js";
@@ -31,6 +32,9 @@ const ROUTES = [
   ["PATCH", "/sites/:id", (ctx, p, body, q, req) => sites.updateSite(ctx, p.id, body, req)],
   ["POST", "/sites/:id/areas", (ctx, p, body) => sites.addAreas(ctx, p.id, body)],
   ["POST", "/sites/:id/testimonials", (ctx, p, body) => sites.addTestimonials(ctx, p.id, body)],
+  ["GET", "/sites/:id/sales", (ctx, p) => sales.listSales(ctx, p.id)],
+  ["POST", "/sites/:id/sales", (ctx, p, body) => sales.addSales(ctx, p.id, body)],
+  ["PATCH", "/sales/:id", (ctx, p, body) => sales.updateSale(ctx, p.id, body)],
   ["GET", "/sites/:id/posts", (ctx, p, b, q, req) => posts.listPosts(ctx, p.id, q, req)],
   ["POST", "/sites/:id/posts", (ctx, p, body, q, req) => posts.createPost(ctx, p.id, body, req)],
   ["GET", "/posts/:id", (ctx, p, b, q, req) => posts.getPost(ctx, p.id, req)],

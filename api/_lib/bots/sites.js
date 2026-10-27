@@ -1,5 +1,6 @@
 import { HttpError, bad, cleanHtml, dateKey, downloadImage, isUuid, markdownToHtml, mapLimit, oneOf, slugify, storeImage, text, url } from "./util.js";
 import { requireScope } from "./context.js";
+import { insertSales, saleView } from "./sales.js";
 
 const THEMES = ["classic", "dark", "sand", "red", "linen"];
 const LAYOUTS = ["classic", "editorial", "bold", "portrait", "listings"];
@@ -123,11 +124,12 @@ export async function listSites(ctx, req) {
 
 export async function getSite(ctx, id, req) {
   const site = await loadSite(ctx, id);
-  const [{ data: areas }, { data: testimonials }] = await Promise.all([
+  const [{ data: areas }, { data: testimonials }, { data: sales }] = await Promise.all([
     ctx.client.from("agent_site_areas").select("id, slug, name, blurb").eq("agent_site_id", id).order("sort_order"),
     ctx.client.from("agent_site_testimonials").select("id, author").eq("agent_site_id", id).order("sort_order"),
+    ctx.client.from("agent_site_sales").select("*").eq("agent_site_id", id).order("sold_on", { ascending: false, nullsFirst: false }),
   ]);
-  return { site: siteView(site, req), areas: areas || [], testimonials: testimonials || [] };
+  return { site: siteView(site, req), areas: areas || [], testimonials: testimonials || [], sales: (sales || []).map(saleView) };
 }
 
 export async function createSite(ctx, body, req) {
@@ -164,6 +166,7 @@ export async function createSite(ctx, body, req) {
   }
   if (body.areas !== undefined) extras.areas = await insertAreas(ctx, created, body.areas);
   if (body.testimonials !== undefined) extras.testimonials = await insertTestimonials(ctx, created, body.testimonials);
+  if (body.sales !== undefined) extras.sales = await insertSales(ctx, created, body.sales);
   return { site: siteView(created, req), ...extras };
 }
 
@@ -184,7 +187,7 @@ export async function updateSite(ctx, id, body, req) {
       extras.hero_photo_error = err.message;
     }
   }
-  if (!Object.keys(fields).length && !body.areas && !body.testimonials) throw bad("Nothing to change. Send at least one field.");
+  if (!Object.keys(fields).length && !body.areas && !body.testimonials && !body.sales) throw bad("Nothing to change. Send at least one field.");
   let current = site;
   if (Object.keys(fields).length) {
     const { data, error } = await ctx.client.from("agent_sites").update(fields).eq("id", id).select("*").single();
@@ -193,6 +196,7 @@ export async function updateSite(ctx, id, body, req) {
   }
   if (body.areas !== undefined) extras.areas = await insertAreas(ctx, current, body.areas);
   if (body.testimonials !== undefined) extras.testimonials = await insertTestimonials(ctx, current, body.testimonials);
+  if (body.sales !== undefined) extras.sales = await insertSales(ctx, current, body.sales);
   return { site: siteView(current, req), ...extras };
 }
 
