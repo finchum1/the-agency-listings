@@ -26,7 +26,7 @@ function Tile({ label, value, sub, tone }) {
   return (
     <div className={`${card} p-4`}>
       <p className={`text-xs font-medium ${muted}`}>{label}</p>
-      <p className={`mt-1 text-2xl font-semibold ${tone === "alert" ? "text-red-600 dark:text-red-400" : ""}`}>{value}</p>
+      <p className={`mt-1 truncate text-xl @2xl:text-2xl font-semibold ${tone === "alert" ? "text-red-600 dark:text-red-400" : ""}`}>{value}</p>
       {sub && <p className={`mt-0.5 text-xs ${muted}`}>{sub}</p>}
     </div>
   );
@@ -160,7 +160,7 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
   const dateItems = upcoming.map((u, i) => ({ key: `${u.person.id}-${u.label}-${i}`, person: u.person, primary: `${u.label} · ${title(u.person)}`, secondary: `${u.person.property_address ? u.person.name : ""}${where(u.person)}`.replace(/^ · /, ""), right: <span className={`shrink-0 text-xs font-medium ${u.date === today ? "text-amber-700 dark:text-amber-400" : muted}`}>{dayLabel(u.date, today)}</span> }));
 
   return (
-    <section className="space-y-4" aria-label="Deals overview">
+    <section className="@container space-y-4" aria-label="Deals overview">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-semibold">Overview</h2>
         <button type="button" onClick={toggle} className="text-xs font-semibold text-[#1c1a17]/55 dark:text-[#faf9f7]/55 hover:underline">
@@ -168,14 +168,14 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 @3xl:grid-cols-4">
         <Tile label="Open deals" value={openDeals.length} sub={`${money.format(sum(openDeals, "price"))} volume${hasForeign ? ` · ${openDeals.length - ownOpen.length} coordinated` : ""}`} />
         <Tile label="Expected commission" value={hasForeign && ownOpen.length === 0 ? "–" : money.format(sum(ownOpen, "commission"))} sub={hasForeign ? "Your own deals only" : "From open deals"} />
         <Tile label="Closing in 30 days" value={closingSoon.length} sub={closingSoon[0] ? `Next: ${title(closingSoon[0])}, ${dayLabel(closingSoon[0].closing_date, today)}` : "Nothing scheduled"} />
         <Tile label="Needs you" value={attention} tone={attention ? "alert" : undefined} sub={attention ? [sentBack.length && `${sentBack.length} sent back`, overdue.length && `${overdue.length} overdue`, waitingDrafts.length && `${waitingDrafts.length} draft${waitingDrafts.length === 1 ? "" : "s"}`].filter(Boolean).join(" · ") : "All caught up"} />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 @3xl:grid-cols-2">
         <div className={`${card} p-4 space-y-2.5`}>
           <h3 className="font-display text-base font-semibold">Needs your attention</h3>
           {needs.length === 0 ? <p className={`text-sm ${muted}`}>Nothing is overdue, sent back or waiting on you.</p> : list("needs", needs)}

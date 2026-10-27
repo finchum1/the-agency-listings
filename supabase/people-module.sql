@@ -2514,3 +2514,24 @@ begin
   return array(select jsonb_array_elements_text(v_stages));
 end;
 $$;
+
+-- ============================================================================
+-- 55. Updates from a coordinator to the agent. deal_update_log remembers which update went out for which deal (so an automatic milestone
+--     update is sent once, and a manual one is on record). Written only by the server (api/deal-notify.js "agent_update", api/deal-updates.js
+--     cron); people who can see the deal can read it. A coordinator can turn automatic updates off in My Profile (deal_updates_auto).
+-- ============================================================================
+create table if not exists public.deal_update_log (
+  person_id uuid not null references public.people(id) on delete cascade,
+  key text not null,
+  kind text not null check (kind in ('manual', 'milestone', 'weekly')),
+  sent_by uuid references public.profiles(id) on delete set null,
+  sent_at timestamptz not null default now(),
+  primary key (person_id, key)
+);
+alter table public.deal_update_log enable row level security;
+revoke all on public.deal_update_log from anon, authenticated;
+grant select on public.deal_update_log to authenticated;
+drop policy if exists deal_update_log_read on public.deal_update_log;
+create policy deal_update_log_read on public.deal_update_log for select to authenticated using (public.deal_person_access(person_id) is not null);
+
+alter table public.agent_notification_settings add column if not exists deal_updates_auto boolean not null default true;

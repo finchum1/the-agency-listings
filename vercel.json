@@ -154,6 +154,10 @@
     {
       "path": "/api/domain-monitor",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/deal-updates",
+      "schedule": "0 14 * * *"
     }
   ],
   "functions": {
@@ -168,6 +172,9 @@
     },
     "api/domain-check.js": {
       "maxDuration": 60
+    },
+    "api/deal-updates.js": {
+      "maxDuration": 300
     }
   }
 }

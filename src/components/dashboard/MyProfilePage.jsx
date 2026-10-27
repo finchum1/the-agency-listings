@@ -36,6 +36,8 @@ export default function MyProfilePage() {
   const [alertEmail, setAlertEmail] = useState("");
   const [domainAlerts, setDomainAlerts] = useState(false);
   const [domainAlertsError, setDomainAlertsError] = useState("");
+  const [dealUpdatesAuto, setDealUpdatesAuto] = useState(true);
+  const [dealUpdatesError, setDealUpdatesError] = useState("");
   const [alertSaving, setAlertSaving] = useState(false);
   const [alertError, setAlertError] = useState("");
   const [alertSaved, setAlertSaved] = useState(false);
@@ -45,13 +47,14 @@ export default function MyProfilePage() {
     let active = true;
     supabase
       .from("agent_notification_settings")
-      .select("lead_alert_email, domain_alerts")
+      .select("lead_alert_email, domain_alerts, deal_updates_auto")
       .eq("agent_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
         if (active) {
           setAlertEmail(data?.lead_alert_email || "");
           setDomainAlerts(Boolean(data?.domain_alerts));
+          setDealUpdatesAuto(data?.deal_updates_auto !== false);
         }
       });
     return () => {
@@ -66,6 +69,16 @@ export default function MyProfilePage() {
     if (error) {
       setDomainAlerts(!on);
       setDomainAlertsError(error.message);
+    }
+  };
+
+  const toggleDealUpdatesAuto = async (on) => {
+    setDealUpdatesAuto(on);
+    setDealUpdatesError("");
+    const { error } = await supabase.from("agent_notification_settings").upsert({ agent_id: user.id, deal_updates_auto: on, updated_at: new Date().toISOString() });
+    if (error) {
+      setDealUpdatesAuto(!on);
+      setDealUpdatesError(error.message);
     }
   };
 
@@ -241,6 +254,22 @@ export default function MyProfilePage() {
             </span>
           </label>
           {domainAlertsError && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{domainAlertsError}</p>}
+        </div>
+      )}
+
+      {profile.deals_role === "tc" && (
+        <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mt-6">
+          <h2 className="font-display text-lg font-semibold">Updates to agents</h2>
+          <label className="mt-3 flex items-start gap-2.5 text-sm cursor-pointer">
+            <input type="checkbox" checked={dealUpdatesAuto} onChange={(e) => toggleDealUpdatesAuto(e.target.checked)} className="mt-0.5" />
+            <span>
+              <span className="font-medium">Email my agents automatically at deal milestones</span>
+              <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+                When closing, an inspection, the appraisal or the financing deadline is a couple of days out, when every document is collected, or when compliance approves, the agent gets a short status email with you as the reply-to. On Mondays they get one summary of deals with something overdue or coming up. You can always send an update yourself from a deal's Overview.
+              </span>
+            </span>
+          </label>
+          {dealUpdatesError && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{dealUpdatesError}</p>}
         </div>
       )}
 

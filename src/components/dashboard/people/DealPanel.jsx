@@ -6,6 +6,7 @@ import DealCompliance, { ComplianceChip } from "./DealCompliance";
 import DealSignatures from "./DealSignatures";
 import DealTabs, { dealTabs } from "./DealTabs";
 import DealOverview from "./DealOverview";
+import SendAgentUpdate from "./SendAgentUpdate";
 import { DetailGroup, EditToggle } from "./DealDetailList";
 import { useDealSummary } from "../../../hooks/useDealSummary";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
@@ -25,7 +26,8 @@ const NUMBERS = [["price", "Price"], ["commission", "Commission"]];
 // work the checklists; compliance reads them, marks documents, and approves or sends the deal back.
 export default function DealPanel({ deal, agentName, viewer, onClose, onChanged }) {
   const edit = viewer === "tc";
-  const [tab, setTab] = useState("overview");
+  // Each role opens on the tab they work in: a coordinator on Tasks, compliance on Documents (to review them); the agent's own panel opens on Overview.
+  const [tab, setTab] = useState(viewer === "compliance" ? "documents" : viewer === "tc" ? "tasks" : "overview");
   const [editingDetails, setEditingDetails] = useState(false); // read like a summary until Edit is pressed (coordinators only)
   const { user } = useAuth();
   const { stages: myStages } = usePeopleStages();
@@ -125,7 +127,9 @@ export default function DealPanel({ deal, agentName, viewer, onClose, onChanged 
 
         <DealTabs tabs={dealTabs(summary, fresh)} active={tab} onChange={setTab} />
         <div className="@container space-y-8 px-5 py-6">
-          {tab === "overview" && <DealOverview person={fresh} summary={summary} dates={dealDates} onTab={setTab} onDate={edit ? changeDate : undefined} />}
+          {tab === "overview" && <DealOverview person={fresh} summary={summary} dates={dealDates} onTab={setTab} onDate={edit ? changeDate : undefined}>
+            {{ top: edit ? <SendAgentUpdate person={fresh} agentName={agentName} /> : null }}
+          </DealOverview>}
           {tab === "tasks" && <TransactionModules person={fresh} side={side} viewer={viewer} dates={dealDates} show="tasks" />}
           {tab === "documents" && (
             <div className="space-y-6">

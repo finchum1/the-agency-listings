@@ -1,3 +1,6 @@
+// POST /api/deal-notify {personId, action: "agent_update", note?, preview?}: a coordinator on this deal sends the agent a status update (where it stands,
+// what's overdue or coming up, what's missing). With preview: true nothing is sent; the text is returned so it can be read first.
+//
 // POST /api/deal-notify {personId, action: "deal_started"}: a coordinator just started this deal for an agent (deal_start_for_agent); emails the agent
 // (once: deal_tcs.agent_emailed_at). Only the coordinator who started it can trigger it.
 //
@@ -12,6 +15,7 @@
 // Only the person who wrote the send-back can trigger it, and the email text comes from the stored message, never from the request.
 import { authenticate, serviceClient } from "./_lib/authUser.js";
 import { sendNotification } from "./_lib/inquiry.js";
+import { buildAgentUpdate, gatherDeal } from "./_lib/dealUpdate.js";
 import { buildDealStartedEmail, buildSentBackEmail, buildSubmittedEmail, buildTcAssignedEmail } from "./_lib/dealEmail.js";
 import { SITE_ORIGIN } from "../src/lib/seo.js";
 
@@ -34,6 +38,25 @@ export default async function handler(req, res) {
   // Read as the caller: they must be able to see this deal, and the newest unsent send-back must be theirs.
   const { data: deal } = await auth.supabase.from("people").select("id, owner_id, name, property_address, side, contract_date, closing_date, compliance_status").eq("id", personId).eq("stage_group", "transaction").maybeSingle();
   if (!deal) return res.status(404).json({ error: "Deal not found." });
+
+  if (req.body?.action === "agent_update") {
+    const access = (await auth.supabase.rpc("deal_person_access", { p_person: personId })).data;
+    if (access !== "tc") return res.status(403).json({ error: "Only a transaction coordinator on this deal can send the agent an update." });
+    const data = await gatherDeal(admin, personId);
+    if (!data) return res.status(404).json({ error: "Deal not found." });
+    const { data: me } = await admin.from("profiles").select("full_name, email").eq("id", auth.user.id).maybeSingle();
+    const note = String(req.body?.note || "").trim().slice(0, 2000);
+    const mail = buildAgentUpdate(data, { note, fromName: me?.full_name || "" });
+    if (req.body?.preview) return res.status(200).json({ ok: true, to: data.owner?.email || "", subject: mail.subject, text: mail.text });
+    const keyMail = process.env.RESEND_API_KEY;
+    if (!keyMail) return res.status(502).json({ error: "Email isn't set up, so the update wasn't sent." });
+    if (!data.owner?.email) return res.status(502).json({ error: "That agent has no email address on file." });
+    const okU = await sendNotification(keyMail, { from: process.env.LEAD_FROM_EMAIL || "Deals <onboarding@resend.dev>", to: [data.owner.email], replyTo: me?.email || undefined, subject: mail.subject, text: mail.text, html: mail.html });
+    if (!okU) return res.status(502).json({ error: "The email service refused it, so nothing was sent." });
+    await admin.from("deal_update_log").insert({ person_id: personId, key: `manual-${new Date().toISOString()}`, kind: "manual", sent_by: auth.user.id });
+    await admin.from("deal_messages").insert({ person_id: personId, author_id: auth.user.id, kind: "message", body: `Sent ${data.owner.full_name || "the agent"} an update.${note ? `\n\n${note}` : ""}` });
+    return res.status(200).json({ ok: true, sent: 1, to: data.owner.email });
+  }
 
   if (req.body?.action === "deal_started") {
     const key = process.env.RESEND_API_KEY;
