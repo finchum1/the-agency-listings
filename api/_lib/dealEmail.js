@@ -83,3 +83,35 @@ ${note ? `<tr><td style="padding:12px 6px 0"><div style="background:#ffffff;bord
 </table></td></tr></table></body></html>`;
   return { subject, text, html };
 }
+
+// "<coordinator> started a deal for you." Sent to the agent when a transaction coordinator creates a deal on their board.
+export function buildDealStartedEmail({ deal, tcName, agentName, orgName, url }) {
+  const title = deal.property_address || deal.name;
+  const who = tcName || "Your coordinator";
+  const subject = `${who} started a deal for you: ${title}`;
+  const facts = [
+    deal.property_address ? ["Property", deal.property_address] : null,
+    ["Client", deal.name],
+    deal.side ? ["Side", deal.side === "buyer" ? "Buyer" : "Seller"] : null,
+    deal.contract_date ? ["Contract date", dateText(deal.contract_date)] : null,
+    deal.closing_date ? ["Closing", dateText(deal.closing_date)] : null,
+  ].filter(Boolean);
+  const text = [
+    `Hi ${(agentName || "").split(" ")[0] || "there"}, ${who} started a deal for you and is coordinating it.`,
+    "",
+    ...facts.map(([k, v]) => `${k}: ${v}`),
+    "",
+    `It's on your Deals board: ${url}`,
+    "",
+    `Replying to this email reaches ${who}.`,
+  ].join("\n");
+  const rows = facts.map(([k, v]) => `<tr><td style="padding:6px 0;width:130px;font:600 11px Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#7a756b">${esc(k)}</td><td style="padding:6px 0;font:15px Arial,sans-serif;color:#1c1a17">${esc(v)}</td></tr>`).join("");
+  const html = `<!doctype html><html><body style="margin:0;background:#f7f4ee"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f4ee"><tr><td align="center" style="padding:24px 12px">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">
+<tr><td style="padding:0 6px 14px"><div style="font:600 11px Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#d3181d">New deal on your board</div><div style="margin-top:6px;font:600 26px Georgia,serif;color:#1c1a17">${esc(title)}</div><div style="margin-top:4px;font:14px Arial,sans-serif;color:#57534b">${esc(who)} started this deal for you and is coordinating it.</div></td></tr>
+<tr><td style="padding:0 6px"><div style="background:#ffffff;border:1px solid #e4dfd3;border-radius:14px;padding:12px 20px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table></div></td></tr>
+<tr><td style="padding:20px 6px"><a href="${esc(url)}" style="display:inline-block;background:#1c1a17;color:#ffffff;text-decoration:none;font:600 14px Arial,sans-serif;padding:13px 22px;border-radius:999px">Open the deal</a><div style="margin-top:10px;font:13px/1.5 Arial,sans-serif;color:#57534b">Replying to this email reaches ${esc(who)}. You can change anything on the deal, or remove the coordinator from it.</div></td></tr>
+<tr><td style="padding:6px 6px 0;font:12px/1.5 Arial,sans-serif;color:#7a756b">${esc(orgName || "")}</td></tr>
+</table></td></tr></table></body></html>`;
+  return { subject, text, html };
+}

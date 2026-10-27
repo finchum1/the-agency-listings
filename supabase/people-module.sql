@@ -2267,3 +2267,42 @@ end;
 $$;
 revoke all on function public.set_token_webhook(uuid, text) from public, anon;
 grant execute on function public.set_token_webhook(uuid, text) to authenticated;
+
+-- ============================================================================
+-- 49. A coordinator starts a deal for an agent. deal_start_for_agent() makes the deal on the agent's board (it is the agent's deal, and
+--     their private contact is made as for any new card), puts the coordinator on it, and leaves a first message in its thread. The
+--     agent is told by email (api/deal-notify.js action "deal_started"); agent_emailed_at keeps that to once. The coordinator can pick
+--     any agent in the office who has the People module on.
+-- ============================================================================
+alter table public.deal_tcs
+  add column if not exists started_by_tc boolean not null default false,
+  add column if not exists agent_emailed_at timestamptz;
+
+create or replace function public.deal_start_for_agent(
+  p_agent uuid, p_name text, p_side text, p_property_address text default '', p_phone text default '', p_email text default '',
+  p_price numeric default null, p_contract_date date default null, p_closing_date date default null
+) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare
+  me record;
+  v_stage text;
+  v_id uuid;
+begin
+  select id, org_id, full_name, deals_role into me from public.profiles where id = auth.uid();
+  if me.id is null or me.deals_role is distinct from 'tc' then raise exception 'Only a transaction coordinator can start a deal for an agent.'; end if;
+  if p_agent is null or p_agent = me.id or not exists (select 1 from public.profiles a where a.id = p_agent and a.org_id = me.org_id and a.people_enabled) then
+    raise exception 'Pick an agent in your office who uses Deals.';
+  end if;
+  if btrim(coalesce(p_name, '')) = '' then raise exception 'Add the client''s name.'; end if;
+  if p_side not in ('buyer', 'seller') then raise exception 'Choose buyer or seller.'; end if;
+  select coalesce(nullif(s.stages #>> '{transaction,0}', ''), 'Pending') into v_stage from (select 1) x left join public.people_settings s on s.owner_id = p_agent;
+  insert into public.people (owner_id, name, phone, email, stage_group, stage, side, property_address, price, contract_date, closing_date, source)
+  values (p_agent, btrim(p_name), btrim(coalesce(p_phone, '')), btrim(coalesce(p_email, '')), 'transaction', coalesce(v_stage, 'Pending'), p_side, btrim(coalesce(p_property_address, '')), p_price, p_contract_date, p_closing_date, '')
+  returning id into v_id;
+  insert into public.deal_tcs (person_id, tc_id, assigned_by, started_by_tc) values (v_id, me.id, me.id, true);
+  insert into public.deal_messages (person_id, author_id, kind, body) values (v_id, me.id, 'message', coalesce(me.full_name, 'The coordinator') || ' started this deal and is coordinating it.');
+  return v_id;
+end;
+$$;
+revoke all on function public.deal_start_for_agent(uuid, text, text, text, text, text, numeric, date, date) from public, anon;
+grant execute on function public.deal_start_for_agent(uuid, text, text, text, text, text, numeric, date, date) to authenticated;

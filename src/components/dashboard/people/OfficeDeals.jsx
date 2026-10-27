@@ -5,6 +5,7 @@ import { useTransactionProgress } from "../../../hooks/useTransactionProgress";
 import { refreshDealAttention } from "../../../hooks/useDealAttention";
 import { ComplianceChip } from "./DealCompliance";
 import DealPanel from "./DealPanel";
+import StartDealModal from "./StartDealModal";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const select = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
@@ -33,6 +34,8 @@ export default function OfficeDeals({ viewer, excludeOwn = false }) {
   const [agent, setAgent] = useState("");
   const [showClosed, setShowClosed] = useState(false);
   const [q, setQ] = useState("");
+  const [starting, setStarting] = useState(false);
+  const [startNote, setStartNote] = useState("");
   const [openId, setOpenId] = useState(() => new URLSearchParams(window.location.search).get("deal"));
   const { progress, reload: reloadProgress } = useTransactionProgress(true);
   const [unread, setUnread] = useState({});
@@ -106,6 +109,14 @@ export default function OfficeDeals({ viewer, excludeOwn = false }) {
           <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} className="accent-[#ed2127]" /> Show closed</label>
         </div>
       </div>
+      {viewer === "tc" && (
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <button type="button" onClick={() => setStarting(true)} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90">
+            + Start a deal
+          </button>
+          {startNote && <p role="status" className="text-sm text-amber-700 dark:text-amber-400">{startNote}</p>}
+        </div>
+      )}
       {error && <p className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {loading ? (
@@ -151,6 +162,19 @@ export default function OfficeDeals({ viewer, excludeOwn = false }) {
         </div>
       )}
 
+      {starting && (
+        <StartDealModal
+          onClose={() => setStarting(false)}
+          onStarted={async (id, note) => {
+            setStarting(false);
+            setStartNote(note);
+            setFilter("all");
+            setAgent("");
+            await load();
+            setOpenId(id);
+          }}
+        />
+      )}
       {open && (
         <DealPanel
           key={open.id}

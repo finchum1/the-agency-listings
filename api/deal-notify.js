@@ -1,3 +1,6 @@
+// POST /api/deal-notify {personId, action: "deal_started"}: a coordinator just started this deal for an agent (deal_start_for_agent); emails the agent
+// (once: deal_tcs.agent_emailed_at). Only the coordinator who started it can trigger it.
+//
 // POST /api/deal-notify {personId, action: "submitted"}: the agent (or their coordinator) just submitted or resubmitted a deal; emails the office's
 // compliance reviewers (once per submission: deal_messages.emailed_at). Only whoever submitted it can trigger it.
 //
@@ -9,7 +12,7 @@
 // Only the person who wrote the send-back can trigger it, and the email text comes from the stored message, never from the request.
 import { authenticate, serviceClient } from "./_lib/authUser.js";
 import { sendNotification } from "./_lib/inquiry.js";
-import { buildSentBackEmail, buildSubmittedEmail, buildTcAssignedEmail } from "./_lib/dealEmail.js";
+import { buildDealStartedEmail, buildSentBackEmail, buildSubmittedEmail, buildTcAssignedEmail } from "./_lib/dealEmail.js";
 import { SITE_ORIGIN } from "../src/lib/seo.js";
 
 export default async function handler(req, res) {
@@ -31,6 +34,31 @@ export default async function handler(req, res) {
   // Read as the caller: they must be able to see this deal, and the newest unsent send-back must be theirs.
   const { data: deal } = await auth.supabase.from("people").select("id, owner_id, name, property_address, side, contract_date, closing_date, compliance_status").eq("id", personId).eq("stage_group", "transaction").maybeSingle();
   if (!deal) return res.status(404).json({ error: "Deal not found." });
+
+  if (req.body?.action === "deal_started") {
+    const key = process.env.RESEND_API_KEY;
+    if (!key) return res.status(502).json({ error: "Email isn't set up, so the agent wasn't emailed. The deal is on their board." });
+    const { data: mine } = await auth.supabase.from("deal_tcs").select("tc_id").eq("person_id", personId).eq("tc_id", auth.user.id).eq("started_by_tc", true).is("agent_emailed_at", null).maybeSingle();
+    if (!mine) return res.status(200).json({ ok: true, sent: 0, note: "Nothing to send." });
+    const { data: claimedD } = await admin.from("deal_tcs").update({ agent_emailed_at: new Date().toISOString() }).eq("person_id", personId).eq("tc_id", auth.user.id).is("agent_emailed_at", null).select("tc_id");
+    if (!claimedD?.length) return res.status(200).json({ ok: true, sent: 0, note: "Already emailed." });
+    const release = () => admin.from("deal_tcs").update({ agent_emailed_at: null }).eq("person_id", personId).eq("tc_id", auth.user.id);
+    const [{ data: agent }, { data: tc }] = await Promise.all([
+      admin.from("profiles").select("full_name, email, org:organizations(name)").eq("id", deal.owner_id).maybeSingle(),
+      admin.from("profiles").select("full_name, email").eq("id", auth.user.id).maybeSingle(),
+    ]);
+    if (!agent?.email) {
+      await release();
+      return res.status(502).json({ error: "That agent has no email address on file." });
+    }
+    const mail = buildDealStartedEmail({ deal, tcName: tc?.full_name || "", agentName: agent.full_name || "", orgName: agent.org?.name, url: `${SITE_ORIGIN}/dashboard/deals?deal=${deal.id}` });
+    const okD = await sendNotification(key, { from: process.env.LEAD_FROM_EMAIL || "Deals <onboarding@resend.dev>", to: [agent.email], replyTo: tc?.email || undefined, subject: mail.subject, text: mail.text, html: mail.html });
+    if (!okD) {
+      await release();
+      return res.status(502).json({ error: "The email service refused it. The deal is still on the agent's board." });
+    }
+    return res.status(200).json({ ok: true, sent: 1 });
+  }
 
   if (req.body?.action === "submitted") {
     const apiKeyS = process.env.RESEND_API_KEY;
