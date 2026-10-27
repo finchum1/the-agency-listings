@@ -4,6 +4,9 @@ import { dealAccess } from "../../../lib/deals";
 import { useDealAttention } from "../../../hooks/useDealAttention";
 import PeopleBoard from "./PeopleBoard";
 import OfficeDeals from "./OfficeDeals";
+import DealsHome from "./DealsHome";
+
+const renderHome = (props) => <DealsHome {...props} />;
 
 // Deals: an agent's own board, plus (for a coordinator or compliance) the office view. Plain agents just get their board.
 export default function DealsPage() {
@@ -13,7 +16,7 @@ export default function DealsPage() {
   const [tab, setTab] = useState(access.mine ? "mine" : "office");
   const viewer = access.isCompliance ? "compliance" : "tc";
 
-  if (!access.team) return <PeopleBoard group="transaction" />;
+  if (!access.team) return <PeopleBoard group="transaction" renderOverview={renderHome} />;
 
   const tabs = [
     ...(access.mine ? [["mine", "My deals", 0]] : []),
@@ -39,7 +42,7 @@ export default function DealsPage() {
           </div>
         )}
       </div>
-      {tab === "mine" && access.mine ? <PeopleBoard group="transaction" /> : <OfficeDeals viewer={viewer} />}
+      {tab === "mine" && access.mine ? <PeopleBoard group="transaction" renderOverview={renderHome} /> : <OfficeDeals viewer={viewer} />}
     </div>
   );
 }

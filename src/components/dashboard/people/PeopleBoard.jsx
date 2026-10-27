@@ -225,7 +225,9 @@ function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleCl
   );
 }
 
-export default function PeopleBoard({ group }) {
+// `renderOverview` (used by Deals) draws something between the board header and the columns, and is handed what it needs to open any
+// deal in the same side panel a card opens.
+export default function PeopleBoard({ group, renderOverview }) {
   const board = BOARDS[group];
   const { people, setPeople, loading, error, refresh } = usePeople();
   const { progress, reload: reloadProgress } = useTransactionProgress(group === "transaction");
@@ -598,6 +600,8 @@ export default function PeopleBoard({ group }) {
       </div>
 
       {(error || boardError) && <p className="text-sm text-red-600 dark:text-red-400">{error || boardError}</p>}
+
+      {renderOverview && !loading && renderOverview({ deals: active, progress, closedStage, openDeal: setSelectedId, selectedId })}
 
       {/* The board is a fixed-height strip: it scrolls sideways, and each
           column scrolls up and down on its own. The strip is the full board

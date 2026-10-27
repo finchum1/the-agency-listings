@@ -133,7 +133,7 @@ export default function ContactsPage() {
   const [sort, setSort] = useState("name");
   const [activeList, setActiveList] = useState("");
   const [selected, setSelected] = useState(() => new Set());
-  const [openId, setOpenId] = useState(null);
+  const [openId, setOpenId] = useState(() => new URLSearchParams(window.location.search).get("contact"));
   const [modal, setModal] = useState(null); // add | import | tags | followup | merge
   const [shown, setShown] = useState(PAGE);
   const [note, setNote] = useState("");

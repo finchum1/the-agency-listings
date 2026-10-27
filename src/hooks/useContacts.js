@@ -168,5 +168,5 @@ export function useContacts() {
     return {};
   };
 
-  return { contacts, tags, cards, ctx, lists, loading, error, reload: load, addContact, updateContact, updateMany, deleteContact, ensureTag, tagMany, untagMany, updateTag, deleteTag, saveList, deleteList, merge };
+  return { contacts, tags, cards, tasks, ctx, lists, loading, error, reload: load, addContact, updateContact, updateMany, deleteContact, ensureTag, tagMany, untagMany, updateTag, deleteTag, saveList, deleteList, merge };
 }
