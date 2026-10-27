@@ -25,6 +25,7 @@ import DealsGate from "./components/dashboard/people/DealsGate";
 import DealsPage from "./components/dashboard/people/DealsPage";
 import ListingReportPage from "./pages/ListingReportPage";
 import TransactionTimelinePage from "./pages/TransactionTimelinePage";
+import AgentUpdatePage from "./pages/AgentUpdatePage";
 import VendorSharePage from "./pages/VendorSharePage";
 import MyProfilePage from "./components/dashboard/MyProfilePage";
 import MySitePage from "./components/dashboard/MySitePage";
@@ -212,6 +213,8 @@ export default function App() {
       <Route path="/report/:token" element={<ListingReportPage />} />
       {/* A buyer's or seller's private closing timeline. */}
       <Route path="/timeline/:token" element={<TransactionTimelinePage />} />
+      {/* A coordinator's update on one deal, for the agent who owns it: same idea, token in the address. */}
+      <Route path="/update/:token" element={<AgentUpdatePage />} />
       <Route
         path="/preview/:token/site"
         element={
