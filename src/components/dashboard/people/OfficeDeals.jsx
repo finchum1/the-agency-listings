@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
+import { useAuth } from "../../../hooks/useAuth";
 import { useTransactionProgress } from "../../../hooks/useTransactionProgress";
 import { refreshDealAttention } from "../../../hooks/useDealAttention";
 import { ComplianceChip } from "./DealCompliance";
@@ -19,8 +20,12 @@ const dateLabel = (d) => (d ? new Date(`${d}T12:00:00`).toLocaleDateString(undef
 
 // The office view of deals for a transaction coordinator (their agents' deals, editable) and compliance (every deal in the
 // office, with the review actions). What each person can see is decided by the database, not by this screen.
-export default function OfficeDeals({ viewer }) {
-  const [deals, setDeals] = useState([]);
+// `excludeOwn`: leave out the signed-in agent's own deals (on a page that already shows them on a board).
+export default function OfficeDeals({ viewer, excludeOwn = false }) {
+  const { user } = useAuth();
+  const [allDeals, setDeals] = useState([]);
+  // Decided here, not when loading, because who is signed in may not be known yet on the first load.
+  const deals = useMemo(() => allDeals.filter((d) => !excludeOwn || d.owner_id !== user?.id), [allDeals, excludeOwn, user?.id]);
   const [agents, setAgents] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
