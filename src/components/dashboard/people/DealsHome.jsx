@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { effectiveDue } from "../../../lib/checklists";
 import { addDays, dayLabel, toKey } from "../../../lib/homeDates";
@@ -32,9 +32,11 @@ function Tile({ label, value, sub, tone }) {
   );
 }
 
-function Row({ onClick, primary, secondary, right, urgent }) {
+// A row that opens its deal. With `onCheck` it has a checkbox in front, to tick the task off without opening the deal.
+function Row({ onClick, primary, secondary, right, urgent, onCheck }) {
   return (
-    <li>
+    <li className={onCheck ? "flex items-center gap-2.5" : undefined}>
+      {onCheck && <input type="checkbox" checked={false} onChange={onCheck} aria-label={`Mark done: ${primary}`} className="h-4 w-4 shrink-0 accent-[#ed2127] cursor-pointer" />}
       <button type="button" onClick={onClick} className="flex w-full items-center justify-between gap-3 rounded-xl border border-black/10 dark:border-white/15 px-3 py-2.5 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
         <span className="min-w-0">
           <span className="block truncate text-sm font-medium">{primary}</span>
@@ -60,6 +62,10 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
   const [tasks, setTasks] = useState([]);
   const [drafts, setDrafts] = useState([]);
   const [more, setMore] = useState({});
+  const [justDone, setJustDone] = useState(null); // the task just ticked off, kept a few seconds so it can be undone
+  const [taskError, setTaskError] = useState("");
+  const undoTimer = useRef(null);
+  useEffect(() => () => clearTimeout(undoTimer.current), []);
 
   const toggle = () =>
     setOpen((v) => {
@@ -83,6 +89,33 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
   useEffect(() => {
     if (!selectedId) load();
   }, [load, selectedId]);
+
+  // Ticking a task off here is the same write the deal's own checklist makes. It leaves the list at once; a miss puts it back.
+  const completeTask = async (task) => {
+    setTaskError("");
+    setTasks((list) => list.filter((t) => t.id !== task.id));
+    const { error } = await supabase.from("transaction_tasks").update({ done: true, done_at: new Date().toISOString() }).eq("id", task.id);
+    if (error) {
+      setTasks((list) => [...list, task]);
+      setTaskError(error.message);
+      return;
+    }
+    setJustDone(task);
+    clearTimeout(undoTimer.current);
+    undoTimer.current = setTimeout(() => setJustDone(null), 8000);
+  };
+  const undoTask = async () => {
+    const task = justDone;
+    if (!task) return;
+    clearTimeout(undoTimer.current);
+    setJustDone(null);
+    setTasks((list) => [...list, task]);
+    const { error } = await supabase.from("transaction_tasks").update({ done: false, done_at: null }).eq("id", task.id);
+    if (error) {
+      setTasks((list) => list.filter((t) => t.id !== task.id));
+      setTaskError(error.message);
+    }
+  };
 
   const now = new Date();
   const today = toKey(now);
@@ -119,7 +152,7 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
 
   const needs = [
     ...sentBack.map((p) => ({ key: `sb-${p.id}`, person: p, primary: title(p), secondary: `Sent back by compliance${where(p)}. Fix it and resubmit.`, right: <ComplianceChip status="needs_changes" />, urgent: true })),
-    ...overdue.map((o) => ({ key: `t-${o.task.id}`, person: o.person, primary: o.task.text, secondary: `${title(o.person)}${where(o.person)} · due ${dayLabel(o.due, today)}`, urgent: true })),
+    ...overdue.map((o) => ({ key: `t-${o.task.id}`, person: o.person, primary: o.task.text, secondary: `${title(o.person)}${where(o.person)} · due ${dayLabel(o.due, today)}`, urgent: true, onCheck: () => completeTask(o.task) })),
     ...waitingDrafts.map((d) => ({ key: `d-${d.id}`, person: byId.get(d.person_id), primary: `Draft ${d.channel === "email" ? "email" : d.channel === "text" ? "text" : "call"} waiting`, secondary: `${title(byId.get(d.person_id))}${d.subject ? ` · ${d.subject}` : ""}` })),
   ];
 
@@ -144,7 +177,7 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
       <>
         <ul className="space-y-1.5">
           {(expanded ? items : items.slice(0, SHOW)).map((it) => (
-            <Row key={it.key} onClick={() => openDeal(it.person.id)} primary={it.primary} secondary={it.secondary} right={it.right} urgent={it.urgent} />
+            <Row key={it.key} onClick={() => openDeal(it.person.id)} primary={it.primary} secondary={it.secondary} right={it.right} urgent={it.urgent} onCheck={it.onCheck} />
           ))}
         </ul>
         {items.length > SHOW && (
@@ -179,6 +212,15 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
         <div className={`${card} p-4 space-y-2.5`}>
           <h3 className="font-display text-base font-semibold">Needs your attention</h3>
           {needs.length === 0 ? <p className={`text-sm ${muted}`}>Nothing is overdue, sent back or waiting on you.</p> : list("needs", needs)}
+          {justDone && (
+            <p role="status" className="flex items-center justify-between gap-3 rounded-lg bg-black/[0.04] dark:bg-white/[0.06] px-3 py-2 text-xs">
+              <span className="min-w-0 truncate">Checked off "{justDone.text}"</span>
+              <button type="button" onClick={undoTask} className="shrink-0 font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                Undo
+              </button>
+            </p>
+          )}
+          {taskError && <p className="text-xs text-red-600 dark:text-red-400">{taskError}</p>}
         </div>
         <div className={`${card} p-4 space-y-2.5`}>
           <h3 className="font-display text-base font-semibold">Coming up · next {UPCOMING_DAYS} days</h3>
