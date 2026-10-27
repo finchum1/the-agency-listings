@@ -34,6 +34,8 @@ export default function MyProfilePage() {
 
   // Optional second address for lead alerts. Kept in a private table (never on the public profile row).
   const [alertEmail, setAlertEmail] = useState("");
+  const [domainAlerts, setDomainAlerts] = useState(false);
+  const [domainAlertsError, setDomainAlertsError] = useState("");
   const [alertSaving, setAlertSaving] = useState(false);
   const [alertError, setAlertError] = useState("");
   const [alertSaved, setAlertSaved] = useState(false);
@@ -43,16 +45,29 @@ export default function MyProfilePage() {
     let active = true;
     supabase
       .from("agent_notification_settings")
-      .select("lead_alert_email")
+      .select("lead_alert_email, domain_alerts")
       .eq("agent_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (active) setAlertEmail(data?.lead_alert_email || "");
+        if (active) {
+          setAlertEmail(data?.lead_alert_email || "");
+          setDomainAlerts(Boolean(data?.domain_alerts));
+        }
       });
     return () => {
       active = false;
     };
   }, [user?.id]);
+
+  const toggleDomainAlerts = async (on) => {
+    setDomainAlerts(on);
+    setDomainAlertsError("");
+    const { error } = await supabase.from("agent_notification_settings").upsert({ agent_id: user.id, domain_alerts: on, updated_at: new Date().toISOString() });
+    if (error) {
+      setDomainAlerts(!on);
+      setDomainAlertsError(error.message);
+    }
+  };
 
   const handleAlertSubmit = async (e) => {
     e.preventDefault();
@@ -212,6 +227,22 @@ export default function MyProfilePage() {
           {alertSaving ? "Saving…" : "Save alert address"}
         </button>
       </form>
+
+      {profile.role === "admin" && (
+        <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mt-6">
+          <h2 className="font-display text-lg font-semibold">Domain alerts</h2>
+          <label className="mt-3 flex items-start gap-2.5 text-sm cursor-pointer">
+            <input type="checkbox" checked={domainAlerts} onChange={(e) => toggleDomainAlerts(e.target.checked)} className="mt-0.5" />
+            <span>
+              <span className="font-medium">Email me when a property site's custom domain stops responding</span>
+              <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+                Every domain is checked each morning (and whenever the Listings page is opened). You get one email when a working domain goes down, with what to check, and one when it's back.
+              </span>
+            </span>
+          </label>
+          {domainAlertsError && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{domainAlertsError}</p>}
+        </div>
+      )}
 
       {profile.people_enabled && (
         <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mt-6">

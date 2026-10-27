@@ -150,6 +150,10 @@
     {
       "path": "/api/weekly-reports",
       "schedule": "0 14 * * 1"
+    },
+    {
+      "path": "/api/domain-monitor",
+      "schedule": "0 13 * * *"
     }
   ],
   "functions": {
@@ -157,6 +161,12 @@
       "maxDuration": 30
     },
     "api/bots.js": {
+      "maxDuration": 60
+    },
+    "api/domain-monitor.js": {
+      "maxDuration": 60
+    },
+    "api/domain-check.js": {
       "maxDuration": 60
     }
   }

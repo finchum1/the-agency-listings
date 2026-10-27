@@ -2177,3 +2177,23 @@ begin
   if def not like '%video_plays%' then raise exception 'listing_analytics was not changed'; end if;
   execute def;
 end $$;
+
+-- ============================================================================
+-- 47. Domain monitoring. domain_health remembers how each property site's custom domain checked out last time (written only by
+--     api/_lib/domainCheck.js with the service role: no client policies), so an email goes out once when a domain that was working
+--     stops responding, and once when it comes back. An admin turns the emails on in My Profile (domain_alerts); it is off by default.
+-- ============================================================================
+create table if not exists public.domain_health (
+  listing_id uuid primary key references public.listings(id) on delete cascade,
+  org_id uuid,
+  domain text not null,
+  status text not null,
+  last_checked_at timestamptz not null default now(),
+  last_ok_at timestamptz,
+  down_since timestamptz,
+  alerted_at timestamptz
+);
+alter table public.domain_health enable row level security;
+revoke all on public.domain_health from anon, authenticated;
+
+alter table public.agent_notification_settings add column if not exists domain_alerts boolean not null default false;
