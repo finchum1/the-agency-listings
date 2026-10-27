@@ -40,8 +40,8 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
   const [entered, setEntered] = useState(false);
   const asideRef = useRef(null);
   const [shareOpen, setShareOpen] = useState(false);
-  // Each role opens on the tab they work in: a coordinator on Tasks, compliance on Documents (to review them); the agent's own panel opens on Overview.
-  const [tab, setTab] = useState(viewer === "compliance" ? "documents" : viewer === "tc" ? "tasks" : "overview");
+  // A coordinator opens on the Overview, like the agent does; compliance opens on Documents, which is what they review.
+  const [tab, setTab] = useState(viewer === "compliance" ? "documents" : "overview");
   const [editingDetails, setEditingDetails] = useState(false); // read like a summary until Edit is pressed (coordinators only)
   const { user } = useAuth();
   const { stages: myStages } = usePeopleStages();
