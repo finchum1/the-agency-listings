@@ -50,7 +50,7 @@ export default function TransactionTimelinePage() {
   const [go, setGo] = useState(false);
 
   useEffect(() => {
-    document.title = "Your closing timeline";
+    document.title = "Your Closing Timeline";
     const meta = document.createElement("meta");
     meta.name = "robots";
     meta.content = "noindex, nofollow";

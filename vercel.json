@@ -111,6 +111,17 @@
       "destination": "/api/meta-vendors?token=:token"
     },
     {
+      "source": "/timeline/:token",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|Facebot|Twitterbot|Slackbot|LinkedInBot|WhatsApp|TelegramBot|Discordbot|Googlebot|bingbot|Applebot|Pinterest|redditbot|SkypeUriPreview|vkShare|W3C_Validator|GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|Claude-User|Claude-SearchBot|anthropic-ai|PerplexityBot|Perplexity-User|DuckAssistBot|Amazonbot|CCBot|Meta-ExternalAgent|cohere-ai|MistralAI-User).*"
+        }
+      ],
+      "destination": "/api/meta-timeline?token=:token"
+    },
+    {
       "source": "/blog/:postSlug",
       "has": [
         {
