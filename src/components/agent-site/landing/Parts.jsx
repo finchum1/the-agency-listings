@@ -17,6 +17,10 @@ const TONES = {
   dark: "bg-[var(--as-dark)] text-[var(--as-on-dark)]",
 };
 
+// The footer in the Linen theme is a light beige, only a shade off the page's own tones, so the last band above it goes pure white with a firmer
+// line under it. (Every other theme's footer is dark or colored and needs nothing extra.)
+export const aboveFooter = (site) => (site.theme === "linen" ? "!bg-white border-b border-[var(--as-text)]/20" : "");
+
 export function Section({ tone = "bg", id, children, className = "" }) {
   return (
     <section id={id} className={`${sectionPad} ${TONES[tone]} ${className}`}>

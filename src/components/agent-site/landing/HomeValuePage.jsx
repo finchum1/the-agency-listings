@@ -5,7 +5,7 @@ import { sanitizeHtml } from "../../../lib/sanitizeHtml";
 import { HoneypotField } from "../../../lib/spamGuard";
 import SiteLink from "../SiteLink";
 import SoldHomes from "../SoldHomes";
-import { Chips, Eyebrow, Field, Heading, Section, inputClass, primaryButton } from "./Parts";
+import { Chips, Eyebrow, Field, Heading, Section, aboveFooter, inputClass, primaryButton } from "./Parts";
 import { useLandingSubmit } from "./useLandingSubmit";
 import { CONDITIONS, SELL_TIMELINES } from "./content";
 
@@ -80,7 +80,7 @@ export default function HomeValuePage() {
         </Section>
       )}
 
-      <Section id="privacy" className="border-t border-[var(--as-text)]/10">
+      <Section id="privacy" className={`border-t border-[var(--as-text)]/10 ${aboveFooter(site)}`}>
         <div className="flex flex-wrap items-center justify-between gap-6">
           <p className="max-w-xl text-[15px] leading-relaxed opacity-75">
             Your information goes to {first} and no one else. This is a request for a valuation, not an appraisal.

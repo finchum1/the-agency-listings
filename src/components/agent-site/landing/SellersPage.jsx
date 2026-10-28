@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAgentSiteContext } from "../../../context/AgentSiteContext";
 import { HoneypotField } from "../../../lib/spamGuard";
 import SiteLink from "../SiteLink";
-import { AgentCard, Chips, ContactLink, Disclaimer, Eyebrow, Field, Heading, Journey, Lead, PageHero, Pillars, Section, inputClass, outlineButton, primaryButton } from "./Parts";
+import { AgentCard, Chips, ContactLink, Disclaimer, Eyebrow, Field, Heading, Journey, Lead, PageHero, Pillars, Section, aboveFooter, inputClass, outlineButton, primaryButton } from "./Parts";
 import { useLandingSubmit } from "./useLandingSubmit";
 import { CLOSING_CHECKLIST, OFFER_OPTIONS, PILLARS, SELLER_COSTS, SELLER_PREP, SELLER_STEPS, SELL_TIMELINES } from "./content";
 
@@ -182,7 +182,7 @@ function SellerCta() {
     submit({ name: f.name, email: f.email, phone: f.phone, address: f.address, details: { timeline: f.timeline } });
   };
   return (
-    <Section tone="alt" id="start">
+    <Section tone="alt" id="start" className={aboveFooter(site)}>
       <div className="grid lg:grid-cols-2 gap-14 items-start">
         <div>
           <Eyebrow>Ready to sell your home?</Eyebrow>

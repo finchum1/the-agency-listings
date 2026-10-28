@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAgentSiteContext } from "../../../context/AgentSiteContext";
 import { HoneypotField } from "../../../lib/spamGuard";
-import { AgentCard, Chips, ContactLink, Disclaimer, Eyebrow, Field, Heading, Journey, Lead, PageHero, Pillars, Section, inputClass, outlineButton, primaryButton } from "./Parts";
+import { AgentCard, Chips, ContactLink, Disclaimer, Eyebrow, Field, Heading, Journey, Lead, PageHero, Pillars, Section, aboveFooter, inputClass, outlineButton, primaryButton } from "./Parts";
 import { useLandingSubmit } from "./useLandingSubmit";
 import { BUYER_STEPS, CLOSING_STEPS, LENDER_REVIEWS, LOAN_DONTS, OFFER_STEPS, PILLARS, WISH_LOCATIONS, WISH_STYLES, WISH_TYPES } from "./content";
 
@@ -171,7 +171,7 @@ export default function BuyersPage() {
       )}
 
       {/* The last band is light (the footer under it is dark); it takes whichever light tone the section above it is not. */}
-      <Section tone={isAgency ? "bg" : "alt"} id="start" className={isAgency ? "border-t border-[var(--as-text)]/10" : ""}>
+      <Section tone={isAgency ? "bg" : "alt"} id="start" className={`${isAgency ? "border-t border-[var(--as-text)]/10" : ""} ${aboveFooter(site)}`}>
         <div className="flex flex-wrap items-center justify-between gap-8">
           <div>
             <Eyebrow>Ready to find your dream home?</Eyebrow>
