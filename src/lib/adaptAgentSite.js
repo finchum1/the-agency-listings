@@ -36,7 +36,11 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     // marketing site's floating pill that's clear at the top and gains a
     // rounded, shadowed pill once scrolled ("floating"). See
     // Navbar.jsx and SiteForm.jsx's "Header Style" picker.
-    headerStyle: site.header_style || "classic",
+    headerStyle: ["floating", "centered", "centered_pill", "stacked", "minimal"].includes(site.header_style) ? site.header_style : "classic",
+    // classic | centered | cta | wide | slim — see Footer.jsx.
+    footerStyle: ["centered", "cta", "wide", "slim"].includes(site.footer_style) ? site.footer_style : "classic",
+    // The agent's own order for the header and footer menus, a list of page paths (see lib/siteNav.js).
+    navOrder: Array.isArray(site.nav_order) ? site.nav_order : [],
     // "square" (original) or "pill" — see index.css [data-buttons="pill"] .as-btn.
     buttonStyle: site.button_style === "pill" ? "pill" : "square",
     fontPairing: site.font_pairing || "playfair-jost",

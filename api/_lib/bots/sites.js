@@ -20,6 +20,8 @@ export const siteView = (s, req) => ({
   layout: s.layout,
   font_pairing: s.font_pairing,
   header_style: s.header_style,
+  footer_style: s.footer_style,
+  nav_order: s.nav_order,
   button_style: s.button_style,
   home_sections: s.home_sections,
   custom_domain: s.custom_domain,
@@ -44,7 +46,13 @@ function readFields(body) {
   set("theme", oneOf(body, "theme", THEMES));
   set("layout", oneOf(body, "layout", LAYOUTS));
   set("font_pairing", oneOf(body, "font_pairing", FONTS));
-  set("header_style", oneOf(body, "header_style", ["classic", "floating"]));
+  set("header_style", oneOf(body, "header_style", ["classic", "floating", "centered", "centered_pill", "stacked", "minimal"]));
+  if (body.nav_order !== undefined) {
+    const order = body.nav_order;
+    if (!Array.isArray(order) || order.length > 20 || order.some((p) => typeof p !== "string" || !/^\/[a-z0-9-]*$/.test(p))) throw bad("nav_order must be a list of page paths like /about, /sellers, /contact.");
+    set("nav_order", order);
+  }
+  set("footer_style", oneOf(body, "footer_style", ["classic", "centered", "cta", "wide", "slim"]));
   set("button_style", oneOf(body, "button_style", ["square", "pill"]));
   set("logo_variant", oneOf(body, "logo_variant", ["red", "white", "black"]));
   set("seo_title", text(body, "seo_title", { max: 120 }));

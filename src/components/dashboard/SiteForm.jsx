@@ -8,6 +8,7 @@ import RichTextEditor from "./RichTextEditor";
 import { paragraphsToHtml } from "../../lib/richTextFallback";
 import CollapsibleSection from "./CollapsibleSection";
 import LandingCardsEditor from "./LandingCardsEditor";
+import MenuOrderEditor from "./MenuOrderEditor";
 import FormSaveBar from "./FormSaveBar";
 
 // Kept in sync with the CSS custom properties in src/index.css
@@ -82,6 +83,35 @@ const HEADER_STYLES = [
     description:
       "A clear header at the top that becomes a detached, rounded pill once you scroll.",
   },
+  {
+    value: "centered",
+    label: "Centered logo",
+    description: "Your logo in the middle of the bar, with half the pages on each side of it.",
+  },
+  {
+    value: "centered_pill",
+    label: "Centered logo, floating",
+    description: "The centered logo as the floating pill that appears once you scroll.",
+  },
+  {
+    value: "stacked",
+    label: "Stacked",
+    description: "Your logo centered on top, with the pages in a row beneath it.",
+  },
+  {
+    value: "minimal",
+    label: "Minimal",
+    description: "Just your logo, phone number and a menu button, at every screen size.",
+  },
+];
+
+// How the footer is arranged (agent_sites.footer_style), see Footer.jsx. What it says is the same in every style.
+const FOOTER_STYLES = [
+  { value: "classic", label: "Three columns", description: "You and your logo, how to reach you, and the pages." },
+  { value: "centered", label: "Centered", description: "Everything in one centered stack: logo, pages, social links, contact." },
+  { value: "cta", label: "Call to action", description: "A \"thinking of making a move?\" band above the three columns." },
+  { value: "wide", label: "Four columns", description: "Adds the buyer and seller pages and your areas as columns of links." },
+  { value: "slim", label: "Slim bar", description: "One line: logo, pages and phone number." },
 ];
 
 // The first entry (kept under its original "playfair-jost" value so
@@ -208,6 +238,8 @@ export default function SiteForm({ site, onSaved }) {
       theme: s.theme || "classic",
       layout: s.layout || "classic",
       header_style: s.header_style || "classic",
+      footer_style: s.footer_style || "classic",
+      nav_order: Array.isArray(s.nav_order) ? s.nav_order : [],
       button_style: s.button_style || "square",
       font_pairing: s.font_pairing || "playfair-jost",
       accent_color: s.accent_color || "",
@@ -304,6 +336,8 @@ export default function SiteForm({ site, onSaved }) {
       theme: form.theme,
       layout: form.layout,
       header_style: form.header_style,
+      footer_style: form.footer_style,
+      nav_order: form.nav_order,
       button_style: form.button_style,
       font_pairing: form.font_pairing,
       accent_color: form.accent_color || null,
@@ -476,6 +510,33 @@ export default function SiteForm({ site, onSaved }) {
                 >
                   <p className="text-sm font-semibold">{h.label}</p>
                   <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{h.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Menu order</label>
+            <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mb-2.5">The order of the pages in the header and the footer. Drag a page, or use the arrows.</p>
+            <MenuOrderEditor homeSections={form.home_sections} landing={form.landing} value={form.nav_order} onChange={(v) => set("nav_order", v)} />
+          </div>
+
+          <div>
+            <label className={labelClass}>Footer style</label>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {FOOTER_STYLES.map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => set("footer_style", f.value)}
+                  className={`text-left rounded-xl border p-3.5 transition-colors ${
+                    form.footer_style === f.value
+                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
+                  }`}
+                >
+                  <p className="text-sm font-semibold">{f.label}</p>
+                  <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{f.description}</p>
                 </button>
               ))}
             </div>
