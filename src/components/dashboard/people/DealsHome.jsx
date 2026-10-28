@@ -140,7 +140,7 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
     .map((t) => {
       const p = openDeals.find((d) => d.id === t.person_id);
       const due = p && effectiveDue(t, p);
-      return p && due && due < today ? { task: t, person: p, due } : null;
+      return p && due && due <= today ? { task: t, person: p, due } : null;
     })
     .filter(Boolean)
     .sort((a, b) => a.due.localeCompare(b.due));
@@ -153,7 +153,7 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
 
   const needs = [
     ...sentBack.map((p) => ({ key: `sb-${p.id}`, person: p, primary: title(p), secondary: `Sent back by compliance${where(p)}. Fix it and resubmit.`, right: <ComplianceChip status="needs_changes" />, urgent: true })),
-    ...overdue.map((o) => ({ key: `t-${o.task.id}`, person: o.person, primary: o.task.text, secondary: `${title(o.person)}${where(o.person)} · due ${dayLabel(o.due, today)}`, urgent: true, onCheck: () => completeTask(o.task) })),
+    ...overdue.map((o) => ({ key: `t-${o.task.id}`, person: o.person, primary: o.task.text, secondary: `${title(o.person)}${where(o.person)} · due ${dayLabel(o.due, today)}`, urgent: o.due < today, onCheck: () => completeTask(o.task) })),
     ...waitingDrafts.map((d) => ({ key: `d-${d.id}`, person: byId.get(d.person_id), primary: `Draft ${d.channel === "email" ? "email" : d.channel === "text" ? "text" : "call"} waiting`, secondary: `${title(byId.get(d.person_id))}${d.subject ? ` · ${d.subject}` : ""}` })),
   ];
 
@@ -206,13 +206,13 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
         <Tile label="Open deals" value={openDeals.length} sub={`${money.format(sum(openDeals, "price"))} volume${hasForeign ? ` · ${openDeals.length - ownOpen.length} coordinated` : ""}`} />
         <Tile label="Expected commission" value={hasForeign && ownOpen.length === 0 ? "–" : money.format(sum(ownOpen, "commission"))} sub={hasForeign ? "Your own deals only" : "From open deals"} />
         <Tile label="Closing in 30 days" value={closingSoon.length} sub={closingSoon[0] ? `Next: ${title(closingSoon[0])}, ${dayLabel(closingSoon[0].closing_date, today)}` : "Nothing scheduled"} />
-        <Tile label="Needs you" value={attention} tone={attention ? "alert" : undefined} sub={attention ? [sentBack.length && `${sentBack.length} sent back`, overdue.length && `${overdue.length} overdue`, waitingDrafts.length && `${waitingDrafts.length} draft${waitingDrafts.length === 1 ? "" : "s"}`].filter(Boolean).join(" · ") : "All caught up"} />
+        <Tile label="Needs you" value={attention} tone={attention ? "alert" : undefined} sub={attention ? [sentBack.length && `${sentBack.length} sent back`, overdue.length && `${overdue.length} overdue or due today`, waitingDrafts.length && `${waitingDrafts.length} draft${waitingDrafts.length === 1 ? "" : "s"}`].filter(Boolean).join(" · ") : "All caught up"} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 @3xl:grid-cols-2">
         <div className={`${card} p-4 space-y-2.5`}>
           <h3 className="font-display text-base font-semibold">Needs your attention</h3>
-          {needs.length === 0 ? <p className={`text-sm ${muted}`}>Nothing is overdue, sent back or waiting on you.</p> : list("needs", needs)}
+          {needs.length === 0 ? <p className={`text-sm ${muted}`}>Nothing is overdue, due today, sent back or waiting on you.</p> : list("needs", needs)}
           {justDone && (
             <p role="status" className="flex items-center justify-between gap-3 rounded-lg bg-black/[0.04] dark:bg-white/[0.06] px-3 py-2 text-xs">
               <span className="min-w-0 truncate">Checked off "{justDone.text}"</span>

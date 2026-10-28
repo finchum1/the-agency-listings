@@ -37,8 +37,8 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
   const today = toKey(new Date());
   const needs = [];
   if (person.compliance_status === "needs_changes") needs.push({ key: "sb", title: "Compliance sent this deal back", note: "Read the note", tone: "alert", tab: "messages" });
-  for (const t of summary.overdue.slice(0, 3)) needs.push({ key: `t${t.id}`, title: t.text, note: `due ${dayLabel(t.due, today)}`, tone: "alert", tab: "tasks", task: t });
-  if (summary.overdue.length > 3) needs.push({ key: "more", title: `${summary.overdue.length - 3} more overdue tasks`, note: "See all", tone: "alert", tab: "tasks" });
+  for (const t of summary.dueNow.slice(0, 3)) needs.push({ key: `t${t.id}`, title: t.text, note: `due ${dayLabel(t.due, today)}`, tone: t.due < today ? "alert" : undefined, tab: "tasks", task: t });
+  if (summary.dueNow.length > 3) needs.push({ key: "more", title: `${summary.dueNow.length - 3} more tasks overdue or due today`, note: "See all", tone: "alert", tab: "tasks" });
   for (const s of summary.signaturesOut) {
     const waiting = (s.recipients || []).filter((r) => r.signing_status === "NOT_SIGNED" && r.role !== "CC").map((r) => r.name || r.email);
     needs.push({ key: `s${s.id}`, title: s.title, note: waiting.length ? `waiting on ${waiting.slice(0, 2).join(", ")}${waiting.length > 2 ? "…" : ""}` : "out for signature", tab: "documents" });

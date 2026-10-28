@@ -50,7 +50,9 @@ export function useDealSummary(personId, dates) {
     docsDone: data.docs.filter((d) => d.done).length,
     docsTotal: data.docs.length,
     overdue: open.filter((t) => t.due && t.due < today).sort((a, b) => a.due.localeCompare(b.due)),
-    soon: open.filter((t) => t.due && t.due >= today).sort((a, b) => a.due.localeCompare(b.due)).slice(0, 3),
+    // Overdue and due today: what needs you. "Coming up" is everything after today.
+    dueNow: open.filter((t) => t.due && t.due <= today).sort((a, b) => a.due.localeCompare(b.due)),
+    soon: open.filter((t) => t.due && t.due > today).sort((a, b) => a.due.localeCompare(b.due)).slice(0, 3),
     flagged: data.docs.filter((d) => d.review_status === "issue"),
     signaturesOut: data.sigs.filter((s) => s.status === "pending" || s.status === "sending"),
   };
