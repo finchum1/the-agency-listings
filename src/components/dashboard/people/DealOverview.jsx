@@ -1,10 +1,11 @@
 import { dayLabel, daysBetween, toKey } from "../../../lib/homeDates";
-import { markerPosition } from "../../../lib/timeline";
+import { clockLabel, markerPosition } from "../../../lib/timeline";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const DATES = [
   ["contract_date", "Contract"],
   ["inspection_date", "Inspection"],
+  ["inspection_period_end", "Inspection period ends"],
   ["appraisal_date", "Appraisal"],
   ["financing_deadline", "Financing"],
   ["closing_date", "Closing"],
@@ -81,7 +82,7 @@ export default function DealOverview({ person, summary, dates, onTab, onDate, on
             </span>
           </div>
         )}
-        <div className="grid grid-cols-5 gap-1.5">
+        <div className="grid grid-cols-6 gap-1.5">
           {DATES.map(([key, label]) => {
             const value = dates[key] || "";
             const past = value && value < today;
@@ -90,8 +91,9 @@ export default function DealOverview({ person, summary, dates, onTab, onDate, on
               <div key={key} className="min-w-0">
                 <div className={`h-1.5 rounded-full ${value ? (past ? "bg-[#1c1a17] dark:bg-[#faf9f7]" : "bg-[#1c1a17]/25 dark:bg-[#faf9f7]/30") : "border border-dashed border-black/25 dark:border-white/30"}`} />
                 <label className={`relative mt-1.5 block ${onDate ? "cursor-pointer" : ""}`}>
-                  <span className={`block truncate text-[11px] font-medium ${muted}`}>{label}</span>
+                  <span className={`block text-[11px] font-medium leading-tight ${muted}`} style={{ overflowWrap: "anywhere" }}>{label}</span>
                   <span className={`block truncate text-xs font-semibold ${value ? "" : muted}`}>{value ? shortDate(value) : onDate ? "Add" : "–"}</span>
+                  {value && key === "inspection_date" && dates.inspection_time && <span className="block truncate text-[10px] font-medium">{clockLabel(dates.inspection_time)}</span>}
                   {value && <span className={`block truncate text-[10px] ${muted}`}>{diff === 0 ? "today" : diff > 0 ? `in ${diff}d` : `${-diff}d ago`}</span>}
                   {onDate && (
                     <input
@@ -114,6 +116,23 @@ export default function DealOverview({ person, summary, dates, onTab, onDate, on
             );
           })}
         </div>
+        {onDate && dates.inspection_date && (
+          <div className="flex items-center gap-2 pt-1">
+            <label htmlFor="inspection-time" className={`text-xs ${muted}`}>Inspection time</label>
+            <input
+              id="inspection-time"
+              type="time"
+              value={(dates.inspection_time || "").slice(0, 5)}
+              onChange={(e) => onDate("inspection_time", e.target.value)}
+              className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+            />
+            {dates.inspection_time && (
+              <button type="button" onClick={() => onDate("inspection_time", "")} className={`text-xs underline underline-offset-2 ${muted} hover:opacity-80`}>
+                Clear
+              </button>
+            )}
+          </div>
+        )}
       </section>
       {children?.bottom}
     </div>

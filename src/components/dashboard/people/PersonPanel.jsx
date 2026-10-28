@@ -33,7 +33,7 @@ const primaryBtn =
 const navBtn =
   "h-8 w-8 flex items-center justify-center rounded-full border border-black/10 dark:border-white/15 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed";
 
-const DATE_FIELDS = ["next_follow_up", "contract_date", "inspection_date", "appraisal_date", "financing_deadline", "closing_date"];
+const DATE_FIELDS = ["next_follow_up", "contract_date", "inspection_date", "inspection_period_end", "inspection_time", "appraisal_date", "financing_deadline", "closing_date"];
 const NUMBER_FIELDS = ["price", "commission", "earnest_money"];
 const TEXT_FIELDS = [
   "name", "email", "phone", "source", "property_address", "other_agent", "title_company", "lender",
@@ -108,7 +108,7 @@ export default function PersonPanel({
   const [menuOpen, setMenuOpen] = useState(false);
   const [dealModal, setDealModal] = useState(null); // share | back | archive
   const [editingDetails, setEditingDetails] = useState(false); // the Details tab reads like a summary until Edit is pressed
-  const dealDates = { contract_date: form.contract_date, inspection_date: form.inspection_date, appraisal_date: form.appraisal_date, financing_deadline: form.financing_deadline, closing_date: form.closing_date };
+  const dealDates = { contract_date: form.contract_date, inspection_date: form.inspection_date, inspection_period_end: form.inspection_period_end, inspection_time: form.inspection_time, appraisal_date: form.appraisal_date, financing_deadline: form.financing_deadline, closing_date: form.closing_date };
   const summary = useDealSummary(isDeal ? person.id : null, dealDates);
   useEffect(() => {
     if (isDeal) summary.reload();

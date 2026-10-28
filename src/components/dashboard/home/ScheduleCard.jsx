@@ -16,6 +16,7 @@ const TASK_COLOR = "#b45309";
 const DEAL_DATES = [
   ["contract_date", "Contract"],
   ["inspection_date", "Inspection"],
+  ["inspection_period_end", "Inspection period ends"],
   ["appraisal_date", "Appraisal"],
   ["financing_deadline", "Financing deadline"],
   ["closing_date", "Closing"],
@@ -30,7 +31,7 @@ function useDealDates(enabled, userId) {
     let active = true;
     supabase
       .from("people")
-      .select("id, name, property_address, stage, contract_date, inspection_date, appraisal_date, financing_deadline, closing_date")
+      .select("id, name, property_address, stage, contract_date, inspection_date, inspection_time, inspection_period_end, appraisal_date, financing_deadline, closing_date")
       .eq("owner_id", userId)
       .eq("stage_group", "transaction")
       .eq("archived", false)
@@ -162,7 +163,13 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
     if (show.deals) {
       for (const p of deals) {
         for (const [field, label] of DEAL_DATES) {
-          if (p[field]) add(p[field], { id: `deal-${p.id}-${field}`, kind: "deal", title: label, sub: [p.name, p.property_address].filter(Boolean).join(" · "), color: DEAL_COLOR, allDay: true });
+          if (!p[field]) continue;
+          const base = { id: `deal-${p.id}-${field}`, kind: "deal", title: label, sub: [p.name, p.property_address].filter(Boolean).join(" · "), color: DEAL_COLOR };
+          // The home inspection has a time of day once one is set: it shows in the hour grid (an hour and a half) rather than all day.
+          if (field === "inspection_date" && p.inspection_time) {
+            const startMin = toMin(p.inspection_time);
+            add(p[field], { ...base, date: p[field], allDay: false, start: new Date(`${p[field]}T${p.inspection_time.slice(0, 5)}:00`).toISOString(), startMin, endMin: Math.min(DAY_MIN, startMin + 90) });
+          } else add(p[field], { ...base, allDay: true });
         }
       }
     }

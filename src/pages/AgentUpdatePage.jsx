@@ -8,6 +8,7 @@ import { AgentFooter, ClientHeader } from "../components/public/ClientPageParts"
 const DATES = [
   ["contract_date", "Contract"],
   ["inspection_date", "Inspection"],
+  ["inspection_period_end", "Inspection period ends"],
   ["appraisal_date", "Appraisal"],
   ["financing_deadline", "Financing deadline"],
   ["closing_date", "Closing"],

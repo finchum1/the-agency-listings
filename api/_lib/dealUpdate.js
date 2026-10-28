@@ -15,7 +15,7 @@ const rel = (key, today) => {
   return d === 0 ? "today" : d === 1 ? "tomorrow" : d === -1 ? "yesterday" : d > 0 ? `in ${d} days` : `${-d} days ago`;
 };
 
-export const DATE_LABELS = { contract_date: "Contract", inspection_date: "Inspection", appraisal_date: "Appraisal", financing_deadline: "Financing deadline", closing_date: "Closing" };
+export const DATE_LABELS = { contract_date: "Contract", inspection_date: "Inspection", inspection_period_end: "Inspection period ends", appraisal_date: "Appraisal", financing_deadline: "Financing deadline", closing_date: "Closing" };
 
 /** Everything an update needs about one deal, read with the service role. */
 export async function gatherDeal(admin, personId) {

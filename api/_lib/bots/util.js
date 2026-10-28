@@ -79,6 +79,13 @@ export const dateKey = (body, key) => {
   return v;
 };
 
+export const timeKey = (body, key) => {
+  const v = text(body, key, { max: 5 });
+  if (v === undefined || v === "") return v;
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(v)) throw bad(`${key} must look like 14:30.`);
+  return v;
+};
+
 // ---- rich text: the site only renders p, h2, h3, strong, em, u, br, a and span.brand-red (see src/lib/sanitizeHtml.js),
 // so that is all that is stored. The page sanitizes again when it renders; this keeps the stored copy tidy too. ----
 

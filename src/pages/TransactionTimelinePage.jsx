@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useForceLight } from "../hooks/useForceLight";
 import { brandFromOrg } from "../lib/brand";
-import { buildTimeline, daysBetween, inDays, prettyDate } from "../lib/timeline";
+import { buildTimeline, clockLabel, daysBetween, inDays, prettyDate } from "../lib/timeline";
 import { AgentFooter, ClientHeader } from "../components/public/ClientPageParts";
 
 const ICONS = {
@@ -162,7 +162,7 @@ export default function TransactionTimelinePage() {
                 <li key={m.key} className={`rounded-2xl p-4 border ${i === 0 ? "bg-[#1c1a17] text-white border-[#1c1a17]" : "bg-white border-black/[0.06]"}`}>
                   <p className={`text-xs font-semibold uppercase tracking-wider ${i === 0 ? "text-[#ff8a8e]" : "text-[#d3181d]"}`}>{inDays(m.days)}</p>
                   <p className="mt-1 font-display text-xl font-semibold">{m.label}</p>
-                  <p className={`text-sm ${i === 0 ? "text-white/70" : "text-[#1c1a17]/60"}`}>{prettyDate(m.date, { weekday: "long", month: "long", day: "numeric" })}</p>
+                  <p className={`text-sm ${i === 0 ? "text-white/70" : "text-[#1c1a17]/60"}`}>{prettyDate(m.date, { weekday: "long", month: "long", day: "numeric" })}{m.time ? ` · ${clockLabel(m.time)}` : ""}</p>
                 </li>
               ))}
             </ul>
@@ -194,6 +194,7 @@ export default function TransactionTimelinePage() {
                         </div>
                         <p className="mt-0.5 text-sm font-medium text-[#1c1a17]/55">
                           {prettyDate(m.date, { weekday: "long", month: "long", day: "numeric" })}
+                          {m.time ? ` · ${clockLabel(m.time)}` : ""}
                           {m.state !== "done" && m.state !== "today" ? ` · ${inDays(m.days).toLowerCase()}` : ""}
                         </p>
                         <p className={`mt-2 text-[15px] leading-relaxed ${m.state === "done" ? "text-[#1c1a17]/55" : "text-[#1c1a17]/80"}`}>{m.state === "done" ? m.doneText : m.text}</p>

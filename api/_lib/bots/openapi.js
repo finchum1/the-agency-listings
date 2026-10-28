@@ -73,7 +73,7 @@ const personFields = {
   next_follow_up: str("YYYY-MM-DD"),
   property_address: str("The home in a transaction"), price: num("Contract price"), commission: num("Commission in dollars"),
   other_agent: str(""), title_company: str(""), lender: str(""),
-  contract_date: str("YYYY-MM-DD"), inspection_date: str("YYYY-MM-DD"), appraisal_date: str("YYYY-MM-DD"), financing_deadline: str("YYYY-MM-DD"), closing_date: str("YYYY-MM-DD"),
+  contract_date: str("YYYY-MM-DD"), inspection_date: str("YYYY-MM-DD"), inspection_period_end: str("YYYY-MM-DD"), inspection_time: str("HH:MM, the time of the home inspection"), appraisal_date: str("YYYY-MM-DD"), financing_deadline: str("YYYY-MM-DD"), closing_date: str("YYYY-MM-DD"),
   note: str("Adds a note to their card"),
 };
 const taskFields = {

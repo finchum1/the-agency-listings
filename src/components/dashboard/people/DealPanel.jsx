@@ -40,7 +40,7 @@ const TEXT = [
 // The first client's name, phone and email, editable here so a coordinator can fix them.
 const CLIENT1 = [["name", "Client"], ["phone", "Phone"], ["email", "Email"]];
 const CLIENT2 = [["client2_name", "Second client"], ["client2_email", "Second client's email"]];
-const DATES = [["contract_date", "Contract"], ["inspection_date", "Inspection"], ["appraisal_date", "Appraisal"], ["financing_deadline", "Financing deadline"], ["closing_date", "Closing"]];
+const DATES = [["contract_date", "Contract"], ["inspection_date", "Inspection"], ["inspection_period_end", "Inspection period ends"], ["inspection_time", "Inspection time"], ["appraisal_date", "Appraisal"], ["financing_deadline", "Financing deadline"], ["closing_date", "Closing"]];
 const NUMBERS = [["price", "Price"], ["commission", "Commission"], ["earnest_money", "Earnest money"]];
 
 // The deal as a coordinator or compliance sees it (the agent uses the People panel). A coordinator can edit the facts and
@@ -68,7 +68,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
   const [error, setError] = useState("");
   const [fresh, setFresh] = useState(deal);
   // All five key dates: the overview's date tiles read them (the checklist's due dates only follow the first three).
-  const dealDates = { contract_date: fresh.contract_date || "", inspection_date: fresh.inspection_date || "", appraisal_date: fresh.appraisal_date || "", financing_deadline: fresh.financing_deadline || "", closing_date: fresh.closing_date || "" };
+  const dealDates = { contract_date: fresh.contract_date || "", inspection_date: fresh.inspection_date || "", inspection_period_end: fresh.inspection_period_end || "", inspection_time: fresh.inspection_time || "", appraisal_date: fresh.appraisal_date || "", financing_deadline: fresh.financing_deadline || "", closing_date: fresh.closing_date || "" };
   const summary = useDealSummary(deal.id, dealDates);
   useEffect(() => {
     summary.reload();

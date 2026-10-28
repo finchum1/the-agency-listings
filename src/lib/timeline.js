@@ -7,6 +7,13 @@ const parse = (key) => {
 export const daysBetween = (fromKey, toKey) => Math.round((parse(toKey) - parse(fromKey)) / 86400000);
 export const prettyDate = (key, opts = { weekday: "short", month: "short", day: "numeric" }) => parse(key).toLocaleDateString(undefined, opts);
 
+/** "10:30" or "10:30:00" as "10:30 AM". */
+export const clockLabel = (t) => {
+  if (!t) return "";
+  const [h, m] = t.split(":").map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
+};
+
 export const inDays = (n) => (n === 0 ? "Today" : n === 1 ? "Tomorrow" : n > 1 ? `In ${n} days` : n === -1 ? "Yesterday" : `${-n} days ago`);
 
 const COPY = {
@@ -23,6 +30,13 @@ const COPY = {
     icon: "search",
     buyer: "Your inspector walks the home. Afterward you decide which repairs, if any, to ask for.",
     seller: "The buyer's inspector visits the home. Any repair requests come back through us, and you decide how to respond.",
+  },
+  inspection_period_end: {
+    done: { buyer: "Inspection period wrapped up.", seller: "The inspection period wrapped up." },
+    label: "Inspection period ends",
+    icon: "search",
+    buyer: "The last day of your inspection period. Inspections and any repair requests are wrapped up by now.",
+    seller: "The last day of the buyer's inspection period. Any repair requests come through us by now.",
   },
   appraisal_date: {
     done: { buyer: "Appraisal completed.", seller: "Appraisal completed." },
@@ -52,7 +66,7 @@ export function buildTimeline(deal, today) {
   const side = deal.side === "seller" ? "seller" : "buyer";
   const items = Object.keys(COPY)
     .filter((k) => deal[k])
-    .map((k) => ({ key: k, label: COPY[k].label, icon: COPY[k].icon, text: COPY[k][side], doneText: COPY[k].done[side], date: deal[k], days: daysBetween(today, deal[k]) }))
+    .map((k) => ({ key: k, label: COPY[k].label, icon: COPY[k].icon, text: COPY[k][side], doneText: COPY[k].done[side], date: deal[k], time: k === "inspection_date" ? deal.inspection_time || "" : "", days: daysBetween(today, deal[k]) }))
     .sort((a, b) => a.date.localeCompare(b.date));
   const nextIndex = items.findIndex((m) => m.days >= 0);
   const closing = items.find((m) => m.key === "closing_date");

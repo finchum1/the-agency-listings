@@ -29,7 +29,7 @@ export default async function handler(req, res) {
 
   const { data: person } = await admin
     .from("people")
-    .select("owner_id, name, side, stage, stage_group, property_address, other_agent, title_company, lender, contract_date, inspection_date, appraisal_date, financing_deadline, closing_date, owner:profiles!people_owner_id_fkey(full_name, title, license, phone, email, photo_url, org:organizations(id, slug, name, brand, address_line1, city, state, zip, disclaimer))")
+    .select("owner_id, name, side, stage, stage_group, property_address, other_agent, title_company, lender, contract_date, inspection_date, inspection_time, inspection_period_end, appraisal_date, financing_deadline, closing_date, owner:profiles!people_owner_id_fkey(full_name, title, license, phone, email, photo_url, org:organizations(id, slug, name, brand, address_line1, city, state, zip, disclaimer))")
     .eq("id", link.person_id)
     .maybeSingle();
   if (!person) return res.status(404).json({ error: "This link isn't valid anymore." });

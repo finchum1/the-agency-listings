@@ -2,7 +2,7 @@
 // own to-do list. Everything acts as the admin who made the token, under row-level security, so a bot only ever sees and
 // changes that admin's own people. Rules that keep a bot safe: nothing is deleted (people are archived with a reason), nothing
 // is sent (messages are drafts the agent approves in the dashboard), and a duplicate email is refused unless asked for.
-import { HttpError, bad, dateKey, isUuid, number, oneOf, text } from "./util.js";
+import { HttpError, bad, dateKey, isUuid, number, oneOf, text, timeKey } from "./util.js";
 import { requireScope } from "./context.js";
 import { ARCHIVE_REASONS, BOARDS, SOURCES } from "../../../src/lib/peopleStages.js";
 import { ANCHORS, DEFAULT_DOCUMENT_TEMPLATES, DEFAULT_TEMPLATES, effectiveDue } from "../../../src/lib/checklistDefaults.js";
@@ -15,7 +15,7 @@ const GROUPS = ["lead", "pipeline", "transaction"];
 const SIDES = ["buyer", "seller", "both"];
 const ANCHOR_KEYS = ANCHORS.map((a) => a.value);
 const RECURRENCES = ["none", "daily", "weekdays", "weekly", "biweekly", "monthly", "quarterly", "yearly"];
-const DEAL_DATES = ["contract_date", "inspection_date", "appraisal_date", "financing_deadline", "closing_date"];
+const DEAL_DATES = ["contract_date", "inspection_date", "inspection_period_end", "appraisal_date", "financing_deadline", "closing_date"];
 
 const fail = (error) => {
   throw new HttpError(error.code === "23514" || error.code === "22P02" ? 400 : 500, error.message);
@@ -82,6 +82,8 @@ function readFields(body) {
     const v = dateKey(body, key);
     set(key, v === "" ? null : v);
   }
+  const clock = timeKey(body, "inspection_time");
+  set("inspection_time", clock === "" ? null : clock);
   if (body.side !== undefined) set("side", body.side === null ? null : oneOf(body, "side", SIDES));
   return f;
 }
