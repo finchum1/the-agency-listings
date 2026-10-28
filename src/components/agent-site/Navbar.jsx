@@ -62,6 +62,12 @@ export default function Navbar() {
   const landingPages = site.homeSections.includes("cards") && landing.menu ? landing.cards.filter((c) => c.on).map((c) => ({ path: c.path, label: c.nav })) : [];
   const basePages = PAGES.filter((page) => !page.sectionKey || site.homeSections.includes(page.sectionKey));
   const visiblePages = [...basePages.filter((p) => p.path !== "/contact"), ...landingPages, ...basePages.filter((p) => p.path === "/contact")];
+  // With the three landing pages in the menu there are eight links plus the phone button, which needs a wider screen than the usual six: the full
+  // menu waits for an extra-large window (below it, the menu button), the agent's name beside the logo is left out (the page is only 1280 wide inside, so there
+  // is never room for it), and the gaps tighten.
+  const many = visiblePages.length > 6;
+  const showDesktop = many ? "hidden xl:flex" : "hidden lg:flex";
+  const hideDesktop = many ? "xl:hidden" : "lg:hidden";
 
   const contactCta = (className) =>
     site.agent.phone ? (
@@ -93,14 +99,14 @@ export default function Navbar() {
           <img src={site.secondaryLogo} alt="" className="agent-secondary-logo h-8 sm:h-10 w-auto" />
         </>
       )}
-      <span className="hidden sm:block ml-2 text-sm font-display tracked-wide whitespace-nowrap text-[var(--as-on-dark)]">
+      <span className={`${many ? "hidden" : "hidden sm:block"} ml-2 text-sm font-display tracked-wide whitespace-nowrap text-[var(--as-on-dark)]`}>
         {site.agent.name}
       </span>
     </SiteLink>
   );
 
   if (site.headerStyle === "floating") {
-    const linkClass = "text-xs font-medium tracked-wide uppercase transition-colors whitespace-nowrap px-4 py-2 rounded-full";
+    const linkClass = `text-xs font-medium tracked-wide uppercase transition-colors whitespace-nowrap ${many ? "px-3" : "px-4"} py-2 rounded-full`;
     const ctaClass =
       "text-xs font-medium tracked-wide uppercase px-5 py-2.5 rounded-full border border-[var(--as-on-dark)]/70 text-[var(--as-on-dark)] whitespace-nowrap transition-colors hover:bg-[var(--as-on-dark)] hover:text-[var(--as-dark)]";
 
@@ -115,7 +121,7 @@ export default function Navbar() {
             {logo}
 
             <div className="ml-auto flex items-center gap-2">
-              <nav className="hidden lg:flex items-center gap-1">
+              <nav className={`${showDesktop} items-center gap-1`}>
                 {visiblePages.map((page) => {
                   const active = location.pathname === agentSiteHref(site.slug, page.path);
                   return (
@@ -136,14 +142,14 @@ export default function Navbar() {
                 {contactCta(`${ctaClass} ml-2`)}
               </nav>
 
-              <button className="lg:hidden p-2 shrink-0 text-[var(--as-on-dark)]" onClick={() => setOpen((v) => !v)} aria-label="Toggle menu">
+              <button className={`${hideDesktop} p-2 shrink-0 text-[var(--as-on-dark)]`} onClick={() => setOpen((v) => !v)} aria-label="Toggle menu">
                 {menuIcon}
               </button>
             </div>
           </div>
 
           {open && (
-            <div className="lg:hidden mt-2 rounded-2xl bg-[var(--as-dark)] shadow-[0_16px_36px_-16px_rgba(0,0,0,0.45)] px-6 py-4 flex flex-col gap-4">
+            <div className={`${hideDesktop} mt-2 rounded-2xl bg-[var(--as-dark)] shadow-[0_16px_36px_-16px_rgba(0,0,0,0.45)] px-6 py-4 flex flex-col gap-4`}>
               {visiblePages.map((page) => (
                 <SiteLink
                   key={page.path}
@@ -175,7 +181,7 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-6 lg:px-10 flex items-center justify-between py-4">
         {logo}
 
-        <nav className="hidden lg:flex items-center gap-6 xl:gap-8 shrink-0">
+        <nav className={`${showDesktop} items-center ${many ? "gap-5 2xl:gap-8" : "gap-6 xl:gap-8"} shrink-0`}>
           {visiblePages.map((page) => {
             const active = location.pathname === agentSiteHref(site.slug, page.path);
             return (
@@ -195,7 +201,7 @@ export default function Navbar() {
         </nav>
 
         <button
-          className="lg:hidden p-2 shrink-0 text-[var(--as-on-dark)]"
+          className={`${hideDesktop} p-2 shrink-0 text-[var(--as-on-dark)]`}
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
         >
@@ -204,7 +210,7 @@ export default function Navbar() {
       </div>
 
       {open && (
-        <div className="lg:hidden bg-[var(--as-dark)] border-t border-[var(--as-on-dark)]/10 px-6 py-4 flex flex-col gap-4">
+        <div className={`${hideDesktop} bg-[var(--as-dark)] border-t border-[var(--as-on-dark)]/10 px-6 py-4 flex flex-col gap-4`}>
           {visiblePages.map((page) => (
             <SiteLink
               key={page.path}

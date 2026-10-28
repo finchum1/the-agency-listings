@@ -43,7 +43,8 @@ export function PageHero({ eyebrow, title, lead, photo, children, below }) {
     <section className="relative overflow-hidden bg-[var(--as-dark)] text-[var(--as-on-dark)]">
       {photo && <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45" />}
       <div className="absolute inset-0 bg-gradient-to-r from-[var(--as-dark)] via-[var(--as-dark)]/80 to-[var(--as-dark)]/20" aria-hidden="true" />
-      <div className={`relative mx-auto max-w-6xl px-6 lg:px-10 py-24 sm:py-32`}>
+      {/* The fixed header is 76px tall but a page leaves 56px for it, so the hero starts 20px under the header: the extra top padding gives that back. */}
+      <div className="relative mx-auto max-w-6xl px-6 lg:px-10 pt-[7.25rem] pb-24 sm:pt-[9.25rem] sm:pb-32">
         <Eyebrow onDark>{eyebrow}</Eyebrow>
         <Heading as="h1" className="!text-4xl sm:!text-6xl max-w-3xl">
           {title}
