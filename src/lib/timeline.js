@@ -69,3 +69,29 @@ export function buildTimeline(deal, today) {
   });
   return { milestones: marked, fill, nextIndex, closed, closing, side };
 }
+
+/**
+ * Where "today" sits along a row of equally wide date tiles, as a fraction of the row (0 to 1), or null when no tile has a date.
+ * `tileDates`: one "YYYY-MM-DD" or "" per tile, in tile order (a tile with no date is skipped, not counted as a stop). Between the last tile that
+ * is already past and the next one still to come the marker moves in proportion to the real days between those two dates, so a deal with only a
+ * contract two days ago and a closing in three weeks puts today just after the contract, not next to the closing.
+ */
+export function markerPosition(tileDates, today) {
+  const n = tileDates.length;
+  const center = (i) => (i + 0.5) / n;
+  const sameDay = tileDates.findIndex((d) => d && d === today);
+  if (!tileDates.some(Boolean)) return null;
+  if (sameDay >= 0) return center(sameDay);
+  let past = -1;
+  tileDates.forEach((d, i) => {
+    if (d && d < today) past = i;
+  });
+  const next = tileDates.findIndex((d, i) => i > past && d && d > today);
+  if (past >= 0 && next >= 0) {
+    const span = daysBetween(tileDates[past], tileDates[next]) || 1;
+    const frac = Math.max(0, Math.min(1, daysBetween(tileDates[past], today) / span));
+    return center(past) + frac * (center(next) - center(past));
+  }
+  if (past >= 0) return (past + 1) / n; // everything is behind us: just after the last tile
+  return next / n; // nothing yet: just before the first
+}

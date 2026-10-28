@@ -1,4 +1,5 @@
 import { dayLabel, daysBetween, toKey } from "../../../lib/homeDates";
+import { markerPosition } from "../../../lib/timeline";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const DATES = [
@@ -40,10 +41,8 @@ export default function DealOverview({ person, summary, dates, onTab, onDate, on
   }
   if (summary.unread > 0) needs.push({ key: "msg", title: `${summary.unread} new message${summary.unread === 1 ? "" : "s"}`, note: "Read", tab: "messages" });
 
-  // Where "today" falls along the five dates: before the first one still to come (or at the end when they're all past); nowhere when none are set.
-  const setDates = DATES.map(([key]) => dates[key] || "");
-  const nextIdx = setDates.findIndex((d) => d && d >= today);
-  const todayAt = setDates.some(Boolean) ? (nextIdx >= 0 ? nextIdx : 5) : -1;
+  // Where "today" falls along the five dates, in proportion to the real days between the dates on either side of it (null when none are set).
+  const todayAt = markerPosition(DATES.map(([key]) => dates[key] || ""), today);
 
   return (
     <div className="space-y-6">
@@ -73,10 +72,12 @@ export default function DealOverview({ person, summary, dates, onTab, onDate, on
 
       <section aria-label="Key dates" className="space-y-2">
         <h3 className="font-display text-base font-semibold">Key dates</h3>
-        {todayAt >= 0 && (
-          <div className="relative h-4" aria-hidden="true">
-            <span className="absolute -translate-x-1/2 text-[10px] font-semibold text-[#ed2127] dark:text-[#f2454b]" style={{ left: `${(todayAt / 5) * 100}%` }}>
-              Today ▾
+        {todayAt != null && (
+          <div className="relative h-7 -mb-1" aria-hidden="true">
+            {/* The label sits centered on the spot, with the arrow centered right under it, pointing at the bars. */}
+            <span className="absolute flex -translate-x-1/2 flex-col items-center text-[#ed2127] dark:text-[#f2454b]" style={{ left: `${Math.min(Math.max(todayAt, 0.03), 0.97) * 100}%` }}>
+              <span className="text-[10px] font-semibold leading-none">Today</span>
+              <span className="text-[11px] leading-none">▾</span>
             </span>
           </div>
         )}
