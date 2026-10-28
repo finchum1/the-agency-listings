@@ -174,6 +174,8 @@ const HOME_SECTION_LABELS = {
   areas: "Service Areas",
   blog: "Blog",
 };
+// The three layouts that belong to the starter templates: they are picked there, not in the Layout list (see lib/siteTemplates.js).
+const TEMPLATE_LAYOUTS = SITE_TEMPLATES.map((t) => t.settings.layout);
 const ALL_SECTION_KEYS = Object.keys(HOME_SECTION_LABELS);
 const DEFAULT_HOME_SECTIONS = ["bio", "testimonials", "cards", "listings", "areas", "blog"];
 
@@ -489,7 +491,8 @@ export default function SiteForm({ site, onSaved }) {
             </p>
             <div className="grid sm:grid-cols-3 gap-3">
               {SITE_TEMPLATES.map((t) => {
-                const active = Object.entries(t.settings).every(([k, v]) => JSON.stringify(form[k]) === JSON.stringify(v));
+                // A template is the one in use while its layout is, even after the agent changes the colors or header.
+                const active = form.layout === t.settings.layout;
                 return (
                   <button
                     key={t.key}
@@ -513,7 +516,7 @@ export default function SiteForm({ site, onSaved }) {
           <div>
             <label className={labelClass}>Layout</label>
             <div className="grid sm:grid-cols-3 gap-3">
-              {LAYOUTS.map((l) => (
+              {LAYOUTS.filter((l) => !TEMPLATE_LAYOUTS.includes(l.value)).map((l) => (
                 <button
                   key={l.value}
                   type="button"
@@ -530,7 +533,11 @@ export default function SiteForm({ site, onSaved }) {
                 </button>
               ))}
             </div>
-            <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-2">Save, then open the site to see the new layout. Your content stays the same.</p>
+            <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-2">
+              {TEMPLATE_LAYOUTS.includes(form.layout)
+                ? `Your layout comes from the ${SITE_TEMPLATES.find((t) => t.settings.layout === form.layout)?.label} template above. Pick one here to switch away from it.`
+                : "Save, then open the site to see the new layout. Your content stays the same."}
+            </p>
           </div>
 
           <div>
