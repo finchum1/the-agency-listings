@@ -1,4 +1,11 @@
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
+// "$5,000 · delivered to the title company Oct 27" / "$5,000 · not delivered yet" / "" when there is no amount and nothing delivered.
+export function earnestLine(form, person) {
+  const amount = money(form.earnest_money);
+  if (!amount && !form.earnest_money_delivered) return "";
+  const when = form.earnest_money_delivered && person?.earnest_money_delivered_at ? ` ${new Date(person.earnest_money_delivered_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "";
+  return [amount, form.earnest_money_delivered ? `delivered to the title company${when}` : "not delivered yet"].filter(Boolean).join(" · ");
+}
 export const money = (n) => (n == null || n === "" || Number.isNaN(Number(n)) ? "" : `$${Number(n).toLocaleString()}`);
 
 // A deal's details as read-only text: only the fields that have something in them, so a half-filled deal doesn't show a wall of empty boxes.

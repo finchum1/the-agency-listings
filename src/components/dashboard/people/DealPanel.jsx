@@ -8,7 +8,7 @@ import DealSignatures from "./DealSignatures";
 import DealTabs, { dealTabs } from "./DealTabs";
 import DealOverview from "./DealOverview";
 import SendAgentUpdate from "./SendAgentUpdate";
-import { DetailGroup, EditToggle } from "./DealDetailList";
+import { DetailGroup, EditToggle, earnestLine } from "./DealDetailList";
 import { useDealSummary } from "../../../hooks/useDealSummary";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
@@ -23,9 +23,22 @@ const inputClass =
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1";
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
-const TEXT = [["property_address", "Property"], ["other_agent", "Other agent"], ["title_company", "Title company"], ["lender", "Lender"]];
+const TEXT = [
+  ["property_address", "Property"],
+  ["other_agent", "Other agent"],
+  ["other_agent_email", "Other agent's email"],
+  ["other_agent_tc_name", "Other agent's TC"],
+  ["other_agent_tc_email", "Other agent's TC email"],
+  ["title_company", "Title company"],
+  ["title_company_email", "Title company email"],
+  ["title_processor_name", "Title processor"],
+  ["title_processor_email", "Title processor email"],
+  ["lender", "Lender"],
+];
+// The second client sits at the top of the details, right under the first.
+const CLIENT2 = [["client2_name", "Second client"], ["client2_email", "Second client's email"]];
 const DATES = [["contract_date", "Contract"], ["inspection_date", "Inspection"], ["appraisal_date", "Appraisal"], ["financing_deadline", "Financing deadline"], ["closing_date", "Closing"]];
-const NUMBERS = [["price", "Price"], ["commission", "Commission"]];
+const NUMBERS = [["price", "Price"], ["commission", "Commission"], ["earnest_money", "Earnest money"]];
 
 // The deal as a coordinator or compliance sees it (the agent uses the People panel). A coordinator can edit the facts and
 // work the checklists; compliance reads them, marks documents, and approves or sends the deal back.
@@ -373,6 +386,8 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                       { label: "Client", value: fresh.name },
                       { label: "Phone", value: fresh.phone, href: fresh.phone ? `tel:${fresh.phone.replace(/[^\d+]/g, "")}` : undefined },
                       { label: "Email", value: fresh.email, href: fresh.email ? `mailto:${fresh.email}` : undefined },
+                      { label: "Second client", value: fresh.client2_name },
+                      { label: "Second client's email", value: fresh.client2_email, href: fresh.client2_email ? `mailto:${fresh.client2_email}` : undefined },
                     ]}
                   />
                   <DetailGroup
@@ -384,8 +399,15 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                       { label: "Property", value: fresh.property_address, wide: true },
                       { label: "Price", value: fresh.price == null ? "" : money.format(fresh.price) },
                       { label: "Commission", value: fresh.commission == null ? "" : money.format(fresh.commission) },
+                      { label: "Earnest money", value: earnestLine({ earnest_money: fresh.earnest_money, earnest_money_delivered: fresh.earnest_money_delivered }, fresh) },
                       { label: "Other agent", value: fresh.other_agent },
+                      { label: "Other agent's email", value: fresh.other_agent_email, href: fresh.other_agent_email ? `mailto:${fresh.other_agent_email}` : undefined },
+                      { label: "Other agent's TC", value: fresh.other_agent_tc_name },
+                      { label: "Other agent's TC email", value: fresh.other_agent_tc_email, href: fresh.other_agent_tc_email ? `mailto:${fresh.other_agent_tc_email}` : undefined },
                       { label: "Title company", value: fresh.title_company },
+                      { label: "Title company email", value: fresh.title_company_email, href: fresh.title_company_email ? `mailto:${fresh.title_company_email}` : undefined },
+                      { label: "Title processor", value: fresh.title_processor_name },
+                      { label: "Title processor email", value: fresh.title_processor_email, href: fresh.title_processor_email ? `mailto:${fresh.title_processor_email}` : undefined },
                       { label: "Lender", value: fresh.lender },
                     ]}
                   />
@@ -401,6 +423,12 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                   <label className={labelClass}>Phone / email</label>
                   <p className="text-sm break-words">{[fresh.phone, fresh.email].filter(Boolean).join(" · ") || "–"}</p>
                 </div>
+                {CLIENT2.map(([key, label]) => (
+                  <div key={key}>
+                    <label className={labelClass}>{label}</label>
+                    <input type={key.endsWith("email") ? "email" : "text"} autoComplete="off" {...bind(key, "text")} className={inputClass} />
+                  </div>
+                ))}
                 <div>
                   <label className={labelClass}>Buyer or seller (listing)</label>
                   {edit ? (
@@ -466,10 +494,25 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                     {edit ? <input type="number" min="0" step="any" inputMode="decimal" {...bind(key, "number")} className={inputClass} /> : <p className="text-sm">{fresh[key] == null ? "–" : money.format(fresh[key])}</p>}
                   </div>
                 ))}
+                <label className="flex items-center gap-2.5 text-sm cursor-pointer self-end pb-2.5">
+                  <input
+                    type="checkbox"
+                    checked={!!fresh.earnest_money_delivered}
+                    disabled={!edit}
+                    onChange={(e) => {
+                      const v = e.target.checked;
+                      const at = v ? new Date().toISOString() : null;
+                      setFresh((f) => ({ ...f, earnest_money_delivered: v, earnest_money_delivered_at: at }));
+                      save({ earnest_money_delivered: v, earnest_money_delivered_at: at });
+                    }}
+                    className="h-4 w-4 accent-[#ed2127]"
+                  />
+                  <span>Earnest money delivered to the title company</span>
+                </label>
                 {TEXT.map(([key, label]) => (
                   <div key={key} className={key === "property_address" ? "sm:col-span-2" : ""}>
                     <label className={labelClass}>{label}</label>
-                    {edit ? <input {...bind(key, "text")} className={inputClass} /> : <p className="text-sm">{fresh[key] || "–"}</p>}
+                    {edit ? <input type={key.endsWith("email") ? "email" : "text"} {...bind(key, "text")} className={inputClass} /> : <p className="text-sm">{fresh[key] || "–"}</p>}
                   </div>
                 ))}
               </div>
@@ -509,7 +552,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
 
 function toForm(p) {
   const f = {};
-  for (const [k] of TEXT) f[k] = p[k] || "";
+  for (const [k] of [...CLIENT2, ...TEXT]) f[k] = p[k] || "";
   for (const [k] of NUMBERS) f[k] = p[k] == null ? "" : String(p[k]);
   for (const [k] of DATES) f[k] = p[k] || "";
   return f;
