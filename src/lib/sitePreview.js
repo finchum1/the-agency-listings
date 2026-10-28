@@ -8,6 +8,9 @@ export const LAYOUT_OPTIONS = [
   { value: "bold", label: "Bold statement", description: "Oversized uppercase type, full-bleed photos and solid color blocks." },
   { value: "portrait", label: "Portrait split", description: "Leads with the agent: a tall portrait beside their name and a way to connect." },
   { value: "listings", label: "Listings first", description: "A short banner, then the listings right away. For agents who sell a lot of homes." },
+  { value: "luxury", label: "Luxury minimal", description: "A full-screen photo, a centered headline and three outlined buttons." },
+  { value: "warm", label: "Warm editorial", description: "A centered headline with one word in color, and pill buttons." },
+  { value: "guide", label: "Guide cards", description: "A light headline with buying and selling guides, then the buyer and seller cards." },
 ];
 export const THEME_OPTIONS = [
   { value: "classic", label: "Classic", swatches: ["#f7f4ee", "#14130f", "#ed2127"] },

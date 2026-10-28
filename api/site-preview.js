@@ -9,9 +9,9 @@ import { publishedOrDueFilter } from "../src/lib/seo.js";
 import { sendNotification } from "./_lib/inquiry.js";
 
 const TOKEN = /^pv[0-9a-f]{64}$/;
-const LAYOUTS = ["classic", "editorial", "bold", "portrait", "listings"];
+const LAYOUTS = ["classic", "editorial", "bold", "portrait", "listings", "luxury", "warm", "guide"];
 const THEMES = ["classic", "dark", "sand", "red", "linen"];
-const LAYOUT_NAMES = { classic: "Classic", editorial: "Minimal editorial", bold: "Bold statement", portrait: "Portrait split", listings: "Listings first" };
+const LAYOUT_NAMES = { classic: "Classic", editorial: "Minimal editorial", bold: "Bold statement", portrait: "Portrait split", listings: "Listings first", luxury: "Luxury minimal", warm: "Warm editorial", guide: "Guide cards" };
 
 async function findLink(admin, token) {
   if (!TOKEN.test(String(token || ""))) return null;

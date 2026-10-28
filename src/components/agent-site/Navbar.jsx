@@ -224,9 +224,13 @@ export default function Navbar() {
     );
   }
 
+  // Clear over the hero photo, the header's light text must read on the photo whatever the theme: a light theme (Linen) makes --as-on-dark dark ink,
+  // meant for its cream bar once it is solid, so until then the text is white.
+  const overPhoto = solid ? undefined : { "--as-on-dark": "#ffffff" };
+
   if (pill) {
     return (
-      <div className="fixed top-0 inset-x-0 z-50 pt-4 px-4 sm:px-6">
+      <div className="fixed top-0 inset-x-0 z-50 pt-4 px-4 sm:px-6" style={overPhoto}>
         <header className="mx-auto max-w-7xl">
           <div className={`flex items-center justify-between gap-4 rounded-full px-4 sm:px-5 py-3 transition-all duration-300 ${solid ? "bg-[var(--as-dark)] shadow-[0_16px_36px_-16px_rgba(0,0,0,0.45)]" : "bg-transparent"}`}>{row}</div>
           {drawer}
@@ -236,7 +240,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className={`fixed top-0 inset-x-0 z-50 transition-colors duration-300 ${solid ? "bg-[var(--as-dark)] shadow-md" : "bg-transparent"}`}>
+    <header className={`fixed top-0 inset-x-0 z-50 transition-colors duration-300 ${solid ? "bg-[var(--as-dark)] shadow-md" : "bg-transparent"}`} style={overPhoto}>
       <div className={`mx-auto max-w-7xl px-6 lg:px-10 flex items-center ${style === "stacked" ? "justify-center py-3" : "justify-between py-4"}`}>{row}</div>
       {drawer}
     </header>

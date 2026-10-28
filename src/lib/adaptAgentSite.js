@@ -30,7 +30,7 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     region: site.region || "",
     theme: site.theme || "classic",
     // How the home page and its sections are arranged (classic | editorial | bold | portrait | listings) — independent of the color theme.
-    layout: ["editorial", "bold", "portrait", "listings"].includes(site.layout) ? site.layout : "classic",
+    layout: ["editorial", "bold", "portrait", "listings", "luxury", "warm", "guide"].includes(site.layout) ? site.layout : "classic",
     // Independent of the color/font `theme` above — whether the Navbar
     // renders as today's flush full-width bar ("classic") or the
     // marketing site's floating pill that's clear at the top and gains a

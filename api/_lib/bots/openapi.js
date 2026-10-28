@@ -23,7 +23,7 @@ const siteFields = {
   tagline: str("Short line under the name"),
   region: str("Region or metro area, e.g. Oklahoma City Metro"),
   theme: str("Color theme", { enum: ["classic", "dark", "sand", "red", "linen"] }),
-  layout: str("Page layout", { enum: ["classic", "editorial", "bold", "portrait", "listings"] }),
+  layout: str("Page layout", { enum: ["classic", "editorial", "bold", "portrait", "listings", "luxury", "warm", "guide"] }),
   font_pairing: str("Font pairing", { enum: ["playfair-jost", "fraunces-inter", "cormorant-worksans", "libre-karla", "bodoni-manrope", "dmserif-dmsans"] }),
   header_style: str("", { enum: ["classic", "floating", "centered", "centered_pill", "stacked", "minimal"] }),
   footer_style: str("", { enum: ["classic", "centered", "cta", "wide", "slim"] }),

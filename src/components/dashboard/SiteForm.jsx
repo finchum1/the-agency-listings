@@ -9,6 +9,7 @@ import { paragraphsToHtml } from "../../lib/richTextFallback";
 import CollapsibleSection from "./CollapsibleSection";
 import LandingCardsEditor from "./LandingCardsEditor";
 import MenuOrderEditor from "./MenuOrderEditor";
+import { SITE_TEMPLATES } from "../../lib/siteTemplates";
 import FormSaveBar from "./FormSaveBar";
 
 // Kept in sync with the CSS custom properties in src/index.css
@@ -58,6 +59,9 @@ const LAYOUTS = [
   { value: "portrait", label: "Portrait split", description: "Leads with the agent: a tall portrait beside their name, tagline, and a way to connect, then warm card-style sections." },
   { value: "listings", label: "Listings first", description: "A short banner, then the listings right away with a big feature home and status filters. The bio becomes a slim strip." },
   { value: "bold", label: "Bold statement", description: "Oversized uppercase type, full-bleed photos with text over them, solid color blocks, and big numbers." },
+  { value: "luxury", label: "Luxury minimal", description: "A full-screen photo, a centered uppercase headline and three outlined buttons (property search, buy, value my home)." },
+  { value: "warm", label: "Warm editorial", description: "A full-screen photo with a centered headline, one word of it in color (wrap it in asterisks in your tagline), and pill buttons." },
+  { value: "guide", label: "Guide cards", description: "No photo up top: a calm headline with buying and selling guide buttons, then the buyer and seller cards." },
 ];
 
 // Button shape on the public site (agent_sites.button_style, check
@@ -204,6 +208,24 @@ function LayoutSketch({ kind }) {
           <div className="flex gap-1 h-5"><div className={`${bar} flex-1`} /><div className={`${bar} flex-1`} /><div className={`${bar} flex-1`} /></div>
         </>
       )}
+      {kind === "luxury" && (
+        <div className="h-full rounded-[3px] bg-[#1c1a17]/70 flex flex-col items-center justify-center gap-1.5">
+          <div className="h-1.5 w-16 rounded-full bg-white/85" />
+          <div className="flex gap-1"><div className="h-2 w-5 border border-white/70" /><div className="h-2 w-5 border border-white/70" /><div className="h-2 w-5 border border-white/70" /></div>
+        </div>
+      )}
+      {kind === "warm" && (
+        <div className="h-full rounded-[3px] bg-[#1c1a17]/60 flex flex-col items-center justify-center gap-1.5">
+          <div className="flex gap-1"><div className="h-2 w-8 rounded-full bg-white/85" /><div className="h-2 w-4 rounded-full bg-[#ed2127]" /></div>
+          <div className="flex gap-1"><div className="h-2 w-6 rounded-full border border-white/70" /><div className="h-2 w-6 rounded-full border border-white/70" /></div>
+        </div>
+      )}
+      {kind === "guide" && (
+        <>
+          <div className="flex flex-col items-center gap-1 pt-1"><div className="h-2 w-20 rounded-[2px] bg-[#1c1a17]/55" /><div className="flex gap-1"><div className="h-2 w-7 border border-[#1c1a17]/50" /><div className="h-2 w-7 border border-[#1c1a17]/50" /></div></div>
+          <div className="flex gap-1 flex-1"><div className={`${bar} flex-1`} /><div className={`${bar} flex-1`} /><div className={`${bar} flex-1`} /></div>
+        </>
+      )}
       {kind === "bold" && (
         <>
           <div className="h-11 rounded-[3px] bg-[#1c1a17]/70 flex flex-col justify-end p-1.5 gap-0.5"><div className="h-2.5 w-14 rounded-[1px] bg-white" /><div className="h-2.5 w-10 rounded-[1px] bg-white" /></div>
@@ -278,6 +300,13 @@ export default function SiteForm({ site, onSaved }) {
     setSaved(false);
     setDirty(true);
     setForm((f) => ({ ...f, [field]: value }));
+  };
+
+  // A starter template sets several fields at once (see lib/siteTemplates.js).
+  const applyTemplate = (settings) => {
+    setSaved(false);
+    setDirty(true);
+    setForm((f) => ({ ...f, ...settings }));
   };
 
   const updateStat = (i, field, value) => {
@@ -445,6 +474,34 @@ export default function SiteForm({ site, onSaved }) {
         </CollapsibleSection>
 
         <CollapsibleSection title="Template & Design" description="Layout, color theme, accent color, font pairing, and logo.">
+          <div>
+            <label className={labelClass}>Start from a template</label>
+            <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mb-2.5">
+              Sets the layout, colors, header, footer, button shape and home section order together. Your photos, logo, accent color and fonts stay. Nothing changes until you save.
+            </p>
+            <div className="grid sm:grid-cols-3 gap-3">
+              {SITE_TEMPLATES.map((t) => {
+                const active = Object.entries(t.settings).every(([k, v]) => JSON.stringify(form[k]) === JSON.stringify(v));
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => applyTemplate(t.settings)}
+                    className={`text-left rounded-xl border p-3.5 transition-colors ${
+                      active
+                        ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                        : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
+                    }`}
+                  >
+                    <LayoutSketch kind={t.settings.layout} />
+                    <p className="text-sm font-semibold mt-2.5">{t.label}</p>
+                    <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{t.note}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div>
             <label className={labelClass}>Layout</label>
             <div className="grid sm:grid-cols-3 gap-3">
