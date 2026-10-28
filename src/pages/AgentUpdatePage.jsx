@@ -86,7 +86,7 @@ export default function AgentUpdatePage() {
   const brand = brandFromOrg(org);
   const agentFirst = (agent?.full_name || "").split(" ")[0];
   const senderFirst = (sender?.full_name || "").split(" ")[0];
-  const dated = DATES.filter(([k]) => deal[k]).map(([k, label]) => ({ key: k, label, date: deal[k], days: daysBetween(today, deal[k]) })).sort((a, b) => a.date.localeCompare(b.date));
+  const dated = DATES.filter(([k]) => deal[k] && !(deal.is_cash && (k === "appraisal_date" || k === "financing_deadline"))).map(([k, label]) => ({ key: k, label, date: deal[k], days: daysBetween(today, deal[k]) })).sort((a, b) => a.date.localeCompare(b.date));
   const nextKey = dated.find((d) => d.days >= 0)?.key;
   const closing = dated.find((d) => d.key === "closing_date");
   const overdue = openTasks.filter((t) => t.due && t.due < today);

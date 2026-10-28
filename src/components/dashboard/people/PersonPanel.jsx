@@ -40,7 +40,7 @@ const TEXT_FIELDS = [
   "client2_name", "client2_email", "other_agent_email", "other_agent_tc_name", "other_agent_tc_email", "title_company_email", "title_processor_name", "title_processor_email", "lender_email",
 ];
 // Earnest money is delivered or not; ticking it also stamps when (see flush).
-const FIELDS = [...TEXT_FIELDS, ...DATE_FIELDS, ...NUMBER_FIELDS, "side", "earnest_money_delivered"];
+const FIELDS = [...TEXT_FIELDS, ...DATE_FIELDS, ...NUMBER_FIELDS, "side", "earnest_money_delivered", "is_cash"];
 
 const openPicker = (e) => {
   try {
@@ -62,6 +62,7 @@ function toForm(person) {
   for (const key of NUMBER_FIELDS) form[key] = person[key] == null ? "" : String(person[key]);
   form.side = person.side || "";
   form.earnest_money_delivered = !!person.earnest_money_delivered;
+  form.is_cash = !!person.is_cash;
   return form;
 }
 
@@ -130,6 +131,7 @@ export default function PersonPanel({
       if (cur[key] === saved[key]) continue;
       if (DATE_FIELDS.includes(key) || key === "side") changes[key] = cur[key] || null;
       else if (NUMBER_FIELDS.includes(key)) changes[key] = cur[key] === "" ? null : Number(cur[key]);
+      else if (key === "is_cash") changes[key] = !!cur[key];
       else if (key === "earnest_money_delivered") {
         changes[key] = !!cur[key];
         changes.earnest_money_delivered_at = cur[key] ? new Date().toISOString() : null;
@@ -323,14 +325,22 @@ export default function PersonPanel({
             <label className={labelClass}>Title processor email</label>
             <input type="email" value={form.title_processor_email} onChange={setField("title_processor_email")} onBlur={flush} className={inputClass} />
           </div>
-          <div>
-            <label className={labelClass}>Lender</label>
-            <input value={form.lender} onChange={setField("lender")} onBlur={flush} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>Lender email</label>
-            <input type="email" value={form.lender_email} onChange={setField("lender_email")} onBlur={flush} className={inputClass} />
-          </div>
+          <label className="flex items-center gap-2.5 text-sm cursor-pointer @md:col-span-2">
+            <input type="checkbox" checked={form.is_cash} onChange={(e) => setField("is_cash", true)({ target: { value: e.target.checked } })} className="h-4 w-4 accent-[#ed2127]" />
+            <span>Cash purchase (no appraisal or financing)</span>
+          </label>
+          {!form.is_cash && (
+            <>
+              <div>
+                <label className={labelClass}>Lender</label>
+                <input value={form.lender} onChange={setField("lender")} onBlur={flush} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Lender email</label>
+                <input type="email" value={form.lender_email} onChange={setField("lender_email")} onBlur={flush} className={inputClass} />
+              </div>
+            </>
+          )}
         </div>
     </div>
   );
@@ -908,6 +918,8 @@ export default function PersonPanel({
           person={person}
           summary={summary}
           dates={dealDates}
+          cash={form.is_cash}
+          onCash={(v) => setField("is_cash", true)({ target: { value: v } })}
           onTab={setTab}
           onDate={changeDate}
           onCheckTask={summary.completeTask}
@@ -972,8 +984,12 @@ export default function PersonPanel({
                   { label: "Title company email", value: form.title_company_email, href: form.title_company_email ? `mailto:${form.title_company_email}` : undefined },
                   { label: "Title processor", value: form.title_processor_name },
                   { label: "Title processor email", value: form.title_processor_email, href: form.title_processor_email ? `mailto:${form.title_processor_email}` : undefined },
-                  { label: "Lender", value: form.lender },
-                  { label: "Lender email", value: form.lender_email, href: form.lender_email ? `mailto:${form.lender_email}` : undefined },
+                  ...(form.is_cash
+                    ? [{ label: "Financing", value: "Cash purchase" }]
+                    : [
+                        { label: "Lender", value: form.lender },
+                        { label: "Lender email", value: form.lender_email, href: form.lender_email ? `mailto:${form.lender_email}` : undefined },
+                      ]),
                 ]}
               />
             </>

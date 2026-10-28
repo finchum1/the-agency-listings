@@ -148,7 +148,7 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
   const attention = sentBack.length + overdue.length + waitingDrafts.length;
 
   const upcoming = [];
-  for (const p of openDeals) for (const [key, label] of KEY_DATES) if (p[key] && p[key] >= today && p[key] <= horizon) upcoming.push({ person: p, date: p[key], label });
+  for (const p of openDeals) for (const [key, label] of KEY_DATES) if (p[key] && !(p.is_cash && (key === "appraisal_date" || key === "financing_deadline")) && p[key] >= today && p[key] <= horizon) upcoming.push({ person: p, date: p[key], label });
   upcoming.sort((a, b) => a.date.localeCompare(b.date) || a.label.localeCompare(b.label));
 
   const needs = [

@@ -66,6 +66,7 @@ export default async function handler(req, res) {
       inspection_period_end: deal.inspection_period_end,
       appraisal_date: deal.appraisal_date,
       financing_deadline: deal.financing_deadline,
+      is_cash: deal.is_cash,
       closing_date: deal.closing_date,
     },
     counts: { tasksDone: s.tasksDone, tasksTotal: s.tasksTotal, docsDone: s.docsDone, docsTotal: s.docsTotal },

@@ -65,7 +65,7 @@ const COPY = {
 export function buildTimeline(deal, today) {
   const side = deal.side === "seller" ? "seller" : "buyer";
   const items = Object.keys(COPY)
-    .filter((k) => deal[k])
+    .filter((k) => deal[k] && !(deal.is_cash && (k === "appraisal_date" || k === "financing_deadline")))
     .map((k) => ({ key: k, label: COPY[k].label, icon: COPY[k].icon, text: COPY[k][side], doneText: COPY[k].done[side], date: deal[k], time: k === "inspection_date" ? deal.inspection_time || "" : "", days: daysBetween(today, deal[k]) }))
     .sort((a, b) => a.date.localeCompare(b.date));
   const nextIndex = items.findIndex((m) => m.days >= 0);

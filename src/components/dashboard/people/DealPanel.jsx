@@ -353,7 +353,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
         <DealTabs tabs={dealTabs(summary, fresh)} active={tab} onChange={setTab} />
         <div className="@container min-h-0 flex-1 space-y-8 overflow-y-auto overscroll-contain px-6 pt-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           {error && tab !== "details" && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-          {tab === "overview" && <DealOverview person={fresh} summary={summary} dates={dealDates} onTab={setTab} onDate={edit ? changeDate : undefined} onCheckTask={edit ? summary.completeTask : undefined}>
+          {tab === "overview" && <DealOverview person={fresh} summary={summary} dates={dealDates} cash={!!fresh.is_cash} onCash={edit ? (v) => { setFresh((f) => ({ ...f, is_cash: v })); save({ is_cash: v }); } : undefined} onTab={setTab} onDate={edit ? changeDate : undefined} onCheckTask={edit ? summary.completeTask : undefined}>
             {{
               top: edit ? (
                 <div className="flex flex-wrap items-center gap-3">
@@ -411,8 +411,12 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                       { label: "Title company email", value: fresh.title_company_email, href: fresh.title_company_email ? `mailto:${fresh.title_company_email}` : undefined },
                       { label: "Title processor", value: fresh.title_processor_name },
                       { label: "Title processor email", value: fresh.title_processor_email, href: fresh.title_processor_email ? `mailto:${fresh.title_processor_email}` : undefined },
-                      { label: "Lender", value: fresh.lender },
-                      { label: "Lender email", value: fresh.lender_email, href: fresh.lender_email ? `mailto:${fresh.lender_email}` : undefined },
+                      ...(fresh.is_cash
+                        ? [{ label: "Financing", value: "Cash purchase" }]
+                        : [
+                            { label: "Lender", value: fresh.lender },
+                            { label: "Lender email", value: fresh.lender_email, href: fresh.lender_email ? `mailto:${fresh.lender_email}` : undefined },
+                          ]),
                     ]}
                   />
                   {edit && <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Dates are on the Overview tab.</p>}
@@ -527,7 +531,20 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                   />
                   <span>Earnest money delivered to the title company</span>
                 </label>
-                {TEXT.map(([key, label]) => (
+                <label className="flex items-center gap-2.5 text-sm sm:col-span-2">
+                  <input
+                    type="checkbox"
+                    checked={!!fresh.is_cash}
+                    disabled={!edit}
+                    onChange={(e) => {
+                      setFresh((f) => ({ ...f, is_cash: e.target.checked }));
+                      save({ is_cash: e.target.checked });
+                    }}
+                    className="h-4 w-4 accent-[#ed2127]"
+                  />
+                  <span>Cash purchase (no appraisal or financing)</span>
+                </label>
+                {TEXT.filter(([key]) => !(fresh.is_cash && key.startsWith("lender"))).map(([key, label]) => (
                   <div key={key} className={key === "property_address" ? "sm:col-span-2" : ""}>
                     <label className={labelClass}>{label}</label>
                     {edit ? <input type={key.endsWith("email") ? "email" : "text"} {...bind(key, "text")} className={inputClass} /> : <p className="text-sm">{fresh[key] || "–"}</p>}

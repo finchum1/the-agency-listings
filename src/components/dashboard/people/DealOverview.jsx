@@ -11,6 +11,8 @@ const DATES = [
   ["closing_date", "Closing"],
 ];
 
+// A cash purchase has no loan: no appraisal, no financing deadline.
+const CASH_SKIPS = ["appraisal_date", "financing_deadline"];
 const shortDate = (key) => new Date(`${key}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 function Row({ onClick, title, note, tone, onCheck }) {
@@ -29,8 +31,9 @@ function Row({ onClick, title, note, tone, onCheck }) {
 // by the panel around it (`children`).
 //   summary   from useDealSummary          onTab(tab) jumps to another tab
 //   dates     the deal's live key dates    onDate(key, value) changes one (omit for read-only)
+//   cash       a cash purchase: the appraisal and financing tiles go away      onCash(bool) flips it (omit for read-only)
 //   onCheckTask(task)  ticks a task off right here, from the overdue and coming-up lists (omit for read-only)
-export default function DealOverview({ person, summary, dates, onTab, onDate, onCheckTask, children }) {
+export default function DealOverview({ person, summary, dates, cash = false, onCash, onTab, onDate, onCheckTask, children }) {
   const today = toKey(new Date());
   const needs = [];
   if (person.compliance_status === "needs_changes") needs.push({ key: "sb", title: "Compliance sent this deal back", note: "Read the note", tone: "alert", tab: "messages" });
@@ -43,7 +46,8 @@ export default function DealOverview({ person, summary, dates, onTab, onDate, on
   if (summary.unread > 0) needs.push({ key: "msg", title: `${summary.unread} new message${summary.unread === 1 ? "" : "s"}`, note: "Read", tab: "messages" });
 
   // Where "today" falls along the five dates, in proportion to the real days between the dates on either side of it (null when none are set).
-  const todayAt = markerPosition(DATES.map(([key]) => dates[key] || ""), today);
+  const tiles = cash ? DATES.filter(([key]) => !CASH_SKIPS.includes(key)) : DATES;
+  const todayAt = markerPosition(tiles.map(([key]) => dates[key] || ""), today);
 
   return (
     <div className="space-y-6">
@@ -72,7 +76,17 @@ export default function DealOverview({ person, summary, dates, onTab, onDate, on
       </section>
 
       <section aria-label="Key dates" className="space-y-2">
-        <h3 className="font-display text-base font-semibold">Key dates</h3>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+          <h3 className="font-display text-base font-semibold">Key dates</h3>
+          {onCash ? (
+            <label className={`flex cursor-pointer items-center gap-2 text-xs ${muted}`} title="No loan, so no appraisal or financing dates">
+              <input type="checkbox" checked={cash} onChange={(e) => onCash(e.target.checked)} className="h-3.5 w-3.5 accent-[#ed2127]" />
+              Cash purchase
+            </label>
+          ) : (
+            cash && <span className={`text-xs ${muted}`}>Cash purchase</span>
+          )}
+        </div>
         {todayAt != null && (
           <div className="relative h-7 -mb-1" aria-hidden="true">
             {/* The label sits centered on the spot, with the arrow centered right under it, pointing at the bars. */}
@@ -82,8 +96,8 @@ export default function DealOverview({ person, summary, dates, onTab, onDate, on
             </span>
           </div>
         )}
-        <div className="grid grid-cols-6 gap-1.5">
-          {DATES.map(([key, label]) => {
+        <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${tiles.length}, minmax(0, 1fr))` }}>
+          {tiles.map(([key, label]) => {
             const value = dates[key] || "";
             const past = value && value < today;
             const diff = value ? daysBetween(today, value) : null;

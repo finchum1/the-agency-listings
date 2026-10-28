@@ -41,7 +41,7 @@ export function summarize(data, today = todayKey()) {
   const { deal, tasks, docs, sigs, lastUpdateAt } = data;
   const dates = { contract_date: deal.contract_date, inspection_date: deal.inspection_date, closing_date: deal.closing_date };
   const open = tasks.filter((t) => !t.done).map((t) => ({ ...t, due: effectiveDue(t, dates) }));
-  const upcomingDates = Object.keys(DATE_LABELS).filter((k) => deal[k] && deal[k] >= today).map((k) => ({ key: k, label: DATE_LABELS[k], date: deal[k], days: daysBetween(today, deal[k]) })).sort((a, b) => a.date.localeCompare(b.date));
+  const upcomingDates = Object.keys(DATE_LABELS).filter((k) => deal[k] && !(deal.is_cash && (k === "appraisal_date" || k === "financing_deadline")) && deal[k] >= today).map((k) => ({ key: k, label: DATE_LABELS[k], date: deal[k], days: daysBetween(today, deal[k]) })).sort((a, b) => a.date.localeCompare(b.date));
   return {
     today,
     overdue: open.filter((t) => t.due && t.due < today).sort((a, b) => a.due.localeCompare(b.due)),
@@ -129,8 +129,10 @@ export function milestonesFor(data, { today = todayKey(), seen = new Set(), firs
   within("closing_date", 2, "closing-2", soon("Closing"));
   within("closing_date", 7, "closing-7", soon("Closing"));
   within("inspection_date", 2, "inspection-2", soon("Inspection"));
-  within("appraisal_date", 2, "appraisal-2", soon("Appraisal"));
-  within("financing_deadline", 2, "financing-2", soon("Financing deadline"));
+  if (!deal.is_cash) {
+    within("appraisal_date", 2, "appraisal-2", soon("Appraisal"));
+    within("financing_deadline", 2, "financing-2", soon("Financing deadline"));
+  }
   const state = [];
   if (s.docsTotal > 0 && s.docsDone === s.docsTotal) state.push({ key: "docs-complete", lead: "All documents are collected" });
   if (deal.compliance_status === "approved" && deal.compliance_updated_at) state.push({ key: `approved-${String(deal.compliance_updated_at).slice(0, 10)}`, lead: "Compliance approved the deal" });

@@ -82,6 +82,10 @@ function readFields(body) {
     const v = dateKey(body, key);
     set(key, v === "" ? null : v);
   }
+  if (body.is_cash !== undefined) {
+    if (typeof body.is_cash !== "boolean") throw bad("is_cash must be true or false.");
+    set("is_cash", body.is_cash);
+  }
   const clock = timeKey(body, "inspection_time");
   set("inspection_time", clock === "" ? null : clock);
   if (body.side !== undefined) set("side", body.side === null ? null : oneOf(body, "side", SIDES));
