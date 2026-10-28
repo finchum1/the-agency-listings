@@ -40,11 +40,11 @@ export function Lead({ children, className = "" }) {
 /** The page's opening: a photo under a dark wash, the title, a lead paragraph and buttons (children). */
 export function PageHero({ eyebrow, title, lead, photo, children, below }) {
   return (
-    <section className="relative overflow-hidden bg-[var(--as-dark)] text-[var(--as-on-dark)]">
+    <section className="relative -mt-14 overflow-hidden bg-[var(--as-dark)] text-[var(--as-on-dark)]">
       {photo && <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45" />}
       <div className="absolute inset-0 bg-gradient-to-r from-[var(--as-dark)] via-[var(--as-dark)]/80 to-[var(--as-dark)]/20" aria-hidden="true" />
-      {/* The fixed header is 76px tall but a page leaves 56px for it, so the hero starts 20px under the header: the extra top padding gives that back. */}
-      <div className="relative mx-auto max-w-6xl px-6 lg:px-10 pt-[7.25rem] pb-24 sm:pt-[9.25rem] sm:pb-32">
+      {/* A page leaves 56px of plain background under its fixed header; -mt-14 above pulls the hero up over it so the photo runs right to the top, and the padding here keeps the text clear of the header. */}
+      <div className="relative mx-auto max-w-6xl px-6 lg:px-10 pt-[10.75rem] pb-24 sm:pt-[12.75rem] sm:pb-32">
         <Eyebrow onDark>{eyebrow}</Eyebrow>
         <Heading as="h1" className="!text-4xl sm:!text-6xl max-w-3xl">
           {title}

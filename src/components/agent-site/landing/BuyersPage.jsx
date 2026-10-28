@@ -170,13 +170,14 @@ export default function BuyersPage() {
         </Section>
       )}
 
-      <Section tone="dark" id="start">
+      {/* The last band is light (the footer under it is dark); it takes whichever light tone the section above it is not. */}
+      <Section tone={isAgency ? "bg" : "alt"} id="start" className={isAgency ? "border-t border-[var(--as-text)]/10" : ""}>
         <div className="flex flex-wrap items-center justify-between gap-8">
           <div>
-            <Eyebrow onDark>Ready to find your dream home?</Eyebrow>
+            <Eyebrow>Ready to find your dream home?</Eyebrow>
             <Heading>We can take you there.</Heading>
           </div>
-          <AgentCard />
+          <AgentCard onDark={false} />
         </div>
         <Disclaimer>
           {site.brokerage.name} makes no guarantees regarding the subject property or your ability to purchase it. Information from the seller or their agent may contain errors or omissions and should be independently verified. This guide is for information only and is not legal, tax or real estate advice; consult a qualified real estate attorney or CPA. Your agent may act as a dual agent if another agent at the brokerage represents the seller.

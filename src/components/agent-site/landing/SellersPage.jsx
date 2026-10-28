@@ -182,16 +182,16 @@ function SellerCta() {
     submit({ name: f.name, email: f.email, phone: f.phone, address: f.address, details: { timeline: f.timeline } });
   };
   return (
-    <Section tone="dark" id="start">
+    <Section tone="alt" id="start">
       <div className="grid lg:grid-cols-2 gap-14 items-start">
         <div>
-          <Eyebrow onDark>Ready to sell your home?</Eyebrow>
+          <Eyebrow>Ready to sell your home?</Eyebrow>
           <Heading>We can take you there.</Heading>
           <div className="mt-8">
-            <AgentCard />
+            <AgentCard onDark={false} />
           </div>
         </div>
-        <div className="bg-[var(--as-bg)] text-[var(--as-text)] p-7 sm:p-9">
+        <div className="bg-[var(--as-bg)] text-[var(--as-text)] border border-[var(--as-text)]/10 p-7 sm:p-9">
           {status === "sent" ? (
             <div role="status" className="py-6 text-center">
               <p className="font-display text-2xl font-semibold">Got it. Thank you!</p>

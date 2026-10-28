@@ -25,10 +25,10 @@ export default function HomeValuePage() {
 
   return (
     <>
-      <section className="relative overflow-hidden bg-[var(--as-dark)] text-[var(--as-on-dark)]">
+      <section className="relative -mt-14 overflow-hidden bg-[var(--as-dark)] text-[var(--as-on-dark)]">
         <img src="/landing/kitchen.jpg" alt="" className="absolute inset-0 h-full w-full object-cover opacity-30" />
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--as-dark)] via-[var(--as-dark)]/85 to-[var(--as-dark)]/40" aria-hidden="true" />
-        <div className="relative mx-auto max-w-6xl px-6 lg:px-10 pt-[6.25rem] pb-20 sm:pt-[8.25rem] sm:pb-28 grid lg:grid-cols-[1fr_460px] gap-12 items-center">
+        <div className="relative mx-auto max-w-6xl px-6 lg:px-10 pt-[9.75rem] pb-20 sm:pt-[11.75rem] sm:pb-28 grid lg:grid-cols-[1fr_460px] gap-12 items-center">
           <div>
             <Eyebrow onDark>Free home valuation</Eyebrow>
             <Heading as="h1" className="!text-4xl sm:!text-6xl">
@@ -80,7 +80,7 @@ export default function HomeValuePage() {
         </Section>
       )}
 
-      <Section tone="dark" id="privacy">
+      <Section id="privacy" className="border-t border-[var(--as-text)]/10">
         <div className="flex flex-wrap items-center justify-between gap-6">
           <p className="max-w-xl text-[15px] leading-relaxed opacity-75">
             Your information goes to {first} and no one else. This is a request for a valuation, not an appraisal.
