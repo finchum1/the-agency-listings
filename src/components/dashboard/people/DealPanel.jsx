@@ -37,8 +37,8 @@ const TEXT = [
   ["lender_email", "Lender email"],
 ];
 // The second client sits at the top of the details, right under the first.
-// The first client's phone and email, editable here so a coordinator can fix them.
-const CLIENT1 = [["phone", "Phone"], ["email", "Email"]];
+// The first client's name, phone and email, editable here so a coordinator can fix them.
+const CLIENT1 = [["name", "Client"], ["phone", "Phone"], ["email", "Email"]];
 const CLIENT2 = [["client2_name", "Second client"], ["client2_email", "Second client's email"]];
 const DATES = [["contract_date", "Contract"], ["inspection_date", "Inspection"], ["appraisal_date", "Appraisal"], ["financing_deadline", "Financing deadline"], ["closing_date", "Closing"]];
 const NUMBERS = [["price", "Price"], ["commission", "Commission"], ["earnest_money", "Earnest money"]];
@@ -387,10 +387,10 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                     title="Contact"
                     rows={[
                       { label: "Client", value: fresh.name },
+                      { label: "Email", value: fresh.email, always: true, href: fresh.email ? `mailto:${fresh.email}` : undefined },
+                      { label: "Second client", value: fresh.client2_name, always: !!(fresh.client2_name || fresh.client2_email) },
+                      { label: "Second client's email", value: fresh.client2_email, always: !!(fresh.client2_name || fresh.client2_email), href: fresh.client2_email ? `mailto:${fresh.client2_email}` : undefined },
                       { label: "Phone", value: fresh.phone, href: fresh.phone ? `tel:${fresh.phone.replace(/[^\d+]/g, "")}` : undefined },
-                      { label: "Email", value: fresh.email, href: fresh.email ? `mailto:${fresh.email}` : undefined },
-                      { label: "Second client", value: fresh.client2_name },
-                      { label: "Second client's email", value: fresh.client2_email, href: fresh.client2_email ? `mailto:${fresh.client2_email}` : undefined },
                     ]}
                   />
                   <DetailGroup
@@ -421,20 +421,32 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
               <div className={`grid gap-3 sm:grid-cols-2 ${edit && editingDetails ? "" : "hidden"}`}>
                 <div>
                   <label className={labelClass}>Client</label>
-                  <p className="text-sm">{fresh.name}</p>
+                  <input
+                    autoComplete="off"
+                    {...bind("name", "text")}
+                    onBlur={() => {
+                      // A deal can't lose its client's name: an empty box goes back to what was saved.
+                      if (!form.name.trim()) setForm((f) => ({ ...f, name: fresh.name || "" }));
+                      else if (edit) commit("name", "text");
+                    }}
+                    className={inputClass}
+                  />
                 </div>
-                {CLIENT1.map(([key, label]) => (
-                  <div key={key}>
-                    <label className={labelClass}>{label}</label>
-                    <input type={key === "email" ? "email" : "tel"} autoComplete="off" {...bind(key, "text")} className={inputClass} />
-                  </div>
-                ))}
+                {/* Names down the left, their emails down the right; the phone follows. */}
+                <div>
+                  <label className={labelClass}>Email</label>
+                  <input type="email" autoComplete="off" {...bind("email", "text")} className={inputClass} />
+                </div>
                 {CLIENT2.map(([key, label]) => (
                   <div key={key}>
                     <label className={labelClass}>{label}</label>
                     <input type={key.endsWith("email") ? "email" : "text"} autoComplete="off" {...bind(key, "text")} className={inputClass} />
                   </div>
                 ))}
+                <div>
+                  <label className={labelClass}>Phone</label>
+                  <input type="tel" autoComplete="off" {...bind("phone", "text")} className={inputClass} />
+                </div>
                 <div>
                   <label className={labelClass}>Buyer or seller (listing)</label>
                   {edit ? (

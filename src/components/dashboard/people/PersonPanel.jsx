@@ -757,43 +757,61 @@ export default function PersonPanel({
     const today = toKey(new Date());
     if (cadence && (!form.next_follow_up || form.next_follow_up <= today)) changeDate("next_follow_up", toKey(addDays(new Date(), cadence)));
   };
+  const nameInput = (
+    <div>
+      <label className={labelClass}>{isDeal ? "Client" : "Name"}</label>
+      <input
+        value={form.name}
+        onChange={setField("name")}
+        onBlur={() => {
+          if (!formRef.current.name.trim()) {
+            formRef.current = { ...formRef.current, name: savedRef.current.name };
+            setForm(formRef.current);
+          } else flush();
+        }}
+        className={inputClass}
+      />
+    </div>
+  );
+  const emailInput = (
+    <div>
+      <label className={labelClass}>Email</label>
+      <input type="email" value={form.email} onChange={setField("email")} onBlur={flush} className={inputClass} />
+    </div>
+  );
+  const phoneInput = (
+    <div>
+      <label className={labelClass}>Phone</label>
+      <input type="tel" value={form.phone} onChange={setField("phone")} onBlur={flush} className={inputClass} />
+    </div>
+  );
   const contactFields = (
         <div className="space-y-3">
-          <div>
-            <label className={labelClass}>Name</label>
-            <input
-              value={form.name}
-              onChange={setField("name")}
-              onBlur={() => {
-                if (!formRef.current.name.trim()) {
-                  formRef.current = { ...formRef.current, name: savedRef.current.name };
-                  setForm(formRef.current);
-                } else flush();
-              }}
-              className={inputClass}
-            />
-          </div>
-          <div className="grid @md:grid-cols-2 gap-3">
-            <div>
-              <label className={labelClass}>Phone</label>
-              <input type="tel" value={form.phone} onChange={setField("phone")} onBlur={flush} className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Email</label>
-              <input type="email" value={form.email} onChange={setField("email")} onBlur={flush} className={inputClass} />
-            </div>
-          </div>
-          {person.stage_group === "transaction" && (
-            <div className="grid @md:grid-cols-2 gap-3">
-              <div>
-                <label className={labelClass}>Second client</label>
-                <input value={form.client2_name} onChange={setField("client2_name")} onBlur={flush} autoComplete="off" className={inputClass} />
+          {isDeal ? (
+            <>
+              {/* Names down the left, their emails down the right (one client per row, so they pair up on a narrow panel too). */}
+              <div className="grid @md:grid-cols-2 gap-3">
+                {nameInput}
+                {emailInput}
+                <div>
+                  <label className={labelClass}>Second client</label>
+                  <input value={form.client2_name} onChange={setField("client2_name")} onBlur={flush} autoComplete="off" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Second client's email</label>
+                  <input type="email" value={form.client2_email} onChange={setField("client2_email")} onBlur={flush} autoComplete="off" className={inputClass} />
+                </div>
               </div>
-              <div>
-                <label className={labelClass}>Second client's email</label>
-                <input type="email" value={form.client2_email} onChange={setField("client2_email")} onBlur={flush} autoComplete="off" className={inputClass} />
+              <div className="grid @md:grid-cols-2 gap-3">{phoneInput}</div>
+            </>
+          ) : (
+            <>
+              {nameInput}
+              <div className="grid @md:grid-cols-2 gap-3">
+                {phoneInput}
+                {emailInput}
               </div>
-            </div>
+            </>
           )}
           <div className="grid @md:grid-cols-2 gap-3">
             <div>
@@ -929,10 +947,10 @@ export default function PersonPanel({
                 title="Contact"
                 rows={[
                   { label: "Client", value: form.name },
+                  { label: "Email", value: form.email, always: true, href: form.email ? `mailto:${form.email}` : undefined },
+                  { label: "Second client", value: form.client2_name, always: !!(form.client2_name || form.client2_email) },
+                  { label: "Second client's email", value: form.client2_email, always: !!(form.client2_name || form.client2_email), href: form.client2_email ? `mailto:${form.client2_email}` : undefined },
                   { label: "Phone", value: form.phone, href: form.phone ? `tel:${form.phone.replace(/[^\d+]/g, "")}` : undefined },
-                  { label: "Email", value: form.email, href: form.email ? `mailto:${form.email}` : undefined },
-                  { label: "Second client", value: form.client2_name },
-                  { label: "Second client's email", value: form.client2_email, href: form.client2_email ? `mailto:${form.client2_email}` : undefined },
                   { label: "Next follow-up", value: form.next_follow_up ? dayLabel(form.next_follow_up, toKey(new Date())) : "" },
                   { label: "Source", value: form.source },
                   { label: "Stage", value: person.stage },

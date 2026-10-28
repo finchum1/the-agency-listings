@@ -11,7 +11,8 @@ export const money = (n) => (n == null || n === "" || Number.isNaN(Number(n)) ? 
 // A deal's details as read-only text: only the fields that have something in them, so a half-filled deal doesn't show a wall of empty boxes.
 // rows: [{ label, value, href?, wide? }]. `title` is the group's small heading.
 export function DetailGroup({ title, rows }) {
-  const shown = rows.filter((r) => r.value !== null && r.value !== undefined && String(r.value).trim() !== "");
+  // A row marked `always` keeps its place (with a dash) so a paired layout stays in its columns.
+  const shown = rows.filter((r) => r.always || (r.value !== null && r.value !== undefined && String(r.value).trim() !== ""));
   const hidden = rows.length - shown.length;
   return (
     <section className="min-w-0 space-y-2.5">
@@ -24,7 +25,9 @@ export function DetailGroup({ title, rows }) {
             <div key={r.label} className={`min-w-0 ${r.wide ? "@md:col-span-2" : ""}`}>
               <dt className={`text-xs ${muted}`}>{r.label}</dt>
               <dd className="mt-0.5 break-words text-sm">
-                {r.href ? (
+                {!String(r.value ?? "").trim() ? (
+                  "–"
+                ) : r.href ? (
                   <a href={r.href} className="underline decoration-black/25 dark:decoration-white/30 underline-offset-2 hover:decoration-current">
                     {r.value}
                   </a>
