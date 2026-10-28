@@ -52,6 +52,10 @@ function readFields(body) {
     if (!Array.isArray(order) || order.length > 20 || order.some((p) => typeof p !== "string" || !/^\/[a-z0-9-]*$/.test(p))) throw bad("nav_order must be a list of page paths like /about, /sellers, /contact.");
     set("nav_order", order);
   }
+  set("footer_cta_heading", text(body, "footer_cta_heading", { max: 80 }));
+  set("footer_cta_text", text(body, "footer_cta_text", { max: 160 }));
+  set("footer_cta_button", text(body, "footer_cta_button", { max: 30 }));
+  set("footer_blurb", text(body, "footer_blurb", { max: 200 }));
   set("footer_style", oneOf(body, "footer_style", ["classic", "centered", "cta", "wide", "slim"]));
   set("button_style", oneOf(body, "button_style", ["square", "pill"]));
   set("logo_variant", oneOf(body, "logo_variant", ["red", "white", "black"]));

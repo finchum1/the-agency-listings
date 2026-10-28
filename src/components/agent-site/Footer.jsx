@@ -228,11 +228,11 @@ export default function Footer() {
         <div className="bg-[var(--as-accent)] text-white px-6 lg:px-10 py-12">
           <div className="mx-auto max-w-6xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
             <div>
-              <p className="font-display text-2xl sm:text-3xl font-semibold">Thinking of making a move?</p>
-              <p className="mt-1 text-white/80">Tell {firstName} what you have in mind and get an answer within one business day.</p>
+              <p className="font-display text-2xl sm:text-3xl font-semibold">{site.footerCta?.heading || "Thinking of making a move?"}</p>
+              <p className="mt-1 text-white/80">{site.footerCta?.text || `Tell ${firstName} what you have in mind and get an answer within one business day.`}</p>
             </div>
             <SiteLink slug={site.slug} path="/contact" className="as-btn shrink-0 self-start sm:self-auto text-xs font-medium tracked-wide uppercase px-8 py-4 border border-white text-white transition-colors hover:bg-white hover:text-[var(--as-dark)]">
-              Let&rsquo;s talk
+              {site.footerCta?.button || "Let\u2019s talk"}
             </SiteLink>
           </div>
         </div>
@@ -258,6 +258,7 @@ export default function Footer() {
               <div className="mb-6">{logo}</div>
               {agentLine("mb-2")}
               {agent.license && <p className="text-[var(--as-on-dark)]/50 mb-5">{agent.license}</p>}
+              {site.footerBlurb && <p className="mb-5 max-w-xs leading-relaxed">{site.footerBlurb}</p>}
               {contact}
               {socials("mt-5")}
             </div>

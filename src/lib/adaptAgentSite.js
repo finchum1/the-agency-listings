@@ -38,6 +38,9 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     // Navbar.jsx and SiteForm.jsx's "Header Style" picker.
     headerStyle: ["floating", "centered", "centered_pill", "stacked", "minimal"].includes(site.header_style) ? site.header_style : "classic",
     // classic | centered | cta | wide | slim — see Footer.jsx.
+    // The agent's own wording for the call to action footer and the four-column footer (empty = the defaults in Footer.jsx).
+    footerCta: { heading: site.footer_cta_heading || "", text: site.footer_cta_text || "", button: site.footer_cta_button || "" },
+    footerBlurb: site.footer_blurb || "",
     footerStyle: ["centered", "cta", "wide", "slim"].includes(site.footer_style) ? site.footer_style : "classic",
     // The agent's own order for the header and footer menus, a list of page paths (see lib/siteNav.js).
     navOrder: Array.isArray(site.nav_order) ? site.nav_order : [],

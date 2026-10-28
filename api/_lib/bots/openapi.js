@@ -27,6 +27,7 @@ const siteFields = {
   font_pairing: str("Font pairing", { enum: ["playfair-jost", "fraunces-inter", "cormorant-worksans", "libre-karla", "bodoni-manrope", "dmserif-dmsans"] }),
   header_style: str("", { enum: ["classic", "floating", "centered", "centered_pill", "stacked", "minimal"] }),
   footer_style: str("", { enum: ["classic", "centered", "cta", "wide", "slim"] }),
+  footer_cta_heading: str("Headline of the call to action footer band (empty for the default)"), footer_cta_text: str("Line under the headline"), footer_cta_button: str("Button label"), footer_blurb: str("Short blurb in the four-column footer"),
   nav_order: { type: "array", items: { type: "string" }, description: "Page paths in the order of the header and footer menus, e.g. [\"/about\", \"/sellers\", \"/contact\"]. Empty for the standard order." },
   button_style: str("", { enum: ["square", "pill"] }),
   home_sections: { type: "array", items: { type: "string", enum: ["bio", "testimonials", "cards", "listings", "areas", "blog"] }, description: "Which home page sections show, in order. cards is the Sellers / Home Value / Buyers cards." },

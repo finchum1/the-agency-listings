@@ -261,6 +261,10 @@ export default function SiteForm({ site, onSaved }) {
       layout: s.layout || "classic",
       header_style: s.header_style || "classic",
       footer_style: s.footer_style || "classic",
+      footer_cta_heading: s.footer_cta_heading || "",
+      footer_cta_text: s.footer_cta_text || "",
+      footer_cta_button: s.footer_cta_button || "",
+      footer_blurb: s.footer_blurb || "",
       nav_order: Array.isArray(s.nav_order) ? s.nav_order : [],
       button_style: s.button_style || "square",
       font_pairing: s.font_pairing || "playfair-jost",
@@ -366,6 +370,10 @@ export default function SiteForm({ site, onSaved }) {
       layout: form.layout,
       header_style: form.header_style,
       footer_style: form.footer_style,
+      footer_cta_heading: form.footer_cta_heading.trim(),
+      footer_cta_text: form.footer_cta_text.trim(),
+      footer_cta_button: form.footer_cta_button.trim(),
+      footer_blurb: form.footer_blurb.trim(),
       nav_order: form.nav_order,
       button_style: form.button_style,
       font_pairing: form.font_pairing,
@@ -597,6 +605,29 @@ export default function SiteForm({ site, onSaved }) {
                 </button>
               ))}
             </div>
+            {form.footer_style === "cta" && (
+              <div className="mt-4 space-y-3 rounded-xl border border-black/10 dark:border-white/15 p-4">
+                <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">The band above your footer. Leave a box empty to use the standard wording.</p>
+                <div>
+                  <label className={labelClass}>Headline</label>
+                  <input value={form.footer_cta_heading} onChange={(e) => set("footer_cta_heading", e.target.value)} maxLength={80} placeholder="Thinking of making a move?" className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Line under it</label>
+                  <input value={form.footer_cta_text} onChange={(e) => set("footer_cta_text", e.target.value)} maxLength={160} placeholder="Tell your agent what you have in mind and get an answer within one business day." className={inputClass} />
+                </div>
+                <div>
+                  <label className={labelClass}>Button</label>
+                  <input value={form.footer_cta_button} onChange={(e) => set("footer_cta_button", e.target.value)} maxLength={30} placeholder="Let's talk" className={inputClass} />
+                </div>
+              </div>
+            )}
+            {form.footer_style === "wide" && (
+              <div className="mt-4 rounded-xl border border-black/10 dark:border-white/15 p-4">
+                <label className={labelClass}>Short blurb under your name (optional)</label>
+                <textarea value={form.footer_blurb} onChange={(e) => set("footer_blurb", e.target.value)} maxLength={200} rows={2} placeholder="A line or two about how you work, or the area you serve." className={inputClass} />
+              </div>
+            )}
           </div>
 
           <div>
