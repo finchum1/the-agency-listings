@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
+import { onDealWork } from "../../../lib/dealEvents";
 import { effectiveDue } from "../../../lib/checklists";
 import { addDays, dayLabel, toKey } from "../../../lib/homeDates";
 import { ComplianceChip } from "./DealCompliance";
@@ -90,6 +91,8 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
   useEffect(() => {
     if (!selectedId) load();
   }, [load, selectedId]);
+  // The side panel stays open beside this overview, so work done in it (a task ticked, a draft sent) reloads the list right away.
+  useEffect(() => onDealWork(load), [load]);
 
   // Ticking a task off here is the same write the deal's own checklist makes. It leaves the list at once; a miss puts it back.
   const completeTask = async (task) => {

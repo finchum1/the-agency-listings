@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "./useAuth";
 import { effectiveDue } from "../lib/checklists";
 import { toKey } from "../lib/homeDates";
+import { announceDealWork } from "../lib/dealEvents";
 
 // What a deal's tabs and overview need to know without opening every tab: checklist progress and overdue tasks, signatures out for signature,
 // and messages you haven't read. `dates` is the deal's live contract / inspection / closing dates, so due dates follow edits as they're typed.
@@ -35,6 +36,7 @@ export function useDealSummary(personId, dates) {
     setData((d) => ({ ...d, tasks: d.tasks.map((t) => (t.id === task.id ? { ...t, done: true, done_at } : t)) }));
     const { error } = await supabase.from("transaction_tasks").update({ done: true, done_at }).eq("id", task.id);
     if (error) reload();
+    else announceDealWork();
     return !error;
   };
 

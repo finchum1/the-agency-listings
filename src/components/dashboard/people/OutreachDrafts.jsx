@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
+import { announceDealWork } from "../../../lib/dealEvents";
 
 const btn = "rounded-full border border-black/10 dark:border-white/15 px-3 py-1.5 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 const CHANNEL = { email: "Email", text: "Text message", call: "Call" };
@@ -34,6 +35,7 @@ export default function OutreachDrafts({ person, onLogged, onCount }) {
   const resolve = async (d, status) => {
     setBusy(d.id);
     await supabase.from("people_outreach").update({ status, resolved_at: new Date().toISOString() }).eq("id", d.id);
+    announceDealWork();
     if (status === "sent") {
       const what = d.channel === "email" ? `Emailed: ${d.subject || d.body.slice(0, 80)}` : d.channel === "text" ? `Texted: ${d.body.slice(0, 120)}` : "Called";
       await supabase.from("people_notes").insert({ person_id: person.id, body: what });

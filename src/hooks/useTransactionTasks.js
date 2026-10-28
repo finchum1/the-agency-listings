@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { announceDealWork } from "../lib/dealEvents";
 
 // A transaction's checklist tasks. Edits are applied locally first so
 // ticking boxes feels instant, then reloaded if the save fails.
@@ -29,6 +30,7 @@ export function useTransactionTasks(personId) {
   const insertRows = async (rows) => {
     const { error: err } = await supabase.from("transaction_tasks").insert(rows);
     if (err) setError(err.message);
+    else announceDealWork();
     await load();
   };
 
@@ -62,7 +64,7 @@ export function useTransactionTasks(personId) {
     if (err) {
       setError(err.message);
       load();
-    }
+    } else announceDealWork();
   };
 
   const removeTask = async (id) => {
@@ -71,12 +73,13 @@ export function useTransactionTasks(personId) {
     if (err) {
       setError(err.message);
       load();
-    }
+    } else announceDealWork();
   };
 
   const clearAll = async () => {
     const { error: err } = await supabase.from("transaction_tasks").delete().eq("person_id", personId);
     if (err) setError(err.message);
+    else announceDealWork();
     await load();
   };
 
