@@ -34,8 +34,11 @@ const TEXT = [
   ["title_processor_name", "Title processor"],
   ["title_processor_email", "Title processor email"],
   ["lender", "Lender"],
+  ["lender_email", "Lender email"],
 ];
 // The second client sits at the top of the details, right under the first.
+// The first client's phone and email, editable here so a coordinator can fix them.
+const CLIENT1 = [["phone", "Phone"], ["email", "Email"]];
 const CLIENT2 = [["client2_name", "Second client"], ["client2_email", "Second client's email"]];
 const DATES = [["contract_date", "Contract"], ["inspection_date", "Inspection"], ["appraisal_date", "Appraisal"], ["financing_deadline", "Financing deadline"], ["closing_date", "Closing"]];
 const NUMBERS = [["price", "Price"], ["commission", "Commission"], ["earnest_money", "Earnest money"]];
@@ -409,6 +412,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                       { label: "Title processor", value: fresh.title_processor_name },
                       { label: "Title processor email", value: fresh.title_processor_email, href: fresh.title_processor_email ? `mailto:${fresh.title_processor_email}` : undefined },
                       { label: "Lender", value: fresh.lender },
+                      { label: "Lender email", value: fresh.lender_email, href: fresh.lender_email ? `mailto:${fresh.lender_email}` : undefined },
                     ]}
                   />
                   {edit && <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Dates are on the Overview tab.</p>}
@@ -419,10 +423,12 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                   <label className={labelClass}>Client</label>
                   <p className="text-sm">{fresh.name}</p>
                 </div>
-                <div>
-                  <label className={labelClass}>Phone / email</label>
-                  <p className="text-sm break-words">{[fresh.phone, fresh.email].filter(Boolean).join(" · ") || "–"}</p>
-                </div>
+                {CLIENT1.map(([key, label]) => (
+                  <div key={key}>
+                    <label className={labelClass}>{label}</label>
+                    <input type={key === "email" ? "email" : "tel"} autoComplete="off" {...bind(key, "text")} className={inputClass} />
+                  </div>
+                ))}
                 {CLIENT2.map(([key, label]) => (
                   <div key={key}>
                     <label className={labelClass}>{label}</label>
@@ -552,7 +558,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
 
 function toForm(p) {
   const f = {};
-  for (const [k] of [...CLIENT2, ...TEXT]) f[k] = p[k] || "";
+  for (const [k] of [...CLIENT1, ...CLIENT2, ...TEXT]) f[k] = p[k] || "";
   for (const [k] of NUMBERS) f[k] = p[k] == null ? "" : String(p[k]);
   for (const [k] of DATES) f[k] = p[k] || "";
   return f;

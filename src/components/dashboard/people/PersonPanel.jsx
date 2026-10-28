@@ -37,7 +37,7 @@ const DATE_FIELDS = ["next_follow_up", "contract_date", "inspection_date", "appr
 const NUMBER_FIELDS = ["price", "commission", "earnest_money"];
 const TEXT_FIELDS = [
   "name", "email", "phone", "source", "property_address", "other_agent", "title_company", "lender",
-  "client2_name", "client2_email", "other_agent_email", "other_agent_tc_name", "other_agent_tc_email", "title_company_email", "title_processor_name", "title_processor_email",
+  "client2_name", "client2_email", "other_agent_email", "other_agent_tc_name", "other_agent_tc_email", "title_company_email", "title_processor_name", "title_processor_email", "lender_email",
 ];
 // Earnest money is delivered or not; ticking it also stamps when (see flush).
 const FIELDS = [...TEXT_FIELDS, ...DATE_FIELDS, ...NUMBER_FIELDS, "side", "earnest_money_delivered"];
@@ -323,9 +323,13 @@ export default function PersonPanel({
             <label className={labelClass}>Title processor email</label>
             <input type="email" value={form.title_processor_email} onChange={setField("title_processor_email")} onBlur={flush} className={inputClass} />
           </div>
-          <div className="@md:col-span-2">
+          <div>
             <label className={labelClass}>Lender</label>
             <input value={form.lender} onChange={setField("lender")} onBlur={flush} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Lender email</label>
+            <input type="email" value={form.lender_email} onChange={setField("lender_email")} onBlur={flush} className={inputClass} />
           </div>
         </div>
     </div>
@@ -951,6 +955,7 @@ export default function PersonPanel({
                   { label: "Title processor", value: form.title_processor_name },
                   { label: "Title processor email", value: form.title_processor_email, href: form.title_processor_email ? `mailto:${form.title_processor_email}` : undefined },
                   { label: "Lender", value: form.lender },
+                  { label: "Lender email", value: form.lender_email, href: form.lender_email ? `mailto:${form.lender_email}` : undefined },
                 ]}
               />
             </>
