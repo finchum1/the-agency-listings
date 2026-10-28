@@ -56,7 +56,7 @@ export default function AgentAreaPage({ site, agent, area, loading, notFound }) 
   return (
     <AgentSiteProvider value={{ site: adapted, siteId: site.id }}>
       <div
-        className="min-h-screen bg-[var(--as-bg)] font-agent-sans"
+        className="min-h-screen flex flex-col bg-[var(--as-bg)] font-agent-sans"
         data-theme={adapted.theme}
         data-buttons={adapted.buttonStyle}
         data-font={adapted.fontPairing}

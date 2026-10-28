@@ -84,7 +84,7 @@ export default function Footer() {
   const visibleLinks = EXPLORE_LINKS.filter((link) => !link.sectionKey || site.homeSections.includes(link.sectionKey));
 
   return (
-    <footer className="bg-[var(--as-dark)] text-[var(--as-on-dark)]/65 px-6 lg:px-10 py-16">
+    <footer className="mt-auto bg-[var(--as-dark)] text-[var(--as-on-dark)]/65 px-6 lg:px-10 py-16">
       <div className="mx-auto max-w-6xl">
         <div className="grid sm:grid-cols-3 gap-12 text-sm items-start">
           <div>

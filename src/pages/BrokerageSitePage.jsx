@@ -51,7 +51,7 @@ export default function BrokerageSitePage({ path, pageTitle, customDomain, child
   return (
     <BrokerageSiteProvider value={{ site: adapted }}>
       <div
-        className="min-h-screen bg-[var(--as-bg)] font-agent-sans"
+        className="min-h-screen flex flex-col bg-[var(--as-bg)] font-agent-sans"
         data-theme={adapted.theme}
         data-font={adapted.fontPairing}
         style={adapted.accentColor ? { "--as-accent": adapted.accentColor } : undefined}

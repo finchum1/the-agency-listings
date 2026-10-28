@@ -7,7 +7,7 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-[var(--ls-dark)] text-[var(--ls-on-dark)]/70 px-6 lg:px-10 py-14">
+    <footer className="mt-auto bg-[var(--ls-dark)] text-[var(--ls-on-dark)]/70 px-6 lg:px-10 py-14">
       <div className="mx-auto max-w-6xl">
         <div className="grid sm:grid-cols-3 gap-10 text-sm items-start">
           <div>

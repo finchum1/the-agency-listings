@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { adaptAgentSite } from "../lib/adaptAgentSite";
 import { buildAgentSitePageMeta, SITE_ORIGIN } from "../lib/seo";
@@ -43,6 +43,20 @@ export default function AgentSitePage({
   // — matches buildAgentSitePageMeta's page keys 1:1 since pageTitle is
   // always one of "About"/"Listings"/"Areas"/"Blog"/"Contact" (App.jsx).
   const pageKey = pageTitle?.toLowerCase().replace(/\s+/g, "-");
+
+  // An inner page leaves 56px of room under the fixed header. That strip is the page background, so with the floating header (a pill with
+  // clear space around it) it showed as a band of a different color above a section that has its own background. It is painted the same color
+  // as the page's first section instead, and that section's own top border (which would be a line across the strip) is dropped.
+  const topRef = useRef(null);
+  const [topBg, setTopBg] = useState("");
+  useLayoutEffect(() => {
+    const first = topRef.current?.firstElementChild;
+    if (!first) return;
+    const cs = getComputedStyle(first);
+    const solid = cs.backgroundImage === "none" && cs.backgroundColor && cs.backgroundColor !== "transparent" && !/,\s*0\)$/.test(cs.backgroundColor);
+    const next = solid ? cs.backgroundColor : "";
+    if (next !== topBg) setTopBg(next);
+  });
 
   useEffect(() => {
     if (!site) return;
@@ -143,7 +157,7 @@ export default function AgentSitePage({
   return (
     <AgentSiteProvider value={{ site: adapted, siteId: site.id, isStandalonePage: Boolean(pageKey) }}>
       <div
-        className="min-h-screen bg-[var(--as-bg)] font-agent-sans"
+        className="min-h-screen flex flex-col bg-[var(--as-bg)] font-agent-sans"
         data-theme={adapted.theme}
         data-buttons={adapted.buttonStyle}
         data-font={adapted.fontPairing}
@@ -153,7 +167,13 @@ export default function AgentSitePage({
         <Navbar />
         {/* Every inner page (About, Listings, Areas, Blog, Contact) opens with its title right under the fixed header, so
             it gets extra room there. Home starts with its hero and needs none. */}
-        {pageKey ? <div className="pt-14">{children}</div> : children}
+        {pageKey ? (
+          <div ref={topRef} className="pt-14 [&>:first-child]:!border-t-0" style={topBg ? { backgroundColor: topBg } : undefined}>
+            {children}
+          </div>
+        ) : (
+          children
+        )}
         <Footer />
       </div>
     </AgentSiteProvider>

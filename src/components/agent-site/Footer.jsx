@@ -102,7 +102,7 @@ export default function Footer() {
   const visibleLinks = [...baseLinks.slice(0, -1), ...landingLinks, ...baseLinks.slice(-1)];
 
   return (
-    <footer className="bg-[var(--as-dark)] text-[var(--as-on-dark)]/65 px-6 lg:px-10 py-16">
+    <footer className="mt-auto bg-[var(--as-dark)] text-[var(--as-on-dark)]/65 px-6 lg:px-10 py-16">
       <div className="mx-auto max-w-6xl">
         <div className="grid sm:grid-cols-3 gap-12 text-sm items-start">
           <div>

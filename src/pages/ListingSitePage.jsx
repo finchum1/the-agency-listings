@@ -92,7 +92,7 @@ export default function ListingSitePage({ listing, agent, photos, openHouses, lo
   return (
     <ListingProvider value={{ listing: adapted, openHouses, listingId: listing.id }}>
       <div
-        className="min-h-screen bg-[var(--ls-bg)] font-ls-sans"
+        className="min-h-screen flex flex-col bg-[var(--ls-bg)] font-ls-sans"
         data-theme={isLuxury ? "luxury" : adapted.theme}
         data-font={isLuxury ? "bodoni-manrope" : adapted.fontPairing}
         style={!isLuxury && adapted.accentColor ? { "--ls-accent": adapted.accentColor } : undefined}
