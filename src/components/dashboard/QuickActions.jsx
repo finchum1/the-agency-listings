@@ -39,7 +39,7 @@ function addItems(profile, isAdmin, limited) {
 
 // The + button and the search button at the top of the menu (full width in the open menu, icons in the rail), the menu of things to add, and the
 // windows for the quick adds. `onSearch` opens the dashboard search (it lives in the layout, once).
-export default function QuickActions({ rail = false, limited = false, onSearch, onNavigate, settings = null }) {
+export default function QuickActions({ rail = false, limited = false, onSearch, onNavigate }) {
   const { profile, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [menu, setMenu] = useState(null); // { x, y, w } when open
@@ -131,12 +131,7 @@ export default function QuickActions({ rail = false, limited = false, onSearch, 
     <>
       <div className={rail ? "flex flex-col gap-1.5" : "space-y-2"}>
         {plusButton}
-        {rail || !settings ? searchButton : (
-          <div className="flex items-stretch gap-2">
-            <div className="min-w-0 flex-1">{searchButton}</div>
-            <div className="flex shrink-0 items-center">{settings}</div>
-          </div>
-        )}
+        {searchButton}
       </div>
       {menu &&
         createPortal(

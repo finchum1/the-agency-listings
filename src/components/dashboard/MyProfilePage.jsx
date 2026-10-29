@@ -6,6 +6,8 @@ import ClaudeConnectionCard from "./ClaudeConnectionCard";
 import BotApiCard from "./BotApiCard";
 import { useTheme } from "../../hooks/useTheme";
 import ImageUploadField from "./ImageUploadField";
+import OrgSwitcher from "./OrgSwitcher";
+import { useOrg } from "../../context/OrgContext";
 
 const THEME_OPTIONS = [
   { value: "light", label: "Light" },
@@ -20,6 +22,7 @@ const THEME_OPTIONS = [
 // server-side regardless of what this form sends.
 export default function MyProfilePage() {
   const { profile, user } = useAuth();
+  const { isPlatformAdmin, orgs } = useOrg();
   const [theme, setTheme] = useTheme();
   const [form, setForm] = useState({
     full_name: "",
@@ -145,6 +148,14 @@ export default function MyProfilePage() {
       <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-6">
         This is what shows up as your contact info on every listing site you're assigned to.
       </p>
+
+      {isPlatformAdmin && orgs.length > 0 && (
+        <section className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mb-6">
+          <h2 className="font-display text-lg font-semibold">Working in</h2>
+          <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1 mb-4">The organization the whole dashboard is working in: its agents, brand, brokerage site and listings.</p>
+          <OrgSwitcher flush />
+        </section>
+      )}
 
       <form onSubmit={handleSubmit} className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-5">
         <ImageUploadField

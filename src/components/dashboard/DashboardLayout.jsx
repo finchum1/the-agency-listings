@@ -7,7 +7,6 @@ import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrg } from "../../context/OrgContext";
 import BrandLogo from "../BrandLogo";
-import { SITE_ORIGIN } from "../../lib/seo";
 import QuickActions from "./QuickActions";
 import GlobalSearch from "./GlobalSearch";
 
@@ -558,7 +557,6 @@ export default function DashboardLayout() {
         {showRail ? (
           <>
             <div className="shrink-0 px-2 pb-3 pt-14 flex flex-col gap-3">
-              {isPlatformAdmin && <SettingsGear rail />}
               <QuickActions rail limited={workingElsewhere} onSearch={() => setSearchOpen(true)} />
             </div>
             <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2" aria-label="Main">
@@ -588,7 +586,7 @@ export default function DashboardLayout() {
             </div>
 
             <div className="px-4 pb-4 shrink-0">
-              <QuickActions limited={workingElsewhere} onSearch={() => setSearchOpen(true)} settings={isPlatformAdmin ? <SettingsGear /> : null} />
+              <QuickActions limited={workingElsewhere} onSearch={() => setSearchOpen(true)} />
             </div>
 
             <nav className="flex-1 overflow-y-auto overflow-x-hidden px-4" aria-label="Main">
@@ -685,7 +683,7 @@ export default function DashboardLayout() {
             </button>
           </div>
           <div className="px-4 pb-3 shrink-0">
-            <QuickActions limited={workingElsewhere} onNavigate={closeMobile} onSearch={() => { closeMobile(); setSearchOpen(true); }} settings={isPlatformAdmin ? <SettingsGear /> : null} />
+            <QuickActions limited={workingElsewhere} onNavigate={closeMobile} onSearch={() => { closeMobile(); setSearchOpen(true); }} />
           </div>
           <nav className="flex-1 overflow-y-auto overscroll-contain px-4" aria-label="Main">
             {NavList({ onNavigate: closeMobile })}
@@ -740,119 +738,5 @@ export default function DashboardLayout() {
         </div>
       </main>
     </div>
-  );
-}
-
-// The settings button at the very top of the menu (platform owner only): it holds "Working in", the organization the dashboard is working in.
-function SettingsGear({ rail = false }) {
-  const [at, setAt] = useState(null);
-  const button = useRef(null);
-  useEffect(() => {
-    if (!at) return undefined;
-    const close = (e) => {
-      if (e.type === "keydown" && e.key !== "Escape") return;
-      if (e.type === "pointerdown" && (e.target.closest?.("[data-settings-menu]") || button.current?.contains(e.target))) return;
-      setAt(null);
-    };
-    window.addEventListener("pointerdown", close);
-    window.addEventListener("keydown", close);
-    return () => {
-      window.removeEventListener("pointerdown", close);
-      window.removeEventListener("keydown", close);
-    };
-  }, [at]);
-  const toggle = () => {
-    if (at) return setAt(null);
-    const r = button.current.getBoundingClientRect();
-    setAt(rail ? { x: r.right + 10, y: r.top } : { x: Math.max(8, Math.min(r.right - 280, window.innerWidth - 288)), y: r.bottom + 6 });
-  };
-  return (
-    <>
-      <button
-        ref={button}
-        type="button"
-        onClick={toggle}
-        aria-label="Settings"
-        aria-expanded={Boolean(at)}
-        title="Settings"
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#1c1a17]/50 dark:text-[#faf9f7]/50 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] ${rail ? "mx-auto" : ""}`}
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <circle cx="12" cy="12" r="3" />
-          <path d="M19.4 14.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
-        </svg>
-      </button>
-      {at &&
-        createPortal(
-          <div
-            data-settings-menu=""
-            role="dialog"
-            aria-label="Settings"
-            style={{ left: at.x, top: at.y, width: 272 }}
-            className="fixed z-[60] rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] p-3 pb-1 shadow-xl print:hidden"
-          >
-            <p className="pb-2 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/40 dark:text-[#faf9f7]/40">Settings</p>
-            <OrgSwitcher flush />
-          </div>,
-          document.body,
-        )}
-    </>
-  );
-}
-
-// Platform owner only: pick which organization the dashboard is working in. Everyone else never sees it. Lives in the settings menu (SettingsGear).
-function OrgSwitcher({ flush = false }) {
-  const { org, orgs, isPlatformAdmin, switchOrg } = useOrg();
-  if (!isPlatformAdmin || orgs.length === 0) return null;
-  return (
-    <div className={flush ? "pb-3" : "px-4 pb-3 shrink-0"}>
-      <label
-        htmlFor="org-switcher"
-        className="block text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-1"
-      >
-        Working in
-      </label>
-      <select
-        id="org-switcher"
-        value={org?.id || ""}
-        onChange={(e) => switchOrg(e.target.value)}
-        className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] px-3 py-2 text-sm text-[#1c1a17] dark:text-[#faf9f7]"
-      >
-        {orgs.map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.brand?.admin_name || o.name}
-          </option>
-        ))}
-      </select>
-      <CopyLoginLink org={org} />
-    </div>
-  );
-}
-
-// The organization's personal sign-in link (see hooks/useAuthOrg.js): its logo on the login screen. Built on the platform's
-// own address (VITE_SITE_ORIGIN), whatever host the owner happens to be on.
-function CopyLoginLink({ org }) {
-  const [copied, setCopied] = useState(false);
-  if (!org?.slug) return null;
-  const link = `${SITE_ORIGIN}/login?org=${org.slug}`;
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(link);
-    } catch {
-      // clipboard blocked (older browser, insecure context): fall back to a prompt the owner can copy from
-      window.prompt("Copy this login link:", link);
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <button
-      type="button"
-      onClick={copy}
-      title={link}
-      className="mt-1.5 text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] transition-colors"
-    >
-      {copied ? "Copied!" : "Copy login link"}
-    </button>
   );
 }
