@@ -8,6 +8,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { useOrg } from "../../context/OrgContext";
 import BrandLogo from "../BrandLogo";
 import { SITE_ORIGIN } from "../../lib/seo";
+import QuickActions from "./QuickActions";
+import GlobalSearch from "./GlobalSearch";
 
 // The sidebar is a drawer. Open it is a menu with labels, anywhere from 224px to 360px wide (drag its right edge); closed it
 // is a 64px rail of icons that stays on the left of the screen. A quick flick, or dragging it narrow enough, closes it.
@@ -131,6 +133,17 @@ export default function DashboardLayout() {
   const { brand: brokerage, org } = useOrg();
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false); // the dashboard search (Cmd or Ctrl K, or the search button)
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const [nav, setNav] = useState(readNav); // the desktop drawer: open or closed, and how wide it is when open
   const [navLive, setNavLive] = useState(null); // its width while the edge is being dragged
   const navDrag = useRef(null);
@@ -544,7 +557,10 @@ export default function DashboardLayout() {
       >
         {showRail ? (
           <>
-            <div className="h-[4.75rem] shrink-0" aria-hidden="true" />
+            <div className="shrink-0 px-2 pb-3 pt-14 flex flex-col gap-3">
+              {isPlatformAdmin && <SettingsGear rail />}
+              <QuickActions rail limited={workingElsewhere} onSearch={() => setSearchOpen(true)} />
+            </div>
             <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2" aria-label="Main">
               {NavList({ rail: true })}
             </nav>
@@ -568,10 +584,12 @@ export default function DashboardLayout() {
             <div className="flex items-center gap-3 px-6 py-6 shrink-0 min-w-0">
               <BrandLogo src={brokerage.logo} darkSrc={brokerage.darkLogo} name={brokerage.name} className="h-9 w-auto" />
               <span className="h-6 w-px bg-black/10 dark:bg-white/15" aria-hidden="true" />
-              <span className="min-w-0 truncate text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{brokerage.locationLabel}</span>
+              <span className="min-w-0 flex-1 truncate text-xs font-semibold tracking-wider-plus uppercase text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{brokerage.locationLabel}</span>
             </div>
 
-            <OrgSwitcher />
+            <div className="px-4 pb-4 shrink-0">
+              <QuickActions limited={workingElsewhere} onSearch={() => setSearchOpen(true)} settings={isPlatformAdmin ? <SettingsGear /> : null} />
+            </div>
 
             <nav className="flex-1 overflow-y-auto overflow-x-hidden px-4" aria-label="Main">
               {NavList({})}
@@ -659,15 +677,15 @@ export default function DashboardLayout() {
               type="button"
               onClick={closeMobile}
               aria-label="Close menu"
-              className="ml-auto p-2 -mr-2 text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+              className={`ml-auto p-2 -mr-2 text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]`}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                 <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </button>
           </div>
-          <div className="px-4 shrink-0">
-            <OrgSwitcher flush />
+          <div className="px-4 pb-3 shrink-0">
+            <QuickActions limited={workingElsewhere} onNavigate={closeMobile} onSearch={() => { closeMobile(); setSearchOpen(true); }} settings={isPlatformAdmin ? <SettingsGear /> : null} />
           </div>
           <nav className="flex-1 overflow-y-auto overscroll-contain px-4" aria-label="Main">
             {NavList({ onNavigate: closeMobile })}
@@ -714,6 +732,8 @@ export default function DashboardLayout() {
           document.body,
         )}
 
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} limited={workingElsewhere} />
+
       <main className="flex-1 min-w-0">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-10 print:p-0 print:max-w-none print:mx-0">
           <Outlet />
@@ -723,7 +743,64 @@ export default function DashboardLayout() {
   );
 }
 
-// Platform owner only: pick which organization the dashboard is working in. Everyone else never sees it.
+// The settings button at the very top of the menu (platform owner only): it holds "Working in", the organization the dashboard is working in.
+function SettingsGear({ rail = false }) {
+  const [at, setAt] = useState(null);
+  const button = useRef(null);
+  useEffect(() => {
+    if (!at) return undefined;
+    const close = (e) => {
+      if (e.type === "keydown" && e.key !== "Escape") return;
+      if (e.type === "pointerdown" && (e.target.closest?.("[data-settings-menu]") || button.current?.contains(e.target))) return;
+      setAt(null);
+    };
+    window.addEventListener("pointerdown", close);
+    window.addEventListener("keydown", close);
+    return () => {
+      window.removeEventListener("pointerdown", close);
+      window.removeEventListener("keydown", close);
+    };
+  }, [at]);
+  const toggle = () => {
+    if (at) return setAt(null);
+    const r = button.current.getBoundingClientRect();
+    setAt(rail ? { x: r.right + 10, y: r.top } : { x: Math.max(8, Math.min(r.right - 280, window.innerWidth - 288)), y: r.bottom + 6 });
+  };
+  return (
+    <>
+      <button
+        ref={button}
+        type="button"
+        onClick={toggle}
+        aria-label="Settings"
+        aria-expanded={Boolean(at)}
+        title="Settings"
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#1c1a17]/50 dark:text-[#faf9f7]/50 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] ${rail ? "mx-auto" : ""}`}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 14.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+        </svg>
+      </button>
+      {at &&
+        createPortal(
+          <div
+            data-settings-menu=""
+            role="dialog"
+            aria-label="Settings"
+            style={{ left: at.x, top: at.y, width: 272 }}
+            className="fixed z-[60] rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] p-3 pb-1 shadow-xl print:hidden"
+          >
+            <p className="pb-2 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/40 dark:text-[#faf9f7]/40">Settings</p>
+            <OrgSwitcher flush />
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+// Platform owner only: pick which organization the dashboard is working in. Everyone else never sees it. Lives in the settings menu (SettingsGear).
 function OrgSwitcher({ flush = false }) {
   const { org, orgs, isPlatformAdmin, switchOrg } = useOrg();
   if (!isPlatformAdmin || orgs.length === 0) return null;

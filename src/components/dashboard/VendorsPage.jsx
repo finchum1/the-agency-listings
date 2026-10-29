@@ -154,10 +154,10 @@ export default function VendorsPage() {
   const { orgId, brand, loading: orgLoading } = useOrg();
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => new URLSearchParams(window.location.search).get("q") || ""); // ?q= comes from the dashboard search
   const [category, setCategory] = useState("");
   const [selected, setSelected] = useState(() => new Set());
-  const [editing, setEditing] = useState(null); // a vendor, EMPTY for a new one, or null
+  const [editing, setEditing] = useState(() => (isAdmin && new URLSearchParams(window.location.search).get("new") ? { ...EMPTY } : null)); // a vendor, EMPTY for a new one, or null
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [copied, copy] = useCopy();

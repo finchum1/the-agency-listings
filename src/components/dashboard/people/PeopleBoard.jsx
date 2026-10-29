@@ -268,7 +268,7 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
   const nextStageNames = board.next ? allStages[board.next.group] : null;
   const prevStageNames = board.prev ? allStages[board.prev.group] : null;
 
-  const [selectedId, setSelectedId] = useState(() => (group === "transaction" ? initialOpenId || new URLSearchParams(window.location.search).get("deal") : null));
+  const [selectedId, setSelectedId] = useState(() => (group === "transaction" ? initialOpenId || new URLSearchParams(window.location.search).get("deal") : new URLSearchParams(window.location.search).get("person"))); // ?person= opens a lead or pipeline card (the dashboard search and quick add use it)
   // One side panel at a time: opening a deal you coordinate (the page's own panel, `foreignOpenId`) closes this one, and opening one of
   // yours here tells the page (`onOwnOpened`) to close that one.
   useEffect(() => {

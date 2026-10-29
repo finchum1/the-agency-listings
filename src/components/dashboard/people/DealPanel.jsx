@@ -9,6 +9,7 @@ import DealTabs, { dealTabs } from "./DealTabs";
 import DealOverview from "./DealOverview";
 import SendAgentUpdate from "./SendAgentUpdate";
 import { DetailGroup, EditToggle, earnestLine } from "./DealDetailList";
+import DealContacts from "./DealContacts";
 import { useDealSummary } from "../../../hooks/useDealSummary";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
@@ -219,6 +220,12 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
   ) : null;
 
   const baseStages = agentStages || BOARDS.transaction.stages;
+  // The deal's contact cards: a field changed / was left. A client's name can't be emptied (it goes back to what was saved).
+  const contactChange = (key, value) => setForm((f) => ({ ...f, [key]: value }));
+  const contactCommit = (key) => {
+    if (key === "name" && !form.name.trim()) setForm((f) => ({ ...f, name: fresh.name || "" }));
+    else if (edit) commit(key, "text");
+  };
   const changeDate = (key, v) => {
     setForm((f) => ({ ...f, [key]: v }));
     const val = v || null;
@@ -383,16 +390,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
               {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
               {!(edit && editingDetails) && (
                 <div className="space-y-6">
-                  <DetailGroup
-                    title="Contact"
-                    rows={[
-                      { label: "Client", value: fresh.name },
-                      { label: "Email", value: fresh.email, always: true, href: fresh.email ? `mailto:${fresh.email}` : undefined },
-                      { label: "Second client", value: fresh.client2_name, always: !!(fresh.client2_name || fresh.client2_email) },
-                      { label: "Second client's email", value: fresh.client2_email, always: !!(fresh.client2_name || fresh.client2_email), href: fresh.client2_email ? `mailto:${fresh.client2_email}` : undefined },
-                      { label: "Phone", value: fresh.phone, href: fresh.phone ? `tel:${fresh.phone.replace(/[^\d+]/g, "")}` : undefined },
-                    ]}
-                  />
+                  <DealContacts values={fresh} editing={false} onChange={contactChange} onCommit={contactCommit} cash={!!fresh.is_cash} />
                   <DetailGroup
                     title="Deal"
                     rows={[
@@ -403,54 +401,14 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                       { label: "Price", value: fresh.price == null ? "" : money.format(fresh.price) },
                       { label: "Commission", value: fresh.commission == null ? "" : money.format(fresh.commission) },
                       { label: "Earnest money", value: earnestLine({ earnest_money: fresh.earnest_money, earnest_money_delivered: fresh.earnest_money_delivered }, fresh) },
-                      { label: "Other agent", value: fresh.other_agent },
-                      { label: "Other agent's email", value: fresh.other_agent_email, href: fresh.other_agent_email ? `mailto:${fresh.other_agent_email}` : undefined },
-                      { label: "Other agent's TC", value: fresh.other_agent_tc_name },
-                      { label: "Other agent's TC email", value: fresh.other_agent_tc_email, href: fresh.other_agent_tc_email ? `mailto:${fresh.other_agent_tc_email}` : undefined },
-                      { label: "Title company", value: fresh.title_company },
-                      { label: "Title company email", value: fresh.title_company_email, href: fresh.title_company_email ? `mailto:${fresh.title_company_email}` : undefined },
-                      { label: "Title processor", value: fresh.title_processor_name },
-                      { label: "Title processor email", value: fresh.title_processor_email, href: fresh.title_processor_email ? `mailto:${fresh.title_processor_email}` : undefined },
-                      ...(fresh.is_cash
-                        ? [{ label: "Financing", value: "Cash purchase" }]
-                        : [
-                            { label: "Lender", value: fresh.lender },
-                            { label: "Lender email", value: fresh.lender_email, href: fresh.lender_email ? `mailto:${fresh.lender_email}` : undefined },
-                          ]),
+                      ...(fresh.is_cash ? [{ label: "Financing", value: "Cash purchase" }] : []),
                     ]}
                   />
                   {edit && <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Dates are on the Overview tab.</p>}
                 </div>
               )}
+              {edit && editingDetails && <DealContacts values={form} editing onChange={contactChange} onCommit={contactCommit} cash={!!fresh.is_cash} />}
               <div className={`grid gap-3 sm:grid-cols-2 ${edit && editingDetails ? "" : "hidden"}`}>
-                <div>
-                  <label className={labelClass}>Client</label>
-                  <input
-                    autoComplete="off"
-                    {...bind("name", "text")}
-                    onBlur={() => {
-                      // A deal can't lose its client's name: an empty box goes back to what was saved.
-                      if (!form.name.trim()) setForm((f) => ({ ...f, name: fresh.name || "" }));
-                      else if (edit) commit("name", "text");
-                    }}
-                    className={inputClass}
-                  />
-                </div>
-                {/* Names down the left, their emails down the right; the phone follows. */}
-                <div>
-                  <label className={labelClass}>Email</label>
-                  <input type="email" autoComplete="off" {...bind("email", "text")} className={inputClass} />
-                </div>
-                {CLIENT2.map(([key, label]) => (
-                  <div key={key}>
-                    <label className={labelClass}>{label}</label>
-                    <input type={key.endsWith("email") ? "email" : "text"} autoComplete="off" {...bind(key, "text")} className={inputClass} />
-                  </div>
-                ))}
-                <div>
-                  <label className={labelClass}>Phone</label>
-                  <input type="tel" autoComplete="off" {...bind("phone", "text")} className={inputClass} />
-                </div>
                 <div>
                   <label className={labelClass}>Buyer or seller (listing)</label>
                   {edit ? (
@@ -544,7 +502,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                   />
                   <span>Cash purchase (no appraisal or financing)</span>
                 </label>
-                {TEXT.filter(([key]) => !(fresh.is_cash && key.startsWith("lender"))).map(([key, label]) => (
+                {TEXT.filter(([key]) => key === "property_address").map(([key, label]) => (
                   <div key={key} className={key === "property_address" ? "sm:col-span-2" : ""}>
                     <label className={labelClass}>{label}</label>
                     {edit ? <input type={key.endsWith("email") ? "email" : "text"} {...bind(key, "text")} className={inputClass} /> : <p className="text-sm">{fresh[key] || "–"}</p>}

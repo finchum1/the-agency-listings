@@ -11,6 +11,7 @@ import { PEEK_WIDTHS } from "../../../hooks/usePeekWidth";
 import TransactionModules from "./TransactionModules";
 import DealCompliance from "./DealCompliance";
 import DealTeam from "./DealTeam";
+import DealContacts from "./DealContacts";
 import DealSignatures from "./DealSignatures";
 import DealTabs, { dealTabs } from "./DealTabs";
 import DealOverview from "./DealOverview";
@@ -293,54 +294,10 @@ export default function PersonPanel({
               {form.earnest_money_delivered && person.earnest_money_delivered_at && <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{formatNoteTime(person.earnest_money_delivered_at)}</span>}
             </span>
           </label>
-          <div>
-            <label className={labelClass}>Other agent</label>
-            <input value={form.other_agent} onChange={setField("other_agent")} onBlur={flush} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>Other agent's email</label>
-            <input type="email" value={form.other_agent_email} onChange={setField("other_agent_email")} onBlur={flush} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>Other agent's TC</label>
-            <input value={form.other_agent_tc_name} onChange={setField("other_agent_tc_name")} onBlur={flush} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>Other agent's TC email</label>
-            <input type="email" value={form.other_agent_tc_email} onChange={setField("other_agent_tc_email")} onBlur={flush} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>Title company</label>
-            <input value={form.title_company} onChange={setField("title_company")} onBlur={flush} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>Title company email</label>
-            <input type="email" value={form.title_company_email} onChange={setField("title_company_email")} onBlur={flush} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>Title processor</label>
-            <input value={form.title_processor_name} onChange={setField("title_processor_name")} onBlur={flush} className={inputClass} />
-          </div>
-          <div>
-            <label className={labelClass}>Title processor email</label>
-            <input type="email" value={form.title_processor_email} onChange={setField("title_processor_email")} onBlur={flush} className={inputClass} />
-          </div>
           <label className="flex items-center gap-2.5 text-sm cursor-pointer @md:col-span-2">
             <input type="checkbox" checked={form.is_cash} onChange={(e) => setField("is_cash", true)({ target: { value: e.target.checked } })} className="h-4 w-4 accent-[#ed2127]" />
             <span>Cash purchase (no appraisal or financing)</span>
           </label>
-          {!form.is_cash && (
-            <>
-              <div>
-                <label className={labelClass}>Lender</label>
-                <input value={form.lender} onChange={setField("lender")} onBlur={flush} className={inputClass} />
-              </div>
-              <div>
-                <label className={labelClass}>Lender email</label>
-                <input type="email" value={form.lender_email} onChange={setField("lender_email")} onBlur={flush} className={inputClass} />
-              </div>
-            </>
-          )}
         </div>
     </div>
   );
@@ -762,6 +719,14 @@ export default function PersonPanel({
   );
 
   const changeDate = (key, value) => setField(key, true)({ target: { value } });
+  // The deal's contact cards: a field changed / was left. A client's name can't be emptied (it goes back to what was saved).
+  const contactChange = (key, value) => setField(key)({ target: { value } });
+  const contactCommit = (key) => {
+    if (key === "name" && !formRef.current.name.trim()) {
+      formRef.current = { ...formRef.current, name: savedRef.current.name };
+      setForm(formRef.current);
+    } else flush();
+  };
   // Being in touch (a call, text, email... logged) moves the next follow-up along, but only when one is due or none is set.
   const afterTouch = () => {
     const today = toKey(new Date());
@@ -797,24 +762,7 @@ export default function PersonPanel({
   );
   const contactFields = (
         <div className="space-y-3">
-          {isDeal ? (
-            <>
-              {/* Names down the left, their emails down the right (one client per row, so they pair up on a narrow panel too). */}
-              <div className="grid @md:grid-cols-2 gap-3">
-                {nameInput}
-                {emailInput}
-                <div>
-                  <label className={labelClass}>Second client</label>
-                  <input value={form.client2_name} onChange={setField("client2_name")} onBlur={flush} autoComplete="off" className={inputClass} />
-                </div>
-                <div>
-                  <label className={labelClass}>Second client's email</label>
-                  <input type="email" value={form.client2_email} onChange={setField("client2_email")} onBlur={flush} autoComplete="off" className={inputClass} />
-                </div>
-              </div>
-              <div className="grid @md:grid-cols-2 gap-3">{phoneInput}</div>
-            </>
-          ) : (
+          {isDeal ? null : (
             <>
               {nameInput}
               <div className="grid @md:grid-cols-2 gap-3">
@@ -946,6 +894,7 @@ export default function PersonPanel({
           </div>
           {editingDetails ? (
             <>
+              <DealContacts values={form} editing onChange={contactChange} onCommit={contactCommit} cash={form.is_cash} />
               {contactFields}
               <section className="min-w-0 space-y-3">
                 <h4 className="text-xs font-semibold uppercase tracking-wide text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Deal</h4>
@@ -955,14 +904,10 @@ export default function PersonPanel({
             </>
           ) : (
             <>
+              <DealContacts values={form} editing={false} onChange={contactChange} onCommit={contactCommit} cash={form.is_cash} />
               <DetailGroup
-                title="Contact"
+                title="Follow-up"
                 rows={[
-                  { label: "Client", value: form.name },
-                  { label: "Email", value: form.email, always: true, href: form.email ? `mailto:${form.email}` : undefined },
-                  { label: "Second client", value: form.client2_name, always: !!(form.client2_name || form.client2_email) },
-                  { label: "Second client's email", value: form.client2_email, always: !!(form.client2_name || form.client2_email), href: form.client2_email ? `mailto:${form.client2_email}` : undefined },
-                  { label: "Phone", value: form.phone, href: form.phone ? `tel:${form.phone.replace(/[^\d+]/g, "")}` : undefined },
                   { label: "Next follow-up", value: form.next_follow_up ? dayLabel(form.next_follow_up, toKey(new Date())) : "" },
                   { label: "Source", value: form.source },
                   { label: "Stage", value: person.stage },
@@ -976,20 +921,7 @@ export default function PersonPanel({
                   { label: "Price", value: money(form.price) },
                   { label: "Commission", value: money(form.commission) },
                   { label: "Earnest money", value: earnestLine(form, person) },
-                  { label: "Other agent", value: form.other_agent },
-                  { label: "Other agent's email", value: form.other_agent_email, href: form.other_agent_email ? `mailto:${form.other_agent_email}` : undefined },
-                  { label: "Other agent's TC", value: form.other_agent_tc_name },
-                  { label: "Other agent's TC email", value: form.other_agent_tc_email, href: form.other_agent_tc_email ? `mailto:${form.other_agent_tc_email}` : undefined },
-                  { label: "Title company", value: form.title_company },
-                  { label: "Title company email", value: form.title_company_email, href: form.title_company_email ? `mailto:${form.title_company_email}` : undefined },
-                  { label: "Title processor", value: form.title_processor_name },
-                  { label: "Title processor email", value: form.title_processor_email, href: form.title_processor_email ? `mailto:${form.title_processor_email}` : undefined },
-                  ...(form.is_cash
-                    ? [{ label: "Financing", value: "Cash purchase" }]
-                    : [
-                        { label: "Lender", value: form.lender },
-                        { label: "Lender email", value: form.lender_email, href: form.lender_email ? `mailto:${form.lender_email}` : undefined },
-                      ]),
+                  ...(form.is_cash ? [{ label: "Financing", value: "Cash purchase" }] : []),
                 ]}
               />
             </>
