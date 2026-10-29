@@ -1,5 +1,6 @@
 import { dayLabel, daysBetween, toKey } from "../../../lib/homeDates";
-import { clockLabel, markerPosition } from "../../../lib/timeline";
+import { chicagoDay, clockLabel, markerPosition } from "../../../lib/timeline";
+import { money } from "./DealDetailList";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const DATES = [
@@ -32,8 +33,9 @@ function Row({ onClick, title, note, tone, onCheck }) {
 //   summary   from useDealSummary          onTab(tab) jumps to another tab
 //   dates     the deal's live key dates    onDate(key, value) changes one (omit for read-only)
 //   cash       a cash purchase: the appraisal and financing tiles go away      onCash(bool) flips it (omit for read-only)
+//   earnest    { amount, delivered, at }: the earnest money, checked off here when it reaches the title company     onEarnest(bool) ticks it (omit for read-only)
 //   onCheckTask(task)  ticks a task off right here, from the overdue and coming-up lists (omit for read-only)
-export default function DealOverview({ person, summary, dates, cash = false, onCash, onTab, onDate, onCheckTask, children }) {
+export default function DealOverview({ person, summary, dates, cash = false, onCash, earnest, onEarnest, onTab, onDate, onCheckTask, children }) {
   const today = toKey(new Date());
   const needs = [];
   if (person.compliance_status === "needs_changes") needs.push({ key: "sb", title: "Compliance sent this deal back", note: "Read the note", tone: "alert", tab: "messages" });
@@ -148,6 +150,27 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
           </div>
         )}
       </section>
+      {earnest && (
+        <section aria-label="Earnest money" className="space-y-2">
+          <h3 className="font-display text-base font-semibold">Earnest money</h3>
+          <label className={`flex items-center gap-3 rounded-xl border border-black/10 dark:border-white/15 px-3.5 py-3 ${onEarnest ? "cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.03]" : ""}`}>
+            <input
+              type="checkbox"
+              checked={!!earnest.delivered}
+              disabled={!onEarnest}
+              onChange={(e) => onEarnest?.(e.target.checked)}
+              className="h-4 w-4 shrink-0 accent-[#ed2127]"
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium">Delivered to the title company</span>
+              <span className={`block text-xs ${muted}`}>
+                {earnest.delivered ? `Checked off${earnest.at ? ` ${shortDate(chicagoDay(earnest.at))}` : ""}. It shows on the client's and the agent's timelines.` : "Check it off when it reaches the title company."}
+              </span>
+            </span>
+            <span className="shrink-0 text-sm font-semibold">{money(earnest.amount) || <span className={`font-normal ${muted}`}>No amount yet</span>}</span>
+          </label>
+        </section>
+      )}
       {children?.bottom}
     </div>
   );

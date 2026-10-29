@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useForceLight } from "../hooks/useForceLight";
 import { brandFromOrg } from "../lib/brand";
-import { daysBetween, inDays, prettyDate } from "../lib/timeline";
+import { chicagoDay, daysBetween, inDays, prettyDate } from "../lib/timeline";
 import { AgentFooter, ClientHeader } from "../components/public/ClientPageParts";
 
 const DATES = [
@@ -181,6 +181,21 @@ export default function AgentUpdatePage() {
                 );
               })}
             </ul>
+          </section>
+        )}
+
+        {(deal.earnest_money != null || deal.earnest_money_delivered) && (
+          <section aria-label="Earnest money">
+            <h2 className="font-display text-2xl font-semibold mb-3">Earnest money</h2>
+            <div className={`${card} p-4 flex items-center justify-between gap-3`}>
+              <span className="min-w-0 font-medium">
+                {deal.earnest_money != null ? `$${Number(deal.earnest_money).toLocaleString()}` : "Amount not entered"}
+                <span className="block text-sm font-normal text-[#1c1a17]/60">{deal.earnest_money_delivered ? "Delivered to the title company" : "Not at the title company yet"}</span>
+              </span>
+              <Pill tone={deal.earnest_money_delivered ? "green" : "amber"}>
+                {deal.earnest_money_delivered ? (deal.earnest_money_delivered_at ? `Delivered ${prettyDate(chicagoDay(deal.earnest_money_delivered_at), { month: "short", day: "numeric" })}` : "Delivered") : "Waiting"}
+              </Pill>
+            </div>
           </section>
         )}
 

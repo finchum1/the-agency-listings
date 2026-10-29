@@ -198,6 +198,7 @@ export default function TransactionTimelinePage() {
                           {m.state !== "done" && m.state !== "today" ? ` · ${inDays(m.days).toLowerCase()}` : ""}
                         </p>
                         <p className={`mt-2 text-[15px] leading-relaxed ${m.state === "done" ? "text-[#1c1a17]/55" : "text-[#1c1a17]/80"}`}>{m.state === "done" ? m.doneText : m.text}</p>
+                        {m.pending && <p className="mt-3 inline-block rounded-full bg-[#fff1d6] px-3 py-1 text-xs font-semibold text-[#8a5a00]">{m.pending}</p>}
                       </div>
                     </div>
                   </li>

@@ -82,6 +82,12 @@ function readFields(body) {
     const v = dateKey(body, key);
     set(key, v === "" ? null : v);
   }
+  set("earnest_money", number(body, "earnest_money", { min: 0, max: 1e10 }));
+  if (body.earnest_money_delivered !== undefined) {
+    if (typeof body.earnest_money_delivered !== "boolean") throw bad("earnest_money_delivered must be true or false.");
+    set("earnest_money_delivered", body.earnest_money_delivered);
+    set("earnest_money_delivered_at", body.earnest_money_delivered ? new Date().toISOString() : null);
+  }
   if (body.is_cash !== undefined) {
     if (typeof body.is_cash !== "boolean") throw bad("is_cash must be true or false.");
     set("is_cash", body.is_cash);

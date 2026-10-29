@@ -38,6 +38,13 @@ const COPY = {
     buyer: "The last day of your inspection period. Inspections and any repair requests are wrapped up by now.",
     seller: "The last day of the buyer's inspection period. Any repair requests come through us by now.",
   },
+  earnest_money_delivered: {
+    done: { buyer: "Your earnest money is at the title company.", seller: "The buyer's earnest money is at the title company." },
+    label: "Earnest money delivered",
+    icon: "doc",
+    buyer: "Your earnest money goes to the title company.",
+    seller: "The buyer's earnest money goes to the title company.",
+  },
   appraisal_date: {
     done: { buyer: "Appraisal completed.", seller: "Appraisal completed." },
     label: "Appraisal",
@@ -61,12 +68,18 @@ const COPY = {
   },
 };
 
+/** A timestamp as the calendar day it was in Oklahoma ("YYYY-MM-DD"), so a check-off late in the evening lands on the day it happened. */
+export const chicagoDay = (iso) => (iso ? new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" }).format(new Date(iso)) : "");
+
 /** The milestones this deal has dates for, in date order, each marked done / today / next / later. */
 export function buildTimeline(deal, today) {
   const side = deal.side === "seller" ? "seller" : "buyer";
+  // Earnest money has no due date of its own: once it is checked off as delivered it is a milestone on the day that happened.
+  const delivered = deal.earnest_money_delivered && deal.earnest_money_delivered_at ? chicagoDay(deal.earnest_money_delivered_at) : "";
+  const source = { ...deal, earnest_money_delivered: delivered };
   const items = Object.keys(COPY)
-    .filter((k) => deal[k] && !(deal.is_cash && (k === "appraisal_date" || k === "financing_deadline")))
-    .map((k) => ({ key: k, label: COPY[k].label, icon: COPY[k].icon, text: COPY[k][side], doneText: COPY[k].done[side], date: deal[k], time: k === "inspection_date" ? deal.inspection_time || "" : "", days: daysBetween(today, deal[k]) }))
+    .filter((k) => source[k] && !(deal.is_cash && (k === "appraisal_date" || k === "financing_deadline")))
+    .map((k) => ({ key: k, label: COPY[k].label, icon: COPY[k].icon, text: COPY[k][side], doneText: COPY[k].done[side], date: source[k], time: k === "inspection_date" ? deal.inspection_time || "" : "", days: daysBetween(today, source[k]) }))
     .sort((a, b) => a.date.localeCompare(b.date));
   const nextIndex = items.findIndex((m) => m.days >= 0);
   const closing = items.find((m) => m.key === "closing_date");
@@ -81,6 +94,11 @@ export function buildTimeline(deal, today) {
     const span = daysBetween(m.date, nextItem.date) || 1;
     return Math.max(0, Math.min(1, daysBetween(m.date, today) / span));
   });
+  // Until it is checked off, the contract milestone says earnest money is still to come.
+  if (!deal.earnest_money_delivered && deal.contract_date) {
+    const contract = marked.find((m) => m.key === "contract_date");
+    if (contract) contract.pending = side === "seller" ? "Waiting on the buyer's earnest money to reach the title company" : "Your earnest money is still to be delivered to the title company";
+  }
   return { milestones: marked, fill, nextIndex, closed, closing, side };
 }
 

@@ -868,6 +868,8 @@ export default function PersonPanel({
           dates={dealDates}
           cash={form.is_cash}
           onCash={(v) => setField("is_cash", true)({ target: { value: v } })}
+          earnest={{ amount: form.earnest_money, delivered: form.earnest_money_delivered, at: person.earnest_money_delivered_at }}
+          onEarnest={(v) => setField("earnest_money_delivered", true)({ target: { value: v } })}
           onTab={setTab}
           onDate={changeDate}
           onCheckTask={summary.completeTask}
