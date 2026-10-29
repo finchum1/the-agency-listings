@@ -90,6 +90,7 @@ export function useAgentSiteEditor(agentId, fallbackNameForNewSlug) {
     setPosts(p || []);
     setSales(sl || []);
     setLoading(false);
+    window.dispatchEvent(new Event("agent-site-saved")); // the page around the editor (setup checklist) reloads its summary
   }, [agentId, fallbackNameForNewSlug]);
 
   useEffect(() => {

@@ -248,6 +248,13 @@ export default function SiteForm({ site, onSaved }) {
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
 
+  // The page's Draft / Live switch changes the status from outside the form: the form follows it without losing what has been typed.
+  useEffect(() => {
+    const onStatus = (e) => setForm((f) => ({ ...f, status: e.detail.status }));
+    window.addEventListener("agent-site-status", onStatus);
+    return () => window.removeEventListener("agent-site-status", onStatus);
+  }, []);
+
   useEffect(() => {
     setForm(toForm(site));
     setDirty(false);
@@ -454,7 +461,7 @@ export default function SiteForm({ site, onSaved }) {
       )}
 
       <div className="space-y-3">
-        <CollapsibleSection title="Basic Info" description="Slug, region, and tagline." defaultOpen>
+        <CollapsibleSection id="basic" title="Basic Info" description="Slug, region, and tagline." defaultOpen>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>URL slug</label>
@@ -483,7 +490,7 @@ export default function SiteForm({ site, onSaved }) {
           </div>
         </CollapsibleSection>
 
-        <CollapsibleSection title="Template & Design" description="Layout, color theme, accent color, font pairing, and logo.">
+        <CollapsibleSection id="design" title="Template & Design" description="Layout, color theme, accent color, font pairing, and logo.">
           <div>
             <label className={labelClass}>Start from a template</label>
             <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mb-2.5">
@@ -749,7 +756,7 @@ export default function SiteForm({ site, onSaved }) {
           </div>
         </CollapsibleSection>
 
-        <CollapsibleSection title="Home Page Sections" description="What shows on your home page, and in what order.">
+        <CollapsibleSection id="home" title="Home Page Sections" description="What shows on your home page, and in what order.">
           <div>
             <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-2">
               Hero and Contact are always included. A page stays reachable on its own even if you
@@ -799,11 +806,11 @@ export default function SiteForm({ site, onSaved }) {
           </div>
         </CollapsibleSection>
 
-        <CollapsibleSection title="Buyer & seller cards" description="The Sellers, Home Value and Buyers pages, and the cards that lead to them.">
+        <CollapsibleSection id="cards" title="Buyer & seller cards" description="The Sellers, Home Value and Buyers pages, and the cards that lead to them.">
           <LandingCardsEditor siteId={site.id} siteSlug={site.slug} value={form.landing} onChange={(v) => set("landing", v)} />
         </CollapsibleSection>
 
-        <CollapsibleSection title="Home Search (IDX)" description="Full MLS search on your area pages.">
+        <CollapsibleSection id="idx" title="Home Search (IDX)" description="Full MLS search on your area pages.">
           <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
             <input
               type="checkbox"
@@ -822,7 +829,7 @@ export default function SiteForm({ site, onSaved }) {
           </label>
         </CollapsibleSection>
 
-        <CollapsibleSection title="Photos, Video & Bio" description="Secondary logo, hero media, your bio, and stats.">
+        <CollapsibleSection id="photos" title="Photos, Video & Bio" description="Secondary logo, hero media, your bio, and stats.">
           <ImageUploadField
             bucket="agent-site-photos"
             folder={site.id}
@@ -897,7 +904,7 @@ export default function SiteForm({ site, onSaved }) {
           </div>
         </CollapsibleSection>
 
-        <CollapsibleSection title="Social Media" description="Instagram, Facebook, LinkedIn, TikTok, and YouTube.">
+        <CollapsibleSection id="social" title="Social Media" description="Instagram, Facebook, LinkedIn, TikTok, and YouTube.">
           <div className="grid sm:grid-cols-3 gap-4">
             <div>
               <label className={labelClass}>Instagram URL</label>
@@ -927,6 +934,7 @@ export default function SiteForm({ site, onSaved }) {
         </CollapsibleSection>
 
         <CollapsibleSection
+          id="seo"
           title="SEO & Sharing"
           description="Controls the title/description search engines show and the preview card when your site is shared."
         >
@@ -961,7 +969,7 @@ export default function SiteForm({ site, onSaved }) {
           />
         </CollapsibleSection>
 
-        <CollapsibleSection title="Custom Domain" description="Serve your site at your own domain instead of /sites/…">
+        <CollapsibleSection id="domain" title="Custom Domain" description="Serve your site at your own domain instead of /sites/…">
           <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
             Once a domain is purchased — or an existing one is pointed at this project (ask your
             admin either way) — enter it here and your site will serve directly at that address,

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 // Reusable accordion section for long dashboard forms (SiteForm.jsx,
 // BrokerageSiteForm.jsx) — each section owns its own open/closed state,
@@ -6,11 +7,20 @@ import { useState } from "react";
 // instead of one continuous scroll. Purely presentational: fields inside
 // keep whatever value/state they already had while collapsed, nothing
 // unmounts.
-export default function CollapsibleSection({ title, description, defaultOpen = false, children }) {
+export default function CollapsibleSection({ id, title, description, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
+  const { hash, key } = useLocation();
+  const box = useRef(null);
+  // A link to this section's address (…/details#design) opens it and brings it into view, each time the link is used.
+  useEffect(() => {
+    if (!id || hash !== `#${id}`) return undefined;
+    setOpen(true);
+    const t = setTimeout(() => box.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+    return () => clearTimeout(t);
+  }, [hash, key, id]);
 
   return (
-    <div className="border border-black/10 dark:border-white/15 rounded-xl overflow-hidden">
+    <div ref={box} id={id} className="scroll-mt-24 border border-black/10 dark:border-white/15 rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
