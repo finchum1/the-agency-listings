@@ -39,7 +39,7 @@ export default function Navbar() {
   // Some layouts open on a light page, not a photo, so their nav can't be clear-with-light-text at the top.
   const solid = scrolled || open || !isHome || LIGHT_HERO_LAYOUTS.includes(site.layout);
 
-  const visiblePages = navPages(site);
+  const visiblePages = navPages({ ...site, hasSales: (site.sales || []).length > 0 });
   // With the three landing pages in the menu there are eight links plus the phone button, which needs a wider screen than the usual six: the full
   // menu waits for an extra-large window (below it, the menu button), the agent's name beside the logo is left out (the page is only 1280 wide inside, so there
   // is never room for it), and the gaps tighten.

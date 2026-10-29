@@ -7,8 +7,8 @@ const arrow = "text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dar
 // The order of the pages in the site's header and footer menus. The pages listed are the ones the menus show right now (a page whose section is off, or the
 // Sellers / Home Value / Buyers pages while they're off, aren't here). Drag a row or use the arrows; the new order is saved with the rest of the form as
 // agent_sites.nav_order. `homeSections`, `landing` and `value` (nav_order) come from the form.
-export default function MenuOrderEditor({ homeSections, landing, value, onChange }) {
-  const pages = navPages({ homeSections, landing, navOrder: value });
+export default function MenuOrderEditor({ homeSections, landing, value, onChange, hasSales = false }) {
+  const pages = navPages({ homeSections, landing, navOrder: value, hasSales });
   const [dragging, setDragging] = useState(null);
   const [over, setOver] = useState(null);
   const save = (list) => onChange(list.map((p) => p.path));

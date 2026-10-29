@@ -34,7 +34,7 @@
       "destination": "/api/meta-agent-site?slug=:slug"
     },
     {
-      "source": "/sites/:slug/:page(about|listings|areas|blog|contact|sellers|buyers|home-value)",
+      "source": "/sites/:slug/:page(about|listings|past-sales|areas|blog|contact|sellers|buyers|home-value)",
       "has": [
         {
           "type": "header",

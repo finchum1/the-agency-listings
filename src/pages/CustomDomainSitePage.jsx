@@ -34,6 +34,7 @@ import IdxListings from "../components/brokerage-site/IdxListings";
 import IdxListingDetail from "../components/brokerage-site/IdxListingDetail";
 import HomeValuation from "../components/brokerage-site/HomeValuation";
 import SellersPage from "../components/agent-site/landing/SellersPage";
+import SoldHomes from "../components/agent-site/SoldHomes";
 import BuyersPage from "../components/agent-site/landing/BuyersPage";
 import HomeValuePage from "../components/agent-site/landing/HomeValuePage";
 
@@ -256,6 +257,7 @@ export default function CustomDomainSitePage() {
           />
         }
       />
+      <Route path="/past-sales" element={<AgentOnlyCustomDomainPage pageTitle="Past Sales"><SoldHomes page /></AgentOnlyCustomDomainPage>} />
       <Route path="/sellers" element={<AgentOnlyCustomDomainPage pageTitle="Sellers"><SellersPage /></AgentOnlyCustomDomainPage>} />
       <Route path="/buyers" element={<AgentOnlyCustomDomainPage pageTitle="Buyers"><BuyersPage /></AgentOnlyCustomDomainPage>} />
       <Route path="/home-value" element={<AgentOnlyCustomDomainPage pageTitle="Home Value"><HomeValuePage /></AgentOnlyCustomDomainPage>} />

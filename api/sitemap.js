@@ -31,6 +31,7 @@ import { handleLlms } from "./_lib/llmsTxt.js";
 const AGENT_SITE_SUBPAGES = ["about", "listings", "areas", "blog", "contact"];
 // The Sellers, Buyers and Home Value pages (agent_sites.home_sections has "cards" while they are on).
 const LANDING_SUBPAGES = ["sellers", "buyers", "home-value"];
+const PAST_SALES_PAGE = "past-sales"; // listed only for a site that has past sales
 
 // The brokerage site's own 8 standalone subpages (App.jsx's /brokerage/*
 // routes, api/meta-brokerage-site.js's ?page= handling) — same idea,
@@ -124,29 +125,33 @@ export default async function handler(req, res) {
     { data: sites },
     { data: posts },
     { data: agentAreas },
+    { data: salesRows },
     { data: brokerageSite },
     { data: brokeragePosts },
     { data: brokerageAreas },
   ] = await Promise.all([
     supabase.from("listings").select("slug, updated_at").neq("status", "draft"),
-    supabase.from("agent_sites").select("slug, updated_at, home_sections").eq("status", "published"),
+    supabase.from("agent_sites").select("id, slug, updated_at, home_sections").eq("status", "published"),
     supabase
       .from("agent_site_posts")
       .select("slug, updated_at, agent_sites(slug)")
       .or(publishedOrDueFilter()),
     supabase.from("agent_site_areas").select("slug, agent_sites(slug)"),
+    supabase.from("agent_site_sales").select("agent_site_id"),
     // The app host's brokerage pages are the default organization's (The Agency); other brokerages are on their own domains.
     supabase.from("brokerage_site").select("updated_at, org:organizations!inner(slug)").eq("org.slug", DEFAULT_ORG_SLUG).eq("status", "published").maybeSingle(),
     supabase.from("brokerage_posts").select("slug, updated_at, org:organizations!inner(slug)").eq("org.slug", DEFAULT_ORG_SLUG).or(publishedOrDueFilter()),
     supabase.from("brokerage_areas").select("slug, org:organizations!inner(slug)").eq("org.slug", DEFAULT_ORG_SLUG),
   ]);
 
+  const salesBySite = new Set((salesRows || []).map((r) => r.agent_site_id));
+
   const urls = [
     { loc: `${SITE_ORIGIN}/` },
     ...(listings || []).map((l) => ({ loc: `${SITE_ORIGIN}/listings/${l.slug}`, lastmod: l.updated_at })),
     ...(sites || []).flatMap((s) => [
       { loc: `${SITE_ORIGIN}/sites/${s.slug}`, lastmod: s.updated_at },
-      ...[...AGENT_SITE_SUBPAGES, ...((s.home_sections || []).includes("cards") ? LANDING_SUBPAGES : [])].map((page) => ({
+      ...[...AGENT_SITE_SUBPAGES, ...(salesBySite.has(s.id) ? [PAST_SALES_PAGE] : []), ...((s.home_sections || []).includes("cards") ? LANDING_SUBPAGES : [])].map((page) => ({
         loc: `${SITE_ORIGIN}/sites/${s.slug}/${page}`,
         lastmod: s.updated_at,
       })),
@@ -192,13 +197,14 @@ async function buildCustomDomainSitemap(supabase, host, rawHost) {
 
   const { data: site } = await supabase.from("agent_sites").select("id, updated_at, home_sections").ilike("custom_domain", host).maybeSingle();
   if (site) {
-    const [{ data: posts }, { data: areas }] = await Promise.all([
+    const [{ data: posts }, { data: areas }, { count: salesCount }] = await Promise.all([
       supabase.from("agent_site_posts").select("slug, updated_at").eq("agent_site_id", site.id).or(publishedOrDueFilter()),
       supabase.from("agent_site_areas").select("slug").eq("agent_site_id", site.id),
+      supabase.from("agent_site_sales").select("id", { count: "exact", head: true }).eq("agent_site_id", site.id),
     ]);
     const urls = [
       { loc: `${origin}/`, lastmod: site.updated_at },
-      ...[...CUSTOM_DOMAIN_AGENT_SUBPAGES, ...((site.home_sections || []).includes("cards") ? LANDING_SUBPAGES : [])].map((page) => ({ loc: `${origin}/${page}`, lastmod: site.updated_at })),
+      ...[...CUSTOM_DOMAIN_AGENT_SUBPAGES, ...(salesCount > 0 ? [PAST_SALES_PAGE] : []), ...((site.home_sections || []).includes("cards") ? LANDING_SUBPAGES : [])].map((page) => ({ loc: `${origin}/${page}`, lastmod: site.updated_at })),
       ...(posts || []).map((p) => ({ loc: `${origin}/blog/${p.slug}`, lastmod: p.updated_at })),
       ...(areas || []).map((a) => ({ loc: `${origin}/areas/${a.slug}` })),
     ];

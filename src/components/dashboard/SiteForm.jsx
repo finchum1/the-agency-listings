@@ -238,7 +238,7 @@ function LayoutSketch({ kind }) {
   );
 }
 
-export default function SiteForm({ site, onSaved, focus }) {
+export default function SiteForm({ site, onSaved, focus, salesCount = 0 }) {
   const { brand } = useOrg();
   const accentOptions = accentChoices(brand);
   const logoOptions = logoChoices(brand);
@@ -603,7 +603,7 @@ export default function SiteForm({ site, onSaved, focus }) {
           <div>
             <label className={labelClass}>Menu order</label>
             <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mb-2.5">The order of the pages in the header and the footer. Drag a page, or use the arrows.</p>
-            <MenuOrderEditor homeSections={form.home_sections} landing={form.landing} value={form.nav_order} onChange={(v) => set("nav_order", v)} />
+            <MenuOrderEditor homeSections={form.home_sections} landing={form.landing} value={form.nav_order} onChange={(v) => set("nav_order", v)} hasSales={salesCount > 0} />
           </div>
 
           <div>

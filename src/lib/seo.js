@@ -118,7 +118,7 @@ export function buildAgentSiteMeta(site, agent) {
 // Without these, every subpage under one site shared buildAgentSiteMeta's
 // single description verbatim — a classic duplicate-meta-description
 // issue when Google (or anyone) compares pages within the same site.
-const AGENT_SITE_PAGE_LABELS = { about: "About", listings: "Listings", areas: "Areas", blog: "Blog", contact: "Contact", sellers: "Selling Your Home", buyers: "Buying a Home", "home-value": "What's Your Home Worth?" };
+const AGENT_SITE_PAGE_LABELS = { about: "About", listings: "Listings", "past-sales": "Past Sales", areas: "Areas", blog: "Blog", contact: "Contact", sellers: "Selling Your Home", buyers: "Buying a Home", "home-value": "What's Your Home Worth?" };
 const AGENT_SITE_PAGE_DESCRIPTIONS = {
   about: (site, agent, brokerage) =>
     `Learn about ${agent?.full_name || "this agent"}${
@@ -128,6 +128,8 @@ const AGENT_SITE_PAGE_DESCRIPTIONS = {
     `Browse current listings from ${agent?.full_name || "this agent"} at ${brokerage.name}${
       site.region ? ` in ${site.region}` : ""
     }.`,
+  "past-sales": (site, agent, brokerage) =>
+    `Homes ${agent?.full_name || "this agent"} at ${brokerage.name} has helped buyers and sellers close${site.region ? ` in ${site.region}` : ""}: recent sales and track record.`,
   areas: (site, agent) =>
     `Explore the neighborhoods and areas ${agent?.full_name || "this agent"} serves${
       site.region ? ` around ${site.region}` : ""

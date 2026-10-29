@@ -27,6 +27,7 @@ import ListingReportPage from "./pages/ListingReportPage";
 import TransactionTimelinePage from "./pages/TransactionTimelinePage";
 import AgentUpdatePage from "./pages/AgentUpdatePage";
 import SellersPage from "./components/agent-site/landing/SellersPage";
+import SoldHomes from "./components/agent-site/SoldHomes";
 import BuyersPage from "./components/agent-site/landing/BuyersPage";
 import HomeValuePage from "./components/agent-site/landing/HomeValuePage";
 import VendorSharePage from "./pages/VendorSharePage";
@@ -205,6 +206,7 @@ export default function App() {
           </PublicAgentSitePage>
         }
       />
+      <Route path="/sites/:slug/past-sales" element={<PublicAgentSitePage pageTitle="Past Sales"><SoldHomes page /></PublicAgentSitePage>} />
       <Route path="/sites/:slug/sellers" element={<PublicAgentSitePage pageTitle="Sellers"><SellersPage /></PublicAgentSitePage>} />
       <Route path="/sites/:slug/buyers" element={<PublicAgentSitePage pageTitle="Buyers"><BuyersPage /></PublicAgentSitePage>} />
       <Route path="/sites/:slug/home-value" element={<PublicAgentSitePage pageTitle="Home Value"><HomeValuePage /></PublicAgentSitePage>} />
@@ -243,6 +245,14 @@ export default function App() {
         element={
           <PreviewSite pageTitle="Listings">
             <FeaturedListings />
+          </PreviewSite>
+        }
+      />
+      <Route
+        path="/preview/:token/site/past-sales"
+        element={
+          <PreviewSite pageTitle="Past Sales">
+            <SoldHomes page />
           </PreviewSite>
         }
       />
@@ -462,7 +472,7 @@ export default function App() {
           }
         />
         <Route
-          path="brokerage-site"
+          path="brokerage-site/:section?"
           element={
             <ProtectedRoute adminOnly>
               <BrokerageSiteEditor />

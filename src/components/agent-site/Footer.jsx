@@ -11,6 +11,7 @@ import { orderByNav } from "../../lib/siteNav";
 const EXPLORE_LINKS = [
   { path: "/about", label: (firstName) => `About ${firstName}`, sectionKey: "bio" },
   { path: "/listings", label: () => "Properties", sectionKey: "listings" },
+  { path: "/past-sales", label: () => "Past Sales", needsSales: true },
   { path: "/blog", label: () => "Blog", sectionKey: "blog" },
   { path: "/contact", label: () => "Let’s Connect" },
 ];
@@ -104,7 +105,7 @@ export default function Footer() {
   const firstName = agent.name.split(" ")[0];
   const landing = resolveLanding(site.landing);
   const landingLinks = site.homeSections.includes("cards") && landing.menu ? landing.cards.filter((c) => c.on).map((c) => ({ path: c.path, label: () => c.nav })) : [];
-  const baseLinks = EXPLORE_LINKS.filter((link) => !link.sectionKey || site.homeSections.includes(link.sectionKey));
+  const baseLinks = EXPLORE_LINKS.filter((link) => (!link.sectionKey || site.homeSections.includes(link.sectionKey)) && (!link.needsSales || (site.sales || []).length > 0));
   // The three landing pages sit just before the last link (Let's Connect), unless the agent has put the menu in an order of their own.
   const visibleLinks = orderByNav([...baseLinks.slice(0, -1), ...landingLinks, ...baseLinks.slice(-1)], site.navOrder);
   const style = ["centered", "cta", "wide", "slim"].includes(site.footerStyle) ? site.footerStyle : "classic";

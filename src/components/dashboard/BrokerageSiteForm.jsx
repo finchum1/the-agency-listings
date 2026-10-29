@@ -7,7 +7,7 @@ import ImageUploadField from "./ImageUploadField";
 import VideoUploadField from "./VideoUploadField";
 import RichTextEditor from "./RichTextEditor";
 import BrokerageFeaturedListingsPicker from "./BrokerageFeaturedListingsPicker";
-import CollapsibleSection from "./CollapsibleSection";
+import CollapsibleSection, { SectionFocus } from "./CollapsibleSection";
 import FormSaveBar from "./FormSaveBar";
 
 // Same template/font/accent/logo options as SiteForm.jsx (agent sites),
@@ -105,7 +105,7 @@ const DEFAULT_HOME_SECTIONS = ["about", "listings", "blog", "areas"];
 // Site-level details for the brokerage site — parallel to SiteForm.jsx
 // (agent sites), minus slug/region/secondary-logo/custom-domain, which
 // don't apply to a singleton office site the same way.
-export default function BrokerageSiteForm({ site, onSaved }) {
+export default function BrokerageSiteForm({ site, onSaved, focus }) {
   const { brand } = useOrg();
   const accentOptions = accentChoices(brand);
   const logoOptions = logoChoices(brand);
@@ -114,6 +114,13 @@ export default function BrokerageSiteForm({ site, onSaved }) {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [dirty, setDirty] = useState(false);
+
+  // The page's Draft / Live switch changes the status from outside the form: the form follows it without losing what has been typed.
+  useEffect(() => {
+    const onStatus = (e) => setForm((f) => ({ ...f, status: e.detail.status }));
+    window.addEventListener("brokerage-site-status", onStatus);
+    return () => window.removeEventListener("brokerage-site-status", onStatus);
+  }, []);
 
   useEffect(() => {
     setForm(toForm(site));
@@ -256,7 +263,10 @@ export default function BrokerageSiteForm({ site, onSaved }) {
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   return (
+    <SectionFocus.Provider value={focus}>
     <form onSubmit={handleSubmit} className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-5">
+      {focus === undefined && (
+        <>
       <div className="flex items-center justify-between gap-4">
         <h2 className="font-display text-lg font-semibold">Site Details</h2>
         <div className="flex items-center gap-2 shrink-0">
@@ -289,18 +299,11 @@ export default function BrokerageSiteForm({ site, onSaved }) {
         </a>
       )}
 
-      <div>
-        <label className={labelClass}>Tagline</label>
-        <input
-          value={form.tagline}
-          onChange={update("tagline")}
-          className={inputClass}
-          placeholder="A boutique brokerage representing Oklahoma's most distinctive properties."
-        />
-      </div>
+        </>
+      )}
 
       <div className="space-y-3">
-        <CollapsibleSection title="Template & Design" description="Theme, accent color, font pairing, and logo.">
+        <CollapsibleSection id="design" title="Template & Design" description="Theme, accent color, font pairing, and logo.">
           <div>
             <label className={labelClass}>Template</label>
             <div className="grid sm:grid-cols-3 gap-3">
@@ -412,7 +415,7 @@ export default function BrokerageSiteForm({ site, onSaved }) {
           </div>
         </CollapsibleSection>
 
-        <CollapsibleSection title="Home Page Sections" description="What shows on the home page, and in what order.">
+        <CollapsibleSection id="home" title="Home Page Sections" description="What shows on the home page, and in what order.">
           <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-2">
             Hero and Contact are always included. A page stays reachable on its own even if it's
             turned off here.
@@ -452,7 +455,16 @@ export default function BrokerageSiteForm({ site, onSaved }) {
           </div>
         </CollapsibleSection>
 
-        <CollapsibleSection title="Content" description="Featured listings, hero media, About, and stats.">
+        <CollapsibleSection id="content" title="Content" description="Tagline, featured listings, hero media, About, and stats.">
+        <div>
+          <label className={labelClass}>Tagline</label>
+          <input
+            value={form.tagline}
+            onChange={update("tagline")}
+            className={inputClass}
+            placeholder="A boutique brokerage representing Oklahoma's most distinctive properties."
+          />
+        </div>
           <BrokerageFeaturedListingsPicker
             value={form.featured_listing_mls_numbers}
             onChange={(mlsNumbers) => set("featured_listing_mls_numbers", mlsNumbers)}
@@ -511,7 +523,7 @@ export default function BrokerageSiteForm({ site, onSaved }) {
           </div>
         </CollapsibleSection>
 
-        <CollapsibleSection title="Contact & Social" description="Contact email/phone and social links.">
+        <CollapsibleSection id="contact" title="Contact & Social" description="Contact email/phone and social links.">
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Contact email</label>
@@ -552,6 +564,7 @@ export default function BrokerageSiteForm({ site, onSaved }) {
         </CollapsibleSection>
 
         <CollapsibleSection
+          id="seo"
           title="SEO & Sharing"
           description="Controls the title/description search engines show and the preview card when the site is shared."
         >
@@ -575,7 +588,7 @@ export default function BrokerageSiteForm({ site, onSaved }) {
           />
         </CollapsibleSection>
 
-        <CollapsibleSection title="Custom Domain" description="Serve the brokerage site at your own domain instead of /brokerage.">
+        <CollapsibleSection id="domain" title="Custom Domain" description="Serve the brokerage site at your own domain instead of /brokerage.">
           <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
             Once a domain is purchased — or an existing one is pointed at this project — enter it
             here and the brokerage site will serve directly at that address, e.g. visiting{" "}
@@ -604,5 +617,6 @@ export default function BrokerageSiteForm({ site, onSaved }) {
 
       <FormSaveBar dirty={dirty} saving={saving} saved={saved} error={error} />
     </form>
+    </SectionFocus.Provider>
   );
 }

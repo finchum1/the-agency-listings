@@ -79,29 +79,15 @@ function NavIcon({ name, className = "" }) {
   );
 }
 
-// Plain top-level tabs. (Website is a collapsible group of its own —
-// see SITE_ITEMS below — and the /dashboard index route just redirects to
-// the right first page for each agent, see DashboardHome.jsx.)
+// Plain top-level tabs. (The /dashboard index route just redirects to the right first page for each agent, see DashboardHome.jsx.)
 const NAV_ITEMS = [
   { to: "/dashboard/listings", label: "Listings", icon: "listings", activeWhen: (p) => p === "/dashboard/listings" || p.startsWith("/dashboard/listings/") },
   { to: "/dashboard/upcoming", label: "Upcoming", icon: "upcoming", activeWhen: (p) => p === "/dashboard/upcoming" },
   { to: "/dashboard/vendors", label: "Vendors", icon: "vendors", activeWhen: (p) => p === "/dashboard/vendors" },
 ];
 
-// Website is a collapsible group, one page per section. profiles.site_access
-// decides what an agent gets: "full" = every page, "limited" = Blog Posts
-// only, "none" = no Website group at all (Listings / Upcoming / People
-// only).
-const SITE_ITEMS = [
-  { to: "/dashboard/site/analytics", label: "Analytics" },
-  { to: "/dashboard/site/details", label: "Site Details" },
-  { to: "/dashboard/site/compare", label: "Compare Templates" },
-  { to: "/dashboard/site/testimonials", label: "Testimonials" },
-  { to: "/dashboard/site/areas", label: "Areas of Expertise" },
-  { to: "/dashboard/site/sales", label: "Past Sales" },
-  { to: "/dashboard/site/blog", label: "Blog Posts" },
-  { to: "/dashboard/site/redirects", label: "Redirects" },
-];
+// Website is one entry; its pages are the menu inside the page (SiteWorkspace). profiles.site_access decides what an agent gets: "full" = every
+// page, "limited" = Blog Posts only, "none" = no Website entry at all (Listings / Upcoming / People only).
 
 // Sites/Agents/Brokerage Site are office settings, not something every
 // agent reaches for day to day — grouped under a collapsible "Admin"
@@ -292,7 +278,6 @@ export default function DashboardLayout() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileNavOpen]);
-  const [siteOpen, setSiteOpen] = useState(location.pathname.startsWith("/dashboard/site"));
   const [peopleOpen, setPeopleOpen] = useState(location.pathname.startsWith("/dashboard/people"));
   const inAdminArea = (path) =>
     [...ADMIN_ITEMS.map((i) => i.to), "/dashboard/brand", "/dashboard/organizations"].some((to) => path === to || path.startsWith(`${to}/`));
@@ -302,7 +287,6 @@ export default function DashboardLayout() {
   // opens the menu group that page belongs to, so the highlighted item is always visible. Groups never close by themselves.
   useEffect(() => {
     const path = location.pathname;
-    if (path.startsWith("/dashboard/site")) setSiteOpen(true);
     if (path.startsWith("/dashboard/people")) setPeopleOpen(true);
     if (inAdminArea(path)) setAdminOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -365,11 +349,12 @@ export default function DashboardLayout() {
   const deals = dealAccess(profile);
   const dealsAttention = useDealAttention(deals.any && !workingElsewhere);
   const siteAccess = profile?.site_access || "full";
-  const siteItems = siteAccess === "limited" ? SITE_ITEMS.filter((i) => i.to.endsWith("/blog")) : SITE_ITEMS;
+  // The pages of the website are a menu inside the Website page itself (SiteWorkspace), so the dashboard menu has one Website entry.
+  const siteHome = siteAccess === "limited" ? "/dashboard/site/blog" : "/dashboard/site/details";
 
   const NavList = ({ onNavigate, rail = false }) => {
     const path = location.pathname;
-    const inSite = path.startsWith("/dashboard/site");
+    const inSite = path === "/dashboard/site" || path.startsWith("/dashboard/site/");
     const inPeople = path.startsWith("/dashboard/people");
 
     // Closed drawer: one icon per main item. A group's icon goes to the first page in that group.
@@ -422,7 +407,7 @@ export default function DashboardLayout() {
         <div className="flex min-h-full flex-col">
           <div className="flex flex-col gap-1.5">
             {!workingElsewhere && railItem("Home", "home", path === "/dashboard" || path === "/dashboard/", { to: "/dashboard" })}
-            {!workingElsewhere && siteAccess !== "none" && railItem("Website", "website", inSite, { items: siteItems })}
+            {!workingElsewhere && siteAccess !== "none" && railItem("Website", "website", inSite, { to: siteHome })}
             {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { items: PEOPLE_ITEMS })}
             {!workingElsewhere && deals.any && railItem("Deals", "deals", path.startsWith("/dashboard/deals"), { to: "/dashboard/deals", badge: dealsAttention.total })}
             {NAV_ITEMS.map((item) => railItem(item.label, item.icon, item.activeWhen(path), { to: item.to }))}
@@ -488,7 +473,14 @@ export default function DashboardLayout() {
             </Link>
           </div>
         )}
-        {!workingElsewhere && siteAccess !== "none" && group("Website", "website", siteOpen, setSiteOpen, siteItems)}
+        {!workingElsewhere && siteAccess !== "none" && (
+          <div className="mt-1 space-y-1">
+            <Link to={siteHome} onClick={onNavigate} className={`${navLinkClass(inSite)} flex items-center gap-3`}>
+              <NavIcon name="website" />
+              Website
+            </Link>
+          </div>
+        )}
         {!workingElsewhere && profile?.people_enabled && group("People", "people", peopleOpen, setPeopleOpen, PEOPLE_ITEMS)}
         {!workingElsewhere && deals.any && (
           <div className="mt-1 space-y-1">
