@@ -21,7 +21,8 @@ async function call(body) {
 // Start a listing from a Zillow, Redfin or Realtor.com link, an MLS number or an address. It finds what it can (the
 // address from the link, and price, rooms, description and photos from the office's MLS feed when the home is in it),
 // shows what it found, and makes a DRAFT listing you can finish on the next screen.
-export default function ListingFromLink() {
+// `agentId` fixes the listing's agent (the site editor, where it is that site's agent); `onCreated(id)` replaces going to the listing's edit screen.
+export default function ListingFromLink({ agentId: fixedAgentId, onCreated }) {
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [value, setValue] = useState("");
@@ -29,18 +30,18 @@ export default function ListingFromLink() {
   const [error, setError] = useState("");
   const [found, setFound] = useState(null);
   const [agents, setAgents] = useState([]);
-  const [agentId, setAgentId] = useState("");
+  const [agentId, setAgentId] = useState(fixedAgentId || "");
   const [mine, setMine] = useState(false);
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isAdmin || fixedAgentId) return;
     supabase
       .from("profiles")
       .select("id, full_name")
       .order("full_name")
       .then(({ data }) => setAgents(data || []));
-  }, [isAdmin]);
-  useEffect(() => setAgentId((a) => a || user?.id || ""), [user?.id]);
+  }, [isAdmin, fixedAgentId]);
+  useEffect(() => setAgentId((a) => fixedAgentId || a || user?.id || ""), [user?.id, fixedAgentId]);
 
   const request = () => {
     const v = value.trim();
@@ -73,6 +74,12 @@ export default function ListingFromLink() {
     setError("");
     try {
       const r = await call({ ...found.request, create: true, agent_id: agentId, confirm_own_listing: mine || undefined });
+      if (onCreated) {
+        setBusy(false);
+        setFound(null);
+        setValue("");
+        return onCreated(r.listing.id);
+      }
       navigate(`/dashboard/listings/${r.listing.id}/edit`, { replace: true });
     } catch (err) {
       setError(err.message);
@@ -132,7 +139,7 @@ export default function ListingFromLink() {
               <span>The MLS shows another office listed this home. I confirm it's my listing.</span>
             </label>
           )}
-          {isAdmin && agents.length > 0 && (
+          {isAdmin && !fixedAgentId && agents.length > 0 && (
             <div>
               <label className="block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5">Listing agent</label>
               <select value={agentId} onChange={(e) => setAgentId(e.target.value)} className={inputClass}>

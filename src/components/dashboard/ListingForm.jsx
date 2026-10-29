@@ -158,12 +158,13 @@ const emptyListing = {
 // mode: "create" | "edit". `listing` is the existing row for edit mode.
 // `descriptionText`/`features` are handled as local UI state, converted
 // to/from the DB shapes (text[] / jsonb) on load and save.
-export default function ListingForm({ mode, listing, onSaved }) {
+// `defaultAgentId`: who a new listing is for when an admin starts it from somewhere that already knows (an agent's website editor).
+export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) {
   const { user, isAdmin } = useAuth();
   const { orgId, brand } = useOrg();
   const accentOptions = accentChoices(brand);
   const logoOptions = logoChoices(brand);
-  const [form, setForm] = useState(emptyListing);
+  const [form, setForm] = useState(() => ({ ...emptyListing, agent_id: defaultAgentId || "" }));
   const [descriptionText, setDescriptionText] = useState("");
   const [features, setFeatures] = useState([]);
   const [agents, setAgents] = useState([]);
@@ -173,7 +174,7 @@ export default function ListingForm({ mode, listing, onSaved }) {
   const [saved, setSaved] = useState(false);
   // What the form looked like when it was loaded or last saved. Anything different from this is an unsaved change,
   // wherever in the form it was made, and brings up the floating Save bar.
-  const [baseline, setBaseline] = useState(() => JSON.stringify({ form: emptyListing, descriptionText: "", features: [] }));
+  const [baseline, setBaseline] = useState(() => JSON.stringify({ form: { ...emptyListing, agent_id: defaultAgentId || "" }, descriptionText: "", features: [] }));
   const snapshot = JSON.stringify({ form, descriptionText, features });
   const dirty = snapshot !== baseline;
 

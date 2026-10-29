@@ -13,6 +13,7 @@ const GROUPS = [
     items: [
       { key: "details", hash: "basic", label: "Basic info" },
       { key: "details", hash: "photos", label: "Photos, video and bio" },
+      { key: "listings", label: "Listings" },
       { key: "testimonials", label: "Testimonials" },
       { key: "areas", label: "Areas of expertise" },
       { key: "blog", label: "Blog posts" },

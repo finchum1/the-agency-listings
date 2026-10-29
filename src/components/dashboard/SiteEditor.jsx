@@ -3,6 +3,7 @@ import SiteForm from "./SiteForm";
 import TestimonialsManager from "./TestimonialsManager";
 import AreasManager from "./AreasManager";
 import PostsManager from "./PostsManager";
+import SiteListingsManager from "./SiteListingsManager";
 import SalesManager from "./SalesManager";
 import SiteAnalytics from "./SiteAnalytics";
 import RedirectsManager from "./RedirectsManager";
@@ -39,6 +40,10 @@ const SECTIONS = {
     title: "Areas of Expertise",
     blurb: "The neighborhoods and communities you serve.",
   },
+  listings: {
+    title: "Listings",
+    blurb: "Your listings: the same ones as on the Listings page, shown on your website.",
+  },
   sales: {
     title: "Past Sales",
     blurb: "Homes you've sold, shown under your current listings.",
@@ -74,7 +79,7 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
 
   // The blog page (list, calendar, analytics and the post editor) is a little wider than the other site pages' short forms.
   return (
-    <div className={`${section === "blog" ? "max-w-4xl" : section === "compare" ? "max-w-7xl" : section === "analytics" ? "max-w-5xl" : "max-w-3xl"} space-y-8`}>
+    <div className={`${section === "blog" ? "max-w-4xl" : section === "compare" ? "max-w-7xl" : section === "analytics" || section === "listings" ? "max-w-5xl" : "max-w-3xl"} space-y-8`}>
       {!hideHeader && (
         <div>
           <h1 className="text-2xl font-display font-semibold">{heading || meta?.title || "Website"}</h1>
@@ -92,6 +97,7 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
       {section === "compare" && <CompareTemplatesPanel site={site} onChanged={refresh} />}
       {show("testimonials") && <TestimonialsManager agentSiteId={site.id} testimonials={testimonials} onChanged={refresh} />}
       {show("areas") && <AreasManager agentSiteId={site.id} areas={areas} onChanged={refresh} />}
+      {show("listings") && <SiteListingsManager agentId={agentId} agentName={agentName} />}
       {show("sales") && <SalesManager agentSiteId={site.id} agentId={agentId} sales={sales} onChanged={refresh} />}
       {show("redirects") && <RedirectsManager site={site} />}
       {show("blog") && <PostsManager agentSiteId={site.id} agentId={agentId} posts={posts} onChanged={refresh} />}

@@ -18,6 +18,7 @@ const NAMES = {
   "/dashboard/site/compare": "Compare templates",
   "/dashboard/site/testimonials": "Testimonials",
   "/dashboard/site/areas": "Areas of expertise",
+  "/dashboard/site/listings": "Website listings",
   "/dashboard/site/sales": "Past sales",
   "/dashboard/site/blog": "Blog posts",
   "/dashboard/site/redirects": "Redirects",
