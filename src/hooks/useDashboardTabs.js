@@ -21,6 +21,18 @@ function read(userId) {
   return null;
 }
 
+// Scroll back to where a tab was. The page is still loading when this starts, so it tries again for a couple of seconds until the page is tall enough.
+function restoreScroll(y) {
+  if (!(y > 0)) return;
+  let tries = 0;
+  const tick = () => {
+    window.scrollTo(0, y);
+    tries += 1;
+    if (tries < 24 && Math.abs(window.scrollY - y) > 4) setTimeout(tick, 100);
+  };
+  setTimeout(tick, 60);
+}
+
 export default function useDashboardTabs(userId) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -40,7 +52,9 @@ export default function useDashboardTabs(userId) {
     if (firstUserId.current === userId) return;
     firstUserId.current = userId;
     const saved = read(userId);
-    if (saved) setState(saved);
+    // The page you are on now belongs to the active tab, whatever it showed last time.
+    if (saved) setState({ ...saved, tabs: saved.tabs.map((t) => (t.id === saved.active ? { ...t, url: here } : t)) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   // Whatever page you are on belongs to the active tab.
@@ -60,12 +74,17 @@ export default function useDashboardTabs(userId) {
     }
   }, [state, userId]);
 
+  // The tab being left keeps how far down its page you were (only good for that same address).
+  const leaving = (s) => s.tabs.map((t) => (t.id === s.active ? { ...t, scroll: { url: t.url, y: Math.round(window.scrollY) } } : t));
+
   const select = useCallback(
     (id) => {
-      const tab = stateRef.current.tabs.find((t) => t.id === id);
-      if (!tab) return;
-      setState((s) => ({ ...s, active: id }));
-      if (tab.url !== `${window.location.pathname}${window.location.search}`) navigate(tab.url);
+      const s = stateRef.current;
+      const tab = s.tabs.find((t) => t.id === id);
+      if (!tab || id === s.active) return;
+      setState({ tabs: leaving(s), active: id });
+      navigate(tab.url);
+      if (tab.scroll?.url === tab.url) restoreScroll(tab.scroll.y);
     },
     [navigate],
   );
@@ -74,8 +93,9 @@ export default function useDashboardTabs(userId) {
     (url = HOME) => {
       if (stateRef.current.tabs.length >= MAX_TABS) return;
       const id = newId();
-      setState((s) => ({ tabs: [...s.tabs, { id, url }], active: id }));
+      setState((s) => ({ tabs: [...leaving(s), { id, url }], active: id }));
       navigate(url);
+      window.scrollTo(0, 0);
     },
     [navigate],
   );
@@ -90,6 +110,7 @@ export default function useDashboardTabs(userId) {
       const next = tabs[Math.min(index, tabs.length - 1)];
       setState({ tabs, active: next.id });
       navigate(next.url);
+      if (next.scroll?.url === next.url) restoreScroll(next.scroll.y);
     },
     [navigate],
   );

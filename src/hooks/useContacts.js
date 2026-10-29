@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { cacheGet, cacheSet } from "../lib/pageCache";
 import { useAuth } from "./useAuth";
 
 // The signed-in agent's whole contact database in memory (it is private to them, so row-level security already limits it), with its
@@ -18,13 +19,15 @@ async function fetchAll(query) {
 
 export function useContacts() {
   const { user } = useAuth();
-  const [contacts, setContacts] = useState([]);
-  const [tags, setTags] = useState([]);
-  const [links, setLinks] = useState([]); // { contact_id, tag_id }
-  const [cards, setCards] = useState([]); // { id, contact_id, stage_group, stage }
-  const [tasks, setTasks] = useState([]); // open follow-ups tied to a contact
-  const [lists, setLists] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // What was loaded last time shows straight away (coming back to a tab), and the fresh copy replaces it.
+  const cached = cacheGet(user?.id ? `contacts:${user.id}` : null);
+  const [contacts, setContacts] = useState(cached?.contacts || []);
+  const [tags, setTags] = useState(cached?.tags || []);
+  const [links, setLinks] = useState(cached?.links || []); // { contact_id, tag_id }
+  const [cards, setCards] = useState(cached?.cards || []); // { id, contact_id, stage_group, stage }
+  const [tasks, setTasks] = useState(cached?.tasks || []); // open follow-ups tied to a contact
+  const [lists, setLists] = useState(cached?.lists || []);
+  const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
@@ -45,6 +48,7 @@ export function useContacts() {
     setCards(p.data || []);
     setTasks(k.data || []);
     setLists(s.data || []);
+    if (!err) cacheSet(`contacts:${user?.id}`, { contacts: c.data || [], tags: t.data || [], links: l.data || [], cards: p.data || [], tasks: k.data || [], lists: s.data || [] });
     setLoading(false);
   }, [user?.id]);
 

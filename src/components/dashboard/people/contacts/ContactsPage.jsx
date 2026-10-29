@@ -7,6 +7,7 @@ import { EMPTY_FILTERS, RELATIONSHIPS, SORTS, applyFilters, cityLine, fullName, 
 import { ManageTags, TagChip, TagPicker } from "./TagParts";
 import ContactPanel from "./ContactPanel";
 import ImportContacts from "./ImportContacts";
+import useUrlParamSync from "../../../../hooks/useUrlParamSync";
 
 const select = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
 const pill = "rounded-full border border-black/10 dark:border-white/15 px-3.5 py-2 text-sm font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
@@ -134,6 +135,7 @@ export default function ContactsPage() {
   const [activeList, setActiveList] = useState("");
   const [selected, setSelected] = useState(() => new Set());
   const [openId, setOpenId] = useState(() => new URLSearchParams(window.location.search).get("contact"));
+  useUrlParamSync("contact", openId);
   const [modal, setModal] = useState(() => (new URLSearchParams(window.location.search).get("new") ? "add" : null)); // add | import | tags | followup | merge
   const [shown, setShown] = useState(PAGE);
   const [note, setNote] = useState("");

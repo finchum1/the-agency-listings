@@ -13,6 +13,7 @@ import DraftBadge from "./DraftBadge";
 import { usePeopleDrafts } from "../../../hooks/usePeopleDrafts";
 import { usePeekWidth } from "../../../hooks/usePeekWidth";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
+import useUrlParamSync from "../../../hooks/useUrlParamSync";
 
 const COLUMN_DRAG_TYPE = "application/x-people-column";
 
@@ -269,6 +270,7 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
   const prevStageNames = board.prev ? allStages[board.prev.group] : null;
 
   const [selectedId, setSelectedId] = useState(() => (group === "transaction" ? initialOpenId || new URLSearchParams(window.location.search).get("deal") : new URLSearchParams(window.location.search).get("person"))); // ?person= opens a lead or pipeline card (the dashboard search and quick add use it)
+  useUrlParamSync(group === "transaction" ? "deal" : "person", selectedId); // the open card is in the address, so a dashboard tab remembers it
   // One side panel at a time: opening a deal you coordinate (the page's own panel, `foreignOpenId`) closes this one, and opening one of
   // yours here tells the page (`onOwnOpened`) to close that one.
   useEffect(() => {

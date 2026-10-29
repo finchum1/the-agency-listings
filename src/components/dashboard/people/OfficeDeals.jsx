@@ -6,6 +6,7 @@ import { refreshDealAttention } from "../../../hooks/useDealAttention";
 import { ComplianceChip } from "./DealCompliance";
 import DealPanel from "./DealPanel";
 import StartDealModal from "./StartDealModal";
+import useUrlParamSync from "../../../hooks/useUrlParamSync";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const select = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
@@ -37,6 +38,7 @@ export default function OfficeDeals({ viewer, excludeOwn = false }) {
   const [starting, setStarting] = useState(false);
   const [startNote, setStartNote] = useState("");
   const [openId, setOpenId] = useState(() => new URLSearchParams(window.location.search).get("deal"));
+  useUrlParamSync("deal", openId);
   const { progress, reload: reloadProgress } = useTransactionProgress(true);
   const [unread, setUnread] = useState({});
 

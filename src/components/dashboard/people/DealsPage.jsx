@@ -11,6 +11,7 @@ import DealsHome from "./DealsHome";
 import DealsList from "./DealsList";
 import DealPanel from "./DealPanel";
 import StartDealModal from "./StartDealModal";
+import useUrlParamSync from "../../../hooks/useUrlParamSync";
 
 // A setting remembered in this browser (the view and filter below).
 function useRemembered(key, initial, allowed) {
@@ -56,6 +57,7 @@ export default function DealsPage() {
   const viewer = access.isCompliance ? "compliance" : "tc";
 
   // A link to one of the deals you coordinate (?deal=...) opens it once the list has loaded. Your own deals open from the board itself.
+  useUrlParamSync("deal", openForeignId);
   const linkedDeal = useRef(new URLSearchParams(window.location.search).get("deal"));
   useEffect(() => {
     if (linkedDeal.current && coordinated.deals.some((d) => d.id === linkedDeal.current)) {
