@@ -4,9 +4,9 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 // dashboard menu; this is where its parts are. Across the top rather than down the side so the boards keep their full width.
 const PAGES = [
   { to: "/dashboard/people/overview", label: "Overview" },
+  { to: "/dashboard/people/contacts", label: "Contacts" },
   { to: "/dashboard/people/leads", label: "Leads" },
   { to: "/dashboard/people/pipeline", label: "Pipeline" },
-  { to: "/dashboard/people/contacts", label: "Contacts" },
 ];
 const SETTINGS = { to: "/dashboard/settings", label: "Settings" };
 
