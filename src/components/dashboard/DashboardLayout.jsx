@@ -553,7 +553,7 @@ export default function DashboardLayout() {
           visible content. */}
       <aside
         style={{ width: navWidth }}
-        className={`hidden md:flex md:shrink-0 md:flex-col md:h-screen md:sticky md:top-0 relative border-r border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] print:hidden ${
+        className={`hidden md:flex md:shrink-0 md:flex-col md:h-screen md:sticky md:top-0 z-40 relative border-r border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] print:hidden ${
           navLive === null ? "transition-[width] duration-200 ease-out motion-reduce:transition-none" : ""
         }`}
       >
