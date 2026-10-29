@@ -6,7 +6,7 @@ import { normalizeDomain } from "../../lib/normalizeDomain";
 import ImageUploadField from "./ImageUploadField";
 import RichTextEditor from "./RichTextEditor";
 import { paragraphsToHtml } from "../../lib/richTextFallback";
-import CollapsibleSection from "./CollapsibleSection";
+import CollapsibleSection, { SectionFocus } from "./CollapsibleSection";
 import LandingCardsEditor from "./LandingCardsEditor";
 import MenuOrderEditor from "./MenuOrderEditor";
 import { SITE_TEMPLATES } from "../../lib/siteTemplates";
@@ -238,7 +238,7 @@ function LayoutSketch({ kind }) {
   );
 }
 
-export default function SiteForm({ site, onSaved }) {
+export default function SiteForm({ site, onSaved, focus }) {
   const { brand } = useOrg();
   const accentOptions = accentChoices(brand);
   const logoOptions = logoChoices(brand);
@@ -427,7 +427,10 @@ export default function SiteForm({ site, onSaved }) {
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   return (
+    <SectionFocus.Provider value={focus}>
     <form onSubmit={handleSubmit} className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-5">
+      {focus === undefined && (
+        <>
       <div className="flex items-center justify-between gap-4">
         <h2 className="font-display text-lg font-semibold">Site Details</h2>
         <div className="flex items-center gap-2 shrink-0">
@@ -458,6 +461,9 @@ export default function SiteForm({ site, onSaved }) {
         >
           View live site
         </a>
+      )}
+
+        </>
       )}
 
       <div className="space-y-3">
@@ -999,5 +1005,6 @@ export default function SiteForm({ site, onSaved }) {
 
       <FormSaveBar dirty={dirty} saving={saving} saved={saved} error={error} />
     </form>
+    </SectionFocus.Provider>
   );
 }

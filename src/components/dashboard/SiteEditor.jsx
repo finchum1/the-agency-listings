@@ -57,7 +57,7 @@ const SECTIONS = {
   },
 };
 
-export default function SiteEditor({ agentId, agentName, heading, section, hideHeader }) {
+export default function SiteEditor({ agentId, agentName, heading, section, hideHeader, focus }) {
   const { isAdmin } = useAuth();
   const { site, testimonials, areas, posts, sales, loading, error, refresh } = useAgentSiteEditor(
     agentId,
@@ -88,7 +88,7 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
 
       {show("analytics") && <SiteAnalytics site={site} />}
 
-      {show("details") && <SiteForm site={site} onSaved={refresh} />}
+      {show("details") && <SiteForm site={site} onSaved={refresh} focus={focus} />}
       {section === "compare" && <CompareTemplatesPanel site={site} onChanged={refresh} />}
       {show("testimonials") && <TestimonialsManager agentSiteId={site.id} testimonials={testimonials} onChanged={refresh} />}
       {show("areas") && <AreasManager agentSiteId={site.id} areas={areas} onChanged={refresh} />}

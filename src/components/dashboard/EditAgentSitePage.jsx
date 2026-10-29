@@ -249,7 +249,7 @@ export default function EditAgentSitePage() {
       <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
         <SiteMenu agentId={agentId} section={section} hash={hash} />
         <div className="min-w-0 flex-1">
-          <SiteEditor key={`${agent.id}-${section}`} agentId={agent.id} agentName={agent.full_name} section={section} hideHeader />
+          <SiteEditor key={`${agent.id}-${section}`} agentId={agent.id} agentName={agent.full_name} section={section} hideHeader focus={section === "details" ? hash || "basic" : undefined} />
         </div>
       </div>
     </div>

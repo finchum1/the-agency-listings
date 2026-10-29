@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 // Reusable accordion section for long dashboard forms (SiteForm.jsx,
@@ -7,17 +7,35 @@ import { useLocation } from "react-router-dom";
 // instead of one continuous scroll. Purely presentational: fields inside
 // keep whatever value/state they already had while collapsed, nothing
 // unmounts.
+// When a form sets this (the id of one section), only that section shows, open and without the accordion header: each page of the agent-site editor
+// is one section. Left undefined, the sections are an accordion, as an agent sees them on their own My Site page.
+export const SectionFocus = createContext(undefined);
+
 export default function CollapsibleSection({ id, title, description, defaultOpen = false, children }) {
   const [open, setOpen] = useState(defaultOpen);
   const { hash, key } = useLocation();
+  const focus = useContext(SectionFocus);
   const box = useRef(null);
   // A link to this section's address (…/details#design) opens it and brings it into view, each time the link is used.
   useEffect(() => {
-    if (!id || hash !== `#${id}`) return undefined;
+    if (focus !== undefined || !id || hash !== `#${id}`) return undefined;
     setOpen(true);
     const t = setTimeout(() => box.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
     return () => clearTimeout(t);
   }, [hash, key, id]);
+
+  if (focus !== undefined) {
+    if (focus !== id) return null;
+    return (
+      <div id={id}>
+        <div className="mb-5">
+          <h3 className="font-display text-lg font-semibold">{title}</h3>
+          {description && <p className="mt-1 text-sm text-[#1c1a17]/55 dark:text-[#faf9f7]/55">{description}</p>}
+        </div>
+        <div className="space-y-5">{children}</div>
+      </div>
+    );
+  }
 
   return (
     <div ref={box} id={id} className="scroll-mt-24 border border-black/10 dark:border-white/15 rounded-xl overflow-hidden">
