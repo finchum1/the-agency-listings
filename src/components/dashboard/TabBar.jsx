@@ -11,17 +11,17 @@ export default function TabBar({ tabs, active, onSelect, onAdd, onClose, max }) 
   const many = tabs.length > 1;
 
   return (
-    <div className="sticky top-0 z-30 flex items-end gap-1 border-b border-black/5 dark:border-white/10 bg-[#f3f1ec] dark:bg-[#141414] pl-5 pr-3 pt-2 print:hidden">
-      <div ref={scroller} role="tablist" aria-label="Open pages" className="flex min-w-0 items-end gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="sticky top-0 z-30 flex items-center gap-1.5 bg-[#faf9f7] dark:bg-[#0d0d0d] pl-4 md:pl-9 pr-3 pt-3.5 pb-2 print:hidden">
+      <div ref={scroller} role="tablist" aria-label="Open pages" className="flex min-w-0 items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((tab) => {
           const on = tab.id === active;
           const title = tabTitle(tab.url);
           return (
             <div
               key={tab.id}
-              className={`group relative flex h-9 min-w-[7.5rem] max-w-[13rem] shrink-0 items-center rounded-t-lg border border-b-0 text-sm transition-colors ${
+              className={`group relative flex h-8 min-w-[7rem] max-w-[13rem] shrink-0 items-center rounded-xl border text-sm transition-colors ${
                 on
-                  ? "border-black/10 dark:border-white/15 bg-[#faf9f7] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7]"
+                  ? "border-black/10 dark:border-white/15 bg-white dark:bg-[#1f1f1f] text-[#1c1a17] dark:text-[#faf9f7] shadow-sm"
                   : "border-transparent text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/5 dark:hover:bg-white/10"
               }`}
             >
@@ -32,7 +32,7 @@ export default function TabBar({ tabs, active, onSelect, onAdd, onClose, max }) 
                 title={title}
                 onClick={() => onSelect(tab.id)}
                 onAuxClick={(e) => e.button === 1 && many && onClose(tab.id)}
-                className="min-w-0 flex-1 truncate py-2 pl-3 pr-1 text-left font-medium"
+                className="min-w-0 flex-1 truncate rounded-xl py-1.5 pl-3.5 pr-1 text-left font-medium"
               >
                 {title}
               </button>
@@ -42,7 +42,7 @@ export default function TabBar({ tabs, active, onSelect, onAdd, onClose, max }) 
                   onClick={() => onClose(tab.id)}
                   aria-label={`Close ${title}`}
                   title="Close tab"
-                  className={`mr-1.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:bg-black/10 dark:hover:bg-white/15 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] ${
+                  className={`mr-1.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-lg text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:bg-black/10 dark:hover:bg-white/15 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] ${
                     on ? "" : "opacity-0 group-hover:opacity-100 focus:opacity-100"
                   }`}
                 >
@@ -61,7 +61,7 @@ export default function TabBar({ tabs, active, onSelect, onAdd, onClose, max }) 
         disabled={tabs.length >= max}
         aria-label="New tab"
         title={tabs.length >= max ? "That's the most tabs you can open" : "New tab"}
-        className="mb-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#1c1a17]/60 dark:text-[#faf9f7]/60 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-30"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#1c1a17]/60 dark:text-[#faf9f7]/60 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-30"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
           <path d="M12 5v14M5 12h14" />
