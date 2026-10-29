@@ -45,6 +45,15 @@ function Bullets({ items }) {
   );
 }
 
+/** A phone screenshot in a simple bezel. */
+function Phone({ src, alt, className = "" }) {
+  return (
+    <figure className={`overflow-hidden rounded-[1.4rem] border-[4px] border-[#1c1a17] bg-[#1c1a17] shadow-xl shadow-black/25 ${className}`}>
+      <img src={src} alt={alt} loading="lazy" className="block w-full h-auto" />
+    </figure>
+  );
+}
+
 function Eyebrow({ children }) {
   return <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">{children}</p>;
 }
@@ -85,7 +94,10 @@ const FAQ = [
   ["Does it work with Google Calendar?", "Yes. Connect your Google account, choose the calendars to show, and your schedule appears on the dashboard. Add or edit an appointment there and it updates in Google Calendar, and changes in Google show up in the dashboard. You can disconnect at any time."],
   ["I already have a website and a blog. Can you move them?", "Yes. Posts can be imported from your current site, and old URLs are redirected to the new ones with permanent redirects, so links and search rankings carry over."],
   ["Does it work on my phone?", "Yes. Your site is built phone-first, and the dashboard installs to your home screen like an app, so checking a lead between showings takes a tap."],
-  ["Can people on my team see different things?", "Yes. Each person can have full website access, blog-only access, or none, and the leads, pipeline, and transactions tools are switched on per agent."],
+  ["Can people on my team see different things?", "Yes. Each person can have full website access, blog-only access, or none, and the contacts, leads, pipeline, and deals tools are switched on per agent. Your contacts and leads stay private to you; deals can be shared with a coordinator or a compliance reviewer you choose."],
+  ["Can my clients see where their deal stands?", "Yes. You send a private link that shows their closing timeline, with a countdown, what's done, what's coming, and who's helping. It never shows price, commission, or your internal checklist, and you can turn the link off whenever you like."],
+  ["Can I see who's looking at my listings?", "Yes. Each property site reports views, visitors, where they came from, and how far they got. Give every place you share a listing its own link and you'll see which one works, and send the seller a private report page with the same numbers."],
+  ["Can I choose how my website looks?", "Yes. Start from one of three templates, pick your colors, a header and a footer, and set the order of your pages. You can also send your agents a private link where they see their site in every layout and pick the one they like."],
 ];
 
 export default function LandingPage() {
@@ -119,7 +131,7 @@ export default function LandingPage() {
               <span className="italic text-[#ed2127]">in one place.</span>
             </h1>
             <p className="text-[17px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-8 max-w-md">
-              Your site, leads, pipeline, transactions, and calendar in one dashboard, already running at The Agency.
+              Your site, contacts, leads, pipeline, deals, and calendar in one dashboard, already running at The Agency.
               We build it, move you over, and keep it running.
             </p>
             <div className="flex flex-wrap items-center gap-4">
@@ -151,7 +163,7 @@ export default function LandingPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.9, ease: easeOut, delay: 0.15 }}
             >
-              <BrowserFrame src="/images/landing/dash-home.jpg" alt="The dashboard home page: today's schedule, shortcuts, and tasks" />
+              <BrowserFrame eager src="/images/landing/dash-home.jpg" alt="The dashboard home page: an hourly schedule, tasks waiting to be scheduled, and today's follow-ups" />
             </motion.div>
             <motion.figure
               initial={{ opacity: 0, y: 24 }}
@@ -160,7 +172,7 @@ export default function LandingPage() {
               className="absolute -bottom-2 right-2 w-[92px] sm:w-[120px] lg:-right-4 lg:w-[140px] overflow-hidden rounded-[1.4rem] border-[4px] border-[#1c1a17] bg-[#1c1a17] shadow-xl shadow-black/25"
             >
               <div className="h-3.5 bg-white flex items-center justify-center"><span className="h-1 w-8 rounded-full bg-[#1c1a17]" /></div>
-              <img src="/images/landing/dash-home-mobile.jpg" alt="The dashboard on a phone" className="block w-full h-auto" />
+              <img src="/images/landing/m-home.jpg" alt="The dashboard home page on a phone" className="block w-full h-auto" />
             </motion.figure>
             <p className="text-[11px] text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-3 max-w-[60%]">{SAMPLE}</p>
           </div>
@@ -205,8 +217,8 @@ export default function LandingPage() {
           </Reveal>
           <div className="mt-12 grid md:grid-cols-2 gap-6">
             {[
-              ["The website", ["Your own agent site on The Agency's brand, on your own domain", "A property site for every listing, from a form", "A blog with a post calendar, a publish checklist, and a formatting menu right on your text", "Areas, bios, and testimonials you edit yourself"]],
-              ["The back office", ["A home page for your day: schedule, new inquiries, tasks, and your goal", "Leads and a pipeline, tagged buyer, seller, or both", "Transactions with key dates, checklists, and progress rings", "Open houses, flyers, and upcoming listings"]],
+              ["The website", ["Your own agent site on The Agency's brand, on your own domain, from three starter templates", "Six headers, five footers, and live previews of your site in every layout", "Seller, buyer, and home value pages, plus a Recently Sold section", "A property site for every listing, with video, visitor analytics, and printable flyers", "A blog with a post calendar and pinned posts"]],
+              ["The back office", ["A home page for your day: an hourly schedule, new inquiries, tasks, and your goal", "A private contacts database with tags and keep-in-touch reminders", "Leads and a pipeline with a follow-up rhythm for every column", "Deals with key dates, checklists, a coordinator, and compliance review", "Timeline and vendor links you can send to a client"]],
             ].map(([title, items], i) => (
               <Reveal key={title} variant="scaleIn" delay={i * 0.1} className="rounded-2xl bg-white dark:bg-[#161616] border border-black/5 dark:border-white/10 shadow-xl shadow-black/5 p-8">
                 <h3 className="text-xl font-display font-semibold">{title}</h3>
@@ -224,21 +236,22 @@ export default function LandingPage() {
           <div className="mt-16">
             <Feature
               eyebrow="Home"
-              title="Your schedule, in sync with Google Calendar."
-              body="Connect your Google account and your calendars show up on the dashboard, in day, week, and month views. Add or change an appointment here and it changes in Google Calendar, and the other way around."
+              title="Your day, hour by hour, in sync with Google Calendar."
+              body="Connect your Google account and your calendars show up on the dashboard, in day, week, and month views. Block time for a task by dragging it onto the grid. Add or change an appointment here and it changes in Google Calendar, and the other way around."
               bullets={[
                 "Pick which calendars to show; calendars you can only view stay view-only",
-                "Your deal dates and tasks appear on the same schedule",
+                "Tasks, deal dates, and appointments share one schedule, with a tray of tasks waiting for a time",
                 "New website inquiries are waiting right below, with call, text, and email buttons",
                 "Repeating tasks and a scorecard that tracks your year against your goal",
               ]}
               visual={
                 <div className="relative pb-6 sm:pr-24">
-                  <BrowserFrame src="/images/landing/dash-calendar.jpg" alt="The schedule with a connected Google account and the calendars shown on the dashboard" />
+                  <BrowserFrame src="/images/landing/dash-home-week.jpg" alt="The week view of the schedule, with appointments, tasks, and deal dates on an hourly grid" />
                   <img
-                    src="/images/landing/dash-event.jpg"
-                    alt="Adding an appointment to Google Calendar from the dashboard"
-                    className="hidden sm:block absolute bottom-0 right-0 w-[200px] lg:w-[230px] rounded-xl border border-black/10 bg-white shadow-2xl shadow-black/25"
+                    src="/images/landing/dash-add.jpg"
+                    alt="Adding a task to the schedule with a start and end time"
+                    loading="lazy"
+                    className="hidden sm:block absolute bottom-0 right-0 w-[200px] lg:w-[240px] rounded-xl border border-black/10 bg-white shadow-2xl shadow-black/25"
                   />
                 </div>
               }
@@ -254,30 +267,122 @@ export default function LandingPage() {
           <GroupHeader id="website" title="The website" body="A site that looks like you, and keeps itself current." />
           <div className="mt-16 flex flex-col gap-24">
             <Feature
+              flip
+              eyebrow="Agent sites"
+              title="Your own site, from a template you pick."
+              body="Start from one of three finished looks, then make it yours: your photos, your accent color, and the pages and sections you want, with The Agency's logo and colors built in. Every site is built phone-first, because that's where your clients are."
+              bullets={[
+                "Three starter templates: luxury minimal, warm editorial, and guide cards",
+                "Six header styles and five footers, with the menu in the order you choose",
+                "Your own domain, with old URLs redirected so you keep your search rankings",
+                "Inquiry forms that filter spam, confirm to the visitor, and land straight in your leads",
+              ]}
+              visual={
+                <div className="grid grid-cols-5 gap-3">
+                  {[
+                    ["/images/landing/site-luxury.jpg", "Luxury minimal", "col-span-3 row-span-2 row-start-1"],
+                    ["/images/landing/site-warm.jpg", "Warm editorial", "col-span-2 aspect-[16/10]"],
+                    ["/images/landing/site-guide.jpg", "Guide cards", "col-span-2 col-start-4 aspect-[16/10]"],
+                  ].map(([src, name, cls]) => (
+                    <figure key={name} className={`relative overflow-hidden rounded-xl border border-black/10 bg-white shadow-xl shadow-black/15 ${cls}`}>
+                      <img src={src} alt={`The ${name} template, shown on a sample agent site`} loading="lazy" className="absolute inset-0 h-full w-full object-cover object-top" />
+                      <figcaption className="absolute bottom-2 left-2 rounded-full bg-black/65 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur">{name}</figcaption>
+                    </figure>
+                  ))}
+                </div>
+              }
+              caption={SAMPLE}
+            />
+            <Feature
+              eyebrow="Compare templates"
+              title="Let your agents choose their own look."
+              body="Make a private link and the agent sees their own site in every layout, with a choice of colors, header, and footer. They scroll around, pick the one they like, and you get an email with their choice. No sign-in, and it works while the site is still a draft."
+              bullets={[
+                "Live previews with their real photo, bio, and listings, not stock mockups",
+                "Looking changes nothing; the site only changes when you apply their pick",
+                "Apply a whole template in one click, then save; your photos and words stay",
+              ]}
+              visual={<BrowserFrame src="/images/landing/dash-site-compare.jpg" alt="Compare templates: a site shown in every layout, with color, header, and footer choices" />}
+              caption={SAMPLE}
+            />
+            <Feature
+              flip
+              eyebrow="Pages that bring in leads"
+              title="Sellers, buyers, and a home value page, ready to go."
+              body="Every agent site comes with guide-style pages for sellers and buyers and a home value page with an address box. Each form lands in your leads tagged with the page it came from, and a home value request adds a 'pull comps' task to your list for the next day."
+              bullets={[
+                "A step-by-step seller and buyer journey that is ready on day one",
+                "Buyer and seller cards on the home page, in the order you pick",
+                "A Recently Sold section and a Past Sales page, copied from your closed listings",
+                "Up to three pinned blog posts leading your blog page",
+              ]}
+              visual={
+                <div className="relative pb-6 sm:pr-20">
+                  <BrowserFrame src="/images/landing/site-sellers.jpg" alt="A seller's page on an agent site, with a guide to the selling journey" />
+                  <img
+                    src="/images/landing/site-past-sales.jpg"
+                    alt="The Past Sales page, a grid of recently sold homes"
+                    loading="lazy"
+                    className="hidden sm:block absolute -bottom-2 right-0 w-[44%] rounded-xl border border-black/10 bg-white shadow-2xl shadow-black/25"
+                  />
+                </div>
+              }
+              caption={SAMPLE}
+            />
+            <Feature
               eyebrow="Listings"
               title="A property site for every listing."
-              body="Fill out a form and the listing has its own site: hero photo, gallery, features, map, and a tour request. No new repo, no redeploy, no waiting on a developer."
-              bullets={["Change a listing's status and the live site updates the moment you do", "Open houses appear as a banner on the listing", "Printable flyers generated from the same listing"]}
+              body="Fill out a form and the listing has its own site: hero photo or video, gallery, features, map, and a tour request. No new repo, no redeploy, no waiting on a developer."
+              bullets={[
+                "Change a listing's status and the live site updates the moment you do",
+                "One video per listing, playing behind the hero or above the gallery",
+                "Open houses appear as a banner on the listing",
+                "A live check on each property's custom domain, with an alert if it stops responding",
+              ]}
               visual={<BrowserFrame src="/images/landing/listing-home-fresh.jpg" alt="A listing's property website with hero photo, price, and key stats" />}
             />
             <Feature
               flip
-              eyebrow="Agent sites"
-              title="Your own site, on The Agency's brand."
-              body="A bio, your areas of expertise, testimonials, your listings, and a blog, in a look you pick, with The Agency's logo and colors built in. It's built phone-first, because that's where your clients are."
-              bullets={["Six looks to start from, then your photos and square or rounded buttons", "Your own domain, with old URLs redirected so you keep your search rankings", "Inquiry forms that filter spam, confirm to the visitor, and land straight in your leads"]}
+              eyebrow="Visitor analytics"
+              title="Know who's looking at every listing."
+              body="Every property site reports how many people looked, where they came from, and what they did. Give each place you share a listing its own link, and you'll see which one is working. Sellers get a private report page with the same numbers."
+              bullets={[
+                "Views, unique visitors, time on page, and how far people scrolled",
+                "Tagged links for Facebook, Instagram, email, text, MLS, and a QR code on the flyer",
+                "A seller report link that never shows inquiry names or contact details",
+                "An optional Monday email to you with last week's numbers",
+              ]}
               visual={
-                <div className="relative pb-6 sm:pr-16">
-                  <BrowserFrame src="/images/landing/agent-site-home.jpg" alt="An Agency agent's website home page" />
-                  <img
-                    src="/images/landing/agent-site-mobile.jpg"
-                    alt="The same agent website on a phone"
-                    className="hidden sm:block absolute -bottom-2 right-0 w-[124px] rounded-[1.4rem] border-[4px] border-[#1c1a17] shadow-xl shadow-black/25"
-                  />
+                <div className="relative pb-6 sm:pl-16">
+                  <BrowserFrame src="/images/landing/dash-analytics.jpg" alt="A listing's analytics: views by day, where visitors came from, devices, and how far they got" />
+                  <Phone src="/images/landing/m-report.jpg" alt="The seller report page on a phone" className="hidden sm:block absolute -bottom-2 left-0 w-[124px]" />
                 </div>
               }
+              caption={SAMPLE}
             />
             <Feature
+              eyebrow="Flyers"
+              title="Print-ready flyers, in three styles."
+              body="Every listing makes a one-page flyer from the same details as its website. Pick Classic, Minimal editorial, or Luxury dark, choose the photos and features, and the page checks that it all fits on one printed sheet."
+              bullets={[
+                "A QR code that sends scans to the listing site, counted in your analytics",
+                "A fit check that shows how much room is left, and trims the blurb to fit for you",
+                "Print or save as a PDF straight from the page",
+              ]}
+              visual={
+                <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                  {[["/images/landing/flyer-classic.jpg", "Classic"], ["/images/landing/flyer-editorial.jpg", "Minimal editorial"], ["/images/landing/flyer-luxury.jpg", "Luxury dark"]].map(([src, name]) => (
+                    <figure key={name} className="overflow-hidden rounded-lg border border-black/10 bg-white shadow-xl shadow-black/20">
+                      <img src={src} alt={`The ${name} flyer`} loading="lazy" className="block w-full h-auto" />
+                      <figcaption className="px-2 py-1.5 text-center text-[11px] text-[#1c1a17]/60">{name}</figcaption>
+                    </figure>
+                  ))}
+                </div>
+              }
+              caption={SAMPLE}
+            />
+            <Feature
+              flip
               eyebrow="Blog"
               title="A blog you'll actually keep up."
               body="Neighborhood guides, local features, and market notes are how an agent gets found. The editor, the calendar, and the checklist are built to make a weekly post the easy thing to do."
@@ -292,7 +397,7 @@ export default function LandingPage() {
       {/* The back office */}
       <section className="px-6 lg:px-10 py-24 lg:py-32">
         <div className="mx-auto max-w-6xl">
-          <GroupHeader id="back-office" title="The back office" body="Leads, pipeline, and transactions, laid out the way agents think." />
+          <GroupHeader id="back-office" title="The back office" body="Contacts, leads, pipeline, and deals, laid out the way agents think." />
           <div className="mt-16 flex flex-col gap-24">
             <Feature
               eyebrow="Overview"
@@ -304,44 +409,107 @@ export default function LandingPage() {
             />
             <Feature
               flip
-              eyebrow="Leads"
-              title="Every lead has a next step."
-              body="Website inquiries, open house sign-ins, and referrals land on a board. Each card carries a follow-up date, and anything overdue turns red, so the person you meant to call doesn't slip."
-              bullets={["Tag each person as a buyer, a seller, or both", "Call, text, or email from inside the card", "A second inquiry from the same person joins their existing card", "Columns you can rename, reorder, and add"]}
-              visual={<BrowserFrame src="/images/landing/dash-leads.jpg" alt="The Leads board with buyer and seller tags and follow-up dates" />}
+              eyebrow="Contacts"
+              title="Everyone you know, in one private database."
+              body="Your sphere, past clients, referral partners, lenders, and vendors, with tags, notes, and a keep-in-touch reminder for each person. It's yours alone: no one else in your office can see your contacts."
+              bullets={[
+                "Tag people and save a filter as a smart list, like 'Due for a touch' or 'Holiday cards'",
+                "Log a call, text, email, meeting, or showing, and 'last in touch' updates itself",
+                "Import from a spreadsheet and merge duplicates into one record",
+                "Every lead, pipeline, and deal card links back to its contact",
+              ]}
+              visual={<BrowserFrame src="/images/landing/dash-contacts.jpg" alt="The Contacts page with tags, relationship, last contact, and saved smart lists" />}
               caption={SAMPLE}
             />
             <Feature
+              eyebrow="Leads"
+              title="Every lead has a next step."
+              body="Website inquiries, open house sign-ins, and referrals land on a board. Each column sets its own follow-up rhythm, so fresh leads come up every day and slower ones every couple of weeks. Anything overdue turns red, so the person you meant to call doesn't slip."
+              bullets={["Tag each person as a buyer, a seller, or both", "Board or list view, with search and filters, including 'due now'", "Call, text, or email from inside the card, and it counts as a touch", "Columns you can rename, reorder, and add"]}
+              visual={<BrowserFrame src="/images/landing/dash-leads.jpg" alt="The Leads board with follow-up cadence on every column, buyer and seller tags, and follow-up dates" />}
+              caption={SAMPLE}
+            />
+            <Feature
+              flip
               eyebrow="Pipeline"
               title="A pipeline that looks past this month."
-              body="Your sphere, your someday-buyers, and the sellers who'll list in spring, all in one place and sorted by how soon they're likely to move. The same board, the same follow-up dates, a longer horizon."
+              body="Your sphere, your someday-buyers, and the sellers who'll list in spring, all in one place and sorted by how soon they're likely to move. The same board, the same follow-up rhythm, a longer horizon."
               bullets={["Stages from 12+ months out to active, or whatever fits how you work", "Everyone you're nurturing, visible at a glance", "Move a card as the timeline changes"]}
               visual={<BrowserFrame src="/images/landing/dash-pipeline.jpg" alt="The Pipeline board, from 12 months out to active" />}
               caption={SAMPLE}
             />
             <Feature
-              flip
-              eyebrow="Transactions"
+              eyebrow="Deals"
               title="Under contract, nothing forgotten."
-              body="Each deal gets its key dates, the numbers, the title and lender, and buyer or seller checklists for tasks and documents, with deadlines counted from the contract date. Progress rings show how far along every deal is."
-              bullets={["Contract, inspection, appraisal, financing, and closing dates", "A task checklist and a document list, with seller and buyer versions you can edit", "Open deals, expected commission, and closed volume on your Overview"]}
+              body="Deals have their own place in the dashboard. Each one gets its key dates, the numbers, the title and lender, and buyer or seller checklists for tasks and documents, with deadlines counted from the contract date. Progress rings show how far along every deal is."
+              bullets={[
+                "An overview of what needs you now and what's coming in the next two weeks",
+                "Contract, inspection, appraisal, financing, and closing dates, plus earnest money",
+                "A task checklist and a document list, with seller and buyer versions you can edit",
+                "Open deals, expected commission, and closed volume on your Overview",
+              ]}
               visual={
                 <div className="relative pb-20 sm:pb-24">
-                  <BrowserFrame src="/images/landing/dash-transactions.jpg" alt="The Transactions board with task and document progress rings on every deal" />
+                  <BrowserFrame src="/images/landing/dash-deals.jpg" alt="The Deals page with needs-your-attention, coming-up dates, and deal totals" />
                   <img
-                    src="/images/landing/dash-checklists.jpg"
-                    alt="A deal's task and document checklists with progress rings"
-                    className="absolute -bottom-2 right-3 w-[62%] sm:w-[54%] rounded-xl border border-black/10 bg-white shadow-2xl shadow-black/25"
+                    src="/images/landing/dash-deal-tasks.jpg"
+                    alt="A deal's task checklist with a progress ring"
+                    loading="lazy"
+                    className="absolute -bottom-2 right-3 w-[62%] sm:w-[48%] rounded-xl border border-black/10 bg-white shadow-2xl shadow-black/25"
                   />
                 </div>
               }
               caption={SAMPLE}
             />
             <Feature
+              flip
+              eyebrow="Coordinators and compliance"
+              title="Bring your coordinator and your compliance reviewer in."
+              body="Pick a transaction coordinator for each deal and they see and work just that deal, with the agent kept informed. A compliance reviewer can read every deal's documents, mark each one approved or send it back with a note, and the agent gets an email when something comes back."
+              bullets={[
+                "A coordinator can start a deal on an agent's behalf, and the agent is emailed",
+                "Agents submit a deal for review; reviewers approve it or send it back with a note",
+                "A message thread on each deal keeps the conversation with the paperwork",
+                "Optional milestone emails and a Monday summary from the coordinator keep agents in the loop",
+              ]}
+              visual={
+                <img
+                  src="/images/landing/dash-deal-panel.jpg"
+                  alt="A deal's side panel: the address, stage, closing countdown, and tabs for tasks, documents, messages, and details"
+                  loading="lazy"
+                  className="mx-auto block w-full max-w-[520px] h-auto rounded-2xl border border-black/10 bg-white shadow-2xl shadow-black/20"
+                />
+              }
+              caption={SAMPLE}
+            />
+            <Feature
+              eyebrow="For your clients"
+              title="Show clients where they stand."
+              body="Send a buyer or seller a private link that shows their closing timeline: a countdown, what's done, what's still coming, and who's helping. It never shows price, commission, or your checklist. Send a vendor list the same way, and clients get your recommended inspector, mover, or plumber with a tap to call."
+              bullets={[
+                "A timeline page branded with you, with a personal note from you or your coordinator",
+                "Links you can switch off at any time, and that expire on their own",
+                "A preferred-vendor list for the whole office, shared with just the vendors you tick",
+              ]}
+              visual={
+                <div className="flex items-start justify-center gap-4 sm:gap-6">
+                  <Phone src="/images/landing/m-timeline.jpg" alt="A client's closing timeline page on a phone" className="w-[44%] max-w-[210px]" />
+                  <Phone src="/images/landing/m-vendors.jpg" alt="A vendor list shared with a client, on a phone" className="mt-10 w-[44%] max-w-[210px]" />
+                </div>
+              }
+              caption={SAMPLE}
+            />
+            <Feature
+              flip
               eyebrow="Listings"
               title="One place to manage every listing."
               body="Status, price, photos, and open houses live in a single dashboard, and the whole office can see coming-soon listings and what buyers want before anything is public."
-              bullets={["Add photos, pick the hero shot, and schedule open houses", "Upcoming listings and buyer needs tracked before they hit the market", "A brokerage-wide view when you manage more than one agent"]}
+              bullets={[
+                "Add photos, pick the hero shot, and schedule open houses",
+                "Upcoming listings and buyer needs tracked before they hit the market",
+                "A brokerage-wide view when you manage more than one agent",
+                "An office analytics page for brokers: views, sources, and agent websites, with a CSV export",
+              ]}
               visual={<BrowserFrame src="/images/landing/dashboard-overview.jpg" alt="The Listings dashboard" />}
             />
           </div>
@@ -384,8 +552,8 @@ export default function LandingPage() {
           <div className="mt-12 grid md:grid-cols-3 gap-6">
             {[
               ["Agents", "Your own site and blog, plus a lead and pipeline board you'll actually open. Everything an independent agent needs, with nothing you don't."],
-              ["Teams", "Give each person the access that fits: full website editing, blog only, or none, and switch the leads and pipeline tools on per agent."],
-              ["Offices", "A brokerage site with an agent roster, areas, and a blog, and a dashboard for every listing and every agent. Each office gets its own location and look."],
+              ["Teams", "Give each person the access that fits: full website editing, blog only, or none, and switch the contacts, leads, pipeline, and deals tools on per agent. Add a transaction coordinator or a compliance reviewer where you need one."],
+              ["Offices", "A brokerage site with an agent roster, areas, and a blog, and a dashboard for every listing and every agent, plus office analytics for the broker. Each office gets its own location and look."],
             ].map(([title, body], i) => (
               <Reveal key={title} variant="scaleIn" delay={i * 0.1} className="rounded-2xl bg-white dark:bg-[#161616] border border-black/5 dark:border-white/10 shadow-xl shadow-black/5 p-8">
                 <h3 className="text-lg font-display font-semibold">{title}</h3>

@@ -6,7 +6,7 @@ import { easeOut } from "./motion";
 // full-bleed screenshot. Proves a screen is real, not a mockup. Reused
 // across every marketing page — don't reuse it to frame arbitrary images
 // elsewhere in the product.
-export function BrowserFrame({ src, alt, className }) {
+export function BrowserFrame({ src, alt, className, eager = false }) {
   return (
     <motion.div
       whileHover={{ y: -6 }}
@@ -18,7 +18,7 @@ export function BrowserFrame({ src, alt, className }) {
         <span className="h-2.5 w-2.5 rounded-full bg-[#e8b23d]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#3fae5c]" />
       </div>
-      <img src={src} alt={alt} className="w-full h-auto block" />
+      <img src={src} alt={alt} loading={eager ? "eager" : "lazy"} className="w-full h-auto block" />
     </motion.div>
   );
 }
