@@ -9,6 +9,8 @@ import { useOrg } from "../../context/OrgContext";
 import BrandLogo from "../BrandLogo";
 import QuickActions from "./QuickActions";
 import GlobalSearch from "./GlobalSearch";
+import TabBar from "./TabBar";
+import useDashboardTabs from "../../hooks/useDashboardTabs";
 
 // The sidebar is a drawer. Open it is a menu with labels, anywhere from 224px to 360px wide (drag its right edge); closed it
 // is a 64px rail of icons that stays on the left of the screen. A quick flick, or dragging it narrow enough, closes it.
@@ -127,11 +129,12 @@ const ADMIN_ITEMS = [
 // top bar. Collapses to a top bar + slide-down panel below `md`, same
 // shape the old mobile nav already used.
 export default function DashboardLayout() {
-  const { profile, isAdmin, isPlatformAdmin } = useAuth();
+  const { profile, user, isAdmin, isPlatformAdmin } = useAuth();
   // The brand of the organization being worked in (the platform owner can switch between them).
   const { brand: brokerage, org } = useOrg();
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const tabs = useDashboardTabs(user?.id || profile?.id);
   const [searchOpen, setSearchOpen] = useState(false); // the dashboard search (Cmd or Ctrl K, or the search button)
   useEffect(() => {
     const onKey = (e) => {
@@ -733,6 +736,7 @@ export default function DashboardLayout() {
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} limited={workingElsewhere} />
 
       <main className="flex-1 min-w-0">
+        <TabBar tabs={tabs.tabs} active={tabs.active} onSelect={tabs.select} onAdd={tabs.add} onClose={tabs.close} max={tabs.max} />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-10 print:p-0 print:max-w-none print:mx-0">
           <Outlet />
         </div>

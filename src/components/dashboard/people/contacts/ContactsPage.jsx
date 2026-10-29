@@ -319,7 +319,7 @@ export default function ContactsPage() {
       </div>
 
       {picked.length > 0 && (
-        <div className="sticky top-2 z-20 mb-3 flex flex-wrap items-center gap-2 rounded-2xl bg-[#1c1a17] text-white px-4 py-3 shadow-lg" role="region" aria-label="Bulk actions">
+        <div className="sticky top-14 z-20 mb-3 flex flex-wrap items-center gap-2 rounded-2xl bg-[#1c1a17] text-white px-4 py-3 shadow-lg" role="region" aria-label="Bulk actions">
           <span className="text-sm font-semibold mr-1">{picked.length} selected</span>
           <TagPicker tags={tags} onPick={bulkTag} onCreate={async (n) => { const t = await createTag(n); return t; }} label="Tag" onDark />
           <TagPicker tags={tags} onPick={bulkUntag} label="Untag" onDark />
