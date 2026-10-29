@@ -59,7 +59,7 @@ const LAYOUTS = [
   { value: "portrait", label: "Portrait split", description: "Leads with the agent: a tall portrait beside their name, tagline, and a way to connect, then warm card-style sections." },
   { value: "listings", label: "Listings first", description: "A short banner, then the listings right away with a big feature home and status filters. The bio becomes a slim strip." },
   { value: "bold", label: "Bold statement", description: "Oversized uppercase type, full-bleed photos with text over them, solid color blocks, and big numbers." },
-  { value: "luxury", label: "Luxury minimal", description: "A full-screen photo, a centered uppercase headline and three outlined buttons (property search, buy, value my home)." },
+  { value: "luxury", label: "Luxury minimal", description: "A full-screen photo, a centered uppercase headline and three outlined buttons (buy, sell, value my home)." },
   { value: "warm", label: "Warm editorial", description: "A full-screen photo with a centered headline, one word of it in color (wrap it in asterisks in your tagline), and pill buttons." },
   { value: "guide", label: "Guide cards", description: "No photo up top: a calm headline with buying and selling guide buttons, then the buyer and seller cards." },
 ];

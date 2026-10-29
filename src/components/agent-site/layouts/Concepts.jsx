@@ -52,10 +52,10 @@ function HeroMedia() {
   );
 }
 
-// Luxury minimal: a full-screen photo darkened evenly, a small region line, a wide-tracked uppercase headline and outlined buttons, centered.
+// Luxury minimal: a full-screen photo darkened evenly, a small region line, a wide-tracked uppercase headline and outlined buttons to the buyer, seller and home value pages, centered.
 export function LuxuryHero() {
   const { site } = useAgentSiteContext();
-  const buttons = actions(site, [["/listings", "Property search"], ["buyers", "Buy a home"], ["value", "Value my home"]]);
+  const buttons = actions(site, [["buyers", "Buy a home"], ["sellers", "Sell your home"], ["value", "Value my home"]]);
   return (
     <section className="relative h-screen min-h-[640px] w-full">
       <HeroMedia />
