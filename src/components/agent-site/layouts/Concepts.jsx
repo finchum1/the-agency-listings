@@ -81,7 +81,7 @@ export function LuxuryHero() {
 // Warm editorial: a full-screen photo, a large centered headline with one word in color, a quiet line under it and two pill buttons.
 export function WarmHero() {
   const { site } = useAgentSiteContext();
-  const buttons = actions(site, [["/listings", "Find your home"], ["value", "What’s my home worth"]]);
+  const buttons = actions(site, [["buyers", "Buy a home"], ["value", "What’s my home worth"]]);
   return (
     <section className="relative h-screen min-h-[640px] w-full">
       <HeroMedia />
