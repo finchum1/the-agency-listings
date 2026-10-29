@@ -8,7 +8,6 @@ import { toKey } from "../../../lib/homeDates";
 import LeadAlertsCard from "./LeadAlertsCard";
 import ScheduleCard from "./ScheduleCard";
 import ScorecardCard from "./ScorecardCard";
-import Shortcuts from "./Shortcuts";
 import TasksCard from "./TasksCard";
 import TimeBlockModal from "./TimeBlockModal";
 import { muted } from "./styles";
@@ -20,7 +19,6 @@ export default function DashboardHomePage() {
   const tasksApi = useAgentTasks(user?.id);
   const [editTask, setEditTask] = useState(null);
 
-  const wantsBlog = (profile?.site_access || "full") !== "none";
   const wantsPeople = !!profile?.people_enabled;
   const peopleSummary = usePeopleSummary(wantsPeople);
   const { alerts, loading: alertsLoading, dismiss: dismissAlert } = useLeadAlerts(user?.id, wantsPeople);
@@ -56,8 +54,6 @@ export default function DashboardHomePage() {
           )}
         </p>
       </header>
-
-      <Shortcuts wantsBlog={wantsBlog} wantsPeople={wantsPeople} />
 
       <div className="grid gap-6 grid-cols-[minmax(0,1fr)] lg:grid-cols-3 items-start">
         <ScheduleCard userId={user?.id} wantsPeople={wantsPeople} tasksApi={tasksApi} span />

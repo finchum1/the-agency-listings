@@ -140,7 +140,7 @@ export default function QuickActions({ rail = false, limited = false, onSearch, 
             role="menu"
             aria-label="Add something new"
             style={{ left: menu.x, top: Math.max(8, Math.min(menu.y, window.innerHeight - (items.length * 52 + 56))), width: menu.w }}
-            className="fixed z-[60] rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] p-1.5 shadow-xl print:hidden"
+            className="fixed z-[60] rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] text-[#1c1a17] dark:text-[#faf9f7] p-1.5 shadow-xl print:hidden"
           >
             <p className="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/40 dark:text-[#faf9f7]/40">Add new</p>
             {items.map((item) => (
