@@ -81,15 +81,17 @@ export function buildTimeline(deal, today) {
     .filter((k) => source[k] && !(deal.is_cash && (k === "appraisal_date" || k === "financing_deadline")))
     .map((k) => ({ key: k, label: COPY[k].label, icon: COPY[k].icon, text: COPY[k][side], doneText: COPY[k].done[side], date: source[k], time: k === "inspection_date" ? deal.inspection_time || "" : "", days: daysBetween(today, source[k]) }))
     .sort((a, b) => a.date.localeCompare(b.date));
-  const nextIndex = items.findIndex((m) => m.days >= 0);
+  // Earnest money is only on the timeline once it is checked off, so it is always done, even on the day it was ticked.
+  const isDone = (m) => m.days < 0 || m.key === "earnest_money_delivered";
+  const nextIndex = items.findIndex((m) => !isDone(m));
   const closing = items.find((m) => m.key === "closing_date");
   const closed = Boolean(closing && closing.days < 0) || deal.stage === "Closed";
-  const marked = items.map((m, i) => ({ ...m, state: m.days < 0 ? "done" : i === nextIndex ? (m.days === 0 ? "today" : "next") : "later" }));
-  // How far the line between two milestones is filled: all of it once the later one has passed, else by dates.
+  const marked = items.map((m, i) => ({ ...m, state: isDone(m) ? "done" : i === nextIndex ? (m.days === 0 ? "today" : "next") : "later" }));
+  // How far the line between two milestones is filled: all of it once the later one is done, else by dates.
   const fill = marked.map((m, i) => {
     const nextItem = marked[i + 1];
     if (!nextItem) return 0;
-    if (nextItem.days < 0) return 1;
+    if (nextItem.state === "done") return 1;
     if (m.days > 0) return 0;
     const span = daysBetween(m.date, nextItem.date) || 1;
     return Math.max(0, Math.min(1, daysBetween(m.date, today) / span));

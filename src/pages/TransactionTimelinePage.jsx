@@ -90,7 +90,7 @@ export default function TransactionTimelinePage() {
   const author = messageFrom || agent;
   const brand = brandFromOrg(org);
   const { milestones, fill, closed, closing } = buildTimeline(deal, today);
-  const upcoming = milestones.filter((m) => m.days >= 0);
+  const upcoming = milestones.filter((m) => m.state !== "done");
   const first = milestones[0];
   const daysToClose = closing ? closing.days : null;
   const span = first && closing ? Math.max(1, daysBetween(first.date, closing.date)) : 1;
