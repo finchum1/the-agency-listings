@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useAgentSite } from "../hooks/useAgentSite";
 import TemplateCompare from "../components/TemplateCompare";
 import AgentSitePage from "./AgentSitePage";
-import { setPreviewBase } from "../lib/sitePreview";
+import { previewQuery, setPreviewBase } from "../lib/sitePreview";
 
 // /preview/<token>/site/...: one page of the agent's site, drawn from a share link's data (drafts included) with the
 // layout and colors in the address. Used as the frames inside the compare page, and for "Open full size".
@@ -50,13 +50,13 @@ export default function SitePreviewPage() {
   }
 
   const first = (agent?.full_name || "").split(" ")[0];
-  const pick = async (layout, theme) => {
+  const pick = async (layout, theme, header, footer) => {
     setBusy(true);
     setError("");
     try {
-      const res = await fetch("/api/site-preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, layout, theme }) });
+      const res = await fetch("/api/site-preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, layout, theme, header, footer }) });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "That didn't save. Try again.");
-      setPicked({ layout, theme });
+      setPicked({ layout, theme, header, footer });
     } catch (err) {
       setError(err.message);
     }
@@ -68,7 +68,7 @@ export default function SitePreviewPage() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10">
         <h1 className="font-display text-3xl sm:text-4xl font-semibold">{first ? `${first}, pick your website look` : "Pick your website look"}</h1>
         <p className="mt-3 max-w-2xl text-[#1c1a17]/65 dark:text-[#faf9f7]/65">
-          Here is your website in five different layouts, using your own photo, bio, and listings. Scroll inside any preview to look around, or open it full size. Choose a color theme
+          Here is your website in five different layouts, using your own photo, bio, and listings. Scroll inside any preview to look around, or open it full size. Choose a color theme, a header and a footer
           above the previews, then press the button on the one you like best. Nothing is final: you can change your mind later.
         </p>
         {picked && (
@@ -79,8 +79,8 @@ export default function SitePreviewPage() {
         {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
         <div className="mt-8">
           <TemplateCompare
-            buildUrl={(layout, theme) => `/preview/${token}/site?preview_layout=${layout}&preview_theme=${theme}`}
-            current={{ layout: null, theme: site.theme }}
+            buildUrl={(layout, theme, header, footer) => `/preview/${token}/site?${previewQuery({ layout, theme, header, footer })}`}
+            current={{ layout: null, theme: site.theme, header: site.header_style, footer: site.footer_style }}
             action={{ label: "I like this one", onPick: pick, busy, pickedLayout: picked?.layout }}
           />
         </div>

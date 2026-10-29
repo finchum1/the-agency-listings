@@ -19,7 +19,24 @@ export const THEME_OPTIONS = [
   { value: "red", label: "Red", swatches: ["#ffffff", "#ed2127", "#0d0d0d"] },
   { value: "linen", label: "Linen", swatches: ["#ffffff", "#f0ece4", "#ed2127"] },
 ];
+export const HEADER_OPTIONS = [
+  { value: "classic", label: "Classic bar" },
+  { value: "floating", label: "Floating pill" },
+  { value: "centered", label: "Centered logo" },
+  { value: "centered_pill", label: "Centered, floating" },
+  { value: "stacked", label: "Stacked" },
+  { value: "minimal", label: "Minimal" },
+];
+export const FOOTER_OPTIONS = [
+  { value: "classic", label: "Three columns" },
+  { value: "centered", label: "Centered" },
+  { value: "cta", label: "Call to action" },
+  { value: "wide", label: "Four columns" },
+  { value: "slim", label: "Slim bar" },
+];
 const LAYOUTS = LAYOUT_OPTIONS.map((l) => l.value);
+const HEADERS = HEADER_OPTIONS.map((h) => h.value);
+const FOOTERS = FOOTER_OPTIONS.map((f) => f.value);
 const THEMES = THEME_OPTIONS.map((t) => t.value);
 const PREFIX = "lp-preview:";
 
@@ -35,8 +52,15 @@ export function readPreviewOverrides(search, key) {
   const params = new URLSearchParams(search || "");
   const layout = params.get("preview_layout");
   const theme = params.get("preview_theme");
-  if ((layout && LAYOUTS.includes(layout)) || (theme && THEMES.includes(theme))) {
-    const found = { layout: LAYOUTS.includes(layout) ? layout : undefined, theme: THEMES.includes(theme) ? theme : undefined };
+  const header = params.get("preview_header");
+  const footer = params.get("preview_footer");
+  if ((layout && LAYOUTS.includes(layout)) || (theme && THEMES.includes(theme)) || (header && HEADERS.includes(header)) || (footer && FOOTERS.includes(footer))) {
+    const found = {
+      layout: LAYOUTS.includes(layout) ? layout : undefined,
+      theme: THEMES.includes(theme) ? theme : undefined,
+      header: HEADERS.includes(header) ? header : undefined,
+      footer: FOOTERS.includes(footer) ? footer : undefined,
+    };
     try {
       window.name = PREFIX + JSON.stringify({ key, ...found });
     } catch {
@@ -47,10 +71,20 @@ export function readPreviewOverrides(search, key) {
   try {
     if (window.name.startsWith(PREFIX)) {
       const saved = JSON.parse(window.name.slice(PREFIX.length));
-      if (saved.key === key) return { layout: saved.layout, theme: saved.theme };
+      if (saved.key === key) return { layout: saved.layout, theme: saved.theme, header: saved.header, footer: saved.footer };
     }
   } catch {
     /* no memory */
   }
   return null;
+}
+
+/** The query string for previewing a look: layout, colors, header and footer (any left out keep what the site has). */
+export function previewQuery({ layout, theme, header, footer }) {
+  const params = new URLSearchParams();
+  if (layout) params.set("preview_layout", layout);
+  if (theme) params.set("preview_theme", theme);
+  if (header) params.set("preview_header", header);
+  if (footer) params.set("preview_footer", footer);
+  return params.toString();
 }

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import TemplateCompare from "../TemplateCompare";
-import { LAYOUT_OPTIONS, THEME_OPTIONS } from "../../lib/sitePreview";
+import { FOOTER_OPTIONS, HEADER_OPTIONS, LAYOUT_OPTIONS, THEME_OPTIONS, previewQuery } from "../../lib/sitePreview";
 
 const when = (iso) => (iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "never");
 const layoutName = (v) => LAYOUT_OPTIONS.find((l) => l.value === v)?.label || v;
 const themeName = (v) => THEME_OPTIONS.find((t) => t.value === v)?.label || v;
+const headerName = (v) => HEADER_OPTIONS.find((h) => h.value === v)?.label || v;
+const footerName = (v) => FOOTER_OPTIONS.find((f) => f.value === v)?.label || v;
 const inputClass =
   "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
 
@@ -22,7 +24,7 @@ export default function CompareTemplatesPanel({ site, onChanged }) {
   const loadLinks = useCallback(async () => {
     const { data } = await supabase
       .from("site_preview_links")
-      .select("id, token_hint, created_at, expires_at, last_viewed_at, picked_layout, picked_theme, picked_at")
+      .select("id, token_hint, created_at, expires_at, last_viewed_at, picked_layout, picked_theme, picked_header, picked_footer, picked_at")
       .eq("agent_site_id", site.id)
       .is("revoked_at", null)
       .gt("expires_at", new Date().toISOString())
@@ -33,11 +35,13 @@ export default function CompareTemplatesPanel({ site, onChanged }) {
     loadLinks();
   }, [loadLinks]);
 
-  const use = async (layout, theme) => {
-    if (site.status === "published" && !confirm(`This site is live. Switch it to ${layoutName(layout)} with ${themeName(theme)} colors now?`)) return;
+  // Header and footer come along only when they were chosen (a pick from an older link has none, so the site keeps its own).
+  const use = async (layout, theme, header, footer) => {
+    const extras = [header && `${headerName(header)} header`, footer && `${footerName(footer)} footer`].filter(Boolean);
+    if (site.status === "published" && !confirm(`This site is live. Switch it to ${layoutName(layout)} with ${themeName(theme)} colors${extras.length ? `, a ${extras.join(" and a ")}` : ""} now?`)) return;
     setBusy(true);
     setError("");
-    const { error: err } = await supabase.from("agent_sites").update({ layout, theme }).eq("id", site.id);
+    const { error: err } = await supabase.from("agent_sites").update({ layout, theme, ...(header ? { header_style: header } : {}), ...(footer ? { footer_style: footer } : {}) }).eq("id", site.id);
     setBusy(false);
     if (err) setError(err.message);
     else onChanged?.();
@@ -77,7 +81,7 @@ export default function CompareTemplatesPanel({ site, onChanged }) {
       <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6">
         <h2 className="font-display text-lg font-semibold">Share with the agent</h2>
         <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
-          Make a private link the agent can open on any device, with no sign-in, even while the site is still a draft. They see their own site in every layout, choose the one they like,
+          Make a private link the agent can open on any device, with no sign-in, even while the site is still a draft. They see their own site in every layout, with a choice of colors, header and footer, pick the one they like,
           and you're emailed their pick. The link only shows the previews, never the editor.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -118,12 +122,14 @@ export default function CompareTemplatesPanel({ site, onChanged }) {
                 {l.picked_layout && (
                   <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                     Picked {layoutName(l.picked_layout)}
-                    {l.picked_theme ? `, ${themeName(l.picked_theme)}` : ""} ({when(l.picked_at)})
+                    {l.picked_theme ? `, ${themeName(l.picked_theme)}` : ""}
+                    {l.picked_header ? `, ${headerName(l.picked_header)} header` : ""}
+                    {l.picked_footer ? `, ${footerName(l.picked_footer)} footer` : ""} ({when(l.picked_at)})
                   </span>
                 )}
                 <span className="ml-auto flex items-center gap-4">
                   {l.picked_layout && (
-                    <button type="button" onClick={() => use(l.picked_layout, l.picked_theme || site.theme)} disabled={busy} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline disabled:opacity-50">
+                    <button type="button" onClick={() => use(l.picked_layout, l.picked_theme || site.theme, l.picked_header, l.picked_footer)} disabled={busy} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline disabled:opacity-50">
                       Use their pick
                     </button>
                   )}
@@ -138,10 +144,10 @@ export default function CompareTemplatesPanel({ site, onChanged }) {
       </div>
 
       <TemplateCompare
-        buildUrl={(layout, theme) => `/sites/${site.slug}?preview_layout=${layout}&preview_theme=${theme}`}
-        current={{ layout: site.layout || "classic", theme: site.theme || "classic" }}
+        buildUrl={(layout, theme, header, footer) => `/sites/${site.slug}?${previewQuery({ layout, theme, header, footer })}`}
+        current={{ layout: site.layout || "classic", theme: site.theme || "classic", header: site.header_style || "classic", footer: site.footer_style || "classic" }}
         action={{ label: "Use this layout", onPick: use, busy }}
-        intro={<p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-5">Live previews of this site in every layout. Pick colors, scroll inside a preview to look around, then use the one you want. Looking changes nothing.</p>}
+        intro={<p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-5">Live previews of this site in every layout. Pick colors, a header and a footer, scroll inside a preview to look around, then use the one you want. Looking changes nothing.</p>}
       />
     </div>
   );

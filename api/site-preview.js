@@ -11,6 +11,8 @@ import { sendNotification } from "./_lib/inquiry.js";
 const TOKEN = /^pv[0-9a-f]{64}$/;
 const LAYOUTS = ["classic", "editorial", "bold", "portrait", "listings", "luxury", "warm", "guide"];
 const THEMES = ["classic", "dark", "sand", "red", "linen"];
+const HEADERS = { classic: "Classic bar", floating: "Floating pill", centered: "Centered logo", centered_pill: "Centered logo, floating", stacked: "Stacked", minimal: "Minimal" };
+const FOOTERS = { classic: "Three columns", centered: "Centered", cta: "Call to action", wide: "Four columns", slim: "Slim bar" };
 const LAYOUT_NAMES = { classic: "Classic", editorial: "Minimal editorial", bold: "Bold statement", portrait: "Portrait split", listings: "Listings first", luxury: "Luxury minimal", warm: "Warm editorial", guide: "Guide cards" };
 
 async function findLink(admin, token) {
@@ -40,9 +42,10 @@ export default async function handler(req, res) {
   if (!link) return res.status(404).json({ error: "This link isn't valid anymore. Ask for a new one." });
 
   if (req.method === "POST") {
-    const { layout, theme } = req.body || {};
+    const { layout, theme, header, footer } = req.body || {};
     if (!LAYOUTS.includes(layout) || (theme !== undefined && !THEMES.includes(theme))) return res.status(400).json({ error: "Pick one of the layouts shown." });
-    await admin.from("site_preview_links").update({ picked_layout: layout, picked_theme: theme || null, picked_at: new Date().toISOString() }).eq("id", link.id);
+    if ((header != null && !HEADERS[header]) || (footer != null && !FOOTERS[footer])) return res.status(400).json({ error: "Pick a header and footer from the choices shown." });
+    await admin.from("site_preview_links").update({ picked_layout: layout, picked_theme: theme || null, picked_header: header || null, picked_footer: footer || null, picked_at: new Date().toISOString() }).eq("id", link.id);
     // Tell whoever shared the link, best effort: the pick is saved either way.
     try {
       const apiKey = process.env.RESEND_API_KEY;
@@ -52,7 +55,7 @@ export default async function handler(req, res) {
       ]);
       if (apiKey && owner?.email) {
         const who = site?.agent?.full_name || "Someone";
-        const look = `${LAYOUT_NAMES[layout]}${theme ? `, ${theme} colors` : ""}`;
+        const look = `${LAYOUT_NAMES[layout]}${theme ? `, ${theme} colors` : ""}${header ? `, ${HEADERS[header]} header` : ""}${footer ? `, ${FOOTERS[footer]} footer` : ""}`;
         await sendNotification(apiKey, {
           from: process.env.LEAD_FROM_EMAIL || "Listing Inquiries <onboarding@resend.dev>",
           to: [owner.email],

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { LAYOUT_OPTIONS, THEME_OPTIONS } from "../lib/sitePreview";
+import { FOOTER_OPTIONS, HEADER_OPTIONS, LAYOUT_OPTIONS, THEME_OPTIONS } from "../lib/sitePreview";
 
 const FRAME_W = 1280; // the width each preview is laid out at, then scaled down to fit its card
 const FRAME_H = 800;
@@ -32,19 +32,46 @@ function Frame({ src, title }) {
   );
 }
 
+// A labeled row of choices (header, footer), styled like the color row.
+function ChipRow({ label, options, value, onChange }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 mb-4" role="group" aria-label={label}>
+      <span className="text-xs font-semibold uppercase tracking-wide text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mr-1 w-14">{label}</span>
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          onClick={() => onChange(o.value)}
+          aria-pressed={value === o.value}
+          className={`rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
+            value === o.value ? "border-[#1c1a17] dark:border-[#faf9f7] bg-[#1c1a17] dark:bg-[#faf9f7] text-white dark:text-[#1c1a17]" : "border-black/10 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/10"
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // Shows the same site in every layout (and in the chosen color theme) so someone can pick the one they like.
-//   buildUrl(layout, theme)  the address of that preview
-//   current                  { layout, theme } the site uses today (marked "Current")
-//   action                   { label, onPick(layout, theme), busyKey?, pickedLayout? }  the button on each card
+//   buildUrl(layout, theme, header, footer)  the address of that preview
+//   current                  { layout, theme, header, footer } the site uses today (marked "Current")
+//   action                   { label, onPick(layout, theme, header, footer), busy?, pickedLayout? }  the button on each card
+// The header and footer start as the site's own and can be changed above the previews, like the colors.
 export default function TemplateCompare({ buildUrl, current, action, intro }) {
   const [theme, setTheme] = useState(current?.theme || "classic");
   useEffect(() => setTheme(current?.theme || "classic"), [current?.theme]);
+  const [header, setHeader] = useState(current?.header || "classic");
+  useEffect(() => setHeader(current?.header || "classic"), [current?.header]);
+  const [footer, setFooter] = useState(current?.footer || "classic");
+  useEffect(() => setFooter(current?.footer || "classic"), [current?.footer]);
 
   return (
     <div>
       {intro}
-      <div className="flex flex-wrap items-center gap-2 mb-6" role="group" aria-label="Color theme">
-        <span className="text-xs font-semibold uppercase tracking-wide text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mr-1">Colors</span>
+      <div className="flex flex-wrap items-center gap-2 mb-4" role="group" aria-label="Color theme">
+        <span className="text-xs font-semibold uppercase tracking-wide text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mr-1 w-14">Colors</span>
         {THEME_OPTIONS.map((t) => (
           <button
             key={t.value}
@@ -63,13 +90,16 @@ export default function TemplateCompare({ buildUrl, current, action, intro }) {
         ))}
       </div>
 
+      <ChipRow label="Header" options={HEADER_OPTIONS} value={header} onChange={setHeader} />
+      <div className="mb-2"><ChipRow label="Footer" options={FOOTER_OPTIONS} value={footer} onChange={setFooter} /></div>
+
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {LAYOUT_OPTIONS.map((l) => {
-          const isCurrent = current?.layout === l.value && current?.theme === theme;
+          const isCurrent = current?.layout === l.value && current?.theme === theme && (current?.header || "classic") === header && (current?.footer || "classic") === footer;
           const picked = action?.pickedLayout === l.value;
           return (
             <section key={l.value} className={`rounded-2xl border p-4 bg-white dark:bg-[#1a1a1a] ${picked ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/25" : "border-black/10 dark:border-white/10"}`} aria-label={l.label}>
-              <Frame src={buildUrl(l.value, theme)} title={`${l.label} layout`} />
+              <Frame src={buildUrl(l.value, theme, header, footer)} title={`${l.label} layout`} />
               <div className="mt-3 flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="font-display text-base font-semibold">
@@ -82,13 +112,13 @@ export default function TemplateCompare({ buildUrl, current, action, intro }) {
               <div className="mt-3 flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => action.onPick(l.value, theme)}
+                  onClick={() => action.onPick(l.value, theme, header, footer)}
                   disabled={action.busy || isCurrent}
                   className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-4 py-2 disabled:opacity-50"
                 >
                   {picked ? "Picked ✓" : isCurrent ? "In use" : action.label}
                 </button>
-                <a href={buildUrl(l.value, theme)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                <a href={buildUrl(l.value, theme, header, footer)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
                   Open full size ↗
                 </a>
               </div>

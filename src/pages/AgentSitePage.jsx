@@ -37,7 +37,7 @@ export default function AgentSitePage({
   // requested ones, and nothing is saved or counted as a visit.
   const overrides = useMemo(() => (site ? readPreviewOverrides(location.search, getPreviewBase() ? "share" : site.slug) : null), [site, location.search]);
   const previewing = Boolean(overrides) || Boolean(getPreviewBase());
-  const shown = site && overrides ? { ...site, ...(overrides.layout ? { layout: overrides.layout } : {}), ...(overrides.theme ? { theme: overrides.theme } : {}) } : site;
+  const shown = site && overrides ? { ...site, ...(overrides.layout ? { layout: overrides.layout } : {}), ...(overrides.theme ? { theme: overrides.theme } : {}), ...(overrides.header ? { header_style: overrides.header } : {}), ...(overrides.footer ? { footer_style: overrides.footer } : {}) } : site;
   const adapted = shown ? adaptAgentSite({ site: shown, agent, testimonials, areas, posts, listings, sales }) : null;
   // "about" | "listings" | "areas" | "blog" | "contact" | undefined (Home)
   // — matches buildAgentSitePageMeta's page keys 1:1 since pageTitle is
