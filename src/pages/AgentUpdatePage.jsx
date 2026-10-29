@@ -86,8 +86,14 @@ export default function AgentUpdatePage() {
   const brand = brandFromOrg(org);
   const agentFirst = (agent?.full_name || "").split(" ")[0];
   const senderFirst = (sender?.full_name || "").split(" ")[0];
-  const dated = DATES.filter(([k]) => deal[k] && !(deal.is_cash && (k === "appraisal_date" || k === "financing_deadline"))).map(([k, label]) => ({ key: k, label, date: deal[k], days: daysBetween(today, deal[k]) })).sort((a, b) => a.date.localeCompare(b.date));
-  const nextKey = dated.find((d) => d.days >= 0)?.key;
+  const dated = DATES.filter(([k]) => deal[k] && !(deal.is_cash && (k === "appraisal_date" || k === "financing_deadline"))).map(([k, label]) => ({ key: k, label, date: deal[k], days: daysBetween(today, deal[k]) }));
+  // Earnest money joins the key dates once it is checked off, on the day it was delivered, and always counts as done.
+  if (deal.earnest_money_delivered && deal.earnest_money_delivered_at) {
+    const day = chicagoDay(deal.earnest_money_delivered_at);
+    dated.push({ key: "earnest_money_delivered", label: "Earnest money delivered", date: day, days: daysBetween(today, day), done: true });
+  }
+  dated.sort((a, b) => a.date.localeCompare(b.date));
+  const nextKey = dated.find((d) => !d.done && d.days >= 0)?.key;
   const closing = dated.find((d) => d.key === "closing_date");
   const overdue = openTasks.filter((t) => t.due && t.due < today);
   const missing = docs.filter((d) => !d.done);
@@ -170,7 +176,7 @@ export default function AgentUpdatePage() {
             <h2 className="font-display text-2xl font-semibold mb-3">Key dates</h2>
             <ul className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {dated.map((d) => {
-                const done = d.days < 0;
+                const done = d.done || d.days < 0;
                 const next = d.key === nextKey;
                 return (
                   <li key={d.key} className={`rounded-2xl p-4 border ${next ? "bg-[#1c1a17] text-white border-[#1c1a17]" : done ? "bg-white/70 border-black/[0.05]" : "bg-white border-black/[0.06]"}`}>
@@ -184,20 +190,6 @@ export default function AgentUpdatePage() {
           </section>
         )}
 
-        {(deal.earnest_money != null || deal.earnest_money_delivered) && (
-          <section aria-label="Earnest money">
-            <h2 className="font-display text-2xl font-semibold mb-3">Earnest money</h2>
-            <div className={`${card} p-4 flex items-center justify-between gap-3`}>
-              <span className="min-w-0 font-medium">
-                {deal.earnest_money != null ? `$${Number(deal.earnest_money).toLocaleString()}` : "Amount not entered"}
-                <span className="block text-sm font-normal text-[#1c1a17]/60">{deal.earnest_money_delivered ? "Delivered to the title company" : "Not at the title company yet"}</span>
-              </span>
-              <Pill tone={deal.earnest_money_delivered ? "green" : "amber"}>
-                {deal.earnest_money_delivered ? (deal.earnest_money_delivered_at ? `Delivered ${prettyDate(chicagoDay(deal.earnest_money_delivered_at), { month: "short", day: "numeric" })}` : "Delivered") : "Waiting"}
-              </Pill>
-            </div>
-          </section>
-        )}
 
         <section aria-label="Tasks">
           <h2 className="font-display text-2xl font-semibold mb-3">Tasks</h2>
