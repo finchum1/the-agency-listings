@@ -56,6 +56,7 @@ import BrokerageAreaPage from "./pages/BrokerageAreaPage";
 import BrokerageSiteEditor from "./components/dashboard/BrokerageSiteEditor";
 import PeopleGate from "./components/dashboard/people/PeopleGate";
 import ProspectsPage from "./components/dashboard/people/ProspectsPage";
+import PeopleLayout from "./components/dashboard/people/PeopleLayout";
 import PeopleOverview from "./components/dashboard/people/PeopleOverview";
 import SettingsPage from "./components/dashboard/people/SettingsPage";
 import BrandSettingsPage from "./components/dashboard/BrandSettingsPage";
@@ -407,14 +408,18 @@ export default function App() {
         <Route path="upcoming" element={<UpcomingModule />} />
         <Route path="vendors" element={<VendorsPage />} />
         <Route path="settings" element={<PeopleGate />}>
-          <Route index element={<SettingsPage />} />
+          <Route element={<PeopleLayout />}>
+            <Route index element={<SettingsPage />} />
+          </Route>
         </Route>
         <Route path="people" element={<PeopleGate />}>
           <Route index element={<Navigate to="overview" replace />} />
-          <Route path="overview" element={<PeopleOverview />} />
-          <Route path="contacts" element={<ContactsPage />} />
-          <Route path="leads" element={<ProspectsPage group="lead" />} />
-          <Route path="pipeline" element={<ProspectsPage group="pipeline" />} />
+          <Route element={<PeopleLayout />}>
+            <Route path="overview" element={<PeopleOverview />} />
+            <Route path="contacts" element={<ContactsPage />} />
+            <Route path="leads" element={<ProspectsPage group="lead" />} />
+            <Route path="pipeline" element={<ProspectsPage group="pipeline" />} />
+          </Route>
           <Route path="transactions" element={<Navigate to="/dashboard/deals" replace />} />
         </Route>
         <Route path="deals" element={<DealsGate />}>

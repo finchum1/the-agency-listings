@@ -94,13 +94,7 @@ const NAV_ITEMS = [
 // group rather than mixed into NAV_ITEMS.
 // People is its own module, switched on per agent by an admin
 // (profiles.people_enabled) — separate from site_access, which only
-// governs website editing. Shown as a collapsible group.
-const PEOPLE_ITEMS = [
-  { to: "/dashboard/people/overview", label: "Overview" },
-  { to: "/dashboard/people/contacts", label: "Contacts" },
-  { to: "/dashboard/people/leads", label: "Leads" },
-  { to: "/dashboard/people/pipeline", label: "Pipeline" },
-];
+// governs website editing. One People entry; its pages are the menu inside the module (people/PeopleLayout.jsx).
 
 const ADMIN_ITEMS = [
   { to: "/dashboard/office-analytics", label: "Office Analytics" },
@@ -278,7 +272,6 @@ export default function DashboardLayout() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileNavOpen]);
-  const [peopleOpen, setPeopleOpen] = useState(location.pathname.startsWith("/dashboard/people"));
   const inAdminArea = (path) =>
     [...ADMIN_ITEMS.map((i) => i.to), "/dashboard/brand", "/dashboard/organizations"].some((to) => path === to || path.startsWith(`${to}/`));
   const [adminOpen, setAdminOpen] = useState(inAdminArea(location.pathname));
@@ -287,7 +280,6 @@ export default function DashboardLayout() {
   // opens the menu group that page belongs to, so the highlighted item is always visible. Groups never close by themselves.
   useEffect(() => {
     const path = location.pathname;
-    if (path.startsWith("/dashboard/people")) setPeopleOpen(true);
     if (inAdminArea(path)) setAdminOpen(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
@@ -355,7 +347,7 @@ export default function DashboardLayout() {
   const NavList = ({ onNavigate, rail = false }) => {
     const path = location.pathname;
     const inSite = path === "/dashboard/site" || path.startsWith("/dashboard/site/");
-    const inPeople = path.startsWith("/dashboard/people");
+    const inPeople = path === "/dashboard/people" || path.startsWith("/dashboard/people/") || path === "/dashboard/settings";
 
     // Closed drawer: one icon per main item. A group's icon goes to the first page in that group.
     if (rail) {
@@ -408,7 +400,7 @@ export default function DashboardLayout() {
           <div className="flex flex-col gap-1.5">
             {!workingElsewhere && railItem("Home", "home", path === "/dashboard" || path === "/dashboard/", { to: "/dashboard" })}
             {!workingElsewhere && siteAccess !== "none" && railItem("Website", "website", inSite, { to: siteHome })}
-            {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { items: PEOPLE_ITEMS })}
+            {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { to: "/dashboard/people/overview" })}
             {!workingElsewhere && deals.any && railItem("Deals", "deals", path.startsWith("/dashboard/deals"), { to: "/dashboard/deals", badge: dealsAttention.total })}
             {NAV_ITEMS.map((item) => railItem(item.label, item.icon, item.activeWhen(path), { to: item.to }))}
           </div>
@@ -481,7 +473,14 @@ export default function DashboardLayout() {
             </Link>
           </div>
         )}
-        {!workingElsewhere && profile?.people_enabled && group("People", "people", peopleOpen, setPeopleOpen, PEOPLE_ITEMS)}
+        {!workingElsewhere && profile?.people_enabled && (
+          <div className="mt-1 space-y-1">
+            <Link to="/dashboard/people/overview" onClick={onNavigate} className={`${navLinkClass(inPeople)} flex items-center gap-3`}>
+              <NavIcon name="people" />
+              People
+            </Link>
+          </div>
+        )}
         {!workingElsewhere && deals.any && (
           <div className="mt-1 space-y-1">
             <Link to="/dashboard/deals" onClick={onNavigate} className={`${navLinkClass(path.startsWith("/dashboard/deals"))} flex items-center gap-3`}>
