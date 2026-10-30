@@ -617,6 +617,22 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
     runStageChange(() => removeStage(group, stage, count));
   };
 
+  // The board is as tall as the screen allows: from where it starts to a little above the bottom edge, so the page itself never needs to scroll.
+  // Re-fitted after every render (the header above it can wrap or gain a line) and when the window changes size.
+  const [boardH, setBoardH] = useState(null);
+  useLayoutEffect(() => {
+    const fit = () => {
+      const el = boardRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      const next = Math.max(416, Math.round(window.innerHeight - top - 16));
+      setBoardH((cur) => (cur !== null && Math.abs(cur - next) < 2 ? cur : next));
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  });
+
   // Measured once the board is on screen (not while it is still loading), again whenever the peek opens or the window changes size.
   const peekOpen = !!selected;
   useLayoutEffect(() => {
@@ -643,25 +659,32 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
         paddingBottom: peekOpen && !isDesktop ? "14rem" : undefined,
       }}
     >
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      {/* The title, and beside it the controls for the board (view, filters, adding someone), so the board gets the height. */}
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-display font-semibold">{board.title}</h1>
           <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
             {active.length + foreign.length} {group === "transaction" ? (active.length + foreign.length === 1 ? "deal" : "deals") : active.length === 1 ? "person" : "people"}
+            {!overviewOnly && renderOverview && !loading && (
+              <>
+                <span aria-hidden="true"> · </span>
+                {renderOverview({ deals: active, progress, closedStage, openDeal: setSelectedId, selectedId })}
+              </>
+            )}
           </p>
         </div>
+        {!overviewOnly && (
+          <div className="flex flex-wrap items-center gap-3">
+            {typeof toolbarLeft === "function" ? toolbarLeft({ ownCount: active.length }) : toolbarLeft}
+          </div>
+        )}
       </div>
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-      {renderOverview && !loading && renderOverview({ deals: active, progress, closedStage, openDeal: setSelectedId, selectedId })}
+      {overviewOnly && renderOverview && !loading && renderOverview({ deals: active, progress, closedStage, openDeal: setSelectedId, selectedId })}
 
       {boardError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{boardError}</p>}
-
-      {/* The controls that belong to the board itself, right above it: view and filter. Adding a column is the ghost column at the end of the board, as in Trello. */}
-      {!overviewOnly && <div className="flex flex-wrap items-center gap-3">
-        {typeof toolbarLeft === "function" ? toolbarLeft({ ownCount: active.length }) : toolbarLeft}
-      </div>}
 
       {/* The board is a fixed-height strip: it scrolls sideways, and each
           column scrolls up and down on its own. The strip is the full board
@@ -670,7 +693,7 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
       {overviewOnly ? null : view === "list" && renderList ? (
         renderList({ own: showOwn ? active : [], foreign, progress, closedStage, stages, openDeal: setSelectedId, openForeign: onOpenForeign, cadenceFor })
       ) : (
-      <div ref={boardRef} className="flex gap-3 overflow-x-auto overflow-y-hidden h-[calc(100vh-19rem)] min-h-[26rem] -mx-1 px-1 pb-1">
+      <div ref={boardRef} style={boardH ? { height: boardH } : undefined} className="flex gap-3 overflow-x-auto overflow-y-hidden h-[calc(100vh-14rem)] min-h-[26rem] -mx-1 px-1 pb-1">
         {displayStages.map((stage, stageIndex) => {
           const isForeignCol = stageIndex >= stages.length;
           const col = [...(showOwn && !isForeignCol ? sortCol(active.filter((p) => p.stage === stage)) : []), ...sortCol(foreign.filter((p) => columnOf(p) === stage))];
