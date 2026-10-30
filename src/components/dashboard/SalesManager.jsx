@@ -14,6 +14,9 @@ const soldLabel = (d) => (d ? new Date(`${d}T12:00:00`).toLocaleDateString("en-U
 
 // The homes an agent has sold, shown on their site as "Recently Sold" right under their current listings: a photo, the
 // address, the price and a "Sold <month year>" tag. Add one by hand, or copy it from one of their closed listings.
+// A long run of past sales is shown a few at a time, newest first.
+const SHOW_STEP = 5;
+
 export default function SalesManager({ agentSiteId, agentId, sales, onChanged }) {
   const [editingId, setEditingId] = useState(null); // null = closed, "new" = adding
   const [form, setForm] = useState(emptyForm);
@@ -21,6 +24,7 @@ export default function SalesManager({ agentSiteId, agentId, sales, onChanged })
   const [error, setError] = useState("");
   const [closed, setClosed] = useState([]);
   const [picking, setPicking] = useState(false);
+  const [shown, setShown] = useState(SHOW_STEP); // how many sales the list shows; "Show more" adds another few
 
   // Their closed listings, so a sale can be copied over instead of retyped. One already copied is left out.
   useEffect(() => {
@@ -135,7 +139,7 @@ export default function SalesManager({ agentSiteId, agentId, sales, onChanged })
 
       {editingId === null && ordered.length > 0 && (
         <div className="space-y-2">
-          {ordered.map((s) => (
+          {ordered.slice(0, shown).map((s) => (
             <div key={s.id} className="border border-black/10 dark:border-white/15 rounded-xl p-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="h-10 w-14 rounded-lg bg-black/5 dark:bg-white/10 overflow-hidden shrink-0">{s.photo_url && <img src={s.photo_url} alt="" className="h-full w-full object-cover" />}</div>
@@ -153,6 +157,17 @@ export default function SalesManager({ agentSiteId, agentId, sales, onChanged })
               </div>
             </div>
           ))}
+          {ordered.length > shown && (
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={() => setShown((n) => n + SHOW_STEP)}
+                className="rounded-full border border-black/15 dark:border-white/20 px-5 py-2 text-xs font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              >
+                Show more ({ordered.length - shown} more)
+              </button>
+            </div>
+          )}
         </div>
       )}
 
