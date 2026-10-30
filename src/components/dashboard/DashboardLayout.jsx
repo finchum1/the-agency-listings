@@ -30,8 +30,9 @@ function readNav() {
   return { open: true, px: DEFAULT_OPEN_PX };
 }
 
-// What the People menu offers beside the row (Overview is the row itself). Settings lives here now that the page has no row of pills above it.
+// What the People menu offers beside the row. Clicking the row itself also goes to Overview; Settings lives here now that the page has no row of pills above it.
 const PEOPLE_MENU = [
+  { to: "/dashboard/people/overview", label: "Overview" },
   { to: "/dashboard/people/contacts", label: "Contacts" },
   { to: "/dashboard/people/leads", label: "Leads" },
   { to: "/dashboard/people/pipeline", label: "Pipeline" },
@@ -802,7 +803,7 @@ export default function DashboardLayout() {
             className="fixed z-[60] min-w-[200px] rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] p-1.5 text-[#1c1a17] dark:text-[#faf9f7] shadow-xl print:hidden"
           >
             <p className="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/40 dark:text-[#faf9f7]/40">People</p>
-            {[...(peopleMenu.touch ? [{ to: "/dashboard/people/overview", label: "Overview" }] : []), ...PEOPLE_MENU].map((item) => (
+            {PEOPLE_MENU.map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
