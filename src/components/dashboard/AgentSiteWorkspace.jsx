@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { Navigate, useLocation } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import useSiteSummary from "../../hooks/useSiteSummary";
 import SiteEditor from "./SiteEditor";
@@ -84,20 +84,36 @@ export default function AgentSiteWorkspace({ agentId, agentName, mode, section, 
       onStatusChange={site ? changeStatus : null}
       checklist={checklist}
     >
-      {/* A page is long, so its parts are listed here as jump links (they stay in view while the page scrolls). */}
-      <nav aria-label={`${group.title} on this page`} className="sticky top-[3.4rem] z-20 -mx-1 mb-4 flex flex-wrap items-center gap-1.5 bg-[#faf9f7] dark:bg-[#0d0d0d] px-1 py-2">
-        <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/45 dark:text-[#faf9f7]/45">Jump to</span>
-        {group.items.map((item) => (
-          <button
-            key={partAnchor(item)}
-            type="button"
-            onClick={() => document.getElementById(partAnchor(item))?.scrollIntoView({ behavior: "smooth", block: "start" })}
-            className="rounded-full border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] px-3 py-1 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/10"
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
+      {/* The four pages of the editor, and under them the parts of the one showing (a page is long, so those are jump links). Both stay in view while it scrolls. */}
+      <div className="sticky top-[3.4rem] z-20 -mx-1 mb-4 bg-[#faf9f7] dark:bg-[#0d0d0d] px-1 pt-2">
+        <nav aria-label="Site pages" className="flex flex-wrap items-center gap-1 border-b border-black/10 dark:border-white/15">
+          {SITE_GROUPS.map((g) => (
+            <Link
+              key={g.key}
+              to={`${base}/${g.key}`}
+              aria-current={g.key === section ? "page" : undefined}
+              className={`-mb-px border-b-2 px-4 py-2 text-sm font-semibold transition-colors ${
+                g.key === section ? "border-[#1c1a17] dark:border-[#faf9f7] text-[#1c1a17] dark:text-[#faf9f7]" : "border-transparent text-[#1c1a17]/55 dark:text-[#faf9f7]/55 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+              }`}
+            >
+              {g.title}
+            </Link>
+          ))}
+        </nav>
+        <nav aria-label={`${group.title} on this page`} className="flex flex-wrap items-center gap-1.5 py-2">
+          <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/45 dark:text-[#faf9f7]/45">Jump to</span>
+          {group.items.map((item) => (
+            <button
+              key={partAnchor(item)}
+              type="button"
+              onClick={() => document.getElementById(partAnchor(item))?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              className="rounded-full border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] px-3 py-1 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      </div>
       <SiteEditor key={`${agentId}-${section}`} agentId={agentId} agentName={agentName} group={section} hideHeader />
     </SiteWorkspace>
   );
