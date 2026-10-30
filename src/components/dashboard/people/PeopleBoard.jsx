@@ -647,7 +647,7 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
         <div className="min-w-0">
           <h1 className="text-2xl font-display font-semibold">{board.title}</h1>
           <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
-            {active.length + foreign.length} {group === "transaction" ? (active.length + foreign.length === 1 ? "deal" : "deals") : active.length === 1 ? "person" : "people"} · drag cards between columns, drag a column's ⋮⋮ grip (or use ⋯) to reorder, click a title to rename it, or use + to add someone.
+            {active.length + foreign.length} {group === "transaction" ? (active.length + foreign.length === 1 ? "deal" : "deals") : active.length === 1 ? "person" : "people"}
           </p>
         </div>
       </div>
