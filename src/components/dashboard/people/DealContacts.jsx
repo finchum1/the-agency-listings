@@ -18,6 +18,19 @@ export const CONTACT_ROLES = [
   { key: "loan_processor", label: "Loan processor", name: "loan_processor_name", email: "loan_processor_email", nameLabel: "Name", cashHides: true },
 ];
 
+// One click opens a new email to a whole group: the people on that side of the deal, addressed together, with the property as the subject.
+const TEAMS = [
+  { label: "Title team", emails: ["title_company_email", "title_processor_email"] },
+  { label: "Other agent & TC", emails: ["other_agent_email", "other_agent_tc_email"] },
+  { label: "Lender & processor", emails: ["lender_email", "loan_processor_email"], cashHides: true },
+];
+const mailtoFor = (values, team) => {
+  const to = [...new Set(team.emails.map((k) => String(values[k] || "").trim()).filter(Boolean))];
+  if (to.length === 0) return null;
+  const subject = values.property_address ? `Re: ${values.property_address}` : "";
+  return `mailto:${to.join(",")}${subject ? `?subject=${encodeURIComponent(subject)}` : ""}`;
+};
+
 const initials = (name) => {
   const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "";
@@ -58,6 +71,31 @@ export default function DealContacts({ values, editing, onChange, onCommit, cash
   return (
     <section aria-label="People on this deal" className="min-w-0 space-y-3">
       <h4 className="text-xs font-semibold uppercase tracking-wide text-[#1c1a17]/50 dark:text-[#faf9f7]/50">People on this deal</h4>
+      {!editing && (
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Email a team">
+          {TEAMS.filter((t) => !(cash && t.cashHides)).map((t) => {
+            const href = mailtoFor(values, t);
+            const cls = "inline-flex items-center gap-1.5 rounded-full border border-black/10 dark:border-white/15 px-3 py-1.5 text-xs font-medium";
+            const icon = (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <path d="M3.5 7l8.5 6 8.5-6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            );
+            return href ? (
+              <a key={t.label} href={href} title={`Email ${href.slice(7).split("?")[0].replace(/,/g, ", ")}`} className={`${cls} hover:bg-black/5 dark:hover:bg-white/10`}>
+                {icon}
+                Email {t.label}
+              </a>
+            ) : (
+              <span key={t.label} title="No email addresses added yet" className={`${cls} cursor-not-allowed opacity-40`}>
+                {icon}
+                Email {t.label}
+              </span>
+            );
+          })}
+        </div>
+      )}
       <div className="grid gap-3 @md:grid-cols-2">
         {shown.map((r) => {
           const name = values[r.name] || "";
