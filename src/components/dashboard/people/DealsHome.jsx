@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { onDealWork } from "../../../lib/dealEvents";
 import { effectiveDue } from "../../../lib/checklists";
-import { addDays, dayLabel, toKey } from "../../../lib/homeDates";
+import { addDays, dayLabel, daysBetween, toKey } from "../../../lib/homeDates";
+import { clockLabel } from "../../../lib/timeline";
 import { ComplianceChip } from "./DealCompliance";
 
 const money = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -54,7 +55,8 @@ function Row({ onClick, primary, secondary, right, urgent, onCheck }) {
 // "needs you" link, for the board page), and every
 // row opens that deal in the side panel (`openDeal`). `deals` are the agent's live (not archived) deals; the board already has them, so nothing here is
 // fetched twice except the open tasks and waiting drafts.
-export default function DealsHome({ deals, closedStage, openDeal, selectedId, lineOnly = false }) {
+export default function DealsHome({ deals, closedStage, stages = [], progress = {}, openDeal, selectedId, lineOnly = false }) {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [drafts, setDrafts] = useState([]);
   const [more, setMore] = useState({});
@@ -174,8 +176,63 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId, li
     );
   };
 
-  // Key dates grouped by day, flattened to rows that show the day beside each item.
-  const dateItems = upcoming.map((u, i) => ({ key: `${u.person.id}-${u.label}-${i}`, person: u.person, primary: `${u.label} · ${title(u.person)}`, secondary: `${u.person.property_address ? u.person.name : ""}${where(u.person)}`.replace(/^ · /, ""), right: <span className={`shrink-0 text-xs font-medium ${u.date === today ? "text-amber-700 dark:text-amber-400" : muted}`}>{dayLabel(u.date, today)}</span> }));
+  // Where the pipeline stands: every open stage in the order of the board, then what has closed this year. Each segment opens the board.
+  const stageSegs = (stages || [])
+    .filter((name) => name !== closedStage)
+    .map((name) => {
+      const inStage = openDeals.filter((p) => colOf(p) === name);
+      return { name, n: inStage.length, volume: sum(inStage, "price") };
+    })
+    .filter((seg) => seg.n > 0);
+
+  // Open deals with something that could go wrong soon. A deal sent back by compliance is already under "Needs your attention", so it is not repeated.
+  const SOON = 5;
+  // "today" and "tomorrow" read mid-sentence in lower case; a date ("Thu, Nov 5") stays as it is.
+  const soonLabel = (date) => {
+    const l = dayLabel(date, today);
+    return /^(Today|Tomorrow)$/.test(l) ? l.toLowerCase() : l;
+  };
+  const risks = [];
+  for (const p of openDeals) {
+    const why = [];
+    let urgent = false;
+    let when = "9999";
+    const flag = (text, date, isUrgent = false) => {
+      why.push(text);
+      if (isUrgent) urgent = true;
+      if (date && date < when) when = date;
+    };
+    const within = (date, days) => date && date >= today && date <= toKey(addDays(now, days));
+    if (within(p.inspection_period_end, 3)) flag(`Inspection period ends ${soonLabel(p.inspection_period_end)}`, p.inspection_period_end);
+    if (!p.is_cash && p.financing_deadline) {
+      if (p.financing_deadline < today) flag(`Financing deadline passed ${daysBetween(p.financing_deadline, today)} day${daysBetween(p.financing_deadline, today) === 1 ? "" : "s"} ago`, p.financing_deadline, true);
+      else if (within(p.financing_deadline, SOON)) flag(`Financing deadline ${soonLabel(p.financing_deadline)}`, p.financing_deadline);
+    }
+    if (Number(p.earnest_money) > 0 && !p.earnest_money_delivered && p.contract_date && daysBetween(p.contract_date, today) >= 3) flag(`Earnest money not delivered (${daysBetween(p.contract_date, today)} days since contract)`, today, true);
+    if (p.closing_date && p.closing_date < today) flag(`Closing date passed ${daysBetween(p.closing_date, today)} day${daysBetween(p.closing_date, today) === 1 ? "" : "s"} ago`, p.closing_date, true);
+    else if (within(p.closing_date, 7)) {
+      const pr = progress[p.id]?.tasks;
+      if (pr && pr.total > 0 && pr.done < pr.total) flag(`Closes ${soonLabel(p.closing_date)}, ${pr.done} of ${pr.total} tasks done`, p.closing_date);
+      if (p.compliance_status !== "approved" && p.compliance_status !== "needs_changes") flag(`Closes ${soonLabel(p.closing_date)}, compliance not approved`, p.closing_date);
+    }
+    if (why.length) risks.push({ person: p, why, urgent, when });
+  }
+  risks.sort((a, b) => Number(b.urgent) - Number(a.urgent) || a.when.localeCompare(b.when));
+  const riskItems = risks.map((r) => ({ key: `r-${r.person.id}`, person: r.person, primary: title(r.person), secondary: `${r.why.join(" · ")}${where(r.person)}`, urgent: r.urgent }));
+
+  // The next two weeks as an agenda: key dates and tasks, grouped by day (tasks already due or overdue are under "Needs your attention").
+  const agenda = new Map();
+  const put = (date, entry) => agenda.set(date, [...(agenda.get(date) || []), entry]);
+  for (const u of upcoming) {
+    const time = u.label === "Inspection" && u.person.inspection_time ? clockLabel(u.person.inspection_time) : "";
+    put(u.date, { key: `${u.person.id}-${u.label}`, kind: "date", person: u.person, primary: `${u.label} · ${title(u.person)}`, secondary: `${u.person.property_address ? u.person.name : ""}${where(u.person)}`.replace(/^ · /, ""), time });
+  }
+  for (const t of tasks) {
+    const p = openDeals.find((d) => d.id === t.person_id);
+    const due = p && effectiveDue(t, p);
+    if (p && due && due > today && due <= horizon) put(due, { key: `t-${t.id}`, kind: "task", person: p, primary: t.text, secondary: `${title(p)}${where(p)}`, task: t });
+  }
+  const days = [...agenda.keys()].sort();
 
   return (
     <section className="@container space-y-4" aria-label="Deals overview">
@@ -184,6 +241,45 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId, li
         <Tile label="Expected commission" value={hasForeign && ownOpen.length === 0 ? "–" : money.format(sum(ownOpen, "commission"))} sub={hasForeign ? "Your own deals only" : "From open deals"} />
         <Tile label="Closing in 30 days" value={closingSoon.length} sub={closingSoon[0] ? `Next: ${title(closingSoon[0])}, ${dayLabel(closingSoon[0].closing_date, today)}` : "Nothing scheduled"} />
         <Tile label="Needs you" value={attention} tone={attention ? "alert" : undefined} sub={attention ? [sentBack.length && `${sentBack.length} sent back`, overdue.length && `${overdue.length} overdue or due today`, waitingDrafts.length && `${waitingDrafts.length} draft${waitingDrafts.length === 1 ? "" : "s"}`].filter(Boolean).join(" · ") : "All caught up"} />
+      </div>
+
+      <div className={`${card} p-4`}>
+        <h3 className="font-display text-base font-semibold">Pipeline</h3>
+        {stageSegs.length === 0 && closed.length === 0 ? (
+          <p className={`mt-2 text-sm ${muted}`}>No deals yet.</p>
+        ) : (
+          <div className="mt-3 flex gap-2">
+            {stageSegs.map((seg, i) => (
+              <button
+                key={seg.name}
+                type="button"
+                onClick={() => navigate("/dashboard/deals/board")}
+                style={{ flex: `${seg.n} 1 0` }}
+                className="min-w-[5.5rem] rounded-xl p-1 text-left hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                title={`${seg.name}: ${seg.n} deal${seg.n === 1 ? "" : "s"}, ${money.format(seg.volume)}. Open the board.`}
+              >
+                <span className="block h-2 rounded-full bg-[#1c1a17] dark:bg-[#faf9f7]" style={{ opacity: 0.2 + (0.7 * (i + 1)) / stageSegs.length }} aria-hidden="true" />
+                <span className={`mt-2 block truncate text-xs font-medium ${muted}`}>{seg.name}</span>
+                <span className="block text-xl font-semibold leading-tight">{seg.n}</span>
+                <span className={`block truncate text-xs ${muted}`}>{compact.format(seg.volume)}</span>
+              </button>
+            ))}
+            {closed.length > 0 && (
+              <button
+                type="button"
+                onClick={() => navigate("/dashboard/deals/board")}
+                style={{ flex: `${closed.length} 1 0` }}
+                className="min-w-[5.5rem] rounded-xl p-1 text-left hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+                title={`Closed in ${year}: ${closed.length}. Open the board.`}
+              >
+                <span className="block h-2 rounded-full bg-emerald-600" aria-hidden="true" />
+                <span className={`mt-2 block truncate text-xs font-medium ${muted}`}>Closed in {year}</span>
+                <span className="block text-xl font-semibold leading-tight">{closed.length}</span>
+                <span className={`block truncate text-xs ${muted}`}>{compact.format(sum(closed, "price"))}</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 @3xl:grid-cols-2">
@@ -201,9 +297,38 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId, li
           {taskError && <p className="text-xs text-red-600 dark:text-red-400">{taskError}</p>}
         </div>
         <div className={`${card} p-4 space-y-2.5`}>
-          <h3 className="font-display text-base font-semibold">Coming up · next {UPCOMING_DAYS} days</h3>
-          {dateItems.length === 0 ? <p className={`text-sm ${muted}`}>No contract, inspection, appraisal, financing or closing dates coming up.</p> : list("dates", dateItems)}
+          <h3 className="font-display text-base font-semibold">At risk</h3>
+          {riskItems.length === 0 ? <p className={`text-sm ${muted}`}>No deadlines are close or overdue, and nothing is missing before a closing.</p> : list("risks", riskItems)}
         </div>
+      </div>
+
+      <div className={`${card} p-4`}>
+        <h3 className="font-display text-base font-semibold">Next {UPCOMING_DAYS} days</h3>
+        {days.length === 0 ? (
+          <p className={`mt-2 text-sm ${muted}`}>No contract, inspection, appraisal, financing or closing dates, or tasks, coming up.</p>
+        ) : (
+          <div className="mt-3 grid grid-cols-1 gap-x-8 gap-y-5 @3xl:grid-cols-2">
+            {days.map((date) => (
+              <section key={date} aria-label={dayLabel(date, today)}>
+                <h4 className="mb-1.5">
+                  <span className={`text-sm font-semibold ${date === today ? "text-amber-700 dark:text-amber-400" : ""}`}>{dayLabel(date, today)}</span>
+                </h4>
+                <ul className="space-y-1.5">
+                  {agenda.get(date).map((a) => (
+                    <Row
+                      key={a.key}
+                      onClick={() => openDeal(a.person.id)}
+                      primary={a.primary}
+                      secondary={a.secondary}
+                      right={a.time ? <span className={`shrink-0 text-xs font-medium ${muted}`}>{a.time}</span> : a.kind === "task" ? <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wide ${muted}`}>Task</span> : null}
+                      onCheck={a.kind === "task" ? () => completeTask(a.task) : undefined}
+                    />
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+        )}
       </div>
 
       <p className={`text-xs ${muted}`}>

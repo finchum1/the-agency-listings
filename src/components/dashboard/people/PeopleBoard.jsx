@@ -668,7 +668,7 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
             {!overviewOnly && renderOverview && !loading && (
               <>
                 <span aria-hidden="true"> · </span>
-                {renderOverview({ deals: active, progress, closedStage, openDeal: setSelectedId, selectedId })}
+                {renderOverview({ deals: active, progress, closedStage, stages, openDeal: setSelectedId, selectedId })}
               </>
             )}
           </p>
@@ -682,7 +682,7 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-      {overviewOnly && renderOverview && !loading && renderOverview({ deals: active, progress, closedStage, openDeal: setSelectedId, selectedId })}
+      {overviewOnly && renderOverview && !loading && renderOverview({ deals: active, progress, closedStage, stages, openDeal: setSelectedId, selectedId })}
 
       {boardError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{boardError}</p>}
 
