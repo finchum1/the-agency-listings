@@ -10,6 +10,7 @@ import { isAppHost } from "../src/lib/appHosts.js";
 import { authenticate, serviceClient } from "./_lib/authUser.js";
 import { ACCESS_TTL_S, ADMIN_SCOPES, CODE_TTL_S, REFRESH_PATTERN, REFRESH_TTL_S, SCOPE_NAMES, newAccessToken, newRefreshToken, originOf, parseScopes, pkceMatches, randomHex, redirectUriOk, sha256 } from "./_lib/oauth.js";
 
+const REUSE_GRACE_MS = 60 * 1000;
 const json = (res, status, body, extra = {}) => {
   for (const [k, v] of Object.entries(extra)) res.setHeader(k, v);
   res.setHeader("Cache-Control", "no-store");
@@ -169,14 +170,18 @@ export default async function handler(req, res) {
       if (!REFRESH_PATTERN.test(refresh)) return oauthError(res, 400, "invalid_grant", "That refresh token isn't valid.");
       const { data: row } = await admin.from("oauth_tokens").select("id, grant_id, refresh_expires_at, rotated_at, grant:oauth_grants(id, client_id, scopes, revoked_at)").eq("refresh_hash", sha256(refresh)).maybeSingle();
       if (!row || !row.grant || row.grant.revoked_at || row.grant.client_id !== String(body.client_id || "")) return oauthError(res, 400, "invalid_grant", "That refresh token isn't valid.");
-      if (row.rotated_at) {
-        // A refresh token that was already used is being used again: someone copied it. The whole connection is cut off.
-        await admin.from("oauth_grants").update({ revoked_at: new Date().toISOString() }).eq("id", row.grant_id).is("revoked_at", null);
-        return oauthError(res, 400, "invalid_grant", "That refresh token was already used. Connect the app again.");
-      }
       if (new Date(row.refresh_expires_at) < new Date()) return oauthError(res, 400, "invalid_grant", "That refresh token has expired. Connect the app again.");
+      if (row.rotated_at) {
+        // A refresh token that was already used. Within a minute that is an app retrying, or two requests refreshing at the same moment, which real
+        // apps do: it just gets a fresh pair. Later than that, someone is replaying an old token (it was copied): the whole connection is cut off.
+        if (Date.now() - new Date(row.rotated_at).getTime() > REUSE_GRACE_MS) {
+          await admin.from("oauth_grants").update({ revoked_at: new Date().toISOString() }).eq("id", row.grant_id).is("revoked_at", null);
+          return oauthError(res, 400, "invalid_grant", "That refresh token was already used. Connect the app again.");
+        }
+        return issue(row.grant_id, row.grant.scopes);
+      }
+      // Claiming it is one conditional update; if two requests race, the loser is handled as the retry case above on its next try.
       const { data: rotated } = await admin.from("oauth_tokens").update({ rotated_at: new Date().toISOString() }).eq("id", row.id).is("rotated_at", null).select("id");
-      if (!rotated?.length) return oauthError(res, 400, "invalid_grant", "That refresh token was already used.");
       return issue(row.grant_id, row.grant.scopes);
     }
     return oauthError(res, 400, "unsupported_grant_type", "Use authorization_code or refresh_token.");

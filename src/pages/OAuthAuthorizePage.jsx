@@ -52,7 +52,7 @@ export default function OAuthAuthorizePage() {
         const offered = ORDER.filter((x) => r.scopes.includes(x));
         const asked = String(q.scope || "").split(/[\s,]+/).filter((x) => offered.includes(x));
         // What the app asked for starts ticked; with no request at all, the everyday permissions start ticked and the owner-only ones don't.
-        setChosen(new Set(["read", ...(asked.length ? asked : offered.filter((x) => !x.startsWith("manage_")))]));
+        setChosen(new Set(["read", ...(asked.length ? asked : offered.filter((x) => !x.startsWith("manage_") && x !== "publish_blog"))]));
       })
       .catch((e) => setError(e.message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -99,6 +99,9 @@ export default function OAuthAuthorizePage() {
           <ul className="space-y-2">
             {ORDER.filter((scope) => info.scopes.includes(scope)).map((scope) => (
               <li key={scope}>
+                {scope === "manage_blog" || scope === "publish_blog" ? (
+                  <p className="mb-1 mt-2 text-xs font-semibold uppercase tracking-wide text-[#1c1a17]/45">{scope === "manage_blog" ? "Owner permissions: off unless you tick them" : "Publishing: off unless you tick it"}</p>
+                ) : null}
                 <label className={`flex items-start gap-3 rounded-xl border border-black/10 px-3.5 py-3 ${scope === "read" ? "" : "cursor-pointer hover:bg-black/[0.02]"}`}>
                   <input type="checkbox" checked={chosen.has(scope)} disabled={scope === "read"} onChange={() => toggle(scope)} className="mt-1 h-4 w-4 accent-[#ed2127]" />
                   <span>
