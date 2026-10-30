@@ -5,7 +5,7 @@ import * as people from "./bots/people.js";
 import * as posts from "./bots/posts.js";
 import * as listings from "./bots/listings.js";
 import { HttpError, bad } from "./bots/util.js";
-import { listingFields, postFields } from "./bots/openapi.js";
+import { listingFields, postFields } from "./toolFields.js";
 import { WRITES, bool, int, obj, str } from "./mcpWriteTools.js";
 import { act, idOf, look, render, strip } from "./mcpAct.js";
 

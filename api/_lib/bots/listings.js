@@ -150,7 +150,7 @@ export async function getListing(ctx, id, req) {
 export async function createListing(ctx, body, req) {
   requireScope(ctx, "listings");
   const agent_id = text(body, "agent_id", { required: true, max: 40 });
-  if (!isUuid(agent_id)) throw bad("agent_id must be an agent's id (see GET /v1/agents).");
+  if (!isUuid(agent_id)) throw bad("agent_id must be an agent's id (see list_agents).");
   const { data: agent } = await ctx.admin.from("profiles").select("id, org_id").eq("id", agent_id).maybeSingle();
   if (!agent || agent.org_id !== ctx.orgId) throw new HttpError(404, "No agent with that id in your organization.");
 

@@ -55,7 +55,7 @@ async function pinFields(ctx, siteId, postId, body) {
   if (n === undefined) return {};
   if (!n) return { featured_order: null };
   const { data: holder } = await ctx.client.from("agent_site_posts").select("id, title").eq("agent_site_id", siteId).eq("featured_order", n).neq("id", postId || "00000000-0000-0000-0000-000000000000").maybeSingle();
-  if (holder) throw new HttpError(409, `Slot ${n} is already pinned to "${holder.title}". Unpin it first (PATCH /v1/posts/${holder.id} with featured_order: null).`, { pinned_post_id: holder.id });
+  if (holder) throw new HttpError(409, `Slot ${n} is already pinned to "${holder.title}". Unpin it first (use update_post on ${holder.id} with featured_order: null).`, { pinned_post_id: holder.id });
   return { featured_order: n };
 }
 

@@ -147,11 +147,11 @@ export async function getSite(ctx, id, req) {
 export async function createSite(ctx, body, req) {
   requireScope(ctx, "sites");
   const agent_id = text(body, "agent_id", { required: true, max: 40 });
-  if (!isUuid(agent_id)) throw bad("agent_id must be an agent's id (see GET /v1/agents).");
+  if (!isUuid(agent_id)) throw bad("agent_id must be an agent's id (see list_agents).");
   const { data: agent } = await ctx.admin.from("profiles").select("id, full_name, org_id").eq("id", agent_id).maybeSingle();
   if (!agent || agent.org_id !== ctx.orgId) throw new HttpError(404, "No agent with that id in your organization.");
   const { data: have } = await ctx.admin.from("agent_sites").select("id, slug").eq("agent_id", agent_id).maybeSingle();
-  if (have) throw new HttpError(409, "That agent already has a website. Use PATCH /v1/sites/{id} to change it.", { site_id: have.id });
+  if (have) throw new HttpError(409, "That agent already has a website. Use update_site to change it.", { site_id: have.id });
 
   const fields = readFields(body);
   const base = slugify(text(body, "slug", { max: 80 }) || agent.full_name, "agent");

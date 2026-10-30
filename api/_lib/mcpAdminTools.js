@@ -8,7 +8,7 @@ import * as posts from "./bots/posts.js";
 import * as listings from "./bots/listings.js";
 import * as alerts from "./bots/alerts.js";
 import { importListing } from "./bots/importListing.js";
-import { listingFields, postFields, saleFields, siteFields } from "./bots/openapi.js";
+import { listingFields, postFields, saleFields, siteFields } from "./toolFields.js";
 import { HttpError } from "./bots/util.js";
 import { WRITES, bool, int, obj, str } from "./mcpWriteTools.js";
 import { act, idOf, look, render, strip } from "./mcpAct.js";

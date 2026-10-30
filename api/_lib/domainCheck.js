@@ -13,7 +13,6 @@ import { assertPublicUrl } from "./safeFetch.js";
 import { fromAs, sendNotification } from "./inquiry.js";
 import { buildDomainAlertEmail } from "./domainEmail.js";
 import { FIX, LABELS } from "./domainInfo.js";
-import { sendToOrgBots } from "./webhooks.js";
 import { SITE_ORIGIN } from "../../src/lib/seo.js";
 
 const MARKER = "agency-listings-ok";
@@ -150,12 +149,6 @@ async function sendDomainAlerts(admin, down, back) {
   ]);
   const byId = new Map((listings || []).map((l) => [l.id, l]));
   const orgs = [...new Set(all.map((i) => i.org_id).filter(Boolean))];
-
-  // Bots first: a webhook is how a bot hears about it right away.
-  for (const org of orgs) {
-    for (const it of down.filter((i) => i.org_id === org)) await sendToOrgBots(admin, org, "domain.down", alertView({ ...it, listing_id: it.id }, byId.get(it.id), "down"));
-    for (const it of back.filter((i) => i.org_id === org)) await sendToOrgBots(admin, org, "domain.recovered", alertView({ ...it, listing_id: it.id }, byId.get(it.id), "down"));
-  }
 
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;

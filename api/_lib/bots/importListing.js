@@ -8,7 +8,7 @@ import { createListing } from "./listings.js";
 // does not try to get around that. What it can do legitimately: read the street address out of the link itself, then look
 // the home up in the office's licensed MLS feed (Repliers) for price, rooms, description and photos. If the home isn't in
 // that feed, the response still returns the address parsed from the link plus a list of what is missing, so the bot (or a
-// person) can fill the rest in from the listing and send it back to POST /v1/listings.
+// person) can fill the rest in from the listing and send it to create_listing.
 
 const SUFFIXES = new Set("alley aly avenue ave boulevard blvd bend bnd circle cir court ct cove cv crossing xing drive dr expressway expy freeway fwy hill hl highway hwy lane ln loop park parkway pkwy place pl plaza plz point pt road rd route rte row square sq street st terrace ter trail trl trace trce way walk".split(" "));
 const DIRECTIONS = new Set(["n", "s", "e", "w", "ne", "nw", "se", "sw"]);
@@ -166,7 +166,7 @@ export async function importListing(ctx, body, req) {
     notes: [
       link && /zillow\.com/i.test(link) ? "Zillow blocks automated page reads, so nothing was read from the Zillow page itself. The address came from the link; everything else comes from the MLS feed when the home is in it." : null,
       mlsNote || null,
-      missing.length ? "Fill the missing fields from the listing and send everything to POST /v1/listings (or call this again with create:true plus those fields)." : null,
+      missing.length ? "Fill the missing fields from the listing and send everything to create_listing (or call this again with create:true plus those fields)." : null,
     ].filter(Boolean),
   };
 

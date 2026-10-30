@@ -27,7 +27,7 @@ async function loadSale(ctx, id) {
 
 // A listing the sale is copied from has to be one of this site's agent's own listings.
 async function loadListing(ctx, site, id) {
-  if (!isUuid(id)) throw bad("listing_id must be a listing id (see GET /v1/listings).");
+  if (!isUuid(id)) throw bad("listing_id must be a listing id (see office_listings).");
   const { data } = await ctx.client.from("listings").select("id, address_line1, city, state, price, agent_id, updated_at, listing_photos(url, is_hero)").eq("id", id).eq("agent_id", site.agent_id).maybeSingle();
   if (!data) throw new HttpError(404, "That listing isn't one of this agent's listings.");
   return data;

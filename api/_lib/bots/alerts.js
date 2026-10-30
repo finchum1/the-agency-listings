@@ -1,12 +1,9 @@
 // Scope "monitoring": what is wrong right now, and a way to be told the moment something breaks.
 //   GET  /alerts        every property-site domain in the office that isn't responding, as of the last check (every 15 minutes)
 //   POST /alerts/check  check the office's domains now (use after fixing something), then return the same list
-//   POST /alerts/test   send a sample "test" event to this token's webhook, to try the connection
-// A token can also have a webhook address (set in My Profile > Bot API access) and is then sent domain.down / domain.recovered events as they happen.
 import { requireScope } from "./context.js";
 import { HttpError } from "./util.js";
 import { alertView, checkMany, recordHealth } from "../domainCheck.js";
-import { deliver } from "../webhooks.js";
 
 const lastCheck = new Map(); // org id -> time of the last on-demand check
 const COOLDOWN_MS = 30000;
@@ -36,12 +33,4 @@ export async function checkNow(ctx) {
   const checked = await checkMany((rows || []).map((r) => ({ id: r.id, org_id: r.org_id, domain: r.custom_domain })), 10);
   await recordHealth(ctx.admin, checked);
   return { checked: checked.length, alerts: await openAlerts(ctx) };
-}
-
-export async function testWebhook(ctx) {
-  requireScope(ctx, "monitoring");
-  const { data: hook } = await ctx.admin.from("api_token_webhooks").select("token_id, url, secret").eq("token_id", ctx.tokenId).maybeSingle();
-  if (!hook) throw new HttpError(404, "This token has no webhook. Set one in My Profile > Bot API access.");
-  const result = await deliver(ctx.admin, hook, "test", { message: "This is a test event from the Latchpoint bot API.", token: ctx.tokenName });
-  return { delivered: result.ok, response: result.status };
 }
