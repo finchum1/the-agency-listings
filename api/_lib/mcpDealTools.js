@@ -112,6 +112,13 @@ async function ownSite(ctx) {
 }
 const draftsOnly = { grant: ["blog", "listings"] };
 
+// Publishing is its own permission (publish_blog): an agent's AI can write drafts without it, and with it can also put their OWN posts live.
+async function ownPost(ctx, id, req) {
+  const { post } = await posts.getPost(ctx, id, req);
+  if (post.agent_site_id !== (await ownSite(ctx))) throw new HttpError(403, "That post isn't on your website.");
+  return post;
+}
+
 export const DRAFT_TOOLS = [
   reader("list_drafts", "List waiting drafts", "read", "Messages drafted for the agent to review and send, newest first (status draft by default).", obj({ status: { type: "string", enum: ["draft", "sent", "discarded"] }, person_id: str("Only this person's drafts"), limit: int("Max drafts") }), async (ctx, a) => render("Drafts:", (await people.listOutreach(ctx, a)).outreach)),
   writer("draft_message", "draft a message", "write_drafts",
@@ -125,6 +132,18 @@ export const DRAFT_TOOLS = [
     const { post } = await posts.getPost(ctx, a.post_id, req);
     if (post.status !== "draft") throw new HttpError(409, "That post isn't a draft any more. Published and scheduled posts are changed in the dashboard.");
     return posts.updatePost(ctx, a.post_id, { ...strip(a, "post_id"), status: "draft" }, req);
+  }, draftsOnly),
+  writer("publish_blog_post", "publish a blog post", "publish_blog", "Publish one of the agent's OWN blog posts (a draft they or you wrote) so it goes live on their website now, or schedule it with scheduled_at. Only publish when the agent asks, and tell them the post's address afterwards.", obj({ post_id: str("Post id from list_blog_posts"), scheduled_at: str("ISO date-time to publish later, e.g. 2026-11-05T09:00:00-06:00; leave out to publish now") }, ["post_id"]), async (ctx, a, req) => {
+    await ownPost(ctx, a.post_id, req);
+    return posts.updatePost(ctx, a.post_id, a.scheduled_at ? { status: "scheduled", scheduled_at: a.scheduled_at } : { status: "published" }, req);
+  }, draftsOnly),
+  writer("unpublish_blog_post", "take a blog post offline", "publish_blog", "Take one of the agent's own published or scheduled blog posts back to a draft. Nothing is deleted.", obj({ post_id: str("Post id from list_blog_posts") }, ["post_id"]), async (ctx, a, req) => {
+    await ownPost(ctx, a.post_id, req);
+    return posts.updatePost(ctx, a.post_id, { status: "draft" }, req);
+  }, draftsOnly),
+  writer("edit_my_blog_post", "edit a blog post", "publish_blog", "Edit one of the agent's own blog posts whatever its status (a published post changes on their site straight away). Does not change whether it is published; use publish_blog_post or unpublish_blog_post for that.", obj({ post_id: str("Post id from list_blog_posts"), ...strip(postFields, "status", "scheduled_at", "featured_order") }, ["post_id"]), async (ctx, a, req) => {
+    await ownPost(ctx, a.post_id, req);
+    return posts.updatePost(ctx, a.post_id, strip(a, "post_id"), req);
   }, draftsOnly),
   writer("draft_listing", "draft a listing", "write_drafts", "Create a listing for the agent saved as a DRAFT (not public until they publish it in the dashboard). Photos are picture addresses that get downloaded and stored.", obj({ ...strip(listingFields, "status") }, ["address_line1", "city", "state", "zip"]), (ctx, a, req) => listings.createListing(ctx, { ...a, agent_id: ctx.ownerId, status: "draft" }, req), draftsOnly),
   writer("edit_listing_draft", "edit a listing draft", "write_drafts", "Edit one of the agent's own listings that is still a draft, including adding photos.", obj({ listing_id: str("Listing id"), ...strip(listingFields, "status") }, ["listing_id"]), async (ctx, a, req) => {

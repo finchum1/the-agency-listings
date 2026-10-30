@@ -36,6 +36,7 @@ const SCOPES = [
   ["write_tasks", "Tasks and contacts", "Add and tick off tasks, update contacts"],
   ["write_deals", "Deals", "Deal dates, contacts, deal tasks"],
   ["write_drafts", "Drafts", "Draft messages, blog posts and listings of your own. Nothing is sent"],
+  ["publish_blog", "Publish my blog posts", "Put your own posts live, schedule or unpublish them"],
   ["manage_blog", "Blog posts (owner)", "Write and edit blog posts on any agent site, and publish"],
   ["manage_listings", "Listings (owner)", "Create and edit any listing"],
   ["manage_agents", "Agents (owner)", "Add agents to the dashboard"],

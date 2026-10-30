@@ -7,6 +7,7 @@ export const SCOPES = {
   write_tasks: "Add and tick off tasks, add and update contacts",
   write_deals: "Update deal dates and contacts, tick off deal tasks",
   write_drafts: "Draft messages for you to send",
+  publish_blog: "Publish and edit your own blog posts (not just drafts)",
   // Owner-only: these change your office's websites, listings and agents, and only an admin account can allow them.
   manage_blog: "Write and edit blog posts on any agent site",
   manage_listings: "Create and edit listings",

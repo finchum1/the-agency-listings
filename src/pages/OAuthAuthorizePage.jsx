@@ -13,12 +13,13 @@ const SCOPE_TEXT = {
   write_tasks: ["Tasks and contacts", "Add and tick off tasks, add and update contacts and tags."],
   write_deals: ["Deals", "Update deal dates and contacts, tick off deal tasks, add deal notes."],
   write_drafts: ["Drafts", "Write draft messages for you to send, and draft blog posts and listings of your own. Nothing is sent."],
+  publish_blog: ["Publish your blog posts", "Put your own blog posts live on your website, schedule them, edit them, or take them offline."],
   manage_blog: ["Blog posts (owner)", "Write and edit blog posts on any agent's website. Can publish them."],
   manage_listings: ["Listings (owner)", "Create and edit any listing in the office, including making it public."],
   manage_agents: ["Agents (owner)", "Add agents to the dashboard. Can email them an invitation if asked."],
   manage_sites: ["Agent websites (owner)", "Edit any agent's website: design, text, areas, testimonials, past sales. Can publish it."],
 };
-const ORDER = ["read", "write_people", "write_tasks", "write_deals", "write_drafts", "manage_blog", "manage_listings", "manage_agents", "manage_sites"];
+const ORDER = ["read", "write_people", "write_tasks", "write_deals", "write_drafts", "publish_blog", "manage_blog", "manage_listings", "manage_agents", "manage_sites"];
 
 export default function OAuthAuthorizePage() {
   const { session, loading } = useAuth();
@@ -108,7 +109,7 @@ export default function OAuthAuthorizePage() {
               </li>
             ))}
           </ul>
-          <p className="text-xs text-[#1c1a17]/50">What you allow is shared with {info.client_name}, which has its own privacy terms. It can never delete anything, and it never sends a message for you (drafts only).{[...chosen].some((x) => x.startsWith("manage_")) ? " Changes under the owner permissions can go live on your websites right away." : ""}</p>
+          <p className="text-xs text-[#1c1a17]/50">What you allow is shared with {info.client_name}, which has its own privacy terms. It can never delete anything, and it never sends a message for you (drafts only).{[...chosen].some((x) => x.startsWith("manage_") || x === "publish_blog") ? " Publishing and the owner permissions can put things live on your websites right away." : ""}</p>
           <div className="flex items-center gap-3">
             <button type="button" disabled={busy} onClick={() => answer("approve")} className="rounded-full bg-[#1c1a17] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#1c1a17]/90 disabled:opacity-60">
               {busy ? "Connecting…" : "Allow"}
