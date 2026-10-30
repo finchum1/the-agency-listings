@@ -167,6 +167,34 @@
       "destination": "/api/sitemap?llms=1"
     },
     {
+      "source": "/.well-known/oauth-protected-resource/:path*",
+      "destination": "/api/oauth?a=resource"
+    },
+    {
+      "source": "/.well-known/oauth-protected-resource",
+      "destination": "/api/oauth?a=resource"
+    },
+    {
+      "source": "/.well-known/oauth-authorization-server/:path*",
+      "destination": "/api/oauth?a=server"
+    },
+    {
+      "source": "/.well-known/oauth-authorization-server",
+      "destination": "/api/oauth?a=server"
+    },
+    {
+      "source": "/oauth/register",
+      "destination": "/api/oauth?a=register"
+    },
+    {
+      "source": "/oauth/token",
+      "destination": "/api/oauth?a=token"
+    },
+    {
+      "source": "/oauth/revoke",
+      "destination": "/api/oauth?a=revoke"
+    },
+    {
       "source": "/v1/:path*",
       "destination": "/api/bots?path=:path*"
     },

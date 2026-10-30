@@ -299,7 +299,7 @@ export default function MyProfilePage() {
         </div>
       )}
 
-      {profile?.role === "admin" && <ClaudeConnectionCard />}
+      {(profile?.role === "admin" || profile?.ai_access) && <ClaudeConnectionCard />}
       {profile?.role === "admin" && <BotApiCard />}
 
       <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mt-6">

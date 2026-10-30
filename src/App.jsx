@@ -8,6 +8,7 @@ import useSwUpdateOnNavigate from "./hooks/useSwUpdateOnNavigate";
 import { isStandalone } from "./lib/pwa";
 
 import LoginPage from "./components/auth/LoginPage";
+import OAuthAuthorizePage from "./pages/OAuthAuthorizePage";
 import SetPasswordPage from "./components/auth/SetPasswordPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/dashboard/DashboardLayout";
@@ -147,6 +148,7 @@ export default function App() {
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/oauth/authorize" element={<OAuthAuthorizePage />} />
       <Route path="/accept-invite" element={<SetPasswordPage />} />
 
       <Route path="/listings/:slug" element={<PublicListingPage />} />

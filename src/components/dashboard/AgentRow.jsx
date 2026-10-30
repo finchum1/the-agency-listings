@@ -212,6 +212,15 @@ export default function AgentRow({
                 </span>
               </span>
             </label>
+            <label className="flex items-start gap-2.5 text-sm cursor-pointer">
+              <input type="checkbox" checked={!!agent.ai_access} onChange={(e) => patch({ ai_access: e.target.checked })} className="mt-0.5" />
+              <span>
+                <span className="font-medium">AI connections</span>
+                <span className="block text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
+                  Lets this agent connect their own AI (Claude, ChatGPT, a Grok bot) to work in their dashboard. It only ever sees and changes their own data. Turn off to cut every connection at once.
+                </span>
+              </span>
+            </label>
             <div>
               <label className={labelClass}>Deals role</label>
               <select

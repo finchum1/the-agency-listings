@@ -33,7 +33,9 @@ export default function LoginPage() {
     // Remember whose dashboard this browser signs in to, so the next visit shows their logo
     const { data: mine } = await supabase.from("profiles").select("org:organizations(slug)").eq("id", data.user.id).maybeSingle();
     rememberLoginOrg(mine?.org?.slug);
-    navigate("/dashboard", { replace: true });
+    // Sent here from another page that needs a sign-in (an AI app asking to connect): go back to it. Only a path on this site is followed.
+    const next = new URLSearchParams(window.location.search).get("next");
+    navigate(next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard", { replace: true });
   };
 
   return (
