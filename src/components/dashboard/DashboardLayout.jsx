@@ -47,7 +47,7 @@ const FLYOUTS = {
     title: "Deals",
     items: [
       { to: "/dashboard/deals", label: "Overview", exact: true },
-      { to: "/dashboard/deals/board", label: "Board" },
+      { to: "/dashboard/deals/board", label: "Deals" },
     ],
   },
   site: {
