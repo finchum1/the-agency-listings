@@ -34,6 +34,26 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
   const callbacks = useRef({});
   callbacks.current = { onOpen, onCreate, onMove, onScheduleTask, onVisibleDay, onNeedMore };
 
+  // Wheel and trackpad: while the hours can still scroll the other way they do; at the top or bottom the page takes over at once, event by event.
+  // Left to the browser, the hand-off waits until the whole gesture (and its momentum) has ended, which feels like lag.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return undefined;
+    const onWheel = (e) => {
+      if (e.ctrlKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // a pinch zoom, or a sideways swipe: leave it be
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
+      const dy = e.deltaY * unit;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+      const atTop = el.scrollTop <= 0;
+      if ((dy > 0 && atBottom) || (dy < 0 && atTop)) {
+        e.preventDefault();
+        window.scrollBy({ top: dy, behavior: "instant" }); // not the page's smooth scrolling: each wheel event must land at once
+      }
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+
   // The width of the scroller, which sets how wide a day is in the strip.
   const [boxW, setBoxW] = useState(0);
   useLayoutEffect(() => {

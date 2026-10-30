@@ -97,7 +97,7 @@ const sortForMonth = (a, b) => KIND_RANK[a.kind] - KIND_RANK[b.kind] || sortItem
 // their open deals and their own tasks, each switchable.
 export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
   const tasks = tasksApi.tasks;
-  const [view, setView] = useState("day");
+  const [view, setView] = useState("week");
   const [cursor, setCursor] = useState(toKey(new Date()));
   const [show, setShow] = useState({ calendar: true, deals: true, tasks: true });
   const [managing, setManaging] = useState(false);
