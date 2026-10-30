@@ -30,11 +30,12 @@ function readNav() {
   return { open: true, px: DEFAULT_OPEN_PX };
 }
 
-// What the People menu offers beside the row (Overview is the row itself).
+// What the People menu offers beside the row (Overview is the row itself). Settings lives here now that the page has no row of pills above it.
 const PEOPLE_MENU = [
   { to: "/dashboard/people/contacts", label: "Contacts" },
   { to: "/dashboard/people/leads", label: "Leads" },
   { to: "/dashboard/people/pipeline", label: "Pipeline" },
+  { to: "/dashboard/settings", label: "Settings" },
 ];
 
 const ICON_PATHS = {
@@ -797,7 +798,7 @@ export default function DashboardLayout() {
             aria-label="People"
             onPointerEnter={(e) => e.pointerType === "mouse" && clearTimeout(peopleTimer.current)}
             onPointerLeave={(e) => e.pointerType === "mouse" && closePeopleMenu(160)}
-            style={{ left: peopleMenu.x, top: Math.max(8, Math.min(peopleMenu.y, window.innerHeight - 220)), ...(peopleMenu.w ? { width: peopleMenu.w } : {}) }}
+            style={{ left: peopleMenu.x, top: Math.max(8, Math.min(peopleMenu.y, window.innerHeight - 260)), ...(peopleMenu.w ? { width: peopleMenu.w } : {}) }}
             className="fixed z-[60] min-w-[200px] rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] p-1.5 text-[#1c1a17] dark:text-[#faf9f7] shadow-xl print:hidden"
           >
             <p className="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/40 dark:text-[#faf9f7]/40">People</p>
