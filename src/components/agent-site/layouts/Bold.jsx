@@ -1,3 +1,5 @@
+import useShowMore from "../../../hooks/useShowMore";
+import ShowMoreButton from "../ShowMoreButton";
 import { useAgentSiteContext } from "../../../context/AgentSiteContext";
 import { formatPrice, STATUS_LABELS } from "../../../lib/format";
 import { agentSiteHref } from "../../../lib/agentSiteLinks";
@@ -166,6 +168,7 @@ export function BoldTestimonials() {
 
 export function BoldAreas() {
   const { site, isStandalonePage } = useAgentSiteContext();
+  const more = useShowMore(site.areas);
   if (site.areas.length === 0) return null;
   return (
     <section id="areas" className="px-6 lg:px-10 py-24 sm:py-32 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
@@ -176,7 +179,7 @@ export function BoldAreas() {
           area
         </Head>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {site.areas.map((area, i) => (
+          {more.shown.map((area, i) => (
             <SiteLink key={area.id} slug={site.slug} path={`/areas/${area.slug}`} className="group relative block overflow-hidden bg-[var(--as-surface)] aspect-[3/4]">
               {area.photo_url && <img src={area.photo_url} alt={area.name} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" />}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/10" />
@@ -189,6 +192,7 @@ export function BoldAreas() {
             </SiteLink>
           ))}
         </div>
+        <ShowMoreButton more={more} />
       </div>
     </section>
   );

@@ -1,3 +1,5 @@
+import useShowMore from "../../../hooks/useShowMore";
+import ShowMoreButton from "../ShowMoreButton";
 import { useState } from "react";
 import { useAgentSiteContext } from "../../../context/AgentSiteContext";
 import { formatPrice, STATUS_LABELS } from "../../../lib/format";
@@ -193,6 +195,7 @@ export function ListingsTestimonials() {
 
 export function ListingsAreas() {
   const { site, isStandalonePage } = useAgentSiteContext();
+  const more = useShowMore(site.areas);
   if (site.areas.length === 0) return null;
   const Heading = isStandalonePage ? "h1" : "h2";
   return (
@@ -201,7 +204,7 @@ export function ListingsAreas() {
         <p className={eyebrow}>Areas of expertise</p>
         <Heading className={`${h2Class} mt-2 mb-8`}>Find your area</Heading>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {site.areas.map((area) => (
+          {more.shown.map((area) => (
             <SiteLink key={area.id} slug={site.slug} path={`/areas/${area.slug}`} className="group flex items-center gap-4 bg-[var(--as-bg)] border border-[var(--as-text)]/10 p-3 pr-5 transition-colors hover:border-[var(--as-accent)]">
               <div className="h-16 w-16 shrink-0 rounded-full overflow-hidden bg-[var(--as-surface)]">{area.photo_url && <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover" />}</div>
               <div className="min-w-0">
@@ -211,6 +214,7 @@ export function ListingsAreas() {
             </SiteLink>
           ))}
         </div>
+        <ShowMoreButton more={more} />
       </div>
     </section>
   );

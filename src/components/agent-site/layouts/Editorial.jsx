@@ -1,3 +1,5 @@
+import useShowMore from "../../../hooks/useShowMore";
+import ShowMoreButton from "../ShowMoreButton";
 import { useAgentSiteContext } from "../../../context/AgentSiteContext";
 import { formatPrice, STATUS_LABELS } from "../../../lib/format";
 import { agentSiteHref } from "../../../lib/agentSiteLinks";
@@ -164,6 +166,7 @@ export function EditorialTestimonials() {
 
 export function EditorialAreas() {
   const { site, isStandalonePage } = useAgentSiteContext();
+  const more = useShowMore(site.areas);
   if (site.areas.length === 0) return null;
   return (
     <section id="areas" className="px-6 lg:px-10 py-28 bg-[var(--as-bg)]">
@@ -172,7 +175,7 @@ export function EditorialAreas() {
           Find your area
         </SectionHead>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-14">
-          {site.areas.map((area) => (
+          {more.shown.map((area) => (
             <SiteLink key={area.id} slug={site.slug} path={`/areas/${area.slug}`} className="group block">
               <div className="overflow-hidden bg-[var(--as-surface)] aspect-[4/5]">
                 {area.photo_url && <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />}
@@ -182,6 +185,7 @@ export function EditorialAreas() {
             </SiteLink>
           ))}
         </div>
+        <ShowMoreButton more={more} />
       </div>
     </section>
   );

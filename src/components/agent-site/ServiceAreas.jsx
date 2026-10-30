@@ -1,9 +1,12 @@
+import useShowMore from "../../hooks/useShowMore";
+import ShowMoreButton from "./ShowMoreButton";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import SiteLink from "./SiteLink";
 import { LAYOUT_SECTIONS } from "./layouts";
 
 export default function ServiceAreas() {
   const { site, isStandalonePage } = useAgentSiteContext();
+  const more = useShowMore(site.areas);
   const Variant = LAYOUT_SECTIONS[site.layout]?.Areas;
   if (Variant) return <Variant />;
   if (site.areas.length === 0) return null;
@@ -22,7 +25,7 @@ export default function ServiceAreas() {
         </Heading>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {site.areas.map((area) => (
+          {more.shown.map((area) => (
             <SiteLink
               key={area.id}
               slug={site.slug}
@@ -47,6 +50,7 @@ export default function ServiceAreas() {
             </SiteLink>
           ))}
         </div>
+        <ShowMoreButton more={more} />
       </div>
     </section>
   );

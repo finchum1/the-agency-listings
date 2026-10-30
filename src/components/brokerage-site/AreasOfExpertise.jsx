@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import useShowMore from "../../hooks/useShowMore";
+import ShowMoreButton from "../agent-site/ShowMoreButton";
 import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
 
 // Mirrors agent-site/ServiceAreas.jsx (same copy, same card layout) —
@@ -8,8 +10,10 @@ import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
 // convention); the standalone /brokerage/areas page shows every area.
 export default function AreasOfExpertise({ preview = false, isStandalonePage = false }) {
   const { site } = useBrokerageSiteContext();
+  const more = useShowMore(site.areas);
   if (site.areas.length === 0) return null;
-  const areas = preview ? site.areas.slice(0, 3) : site.areas;
+  // The home preview is always the top 3 with View All; the full page shows 3 at a time on a phone.
+  const areas = preview ? site.areas.slice(0, 3) : more.shown;
   const Heading = isStandalonePage ? "h1" : "h2";
 
   return (
@@ -45,6 +49,7 @@ export default function AreasOfExpertise({ preview = false, isStandalonePage = f
             </Link>
           ))}
         </div>
+        {!preview && <ShowMoreButton more={more} />}
 
         {preview && site.areas.length > areas.length && (
           <div className="mt-14 flex justify-center">
