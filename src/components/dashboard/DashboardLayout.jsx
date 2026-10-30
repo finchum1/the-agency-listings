@@ -845,7 +845,8 @@ export default function DashboardLayout() {
 
       <main className="flex-1 min-w-0">
         <TabBar tabs={tabs.tabs} active={tabs.active} onSelect={tabs.select} onAdd={tabs.add} onClose={tabs.close} max={tabs.max} />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-10 print:p-0 print:max-w-none print:mx-0">
+        {/* The boards (Leads, Pipeline, Deals) use the whole width beside the menu: centered in a capped column they left a wide dark gap on a big screen. */}
+        <div className={`${/^\/dashboard\/(people\/(leads|pipeline)|deals)\/?$/.test(location.pathname) ? "" : "mx-auto max-w-7xl"} px-4 sm:px-6 py-6 sm:py-10 print:p-0 print:max-w-none print:mx-0`}>
           <Outlet />
         </div>
       </main>
