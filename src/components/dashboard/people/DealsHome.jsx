@@ -200,6 +200,18 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
   }
   const dateDays = [...dateAgenda.keys()].sort();
   const taskDays = [...taskAgenda.keys()].sort();
+  // A long list of tasks is cut to the first few, so the column stays about as tall as the one beside it.
+  const TASK_SHOW = 8;
+  const taskCount = [...taskAgenda.values()].reduce((n, list) => n + list.length, 0);
+  const shownTasks = new Map();
+  let room = more.tasks ? Infinity : TASK_SHOW;
+  for (const d of taskDays) {
+    if (room <= 0) break;
+    const take = taskAgenda.get(d).slice(0, room);
+    shownTasks.set(d, take);
+    room -= take.length;
+  }
+  const shownTaskDays = [...shownTasks.keys()];
 
   // A list of days, each with its heading and rows.
   const dayList = (days, agenda, { checks = false, columns = false } = {}) => (
@@ -272,29 +284,36 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 @3xl:grid-cols-2">
-        <div className={`${card} p-4 space-y-2.5`}>
-          <h3 className="font-display text-base font-semibold">Needs your attention</h3>
-          {needs.length === 0 ? <p className={`text-sm ${muted}`}>Nothing is overdue, due today, sent back or waiting on you.</p> : list("needs", needs)}
-          {justDone && (
-            <p role="status" className="flex items-center justify-between gap-3 rounded-lg bg-black/[0.04] dark:bg-white/[0.06] px-3 py-2 text-xs">
-              <span className="min-w-0 truncate">Checked off "{justDone.text}"</span>
-              <button type="button" onClick={undoTask} className="shrink-0 font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
-                Undo
-              </button>
-            </p>
-          )}
-          {taskError && <p className="text-xs text-red-600 dark:text-red-400">{taskError}</p>}
+      {/* Two columns that each take only the height they need: what needs you and the key dates on the left, the coming tasks on the right. */}
+      <div className="grid grid-cols-1 items-start gap-4 @3xl:grid-cols-2">
+        <div className="space-y-4">
+          <div className={`${card} p-4 space-y-2.5`}>
+            <h3 className="font-display text-base font-semibold">Needs your attention</h3>
+            {needs.length === 0 ? <p className={`text-sm ${muted}`}>Nothing is overdue, due today, sent back or waiting on you.</p> : list("needs", needs)}
+            {justDone && (
+              <p role="status" className="flex items-center justify-between gap-3 rounded-lg bg-black/[0.04] dark:bg-white/[0.06] px-3 py-2 text-xs">
+                <span className="min-w-0 truncate">Checked off "{justDone.text}"</span>
+                <button type="button" onClick={undoTask} className="shrink-0 font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                  Undo
+                </button>
+              </p>
+            )}
+            {taskError && <p className="text-xs text-red-600 dark:text-red-400">{taskError}</p>}
+          </div>
+          <div className={`${card} p-4 space-y-2.5`}>
+            <h3 className="font-display text-base font-semibold">Key dates · next {UPCOMING_DAYS} days</h3>
+            {dateDays.length === 0 ? <p className={`text-sm ${muted}`}>No contract, inspection, appraisal, financing or closing dates coming up.</p> : dayList(dateDays, dateAgenda)}
+          </div>
         </div>
         <div className={`${card} p-4 space-y-2.5`}>
           <h3 className="font-display text-base font-semibold">Tasks · next {UPCOMING_DAYS} days</h3>
-          {taskDays.length === 0 ? <p className={`text-sm ${muted}`}>No tasks fall due in the next {UPCOMING_DAYS} days.</p> : dayList(taskDays, taskAgenda, { checks: true })}
+          {taskDays.length === 0 ? <p className={`text-sm ${muted}`}>No tasks fall due in the next {UPCOMING_DAYS} days.</p> : dayList(shownTaskDays, shownTasks, { checks: true })}
+          {taskCount > TASK_SHOW && (
+            <button type="button" onClick={() => setMore((m) => ({ ...m, tasks: !m.tasks }))} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+              {more.tasks ? "Show fewer" : `${taskCount - TASK_SHOW} more`}
+            </button>
+          )}
         </div>
-      </div>
-
-      <div className={`${card} p-4 space-y-2.5`}>
-        <h3 className="font-display text-base font-semibold">Key dates · next {UPCOMING_DAYS} days</h3>
-        {dateDays.length === 0 ? <p className={`text-sm ${muted}`}>No contract, inspection, appraisal, financing or closing dates coming up.</p> : dayList(dateDays, dateAgenda, { columns: true })}
       </div>
 
       <p className={`text-xs ${muted}`}>
