@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 const browserZone = () => {
@@ -27,6 +27,25 @@ async function callApi(path, body) {
   return json;
 }
 
+// The server answers for at most 70 days at a time, and the week view can hold far more than that, so a range is asked for in 28-day chunks on a fixed
+// grid of local days. Each chunk is remembered (until a calendar changes), so scrolling on only fetches the days that are new.
+const CHUNK_DAYS = 28;
+const GRID_START = new Date(2020, 0, 1);
+const dayNumber = (d) => Math.round((d - GRID_START) / 864e5);
+const chunkBounds = (i) => {
+  const start = new Date(GRID_START);
+  start.setDate(start.getDate() + i * CHUNK_DAYS);
+  const end = new Date(start);
+  end.setDate(end.getDate() + CHUNK_DAYS);
+  return { start, end };
+};
+const chunksFor = (rangeStart, rangeEnd) => {
+  const out = [];
+  for (let i = Math.floor(dayNumber(rangeStart) / CHUNK_DAYS); chunkBounds(i).start < rangeEnd; i++) out.push(i);
+  return out;
+};
+const eventKey = (e) => `${e.calendarId}|${e.eventId || e.uid}|${e.start || e.startDate}`;
+
 /** Checks an iCal address before it is saved. Resolves { name, upcoming, address }; rejects with a plain-language message. */
 export const checkCalendarAddress = (url) => callApi("/api/calendar", { action: "check", url });
 
@@ -44,6 +63,7 @@ export function useCalendarEvents(userId, rangeStart, rangeEnd) {
   const [loadingCalendars, setLoadingCalendars] = useState(true);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [version, setVersion] = useState(0);
+  const cache = useRef({ version: -1, chunks: new Map() });
 
   const loadCalendars = useCallback(async () => {
     const [{ data: cals }, { data: conns }] = await Promise.all([
@@ -73,16 +93,49 @@ export function useCalendarEvents(userId, rangeStart, rangeEnd) {
       return;
     }
     let active = true;
+    if (cache.current.version !== version) cache.current = { version, chunks: new Map() };
+    const store = cache.current;
+    const wanted = chunksFor(rangeStart, rangeEnd);
+    const missing = wanted.filter((i) => !store.chunks.has(i));
+    // Everything in range, once: the same event can sit in two neighbouring chunks.
+    const assemble = (failures) => {
+      const seen = new Set();
+      const merged = [];
+      const problems = [...failures];
+      for (const i of wanted) {
+        const c = store.chunks.get(i);
+        if (!c) continue;
+        for (const e of c.events) {
+          const k = eventKey(e);
+          if (!seen.has(k)) {
+            seen.add(k);
+            merged.push(e);
+          }
+        }
+        for (const er of c.errors) if (!problems.some((p) => p.calendarId === er.calendarId && p.message === er.message)) problems.push(er);
+      }
+      setEvents(merged);
+      setErrors(problems);
+    };
+    if (missing.length === 0) {
+      assemble([]);
+      return () => {
+        active = false;
+      };
+    }
     setLoadingEvents(true);
-    callApi("/api/calendar", { action: "events", start: rangeStart.toISOString(), end: rangeEnd.toISOString(), tz: browserZone() })
-      .then((r) => {
-        if (!active) return;
-        setEvents(r.events || []);
-        setErrors(r.errors || []);
-      })
-      .catch((err) => {
-        if (active) setErrors([{ calendarId: null, name: "Calendars", message: err.message }]);
-      })
+    const failures = [];
+    Promise.all(
+      missing.map((i) => {
+        const { start, end } = chunkBounds(i);
+        return callApi("/api/calendar", { action: "events", start: start.toISOString(), end: end.toISOString(), tz: browserZone() })
+          .then((r) => store.chunks.set(i, { events: r.events || [], errors: r.errors || [] }))
+          .catch((err) => {
+            if (!failures.some((f) => f.message === err.message)) failures.push({ calendarId: null, name: "Calendars", message: err.message });
+          });
+      }),
+    )
+      .then(() => active && assemble(failures))
       .finally(() => active && setLoadingEvents(false));
     return () => {
       active = false;
