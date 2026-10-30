@@ -7,8 +7,9 @@ import { authenticateToken } from "./_lib/mcpAuth.js";
 import { originOf } from "./_lib/oauth.js";
 import { TOOLS as READ_TOOLS } from "./_lib/mcpTools.js";
 import { WRITE_TOOLS } from "./_lib/mcpWriteTools.js";
+import { TASK_TOOLS } from "./_lib/mcpTaskTools.js";
 
-const TOOLS = [...READ_TOOLS, ...WRITE_TOOLS];
+const TOOLS = [...READ_TOOLS, ...WRITE_TOOLS, ...TASK_TOOLS];
 
 const SERVER = { name: "latchpoint-real-estate", title: "Latchpoint Real Estate", version: "1.0.0" };
 const SUPPORTED = ["2025-06-18", "2025-03-26", "2024-11-05"];

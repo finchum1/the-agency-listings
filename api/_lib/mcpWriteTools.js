@@ -7,20 +7,20 @@ import * as people from "./bots/people.js";
 import { HttpError } from "./bots/util.js";
 
 const TZ = "America/Chicago";
-const todayKey = () => new Date().toLocaleDateString("en-CA", { timeZone: TZ });
-const plusDays = (key, n) => {
+export const todayKey = () => new Date().toLocaleDateString("en-CA", { timeZone: TZ });
+export const plusDays = (key, n) => {
   const d = new Date(`${key}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
 };
-const dayText = (key) => new Date(`${key}T12:00:00Z`).toLocaleDateString("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric", year: "numeric" });
+export const dayText = (key) => new Date(`${key}T12:00:00Z`).toLocaleDateString("en-US", { timeZone: "UTC", weekday: "short", month: "short", day: "numeric", year: "numeric" });
 
 // ---- schema helpers (the same shapes mcpTools.js uses) ----
-const obj = (properties = {}, required = []) => ({ type: "object", properties, required, additionalProperties: false });
-const str = (description) => ({ type: "string", description });
-const int = (description) => ({ type: "integer", description });
-const bool = (description) => ({ type: "boolean", description });
-const WRITES = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false };
+export const obj = (properties = {}, required = []) => ({ type: "object", properties, required, additionalProperties: false });
+export const str = (description) => ({ type: "string", description });
+export const int = (description) => ({ type: "integer", description });
+export const bool = (description) => ({ type: "boolean", description });
+export const WRITES = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false };
 const BOARD = { type: "string", enum: ["lead", "pipeline"], description: "lead = the Leads board, pipeline = the Pipeline board" };
 
 // ---- guard rails ----
@@ -33,7 +33,7 @@ function rateLimit(userId) {
   list.push(now);
   recent.set(userId, list);
 }
-const ctxFor = (sb, userId, tokenName) => ({ client: sb, admin: serviceClient(), ownerId: userId, scopes: ["people"], tokenName, tokenId: null });
+export const ctxFor = (sb, userId, tokenName, extra = {}) => ({ client: sb, admin: serviceClient(), ownerId: userId, scopes: ["people"], tokenName, tokenId: null, ...extra });
 
 async function audit(userId, tool, status, detail) {
   try {
@@ -44,10 +44,10 @@ async function audit(userId, tool, status, detail) {
 }
 
 // Runs one change with the checks every write tool shares, and logs it.
-async function change(tool, sb, userId, fn) {
+export async function change(tool, sb, userId, fn, extra) {
   rateLimit(userId);
   try {
-    const out = await fn(ctxFor(sb, userId, "AI connection"));
+    const out = await fn(ctxFor(sb, userId, "AI connection", extra));
     await audit(userId, tool, 200, out.audit);
     return out.text;
   } catch (err) {

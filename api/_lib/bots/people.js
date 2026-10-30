@@ -457,6 +457,13 @@ export async function listTasks(ctx, q) {
   return { tasks: must(await query).map(taskView) };
 }
 
+// A contact of the token owner's, for linking a to-do to them.
+async function ownContactId(ctx, contactId) {
+  const { data } = await ctx.client.from("contacts").select("id").eq("id", id(contactId, "contact")).eq("owner_id", ctx.ownerId).maybeSingle();
+  if (!data) throw new HttpError(404, "No contact with that id in your Contacts.");
+  return data.id;
+}
+
 export async function createTask(ctx, body) {
   await gate(ctx);
   const title = text(body, "title", { required: true, max: 300 });
@@ -476,6 +483,7 @@ export async function createTask(ctx, body) {
     list: cleanList(text(body, "list", { max: 40 })),
     checklist: cleanSteps(Array.isArray(body.checklist) ? body.checklist.map((s) => (typeof s === "string" ? { text: s } : s)) : []),
   };
+  if (body.contact_id) row.contact_id = await ownContactId(ctx, body.contact_id);
   return { task: taskView(must(await ctx.client.from("agent_tasks").insert(row).select("*").single())) };
 }
 
@@ -511,6 +519,7 @@ export async function updateTask(ctx, taskId, body) {
     }
   } else if (body.done === false) Object.assign(changes, { done: false, done_at: null });
   else if (body.done !== undefined) throw bad("done must be true or false.");
+  if (body.contact_id !== undefined) changes.contact_id = body.contact_id ? await ownContactId(ctx, body.contact_id) : null;
   if (!Object.keys(changes).length) throw bad("Nothing to change.");
   return { task: taskView(must(await ctx.client.from("agent_tasks").update(changes).eq("id", task.id).select("*").single())) };
 }
