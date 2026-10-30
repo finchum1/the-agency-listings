@@ -353,15 +353,6 @@ export default function DashboardLayout() {
   }, [mobileNavOpen]);
   const inAdminArea = (path) =>
     [...ADMIN_ITEMS.map((i) => i.to), "/dashboard/brand", "/dashboard/organizations"].some((to) => path === to || path.startsWith(`${to}/`));
-  const [adminOpen, setAdminOpen] = useState(inAdminArea(location.pathname));
-
-  // Landing on a page from somewhere else (a link on the home page, a button inside a page, the browser's back button)
-  // opens the menu group that page belongs to, so the highlighted item is always visible. Groups never close by themselves.
-  useEffect(() => {
-    const path = location.pathname;
-    if (inAdminArea(path)) setAdminOpen(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
 
   // On recent iOS the installed app's status bar area is drawn by the
   // system, in the page's <body> background color (cached at launch).
@@ -486,51 +477,12 @@ export default function DashboardLayout() {
           {isAdmin && (
             <div className="mt-auto pt-3">
               <div className="mx-2 mb-3 border-t border-black/10 dark:border-white/10" aria-hidden="true" />
-              {railItem("Admin", "admin", inAdminArea(path), { items: adminItems })}
+              {railItem("Admin", "admin", inAdminArea(path), { to: adminItems[0].to, extra: flyTrigger("admin", onNavigate) })}
             </div>
           )}
         </div>
       );
     }
-
-    const group = (label, icon, open, setOpen, items) => (
-      <div className="mt-1 space-y-1">
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          className={`${navLinkClass(false)} w-full flex items-center justify-between text-left`}
-        >
-          <span className="flex items-center gap-3 min-w-0">
-            <NavIcon name={icon} />
-            <span className="truncate">{label}</span>
-          </span>
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            className={`shrink-0 transition-transform ${open ? "rotate-90" : ""}`}
-          >
-            <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        {open && (
-          <div className="ml-3 pl-2 border-l border-black/10 dark:border-white/10 space-y-1">
-            {items.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                onClick={onNavigate}
-                className={navLinkClass(location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    );
 
     // The everyday modules at the top; Admin is set apart at the bottom, just above the profile and sign-out.
     return (
@@ -588,7 +540,15 @@ export default function DashboardLayout() {
         </div>
         {isAdmin && (
           <div className="mt-auto pt-6">
-            <div className="border-t border-black/10 dark:border-white/10 pt-3">{group("Admin", "admin", adminOpen, setAdminOpen, adminItems)}</div>
+            <div className="border-t border-black/10 dark:border-white/10 pt-3">
+              <Link to={adminItems[0].to} {...flyTrigger("admin", onNavigate)} className={`${navLinkClass(inAdminArea(path))} flex items-center gap-3`}>
+                <NavIcon name="admin" />
+                <span className="flex-1">Admin</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0 text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
+                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Link>
+            </div>
           </div>
         )}
       </div>
@@ -816,14 +776,14 @@ export default function DashboardLayout() {
           <div
             data-fly-menu=""
             role="menu"
-            aria-label={FLYOUTS[flyout.kind].title}
+            aria-label={flyout.kind === "admin" ? "Admin" : FLYOUTS[flyout.kind].title}
             onPointerEnter={(e) => e.pointerType === "mouse" && clearTimeout(flyTimer.current)}
             onPointerLeave={(e) => e.pointerType === "mouse" && closeFlyout(160)}
-            style={{ left: flyout.x, top: Math.max(8, Math.min(flyout.y, window.innerHeight - 260)), ...(flyout.w ? { width: flyout.w } : {}) }}
+            style={{ left: flyout.x, top: Math.max(8, Math.min(flyout.y, window.innerHeight - ((flyout.kind === "admin" ? adminItems : FLYOUTS[flyout.kind].items).length * 40 + 56))), ...(flyout.w ? { width: flyout.w } : {}) }}
             className="fixed z-[60] min-w-[200px] rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] p-1.5 text-[#1c1a17] dark:text-[#faf9f7] shadow-xl print:hidden"
           >
-            <p className="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/40 dark:text-[#faf9f7]/40">{FLYOUTS[flyout.kind].title}</p>
-            {FLYOUTS[flyout.kind].items.map((item) => (
+            <p className="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/40 dark:text-[#faf9f7]/40">{flyout.kind === "admin" ? "Admin" : FLYOUTS[flyout.kind].title}</p>
+            {(flyout.kind === "admin" ? adminItems : FLYOUTS[flyout.kind].items).map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
