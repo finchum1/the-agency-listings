@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { fromKey } from "../../../lib/homeDates";
+import { daysBetween, fromKey } from "../../../lib/homeDates";
 import { DAY_MIN, HOUR_PX, SNAP, clamp, layoutDay, minLabel, rangeLabel, snapMin } from "../../../lib/timeGrid";
 import { muted } from "./styles";
 
@@ -18,7 +18,12 @@ const hex2rgba = (hex, a) => {
 // space to make a new one (or just click/tap a slot), and drag a task from the "To schedule" list onto the grid to
 // block time for it. On a touch screen a block or task needs a short press before it can be dragged, so scrolling
 // still works. What a drag *does* is up to the caller: this component only reports the new date and times.
-export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate, onMove, onToggleTask, onPickTask, onScheduleTask, onDayClick }) {
+//
+// `wide` is the week view's free-scrolling strip: `days` is a long run of days, each column a seventh of the width, and the strip scrolls sideways
+// as far as it goes (the time gutter stays put). `onVisibleDay(key)` says which day is now at the left edge, `onNeedMore("prepend" | "append")`
+// asks the caller for more days when the scroll nears either end, and `scrollTarget { key, smooth, nonce }` asks to bring a day to the left edge.
+// `resetKey` is what makes the hours jump back to the first appointment (the date for a single day; left alone while a strip scrolls).
+export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate, onMove, onToggleTask, onPickTask, onScheduleTask, onDayClick, wide = false, resetKey, scrollTarget, onVisibleDay, onNeedMore }) {
   const scrollRef = useRef(null);
   const colRefs = useRef({});
   const headRef = useRef(null);
@@ -27,7 +32,21 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
   const [ghost, setGhost] = useState(null); // { label, x, y } follows the pointer while a "To schedule" task is dragged
   const [now, setNow] = useState(() => new Date());
   const callbacks = useRef({});
-  callbacks.current = { onOpen, onCreate, onMove, onScheduleTask };
+  callbacks.current = { onOpen, onCreate, onMove, onScheduleTask, onVisibleDay, onNeedMore };
+
+  // The width of the scroller, which sets how wide a day is in the strip.
+  const [boxW, setBoxW] = useState(0);
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return undefined;
+    const measure = () => setBoxW(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const colW = wide ? Math.max(96, Math.floor((boxW - GUTTER) / 7)) : 0;
+  const template = wide ? `${GUTTER}px repeat(${days.length}, ${colW}px)` : `${GUTTER}px repeat(${days.length}, minmax(0, 1fr))`;
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 60000);
@@ -44,7 +63,7 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
 
   // Scroll to the first block of the visible days (an hour above it), or to the working day if there is none.
   const firstMin = days.reduce((m, k) => itemsFor(k).timed.reduce((mm, it) => Math.min(mm, it.startMin), m), DAY_MIN);
-  const daysKey = days.join(",");
+  const daysKey = resetKey ?? days.join(",");
   useLayoutEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -52,6 +71,69 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
     el.scrollTop = Math.max(0, (target / 60) * HOUR_PX);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [daysKey]);
+
+  // Days added before the first one push everything right: scroll by the same amount so what was on screen stays put.
+  const firstDayRef = useRef(days[0]);
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (wide && el && colW && firstDayRef.current && days[0] < firstDayRef.current) el.scrollLeft += daysBetween(days[0], firstDayRef.current) * colW;
+    firstDayRef.current = days[0];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [days[0]]);
+
+  // The day at the left edge stays there when the strip's width changes (the layout shifts when the view changes, and so does the window's width).
+  const anchorRef = useRef(null);
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    const idx = wide && colW && anchorRef.current ? days.indexOf(anchorRef.current) : -1;
+    if (el && idx >= 0) el.scrollLeft = idx * colW;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [colW]);
+
+  // Bring a requested day to the left edge, once the strip has been measured.
+  const alignRef = useRef(null);
+  useLayoutEffect(() => {
+    if (scrollTarget) alignRef.current = scrollTarget;
+  }, [scrollTarget?.nonce]);
+  useLayoutEffect(() => {
+    const t = alignRef.current;
+    const el = scrollRef.current;
+    if (!wide || !t || !el || !boxW) return;
+    const idx = days.indexOf(t.key);
+    if (idx < 0) return;
+    alignRef.current = null;
+    anchorRef.current = t.key;
+    el.scrollTo({ left: idx * colW, behavior: t.smooth ? "smooth" : "auto" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollTarget?.nonce, boxW, wide, days.length]);
+
+  // Which day is at the left edge, and whether the strip is near an end (then ask for more days, once per length).
+  const rafRef = useRef(0);
+  const visibleRef = useRef(null);
+  const askedRef = useRef({ prepend: 0, append: 0 });
+  useEffect(() => () => cancelAnimationFrame(rafRef.current), []);
+  const onScroll = () => {
+    if (!wide || rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0;
+      const el = scrollRef.current;
+      if (!el || !colW) return;
+      const idx = Math.max(0, Math.min(days.length - 1, Math.round(el.scrollLeft / colW)));
+      anchorRef.current = days[idx];
+      if (days[idx] !== visibleRef.current) {
+        visibleRef.current = days[idx];
+        callbacks.current.onVisibleDay?.(days[idx]);
+      }
+      if (el.scrollLeft < colW * 14 && askedRef.current.prepend !== days.length) {
+        askedRef.current.prepend = days.length;
+        callbacks.current.onNeedMore?.("prepend");
+      }
+      if (el.scrollWidth - el.scrollLeft - el.clientWidth < colW * 14 && askedRef.current.append !== days.length) {
+        askedRef.current.append = days.length;
+        callbacks.current.onNeedMore?.("append");
+      }
+    });
+  };
 
   // Which day column and minute is under a point on screen. `lockKey` pins the column (a resize stays on its own day).
   const hit = (x, y, lockKey) => {
@@ -65,12 +147,15 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
     }
     if (!best && !lockKey && days.length) {
       // Past the left or right edge of the grid: stick to the nearest column so the block doesn't flicker back.
-      const first = colRefs.current[days[0]]?.getBoundingClientRect();
-      const last = colRefs.current[days[days.length - 1]]?.getBoundingClientRect();
-      if (first && last) {
-        const key = x < first.left ? days[0] : days[days.length - 1];
-        const r = x < first.left ? first : last;
-        best = { key, min: ((y - r.top) / HOUR_PX) * 60, rect: r };
+      let near = Infinity;
+      for (const key of days) {
+        const r = colRefs.current[key]?.getBoundingClientRect();
+        if (!r) continue;
+        const d = x < r.left ? r.left - x : x - r.right + 1;
+        if (d < near) {
+          near = d;
+          best = { key, min: ((y - r.top) / HOUR_PX) * 60, rect: r };
+        }
       }
     }
     return best;
@@ -100,6 +185,10 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
       if (g.kind !== "tray" || (ev.clientX >= sr.left && ev.clientX <= sr.right)) {
         if (ev.clientY > headBottom && ev.clientY < headBottom + 36) scroller.scrollTop -= 12;
         else if (ev.clientY > sr.bottom - 36) scroller.scrollTop += 12;
+        if (wide) {
+          if (ev.clientX < sr.left + GUTTER + 24) scroller.scrollLeft -= 14;
+          else if (ev.clientX > sr.right - 36) scroller.scrollLeft += 14;
+        }
       }
       if (g.kind === "move") {
         const p = hit(ev.clientX, ev.clientY);
@@ -243,14 +332,15 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
     <div className={`flex flex-col gap-4 items-start ${cols === 1 ? "lg:flex-row" : ""}`}>
       <div
         ref={scrollRef}
-        className="relative min-w-0 w-full flex-1 overflow-auto rounded-xl border border-black/10 dark:border-white/15 max-h-[min(72vh,640px)] overscroll-contain"
+        onScroll={onScroll}
+        className="relative min-w-0 w-full flex-1 overflow-auto rounded-xl border border-black/10 dark:border-white/15 max-h-[min(72vh,640px)] overscroll-x-contain overscroll-y-auto"
         data-testid="time-grid"
       >
-        <div style={{ minWidth: cols > 1 ? GUTTER + cols * 112 : undefined }}>
+        <div style={wide ? { width: GUTTER + cols * colW } : { minWidth: cols > 1 ? GUTTER + cols * 112 : undefined }}>
           {/* day names and the all-day strip stay put while the hours scroll */}
           <div ref={headRef} className="sticky top-0 z-30 bg-white dark:bg-[#1a1a1a] border-b border-black/10 dark:border-white/15">
-            <div className="grid" style={{ gridTemplateColumns: `${GUTTER}px repeat(${cols}, minmax(0, 1fr))` }}>
-              <div />
+            <div className="grid" style={{ gridTemplateColumns: template }}>
+              <div className="sticky left-0 z-10 bg-white dark:bg-[#1a1a1a]" />
               {days.map((key) => {
                 const d = fromKey(key);
                 const isToday = key === today;
@@ -271,8 +361,8 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
                 );
               })}
             </div>
-            <div className="grid border-t border-black/5 dark:border-white/10" style={{ gridTemplateColumns: `${GUTTER}px repeat(${cols}, minmax(0, 1fr))` }} data-allday-strip>
-              <div className={`text-[10px] pt-2 pr-1.5 text-right ${muted}`}>all day</div>
+            <div className="grid border-t border-black/5 dark:border-white/10" style={{ gridTemplateColumns: template }} data-allday-strip>
+              <div className={`sticky left-0 z-10 bg-white dark:bg-[#1a1a1a] text-[10px] pt-2 pr-1.5 text-right ${muted}`}>all day</div>
               {days.map((key) => {
                 const over = preview && preview.kind === "allday" && preview.date === key;
                 return (
@@ -333,8 +423,8 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
             </div>
           </div>
 
-          <div className="relative grid" style={{ gridTemplateColumns: `${GUTTER}px repeat(${cols}, minmax(0, 1fr))`, height: 24 * HOUR_PX }}>
-            <div className="relative">
+          <div className="relative grid" style={{ gridTemplateColumns: template, height: 24 * HOUR_PX }}>
+            <div className="sticky left-0 z-[25] bg-white dark:bg-[#1a1a1a]">
               {HOURS.slice(1).map((h) => (
                 <span key={h} className={`absolute right-1.5 -translate-y-1/2 text-[10px] ${muted}`} style={{ top: h * HOUR_PX }}>
                   {minLabel(h * 60, true)}

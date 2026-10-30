@@ -43,12 +43,20 @@ function useDealDates(enabled, userId) {
   return enabled ? deals : [];
 }
 
-function rangeFor(view, cursorKey) {
+// The week view is a long strip of days that scrolls sideways (`win`: its first day and how many days it holds), so what is loaded follows the
+// strip rather than the day in the title. It starts three weeks back and grows by four weeks at either end as you scroll toward it.
+const WIN_BEFORE = 21;
+const WIN_DAYS = 63;
+const WIN_STEP = 28;
+const WIN_MAX = 7 * 60;
+const makeWin = (key) => ({ startKey: toKey(addDays(startOfWeek(fromKey(key)), -WIN_BEFORE)), days: WIN_DAYS });
+
+function rangeFor(view, cursorKey, win) {
   const c = fromKey(cursorKey);
   if (view === "day") return { start: c, end: addDays(c, 1) };
   if (view === "week") {
-    const s = startOfWeek(c);
-    return { start: s, end: addDays(s, 7) };
+    const s = fromKey(win.startKey);
+    return { start: s, end: addDays(s, win.days) };
   }
   const grid = monthGrid(c.getFullYear(), c.getMonth());
   return { start: fromKey(grid[0].key), end: addDays(fromKey(grid[grid.length - 1].key), 1) };
@@ -58,7 +66,8 @@ function titleFor(view, cursorKey) {
   const c = fromKey(cursorKey);
   if (view === "day") return c.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
   if (view === "month") return c.toLocaleDateString(undefined, { month: "long", year: "numeric" });
-  const s = startOfWeek(c);
+  // The week strip scrolls freely, so the title is the seven days from the one at the left edge.
+  const s = c;
   const e = addDays(s, 6);
   const sameMonth = s.getMonth() === e.getMonth();
   const a = s.toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -100,7 +109,9 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
   const [googleNotice, setGoogleNotice] = useState({ message: "", connectionId: null });
   const today = toKey(new Date());
 
-  const { start, end } = useMemo(() => rangeFor(view, cursor), [view, cursor]);
+  const [win, setWin] = useState(() => makeWin(toKey(new Date())));
+  const [scrollTarget, setScrollTarget] = useState({ key: toKey(startOfWeek(new Date())), smooth: false, nonce: 0 });
+  const { start, end } = useMemo(() => rangeFor(view, cursor, win), [view, cursor, win]);
   const cal = useCalendarEvents(userId, start, end);
 
   // Coming back from Google's sign-in: /dashboard?google=connected&connection=<id> (or error / cancelled).
@@ -191,6 +202,25 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
   // Google answered (or the range changed): the events on screen are the real ones again.
   useEffect(() => setMoved({}), [cal.events]);
 
+  // Scroll the week strip so `key` is at its left edge (loading a fresh stretch of days around it when it is far from the ones loaded).
+  const goWeekTo = (key, smooth = true) => {
+    const first = fromKey(win.startKey);
+    const inside = fromKey(key) >= addDays(first, 7) && addDays(fromKey(key), 14) <= addDays(first, win.days);
+    if (!inside) setWin(makeWin(key));
+    setScrollTarget((t) => ({ key, smooth: smooth && inside, nonce: t.nonce + 1 }));
+  };
+  const extendWin = (dir) =>
+    setWin((w) => {
+      if (w.days >= WIN_MAX) return w;
+      return dir === "prepend" ? { startKey: toKey(addDays(fromKey(w.startKey), -WIN_STEP)), days: w.days + WIN_STEP } : { ...w, days: w.days + WIN_STEP };
+    });
+  const selectView = (v) => {
+    setView(v);
+    if (v === "week") goWeekTo(toKey(startOfWeek(fromKey(cursor))), false);
+  };
+  const goPrevNext = (dir) => (view === "week" ? goWeekTo(toKey(addDays(fromKey(cursor), 7 * dir))) : setCursor(step(view, cursor, dir)));
+  const goToday = () => (view === "week" ? goWeekTo(toKey(startOfWeek(new Date()))) : setCursor(today));
+
   const itemsOn = (key) => byDay.get(key) || [];
   const itemsFor = (key) => {
     const list = itemsOn(key);
@@ -243,13 +273,13 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
   };
   const noCalendars = !cal.loading && cal.calendars.length === 0;
   const grid = view === "month" ? monthGrid(fromKey(cursor).getFullYear(), fromKey(cursor).getMonth()) : [];
-  const weekDays = view === "week" ? Array.from({ length: 7 }, (_, i) => toKey(addDays(start, i))) : [];
+  const weekDays = useMemo(() => (view === "week" ? Array.from({ length: win.days }, (_, i) => toKey(addDays(fromKey(win.startKey), i))) : []), [view, win]);
 
   const segment = (v, label) => (
     <button
       key={v}
       type="button"
-      onClick={() => setView(v)}
+      onClick={() => selectView(v)}
       aria-pressed={view === v}
       className={`px-3.5 py-1.5 text-xs font-semibold rounded-full transition-colors ${view === v ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"}`}
     >
@@ -276,13 +306,13 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <button type="button" onClick={() => setCursor(step(view, cursor, -1))} aria-label="Previous" className="h-8 w-8 rounded-full border border-black/10 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/10">
+        <button type="button" onClick={() => goPrevNext(-1)} aria-label="Previous" className="h-8 w-8 rounded-full border border-black/10 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/10">
           ‹
         </button>
-        <button type="button" onClick={() => setCursor(step(view, cursor, 1))} aria-label="Next" className="h-8 w-8 rounded-full border border-black/10 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/10">
+        <button type="button" onClick={() => goPrevNext(1)} aria-label="Next" className="h-8 w-8 rounded-full border border-black/10 dark:border-white/15 hover:bg-black/5 dark:hover:bg-white/10">
           ›
         </button>
-        <button type="button" onClick={() => setCursor(today)} className="rounded-full border border-black/10 dark:border-white/15 text-xs font-semibold px-3.5 py-1.5 hover:bg-black/5 dark:hover:bg-white/10">
+        <button type="button" onClick={goToday} className="rounded-full border border-black/10 dark:border-white/15 text-xs font-semibold px-3.5 py-1.5 hover:bg-black/5 dark:hover:bg-white/10">
           Today
         </button>
         <p className="text-sm font-semibold ml-1" aria-live="polite">
@@ -321,6 +351,11 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
         {(view === "day" || view === "week") && (
           <TimeGrid
             days={view === "day" ? [cursor] : weekDays}
+            wide={view === "week"}
+            resetKey={view === "day" ? cursor : "week"}
+            scrollTarget={view === "week" ? scrollTarget : undefined}
+            onVisibleDay={(key) => setCursor(key)}
+            onNeedMore={extendWin}
             today={today}
             itemsFor={itemsFor}
             tray={tray}
