@@ -658,13 +658,13 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
 
       {boardError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{boardError}</p>}
 
-      {/* The controls that belong to the board itself, right above it: view and filter on the left, adding a column on the right. */}
+      {/* The controls that belong to the board itself, right above it: view and filter, then adding a column, all in one row (the button stays beside the controls rather than drifting to the page's far edge). */}
       {!overviewOnly && <div className="flex flex-wrap items-center gap-3">
         {typeof toolbarLeft === "function" ? toolbarLeft({ ownCount: active.length }) : toolbarLeft}
         {view === "board" && (
           <>
             {addingColumn ? (
-          <form onSubmit={handleAddColumn} className="flex items-center gap-2 shrink-0 sm:ml-auto">
+          <form onSubmit={handleAddColumn} className="flex items-center gap-2 shrink-0">
             <input
               autoFocus
               value={newColumnName}
@@ -693,7 +693,7 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
           <button
             type="button"
             onClick={() => setAddingColumn(true)}
-            className="shrink-0 sm:ml-auto rounded-full border border-black/15 dark:border-white/20 px-4 py-2 text-sm font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            className="shrink-0 rounded-full border border-black/15 dark:border-white/20 px-4 py-2 text-sm font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
             + Add column
           </button>
