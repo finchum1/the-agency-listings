@@ -265,11 +265,12 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
       setMoveError(`Couldn't move “${e.title}”: ${err.message}`);
     }
   };
+  // The day a new item starts on: today when it is on screen (the week strip shows seven days from wherever it is scrolled to), else the first day shown.
+  const focusDay = view === "week" && today >= cursor && today <= toKey(addDays(fromKey(cursor), 6)) ? today : cursor;
   const nextSlot = () => {
     const n = new Date();
-    const key = cursor === today ? today : cursor;
-    const start = cursor === today ? Math.min(DAY_MIN - 60, Math.ceil((n.getHours() * 60 + n.getMinutes()) / 30) * 30) : 9 * 60;
-    return { date: key, startMin: start, endMin: start + 60 };
+    const start = focusDay === today ? Math.min(DAY_MIN - 60, Math.ceil((n.getHours() * 60 + n.getMinutes()) / 30) * 30) : 9 * 60;
+    return { date: focusDay, startMin: start, endMin: start + 60 };
   };
   const noCalendars = !cal.loading && cal.calendars.length === 0;
   const grid = view === "month" ? monthGrid(fromKey(cursor).getFullYear(), fromKey(cursor).getMonth()) : [];
@@ -422,7 +423,7 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
         )}
       </div>
       {moveError && <p className="mt-3 text-xs text-red-600 dark:text-red-400">{moveError}</p>}
-      {eventModal && <EventModal key={eventModal.event?.eventId || "new"} cal={cal} event={eventModal.event} defaultDate={cursor} defaults={eventModal.defaults} onClose={() => setEventModal(null)} />}
+      {eventModal && <EventModal key={eventModal.event?.eventId || "new"} cal={cal} event={eventModal.event} defaultDate={focusDay} defaults={eventModal.defaults} onClose={() => setEventModal(null)} />}
       {block && (
         <TimeBlockModal
           key={`${block.task?.id || "new"}-${block.range?.date || ""}-${block.range?.allDay ? "d" : ""}`}
@@ -432,7 +433,7 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
           openTasks={untimed}
           canAddEvent={canAddEvent}
           tasksApi={tasksApi}
-          fallbackDate={cursor}
+          fallbackDate={focusDay}
           onEvent={(r) => {
             setBlock(null);
             setEventModal({ event: null, defaults: { date: r.date, allDay: r.allDay, start: fromMin(r.startMin ?? 9 * 60), end: fromMin(r.endMin ?? 10 * 60) } });

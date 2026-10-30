@@ -51,6 +51,16 @@ export const checkCalendarAddress = (url) => callApi("/api/calendar", { action: 
 
 export const browserTimeZone = browserZone;
 
+/** Address suggestions for a typed place (api/places.js). Resolves [{ label }]; never rejects except when the request is cancelled. */
+export async function suggestAddresses(q, signal) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const res = await fetch("/api/places", { method: "POST", signal, headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` }, body: JSON.stringify({ q }) });
+  const json = await res.json().catch(() => ({}));
+  return res.ok ? json.suggestions || [] : [];
+}
+
 // The agent's linked calendars (id, name, color, on/off, source, whether they can be edited; never an iCal address or a
 // Google token), their connected Google accounts, and the events from the calendars that are on, for one date range.
 // Events come from api/calendar.js. Connecting accounts and changing events go through api/google.js.
@@ -67,7 +77,7 @@ export function useCalendarEvents(userId, rangeStart, rangeEnd) {
 
   const loadCalendars = useCallback(async () => {
     const [{ data: cals }, { data: conns }] = await Promise.all([
-      supabase.from("agent_calendars").select("id, name, color, enabled, source, can_write, connection_id").order("created_at"),
+      supabase.from("agent_calendars").select("id, name, color, enabled, source, can_write, connection_id, is_default").order("created_at"),
       supabase.from("google_connections").select("id, email, status").order("created_at"),
     ]);
     setCalendars(cals || []);
@@ -158,6 +168,17 @@ export function useCalendarEvents(userId, rangeStart, rangeEnd) {
     if (error) loadCalendars();
     else refresh();
   };
+  // The calendar new events start on. One at a time: the old one is cleared first (the database allows a single default).
+  const setDefaultCalendar = async (id) => {
+    const previous = calendars.find((c) => c.is_default)?.id;
+    setCalendars((list) => list.map((c) => ({ ...c, is_default: c.id === id })));
+    if (previous && previous !== id) {
+      const { error: e1 } = await supabase.from("agent_calendars").update({ is_default: false }).eq("id", previous);
+      if (e1) return loadCalendars();
+    }
+    const { error } = await supabase.from("agent_calendars").update({ is_default: true }).eq("id", id);
+    if (error) loadCalendars();
+  };
   const removeCalendar = async (id) => {
     setCalendars((list) => list.filter((c) => c.id !== id));
     await supabase.from("agent_calendars").delete().eq("id", id);
@@ -201,6 +222,7 @@ export function useCalendarEvents(userId, rangeStart, rangeEnd) {
     loading: loadingCalendars || loadingEvents,
     addCalendar,
     updateCalendar,
+    setDefaultCalendar,
     removeCalendar,
     connectGoogle,
     googleCalendars,

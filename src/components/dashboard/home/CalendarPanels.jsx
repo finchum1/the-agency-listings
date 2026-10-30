@@ -1,3 +1,4 @@
+import AddressInput from "./AddressInput";
 import { useEffect, useState } from "react";
 import { browserTimeZone, checkCalendarAddress } from "../../../hooks/useCalendarEvents";
 import { toKey } from "../../../lib/homeDates";
@@ -188,6 +189,14 @@ export function CalendarsPanel({ cal, onClose, notice, openConnectionId }) {
                 {dot(c.color)}
                 <span className="min-w-0 flex-1 text-sm truncate">{c.name}</span>
                 <span className={`text-[11px] ${muted}`}>{c.source === "google" ? (c.can_write ? "Google · can edit" : "Google · view only") : "Address · view only"}</span>
+                {c.source === "google" && c.can_write &&
+                  (c.is_default ? (
+                    <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Default for new events</span>
+                  ) : (
+                    <button type="button" onClick={() => cal.setDefaultCalendar(c.id)} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                      Make default
+                    </button>
+                  ))}
                 <button type="button" onClick={() => confirm(`Remove “${c.name}” from your schedule? Nothing changes in the calendar itself.`) && cal.removeCalendar(c.id)} className={`text-xs ${muted} hover:text-red-600 dark:hover:text-red-400`}>
                   Remove
                 </button>
@@ -244,7 +253,7 @@ export function EventModal({ cal, event, defaultDate, defaults, onClose }) {
   const calendarFor = (id) => cal.calendars.find((c) => c.id === id);
 
   const [f, setF] = useState(() => {
-    if (!event) return { title: "", allDay: Boolean(defaults?.allDay), startDate: defaults?.date || defaultDate, endDate: defaults?.date || defaultDate, start: defaults?.start || "09:00", end: defaults?.end || "10:00", location: "", description: "", calendarRowId: writable[0]?.id || "" };
+    if (!event) return { title: "", allDay: Boolean(defaults?.allDay), startDate: defaults?.date || defaultDate, endDate: defaults?.date || defaultDate, start: defaults?.start || "09:00", end: defaults?.end || "10:00", location: "", description: "", calendarRowId: (writable.find((c) => c.is_default) || writable[0])?.id || "" };
     if (event.allDay) {
       const last = new Date(`${event.endDate}T00:00:00`);
       last.setDate(last.getDate() - 1); // Google's all-day end is the day after the last day
@@ -254,6 +263,7 @@ export function EventModal({ cal, event, defaultDate, defaults, onClose }) {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [makeDefault, setMakeDefault] = useState(false);
   const set = (patch) => setF((p) => ({ ...p, ...patch }));
 
   useEffect(() => {
@@ -272,6 +282,7 @@ export function EventModal({ cal, event, defaultDate, defaults, onClose }) {
       : { title: f.title.trim(), start: `${f.startDate}T${f.start}:00`, end: `${f.endDate || f.startDate}T${f.end}:00`, timeZone: browserTimeZone(), location: f.location, description: f.description };
     try {
       await cal.saveEvent({ calendarRowId: f.calendarRowId, eventId: editing ? event.eventId : undefined, event: payload });
+      if (makeDefault && !editing) await cal.setDefaultCalendar(f.calendarRowId);
       onClose();
     } catch (err) {
       setError(err.message);
@@ -341,7 +352,7 @@ export function EventModal({ cal, event, defaultDate, defaults, onClose }) {
             </div>
             <div>
               <label className={labelClass}>Location</label>
-              <input disabled={readOnly} value={f.location} onChange={(e) => set({ location: e.target.value })} maxLength={300} className={inputClass} />
+              <AddressInput disabled={readOnly} value={f.location} onChange={(v) => set({ location: v })} maxLength={300} className={inputClass} />
             </div>
             <div>
               <label className={labelClass}>Notes</label>
@@ -360,9 +371,16 @@ export function EventModal({ cal, event, defaultDate, defaults, onClose }) {
                   {writable.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
+                      {c.is_default ? " (default)" : ""}
                     </option>
                   ))}
                 </select>
+              )}
+              {!editing && f.calendarRowId && !calendarFor(f.calendarRowId)?.is_default && (
+                <label className="mt-2 flex items-center gap-2 text-xs cursor-pointer">
+                  <input type="checkbox" checked={makeDefault} onChange={(e) => setMakeDefault(e.target.checked)} className="h-3.5 w-3.5" />
+                  Use this as my default calendar for new events
+                </label>
               )}
             </div>
             {editing && event.recurring && canEdit && <p className={`text-xs ${muted}`}>This is one occurrence of a repeating event. Changes apply to this occurrence only.</p>}
