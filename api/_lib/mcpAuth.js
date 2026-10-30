@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { serviceClient } from "./authUser.js";
-import { ACCESS_PATTERN } from "./oauth.js";
+import { ACCESS_PATTERN, ADMIN_SCOPES } from "./oauth.js";
 
 // A personal token (made on the dashboard, shown once, stored only as a hash) -> a Supabase client that acts AS that
 // person, so the dashboard's row-level rules apply to everything the connection reads. The server never queries with
@@ -47,7 +47,8 @@ export const TOKEN_PATTERN = /^lp_[0-9a-f]{64}$/;
 // "AI access" on for them, and never while their login is switched off. Checked on every call, so switching it off cuts every connection at once.
 async function allowedProfile(admin, userId) {
   const { data } = await admin.from("profiles").select("role, ai_access, login_enabled").eq("id", userId).maybeSingle();
-  return Boolean(data && data.login_enabled !== false && (data.role === "admin" || data.ai_access));
+  if (!data || data.login_enabled === false || !(data.role === "admin" || data.ai_access)) return null;
+  return { admin: data.role === "admin" };
 }
 
 /**
@@ -84,6 +85,8 @@ export async function authenticateToken(req) {
     if (now.getTime() - last > 5 * 60 * 1000) await admin.from("oauth_grants").update({ last_used_at: now.toISOString() }).eq("id", row.grant.id);
   }
 
-  if (!(await allowedProfile(admin, owner))) return null;
-  return { client: await sessionClientFor(admin, owner), userId: owner, tokenName: name, scopes };
+  const who = await allowedProfile(admin, owner);
+  if (!who) return null;
+  // The manage_ scopes (agents, sites, blog, listings) only ever work for an admin account, whatever the token says.
+  return { client: await sessionClientFor(admin, owner), userId: owner, tokenName: name, scopes: who.admin ? scopes : scopes.filter((x) => !ADMIN_SCOPES.includes(x)), isAdmin: who.admin };
 }

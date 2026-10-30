@@ -10,14 +10,14 @@ const free = { type: "object", additionalProperties: true };
 const errors = { 400: json(obj({ error: str("What was wrong") }), "Bad request"), 401: json(obj({ error: str("") }), "Missing or invalid token"), 403: json(obj({ error: str("") }), "The token lacks the needed scope"), 404: json(obj({ error: str("") }), "Not found"), 409: json(obj({ error: str("") }), "Conflict, for example a duplicate") };
 const op = (summary, scope, extra) => ({ summary, description: scope ? `Needs the \`${scope}\` scope.` : "Any valid token.", security: [{ bearer: [] }], responses: { 200: json(free), ...errors }, ...extra });
 
-const saleFields = {
+export const saleFields = {
   address: str("Street address, e.g. 14 Willow Creek Ln. Required unless listing_id is sent."),
   city: str(""), state: str("e.g. OK"), price: num("Sold price in dollars (optional)"), sold_on: str("YYYY-MM-DD, shown as a \"Sold Oct 2026\" tag"),
   photo_url: str("A picture address to use as is"), photo_source_url: str("A public picture address to download and store"),
   listing_id: str("One of this agent's listings (GET /listings) to copy the address, price and first photo from. Anything else you send wins. A closed listing copied this way no longer shows with the current listings.", { format: "uuid" }),
 };
 
-const siteFields = {
+export const siteFields = {
   slug: str("Web address name, e.g. terri-boushon. Made from the agent's name if omitted."),
   status: str("draft (default) or published", { enum: ["draft", "published"] }),
   tagline: str("Short line under the name"),
@@ -41,7 +41,7 @@ const siteFields = {
   sales: { type: "array", maxItems: 30, items: obj(saleFields), description: "Past sales to add (shown as Recently Sold under the listings)" },
 };
 
-const listingFields = {
+export const listingFields = {
   status: str("draft (default), coming_soon, for_sale, pending, closed or off_market", { enum: ["draft", "coming_soon", "for_sale", "pending", "closed", "off_market"] }),
   mls_number: str(""), address_line1: str("Street address"), city: str(""), state: str("2-letter state"), zip: str(""),
   price: num("Asking price in dollars"), beds: { type: "integer" }, baths: num("5.2 means 5 full and 2 half"), sqft: { type: "integer" },
@@ -55,7 +55,7 @@ const listingFields = {
   hero_video_url: str(""), video_placement: str("Where the video plays: the hero, above the photo gallery, or both.", { enum: ["hero", "gallery", "both"] }), seo_title: str(""), seo_description: str(""), slug: str(""),
 };
 
-const postFields = {
+export const postFields = {
   title: str(""), body_markdown: str("The post in markdown. Use ## for sections. Lists become bullet lines."), body_html: str("Or HTML (only p, h2, h3, strong, em, u, br, a are kept)"),
   excerpt: str("Defaults to the first lines of the body"), category: str("e.g. Market Update, Neighborhood Guide"), post_date: str("YYYY-MM-DD, defaults to today"),
   status: str("draft (default), published or scheduled", { enum: ["draft", "published", "scheduled"] }), scheduled_at: str("ISO date-time; required when scheduled"),
@@ -76,6 +76,7 @@ const personFields = {
   next_follow_up: str("YYYY-MM-DD"),
   property_address: str("The home in a transaction"), price: num("Contract price"), commission: num("Commission in dollars"),
   other_agent: str(""), title_company: str(""), lender: str(""),
+  client2_name: str("Second client"), client2_email: str(""), other_agent_email: str(""), other_agent_tc_name: str("The other agent's transaction coordinator"), other_agent_tc_email: str(""), title_company_email: str(""), title_processor_name: str(""), title_processor_email: str(""), lender_email: str(""), loan_processor_name: str(""), loan_processor_email: str(""),
   contract_date: str("YYYY-MM-DD"), inspection_date: str("YYYY-MM-DD"), inspection_period_end: str("YYYY-MM-DD"), inspection_time: str("HH:MM, the time of the home inspection"), appraisal_date: str("YYYY-MM-DD"), financing_deadline: str("YYYY-MM-DD"), closing_date: str("YYYY-MM-DD"),
   earnest_money: num("Earnest money amount in dollars"), earnest_money_delivered: { type: "boolean", description: "true once it is at the title company (shows on the client and agent timelines)" },
   is_cash: { type: "boolean", description: "A cash purchase: no appraisal or financing dates" },

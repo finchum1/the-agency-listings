@@ -6,8 +6,14 @@ export const SCOPES = {
   write_people: "Add people, move them between stages, set follow-ups, add notes",
   write_tasks: "Add and tick off tasks, add and update contacts",
   write_deals: "Update deal dates and contacts, tick off deal tasks",
-  write_drafts: "Draft messages, blog posts and listings (nothing is sent or published)",
+  write_drafts: "Draft messages for you to send",
+  // Owner-only: these change your office's websites, listings and agents, and only an admin account can allow them.
+  manage_blog: "Write and edit blog posts on any agent site",
+  manage_listings: "Create and edit listings",
+  manage_agents: "Add agents to your dashboard",
+  manage_sites: "Edit any agent's website, areas, testimonials and past sales",
 };
+export const ADMIN_SCOPES = ["manage_blog", "manage_listings", "manage_agents", "manage_sites"];
 export const SCOPE_NAMES = Object.keys(SCOPES);
 
 export const ACCESS_TTL_S = 60 * 60;
@@ -21,10 +27,10 @@ export const newRefreshToken = () => `ort_${randomHex(32)}`;
 export const ACCESS_PATTERN = /^oat_[0-9a-f]{64}$/;
 export const REFRESH_PATTERN = /^ort_[0-9a-f]{64}$/;
 
-/** "read write_people" -> only the scopes that exist, always including read. */
-export function parseScopes(value) {
+/** "read write_people" -> only the scopes that exist, always including read. The manage_ scopes are for admin accounts only. */
+export function parseScopes(value, isAdmin = false) {
   const asked = Array.isArray(value) ? value : String(value || "").split(/[\s,]+/);
-  const set = new Set(asked.filter((s) => SCOPE_NAMES.includes(s)));
+  const set = new Set(asked.filter((s) => SCOPE_NAMES.includes(s) && (isAdmin || !ADMIN_SCOPES.includes(s))));
   set.add("read");
   return [...set];
 }

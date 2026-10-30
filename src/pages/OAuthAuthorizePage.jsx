@@ -12,9 +12,13 @@ const SCOPE_TEXT = {
   write_people: ["Add and update people", "Add leads and pipeline people, move them between stages, set follow-ups, add notes."],
   write_tasks: ["Tasks and contacts", "Add and tick off tasks, add and update contacts and tags."],
   write_deals: ["Deals", "Update deal dates and contacts, tick off deal tasks, add deal notes."],
-  write_drafts: ["Drafts", "Write draft messages, blog posts and listings for you to review. Nothing is sent or published."],
+  write_drafts: ["Drafts", "Write draft messages for you to send, and draft blog posts and listings of your own. Nothing is sent."],
+  manage_blog: ["Blog posts (owner)", "Write and edit blog posts on any agent's website. Can publish them."],
+  manage_listings: ["Listings (owner)", "Create and edit any listing in the office, including making it public."],
+  manage_agents: ["Agents (owner)", "Add agents to the dashboard. Can email them an invitation if asked."],
+  manage_sites: ["Agent websites (owner)", "Edit any agent's website: design, text, areas, testimonials, past sales. Can publish it."],
 };
-const ORDER = ["read", "write_people", "write_tasks", "write_deals", "write_drafts"];
+const ORDER = ["read", "write_people", "write_tasks", "write_deals", "write_drafts", "manage_blog", "manage_listings", "manage_agents", "manage_sites"];
 
 export default function OAuthAuthorizePage() {
   const { session, loading } = useAuth();
@@ -44,9 +48,10 @@ export default function OAuthAuthorizePage() {
     call({ action: "info" })
       .then((r) => {
         setInfo(r);
-        const asked = String(q.scope || "").split(/[\s,]+/).filter((x) => ORDER.includes(x));
-        // What the app asked for starts ticked; with no request at all, everything starts ticked (the agent can untick any of it).
-        setChosen(new Set(["read", ...(asked.length ? asked : ORDER)]));
+        const offered = ORDER.filter((x) => r.scopes.includes(x));
+        const asked = String(q.scope || "").split(/[\s,]+/).filter((x) => offered.includes(x));
+        // What the app asked for starts ticked; with no request at all, the everyday permissions start ticked and the owner-only ones don't.
+        setChosen(new Set(["read", ...(asked.length ? asked : offered.filter((x) => !x.startsWith("manage_")))]));
       })
       .catch((e) => setError(e.message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -91,7 +96,7 @@ export default function OAuthAuthorizePage() {
             <p className="mt-1.5 text-sm text-[#1c1a17]/65">It will act as you ({info.you}), only on your own data, and only for what you allow below. You can disconnect it any time under My Profile.</p>
           </div>
           <ul className="space-y-2">
-            {ORDER.map((scope) => (
+            {ORDER.filter((scope) => info.scopes.includes(scope)).map((scope) => (
               <li key={scope}>
                 <label className={`flex items-start gap-3 rounded-xl border border-black/10 px-3.5 py-3 ${scope === "read" ? "" : "cursor-pointer hover:bg-black/[0.02]"}`}>
                   <input type="checkbox" checked={chosen.has(scope)} disabled={scope === "read"} onChange={() => toggle(scope)} className="mt-1 h-4 w-4 accent-[#ed2127]" />
@@ -103,7 +108,7 @@ export default function OAuthAuthorizePage() {
               </li>
             ))}
           </ul>
-          <p className="text-xs text-[#1c1a17]/50">What you allow is shared with {info.client_name}, which has its own privacy terms. It can never send messages, delete anything or publish for you.</p>
+          <p className="text-xs text-[#1c1a17]/50">What you allow is shared with {info.client_name}, which has its own privacy terms. It can never delete anything, and it never sends a message for you (drafts only).{[...chosen].some((x) => x.startsWith("manage_")) ? " Changes under the owner permissions can go live on your websites right away." : ""}</p>
           <div className="flex items-center gap-3">
             <button type="button" disabled={busy} onClick={() => answer("approve")} className="rounded-full bg-[#1c1a17] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#1c1a17]/90 disabled:opacity-60">
               {busy ? "Connecting…" : "Allow"}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../hooks/useAuth";
 
 const inputClass =
   "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -34,7 +35,11 @@ const SCOPES = [
   ["write_people", "Add and update people", "People, follow-ups, notes"],
   ["write_tasks", "Tasks and contacts", "Add and tick off tasks, update contacts"],
   ["write_deals", "Deals", "Deal dates, contacts, deal tasks"],
-  ["write_drafts", "Drafts", "Draft messages, posts and listings. Nothing is sent or published"],
+  ["write_drafts", "Drafts", "Draft messages, blog posts and listings of your own. Nothing is sent"],
+  ["manage_blog", "Blog posts (owner)", "Write and edit blog posts on any agent site, and publish"],
+  ["manage_listings", "Listings (owner)", "Create and edit any listing"],
+  ["manage_agents", "Agents (owner)", "Add agents to the dashboard"],
+  ["manage_sites", "Agent websites (owner)", "Edit any agent's website"],
 ];
 const scopeLabel = (scopes) => scopes.filter((s) => s !== "read").map((s) => SCOPES.find((x) => x[0] === s)?.[1]).filter(Boolean).join(", ") || "Read only";
 
@@ -43,6 +48,7 @@ const scopeLabel = (scopes) => scopes.filter((s) => s !== "read").map((s) => SCO
 //   - Personal tokens, for bots that can't sign in (a Grok bot, a script): shown once when made, only a hash is kept, each with the permissions picked.
 // Whatever connects acts as this person, through the dashboard's own access rules, and can never send, delete or publish.
 export default function ClaudeConnectionCard() {
+  const { profile } = useAuth();
   const [apps, setApps] = useState([]);
   const [tokens, setTokens] = useState([]);
   const [name, setName] = useState("");
@@ -157,7 +163,7 @@ export default function ClaudeConnectionCard() {
           </button>
         </div>
         <div className="flex flex-wrap gap-x-5 gap-y-1.5" role="group" aria-label="What this token may do">
-          {SCOPES.map(([scope, label, hint]) => (
+          {SCOPES.filter(([scope]) => profile?.role === "admin" || !scope.startsWith("manage_")).map(([scope, label, hint]) => (
             <label key={scope} title={hint} className={`inline-flex items-center gap-1.5 text-xs ${scope === "read" ? "opacity-60" : "cursor-pointer"}`}>
               <input type="checkbox" checked={picked.has(scope)} disabled={scope === "read"} onChange={() => toggle(scope)} className="h-3.5 w-3.5 accent-[#ed2127]" />
               {label}

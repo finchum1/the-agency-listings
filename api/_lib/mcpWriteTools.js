@@ -26,7 +26,7 @@ const BOARD = { type: "string", enum: ["lead", "pipeline"], description: "lead =
 // ---- guard rails ----
 const recent = new Map(); // person id -> request times
 const WRITES_PER_MINUTE = 60;
-function rateLimit(userId) {
+export function rateLimit(userId) {
   const now = Date.now();
   const list = (recent.get(userId) || []).filter((t) => now - t < 60000);
   if (list.length >= WRITES_PER_MINUTE) throw new HttpError(429, `That's a lot of changes at once (limit ${WRITES_PER_MINUTE} a minute). Wait a moment and continue.`);
@@ -35,7 +35,7 @@ function rateLimit(userId) {
 }
 export const ctxFor = (sb, userId, tokenName, extra = {}) => ({ client: sb, admin: serviceClient(), ownerId: userId, scopes: ["people"], tokenName, tokenId: null, ...extra });
 
-async function audit(userId, tool, status, detail) {
+export async function audit(userId, tool, status, detail) {
   try {
     await serviceClient().from("api_audit_log").insert({ token_id: null, owner_id: userId, method: "TOOL", path: `mcp:${tool}`, status, detail: detail ? String(detail).slice(0, 500) : null });
   } catch {

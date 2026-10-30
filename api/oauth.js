@@ -8,7 +8,7 @@
 // The page the agent sees (/oauth/authorize) is part of the dashboard app (src/pages/OAuthAuthorizePage.jsx).
 import { isAppHost } from "../src/lib/appHosts.js";
 import { authenticate, serviceClient } from "./_lib/authUser.js";
-import { ACCESS_TTL_S, CODE_TTL_S, REFRESH_PATTERN, REFRESH_TTL_S, SCOPE_NAMES, newAccessToken, newRefreshToken, originOf, parseScopes, pkceMatches, randomHex, redirectUriOk, sha256 } from "./_lib/oauth.js";
+import { ACCESS_TTL_S, ADMIN_SCOPES, CODE_TTL_S, REFRESH_PATTERN, REFRESH_TTL_S, SCOPE_NAMES, newAccessToken, newRefreshToken, originOf, parseScopes, pkceMatches, randomHex, redirectUriOk, sha256 } from "./_lib/oauth.js";
 
 const json = (res, status, body, extra = {}) => {
   for (const [k, v] of Object.entries(extra)) res.setHeader(k, v);
@@ -97,7 +97,8 @@ export default async function handler(req, res) {
     const { data: profile } = await admin.from("profiles").select("role, ai_access, login_enabled, full_name").eq("id", auth.user.id).maybeSingle();
     const allowed = Boolean(profile && profile.login_enabled !== false && (profile.role === "admin" || profile.ai_access));
 
-    if (body.action === "info") return json(res, 200, { client_name: client.client_name, allowed, scopes: SCOPE_NAMES, you: profile?.full_name || auth.user.email });
+    const isAdmin = profile?.role === "admin";
+    if (body.action === "info") return json(res, 200, { client_name: client.client_name, allowed, admin: isAdmin, scopes: SCOPE_NAMES.filter((s) => isAdmin || !ADMIN_SCOPES.includes(s)), you: profile?.full_name || auth.user.email });
     if (!allowed) return json(res, 403, { error: "AI connections aren't turned on for your account. Ask an admin to turn them on." });
 
     const state = body.state ? `&state=${encodeURIComponent(String(body.state).slice(0, 500))}` : "";
@@ -113,7 +114,7 @@ export default async function handler(req, res) {
       user_id: auth.user.id,
       redirect_uri: redirectUri,
       code_challenge: challenge,
-      scopes: parseScopes(body.scopes),
+      scopes: parseScopes(body.scopes, isAdmin),
       expires_at: new Date(Date.now() + CODE_TTL_S * 1000).toISOString(),
     });
     if (error) return json(res, 500, { error: "Couldn't finish connecting. Try again." });
