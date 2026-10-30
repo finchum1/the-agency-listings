@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { dealAccess } from "../../lib/deals";
 import { useDealAttention } from "../../hooks/useDealAttention";
+import { usePeopleAttention } from "../../hooks/usePeopleAttention";
 import { createPortal } from "react-dom";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
@@ -417,6 +418,15 @@ export default function DashboardLayout() {
   const workingElsewhere = Boolean(isPlatformAdmin && org && profile?.org_id && org.id !== profile.org_id);
   const deals = dealAccess(profile);
   const dealsAttention = useDealAttention(deals.any && !workingElsewhere);
+  const peopleAttention = usePeopleAttention(Boolean(profile?.people_enabled) && !workingElsewhere, profile?.id, location.pathname);
+  // The red number beside an item that has something waiting (99+ when it is a lot).
+  const bubble = (n) =>
+    n > 0 && (
+      <span aria-label={`${n} need attention`} className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[#ed2127] dark:bg-[#f2454b] px-1 text-[10px] font-semibold leading-none text-white">
+        {n > 99 ? "99+" : n}
+      </span>
+    );
+  const flyBadge = { "/dashboard/people/contacts": peopleAttention.contacts, "/dashboard/people/leads": peopleAttention.leads, "/dashboard/people/pipeline": peopleAttention.pipeline };
   const siteAccess = profile?.site_access || "full";
   // The pages of the website are a menu inside the Website page itself (SiteWorkspace), so the dashboard menu has one Website entry.
   const siteHome = siteAccess === "limited" ? "/dashboard/site/blog" : "/dashboard/site/content";
@@ -446,7 +456,11 @@ export default function DashboardLayout() {
           return (
             <Link key={label} to={to} onClick={onNavigate} aria-label={label} aria-current={active ? "page" : undefined} className={itemClass(active, false)} {...handlers} {...extra}>
               <NavIcon name={icon} />
-              {badge > 0 && <span aria-hidden="true" className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#ed2127] dark:bg-[#f2454b] ring-2 ring-white dark:ring-[#161616]" />}
+              {badge > 0 && (
+                <span aria-label={`${badge} need attention`} className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ed2127] dark:bg-[#f2454b] px-1 text-[9px] font-semibold leading-none text-white ring-2 ring-white dark:ring-[#1a1a1a]">
+                  {badge > 99 ? "99+" : badge}
+                </span>
+              )}
             </Link>
           );
         }
@@ -477,7 +491,7 @@ export default function DashboardLayout() {
           <div className="flex flex-col gap-1.5">
             {!workingElsewhere && railItem("Home", "home", path === "/dashboard" || path === "/dashboard/", { to: "/dashboard" })}
             {!workingElsewhere && siteAccess !== "none" && railItem("Website", "website", inSite, { to: siteHome, extra: siteAccess === "limited" ? undefined : flyTrigger("site", onNavigate) })}
-            {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { to: "/dashboard/people/overview", extra: flyTrigger("people", onNavigate) })}
+            {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { to: "/dashboard/people/overview", badge: peopleAttention.total, extra: flyTrigger("people", onNavigate) })}
             {!workingElsewhere && deals.any && railItem("Deals", "deals", path.startsWith("/dashboard/deals"), { to: "/dashboard/deals", badge: dealsAttention.total, extra: deals.mine ? flyTrigger("deals", onNavigate) : undefined })}
             {NAV_ITEMS.map((item) => railItem(item.label, item.icon, item.activeWhen(path), { to: item.to }))}
           </div>
@@ -521,6 +535,7 @@ export default function DashboardLayout() {
             <Link to="/dashboard/people/overview" {...flyTrigger("people", onNavigate)} className={`${navLinkClass(inPeople)} flex items-center gap-3`}>
               <NavIcon name="people" />
               <span className="flex-1">People</span>
+              {bubble(peopleAttention.total)}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0 text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
                 <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
@@ -807,6 +822,7 @@ export default function DashboardLayout() {
                 className={navLinkClass(item.exact ? location.pathname === item.to : location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))}
               >
                 {item.label}
+                {flyBadge[item.to] > 0 && <span className="float-right mt-px">{bubble(flyBadge[item.to])}</span>}
               </Link>
             ))}
           </div>,
