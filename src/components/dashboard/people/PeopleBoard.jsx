@@ -658,48 +658,9 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
 
       {boardError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{boardError}</p>}
 
-      {/* The controls that belong to the board itself, right above it: view and filter, then adding a column, all in one row (the button stays beside the controls rather than drifting to the page's far edge). */}
+      {/* The controls that belong to the board itself, right above it: view and filter. Adding a column is the ghost column at the end of the board, as in Trello. */}
       {!overviewOnly && <div className="flex flex-wrap items-center gap-3">
         {typeof toolbarLeft === "function" ? toolbarLeft({ ownCount: active.length }) : toolbarLeft}
-        {view === "board" && (
-          <>
-            {addingColumn ? (
-          <form onSubmit={handleAddColumn} className="flex items-center gap-2 shrink-0">
-            <input
-              autoFocus
-              value={newColumnName}
-              onChange={(e) => setNewColumnName(e.target.value)}
-              placeholder="Column name"
-              className={`${inputClass} w-44`}
-            />
-            <button
-              type="submit"
-              className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-4 py-2"
-            >
-              Add
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAddingColumn(false);
-                setNewColumnName("");
-              }}
-              className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
-            >
-              Cancel
-            </button>
-          </form>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setAddingColumn(true)}
-            className="shrink-0 rounded-full border border-black/15 dark:border-white/20 px-4 py-2 text-sm font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-          >
-            + Add column
-          </button>
-        )}
-          </>
-        )}
       </div>}
 
       {/* The board is a fixed-height strip: it scrolls sideways, and each
@@ -938,6 +899,50 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
             </div>
           );
         })}
+        {/* Trello-style: the way to add a column is the empty one at the end of the row. It opens into a name box in place. */}
+        <div className="w-64 shrink-0 self-start">
+          {addingColumn ? (
+            <form onSubmit={handleAddColumn} className="space-y-2 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] p-2.5">
+              <input
+                autoFocus
+                value={newColumnName}
+                onChange={(e) => setNewColumnName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setAddingColumn(false);
+                    setNewColumnName("");
+                  }
+                }}
+                placeholder="Column name"
+                aria-label="Column name"
+                className={`${inputClass} w-full`}
+              />
+              <div className="flex items-center gap-2">
+                <button type="submit" className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-4 py-2">
+                  Add column
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddingColumn(false);
+                    setNewColumnName("");
+                  }}
+                  className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAddingColumn(true)}
+              className="flex w-full items-center gap-2 rounded-2xl bg-black/[0.04] dark:bg-white/[0.06] px-4 py-3 text-sm font-semibold text-[#1c1a17]/65 dark:text-[#faf9f7]/65 hover:bg-black/[0.08] dark:hover:bg-white/[0.1] transition-colors"
+            >
+              <span aria-hidden="true">+</span> Add column
+            </button>
+          )}
+        </div>
       </div>
       )}
 
