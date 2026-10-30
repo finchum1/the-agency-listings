@@ -396,6 +396,10 @@ export default function App() {
         <Route path="listings/:id/analytics" element={<ListingAnalyticsPage />} />
         <Route path="profile" element={<MyProfilePage />} />
         <Route path="site" element={<DashboardHome />} />
+        <Route path="site/content" element={<MySitePage section="content" />} />
+        <Route path="site/design" element={<MySitePage section="design" />} />
+        <Route path="site/settings" element={<MySitePage section="settings" />} />
+        <Route path="site/insights" element={<MySitePage section="insights" />} />
         <Route path="site/analytics" element={<MySitePage section="analytics" />} />
         <Route path="site/details" element={<MySitePage section="details" />} />
         <Route path="site/testimonials" element={<MySitePage section="testimonials" />} />

@@ -13,6 +13,10 @@ const NAMES = {
   "/dashboard/people/leads": "Leads",
   "/dashboard/people/pipeline": "Pipeline",
   "/dashboard/site": "Website",
+  "/dashboard/site/content": "Website content",
+  "/dashboard/site/design": "Website design",
+  "/dashboard/site/settings": "Website settings",
+  "/dashboard/site/insights": "Website insights",
   "/dashboard/site/analytics": "Site analytics",
   "/dashboard/site/details": "Site details",
   "/dashboard/site/compare": "Compare templates",
@@ -35,7 +39,7 @@ export function tabTitle(url) {
   const path = pathname.replace(/\/+$/, "") || "/dashboard";
   const params = new URLSearchParams(search);
   if (path === "/dashboard/deals" && params.get("deal")) return "Deal";
-  if (path === "/dashboard/site/blog" && (params.get("new") || params.get("edit"))) return params.get("new") ? "New blog post" : "Edit blog post";
+  if ((path === "/dashboard/site/blog" || path === "/dashboard/site/content") && (params.get("new") || params.get("edit"))) return params.get("new") ? "New blog post" : "Edit blog post";
   if (path === "/dashboard/people/contacts" && params.get("contact")) return "Contact";
   if (NAMES[path]) return NAMES[path];
   if (/^\/dashboard\/listings\/[^/]+\/edit$/.test(path)) return "Edit listing";

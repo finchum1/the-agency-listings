@@ -5,7 +5,7 @@ const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 
 // The page around a site editor (an agent's site, or the brokerage's): the name and Draft / Live at the top, what is still missing, and a menu of
 // the site's pages down the left (a dropdown on a narrow screen) with the chosen page on the right, one page at a time.
-//   groups   [{ title, items: [{ key, hash?, label }] }]  a page is the editor's section `key`; `hash` picks one accordion section of a form page
+//   groups   (optional: leave out for a page that scrolls on its own, with no menu) [{ title, items: [{ key, hash?, label }] }]  a page is the editor's section `key`; `hash` picks one accordion section of a form page
 //   address  (item) => the address of that page
 //   current  { key, hash } the page showing now (a form page with no hash is `defaultHash`)
 export const itemActive = (item, section, hash) => item.key === section && (item.hash ? item.hash === hash : true);
@@ -150,7 +150,7 @@ export default function SiteWorkspace({ title, back, viewHref, groups, address, 
       <SetupChecklist items={checklist} />
 
       <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
-        <SiteMenu groups={groups} address={address} section={section} hash={hash} />
+        {groups && <SiteMenu groups={groups} address={address} section={section} hash={hash} />}
         <div className="min-w-0 flex-1">{children}</div>
       </div>
     </div>

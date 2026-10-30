@@ -6,7 +6,7 @@ import AgentSiteWorkspace from "./AgentSiteWorkspace";
 // Admin-only: edit any agent's site by their profile id (route /dashboard/sites/:agentId/:section?). Self-editing goes through MySitePage instead; both
 // use the same workspace (AgentSiteWorkspace): a menu of the site's pages down the left and one page at a time on the right.
 export default function EditAgentSitePage() {
-  const { agentId, section = "details" } = useParams();
+  const { agentId, section = "content" } = useParams();
   const location = useLocation();
   const [agent, setAgent] = useState(null);
   const [notFound, setNotFound] = useState(false);

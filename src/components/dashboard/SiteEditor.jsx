@@ -10,6 +10,7 @@ import RedirectsManager from "./RedirectsManager";
 import ImportPosts from "./ImportPosts";
 import CompareTemplatesPanel from "./CompareTemplatesPanel";
 import { useAuth } from "../../hooks/useAuth";
+import { siteGroup, partAnchor } from "../../lib/siteGroups";
 
 // Shared editor for an agent's personal site — used both for an agent's
 // own "My Site" pages and, for admins, to edit any other agent's site from
@@ -62,14 +63,19 @@ const SECTIONS = {
   },
 };
 
-export default function SiteEditor({ agentId, agentName, heading, section, hideHeader, focus }) {
+export default function SiteEditor({ agentId, agentName, heading, section, hideHeader, focus, group }) {
   const { isAdmin } = useAuth();
   const { site, testimonials, areas, posts, sales, loading, error, refresh } = useAgentSiteEditor(
     agentId,
     agentName,
   );
 
-  const show = (key) => !section || section === key;
+  // `group` (content | design | settings | insights) stacks that group's parts one after another on a single page; `section` shows one part.
+  const g = group ? siteGroup(group) : null;
+  const show = (key) => (g ? g.items.some((i) => i.key === key) : !section || section === key);
+  const formParts = g ? g.items.filter((i) => i.key === "details").map(partAnchor) : null;
+  // A plain function, not a component: a component defined here would be a new type on every render and remount the managers inside it.
+  const part = (id, node) => (g ? <section key={id} id={id} className="scroll-mt-24">{node}</section> : node);
 
   if (loading) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
   if (error) return <p className="text-sm text-red-600 dark:text-red-400">{error}</p>;
@@ -79,7 +85,7 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
 
   // The blog page (list, calendar, analytics and the post editor) is a little wider than the other site pages' short forms.
   return (
-    <div className={`${section === "blog" ? "max-w-4xl" : section === "compare" ? "max-w-7xl" : section === "analytics" || section === "listings" ? "max-w-5xl" : "max-w-3xl"} space-y-8`}>
+    <div className={`${g ? "max-w-5xl" : section === "blog" ? "max-w-4xl" : section === "compare" ? "max-w-7xl" : section === "analytics" || section === "listings" ? "max-w-5xl" : "max-w-3xl"} space-y-8`}>
       {!hideHeader && (
         <div>
           <h1 className="text-2xl font-display font-semibold">{heading || meta?.title || "Website"}</h1>
@@ -91,17 +97,23 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
         </div>
       )}
 
-      {show("analytics") && <SiteAnalytics site={site} />}
+      {show("analytics") && part("analytics", <SiteAnalytics site={site} />)}
 
-      {show("details") && <SiteForm site={site} onSaved={refresh} focus={focus} salesCount={sales.length} />}
-      {section === "compare" && <CompareTemplatesPanel site={site} onChanged={refresh} />}
-      {show("testimonials") && <TestimonialsManager agentSiteId={site.id} testimonials={testimonials} onChanged={refresh} />}
-      {show("areas") && <AreasManager agentSiteId={site.id} areas={areas} onChanged={refresh} />}
-      {show("listings") && <SiteListingsManager agentId={agentId} agentName={agentName} />}
-      {show("sales") && <SalesManager agentSiteId={site.id} agentId={agentId} sales={sales} onChanged={refresh} />}
-      {show("redirects") && <RedirectsManager site={site} />}
-      {show("blog") && <PostsManager agentSiteId={site.id} agentId={agentId} posts={posts} onChanged={refresh} />}
-      {show("blog") && isAdmin && <ImportPosts agentSiteId={site.id} onImported={refresh} />}
+      {show("details") && <SiteForm site={site} onSaved={refresh} focus={g ? formParts : focus} salesCount={sales.length} />}
+      {(g ? show("compare") : section === "compare") && part("compare", <CompareTemplatesPanel site={site} onChanged={refresh} />)}
+      {show("listings") && part("listings", <SiteListingsManager agentId={agentId} agentName={agentName} />)}
+      {show("testimonials") && part("testimonials", <TestimonialsManager agentSiteId={site.id} testimonials={testimonials} onChanged={refresh} />)}
+      {show("areas") && part("areas", <AreasManager agentSiteId={site.id} areas={areas} onChanged={refresh} />)}
+      {show("blog") &&
+        part(
+          "blog",
+          <div className="space-y-8">
+            <PostsManager agentSiteId={site.id} agentId={agentId} posts={posts} onChanged={refresh} />
+            {isAdmin && <ImportPosts agentSiteId={site.id} onImported={refresh} />}
+          </div>,
+        )}
+      {show("sales") && part("sales", <SalesManager agentSiteId={site.id} agentId={agentId} sales={sales} onChanged={refresh} />)}
+      {show("redirects") && part("redirects", <RedirectsManager site={site} />)}
     </div>
   );
 }

@@ -1,47 +1,15 @@
-import { useMemo } from "react";
-import { Navigate } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import useSiteSummary from "../../hooks/useSiteSummary";
 import SiteEditor from "./SiteEditor";
 import SiteWorkspace from "./SiteWorkspace";
+import { SITE_GROUP_KEYS, SITE_GROUPS, siteGroup, locateSitePart } from "../../lib/siteGroups";
 
-// The pages of an agent's site, grouped by what you are doing. `hash` points at one accordion section of the Site Details form (SiteForm), so
-// each reads as a page of its own; the others are pages of the editor (see SiteEditor's sections).
-const GROUPS = [
-  {
-    title: "Content",
-    items: [
-      { key: "details", hash: "basic", label: "Basic info" },
-      { key: "details", hash: "photos", label: "Photos, video and bio" },
-      { key: "listings", label: "Listings" },
-      { key: "testimonials", label: "Testimonials" },
-      { key: "areas", label: "Areas of expertise" },
-      { key: "blog", label: "Blog posts" },
-      { key: "sales", label: "Past sales" },
-    ],
-  },
-  {
-    title: "Design",
-    items: [
-      { key: "details", hash: "design", label: "Template and design" },
-      { key: "details", hash: "home", label: "Home page sections" },
-      { key: "details", hash: "cards", label: "Buyer and seller cards" },
-      { key: "compare", label: "Compare templates" },
-    ],
-  },
-  {
-    title: "Settings",
-    items: [
-      { key: "details", hash: "social", label: "Social media" },
-      { key: "details", hash: "seo", label: "SEO and sharing" },
-      { key: "details", hash: "domain", label: "Custom domain" },
-      { key: "details", hash: "idx", label: "Home search (IDX)" },
-      { key: "redirects", label: "Redirects" },
-    ],
-  },
-  { title: "Insights", items: [{ key: "analytics", label: "Analytics" }] },
-];
-export const AGENT_SITE_SECTIONS = [...new Set(GROUPS.flatMap((g) => g.items.map((i) => i.key)))];
+// The site editor is four pages — Content, Design, Settings and Insights (lib/siteGroups.js) — each one scrolling through all of its parts. The Website
+// entry in the dashboard menu opens them (hover it for the list). An address that names a single part (/site/blog, /site/details#domain) goes to the
+// page that part is on, scrolled to it.
+export const AGENT_SITE_SECTIONS = [...SITE_GROUP_KEYS, ...new Set(SITE_GROUPS.flatMap((g) => g.items.map((i) => i.key)))];
 
 // What a site needs to look finished: each item says whether it is done and where to go to do it.
 function checklistFor(summary, address) {
@@ -64,13 +32,40 @@ function checklistFor(summary, address) {
  * signed-in agent's own (under /dashboard/site). `limited` is an agent who may only write blog posts: just that page, no menu.
  */
 export default function AgentSiteWorkspace({ agentId, agentName, mode, section, hash }) {
+  const location = useLocation();
   const base = mode === "admin" ? `/dashboard/sites/${agentId}` : "/dashboard/site";
-  const address = (i) => `${base}/${i.key}${i.hash ? `#${i.hash}` : ""}`;
+  // The address of a part of the editor: its page, scrolled to it.
+  const address = (i) => {
+    const at = locateSitePart(i.key, i.hash);
+    return `${base}/${at.group}#${at.anchor}`;
+  };
   const { summary, setStatus } = useSiteSummary(agentId);
   const checklist = useMemo(() => checklistFor(summary, address), [summary, base]); // eslint-disable-line react-hooks/exhaustive-deps
   const site = summary?.site;
 
-  if (!AGENT_SITE_SECTIONS.includes(section)) return <Navigate to={`${base}/details`} replace />;
+  // Bring the part named in the address into view once the page has loaded it.
+  useEffect(() => {
+    if (!hash) {
+      window.scrollTo(0, 0);
+      return undefined;
+    }
+    let tries = 0;
+    const timer = setInterval(() => {
+      const el = document.getElementById(hash);
+      if (el || ++tries > 30) {
+        clearInterval(timer);
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
+    return () => clearInterval(timer);
+  }, [section, hash]);
+
+  const group = siteGroup(section);
+  if (!AGENT_SITE_SECTIONS.includes(section)) return <Navigate to={`${base}/content`} replace />;
+  if (!group) {
+    const at = locateSitePart(section, hash);
+    return <Navigate to={`${base}/${at.group}${location.search}#${at.anchor}`} replace />;
+  }
 
   const changeStatus = async (status) => {
     const { error } = await supabase.from("agent_sites").update({ status }).eq("id", site.id);
@@ -85,15 +80,11 @@ export default function AgentSiteWorkspace({ agentId, agentName, mode, section, 
       title={mode === "admin" ? `${agentName}'s Site` : "My website"}
       back={mode === "admin" ? { to: "/dashboard/sites", label: "← All sites" } : null}
       viewHref={site ? `/sites/${site.slug}` : null}
-      groups={GROUPS}
-      address={address}
-      section={section}
-      hash={section === "details" && !hash ? "basic" : hash}
       status={site?.status}
       onStatusChange={site ? changeStatus : null}
       checklist={checklist}
     >
-      <SiteEditor key={`${agentId}-${section}`} agentId={agentId} agentName={agentName} section={section} hideHeader focus={section === "details" ? hash || "basic" : undefined} />
+      <SiteEditor key={`${agentId}-${section}`} agentId={agentId} agentName={agentName} group={section} hideHeader />
     </SiteWorkspace>
   );
 }

@@ -8,7 +8,7 @@ import { useLocation } from "react-router-dom";
 // keep whatever value/state they already had while collapsed, nothing
 // unmounts.
 // When a form sets this (the id of one section), only that section shows, open and without the accordion header: each page of the agent-site editor
-// is one section. Left undefined, the sections are an accordion, as an agent sees them on their own My Site page.
+// is one section; a list of ids shows those sections one after another (a page of the editor that scrolls). Left undefined, the sections are an accordion, as an agent sees them on their own My Site page.
 export const SectionFocus = createContext(undefined);
 
 export default function CollapsibleSection({ id, title, description, defaultOpen = false, children }) {
@@ -25,9 +25,9 @@ export default function CollapsibleSection({ id, title, description, defaultOpen
   }, [hash, key, id]);
 
   if (focus !== undefined) {
-    if (focus !== id) return null;
+    if (Array.isArray(focus) ? !focus.includes(id) : focus !== id) return null;
     return (
-      <div id={id}>
+      <div id={id} className="scroll-mt-24">
         <div className="mb-5">
           <h3 className="font-display text-lg font-semibold">{title}</h3>
           {description && <p className="mt-1 text-sm text-[#1c1a17]/55 dark:text-[#faf9f7]/55">{description}</p>}
