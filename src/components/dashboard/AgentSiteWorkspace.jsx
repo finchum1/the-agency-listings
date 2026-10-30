@@ -4,7 +4,7 @@ import { supabase } from "../../lib/supabaseClient";
 import useSiteSummary from "../../hooks/useSiteSummary";
 import SiteEditor from "./SiteEditor";
 import SiteWorkspace from "./SiteWorkspace";
-import { SITE_GROUP_KEYS, SITE_GROUPS, siteGroup, locateSitePart } from "../../lib/siteGroups";
+import { SITE_GROUP_KEYS, SITE_GROUPS, partAnchor, siteGroup, locateSitePart } from "../../lib/siteGroups";
 
 // The site editor is four pages — Content, Design, Settings and Insights (lib/siteGroups.js) — each one scrolling through all of its parts. The Website
 // entry in the dashboard menu opens them (hover it for the list). An address that names a single part (/site/blog, /site/details#domain) goes to the
@@ -84,6 +84,20 @@ export default function AgentSiteWorkspace({ agentId, agentName, mode, section, 
       onStatusChange={site ? changeStatus : null}
       checklist={checklist}
     >
+      {/* A page is long, so its parts are listed here as jump links (they stay in view while the page scrolls). */}
+      <nav aria-label={`${group.title} on this page`} className="sticky top-[3.4rem] z-20 -mx-1 mb-4 flex flex-wrap items-center gap-1.5 bg-[#faf9f7] dark:bg-[#0d0d0d] px-1 py-2">
+        <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/45 dark:text-[#faf9f7]/45">Jump to</span>
+        {group.items.map((item) => (
+          <button
+            key={partAnchor(item)}
+            type="button"
+            onClick={() => document.getElementById(partAnchor(item))?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="rounded-full border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] px-3 py-1 text-xs font-medium hover:bg-black/5 dark:hover:bg-white/10"
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
       <SiteEditor key={`${agentId}-${section}`} agentId={agentId} agentName={agentName} group={section} hideHeader />
     </SiteWorkspace>
   );

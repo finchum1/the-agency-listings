@@ -75,7 +75,7 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
   const show = (key) => (g ? g.items.some((i) => i.key === key) : !section || section === key);
   const formParts = g ? g.items.filter((i) => i.key === "details").map(partAnchor) : null;
   // A plain function, not a component: a component defined here would be a new type on every render and remount the managers inside it.
-  const part = (id, node) => (g ? <section key={id} id={id} className="scroll-mt-24">{node}</section> : node);
+  const part = (id, node) => (g ? <section key={id} id={id} className="scroll-mt-28">{node}</section> : node);
 
   if (loading) return <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>;
   if (error) return <p className="text-sm text-red-600 dark:text-red-400">{error}</p>;

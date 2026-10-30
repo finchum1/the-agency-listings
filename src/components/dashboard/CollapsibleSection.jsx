@@ -27,7 +27,7 @@ export default function CollapsibleSection({ id, title, description, defaultOpen
   if (focus !== undefined) {
     if (Array.isArray(focus) ? !focus.includes(id) : focus !== id) return null;
     return (
-      <div id={id} className="scroll-mt-24">
+      <div id={id} className="scroll-mt-28">
         <div className="mb-5">
           <h3 className="font-display text-lg font-semibold">{title}</h3>
           {description && <p className="mt-1 text-sm text-[#1c1a17]/55 dark:text-[#faf9f7]/55">{description}</p>}
