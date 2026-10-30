@@ -43,6 +43,13 @@ const FLYOUTS = {
       { to: "/dashboard/settings", label: "Settings" },
     ],
   },
+  deals: {
+    title: "Deals",
+    items: [
+      { to: "/dashboard/deals", label: "Overview", exact: true },
+      { to: "/dashboard/deals/board", label: "Board" },
+    ],
+  },
   site: {
     title: "Website",
     items: [
@@ -471,7 +478,7 @@ export default function DashboardLayout() {
             {!workingElsewhere && railItem("Home", "home", path === "/dashboard" || path === "/dashboard/", { to: "/dashboard" })}
             {!workingElsewhere && siteAccess !== "none" && railItem("Website", "website", inSite, { to: siteHome, extra: siteAccess === "limited" ? undefined : flyTrigger("site", onNavigate) })}
             {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { to: "/dashboard/people/overview", extra: flyTrigger("people", onNavigate) })}
-            {!workingElsewhere && deals.any && railItem("Deals", "deals", path.startsWith("/dashboard/deals"), { to: "/dashboard/deals", badge: dealsAttention.total })}
+            {!workingElsewhere && deals.any && railItem("Deals", "deals", path.startsWith("/dashboard/deals"), { to: "/dashboard/deals", badge: dealsAttention.total, extra: deals.mine ? flyTrigger("deals", onNavigate) : undefined })}
             {NAV_ITEMS.map((item) => railItem(item.label, item.icon, item.activeWhen(path), { to: item.to }))}
           </div>
           {isAdmin && (
@@ -522,10 +529,15 @@ export default function DashboardLayout() {
         )}
         {!workingElsewhere && deals.any && (
           <div className="mt-1 space-y-1">
-            <Link to="/dashboard/deals" onClick={onNavigate} className={`${navLinkClass(path.startsWith("/dashboard/deals"))} flex items-center gap-3`}>
+            <Link to="/dashboard/deals" {...(deals.mine ? flyTrigger("deals", onNavigate) : { onClick: onNavigate })} className={`${navLinkClass(path.startsWith("/dashboard/deals"))} flex items-center gap-3`}>
               <NavIcon name="deals" />
               <span className="flex-1">Deals</span>
               {dealsAttention.total > 0 && <span aria-label={`${dealsAttention.total} need attention`} className="rounded-full bg-[#ed2127] dark:bg-[#f2454b] px-1.5 py-px text-[10px] font-semibold text-white">{dealsAttention.total}</span>}
+              {deals.mine && (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0 text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
+                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
             </Link>
           </div>
         )}
@@ -792,7 +804,7 @@ export default function DashboardLayout() {
                   setFlyout(null);
                   setMobileNavOpen(false);
                 }}
-                className={navLinkClass(location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))}
+                className={navLinkClass(item.exact ? location.pathname === item.to : location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))}
               >
                 {item.label}
               </Link>

@@ -259,7 +259,7 @@ function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleCl
 // coordinator panel through `onOpenForeign`, can't be dragged) shown after the agent's own cards in the column with the same name, or in an
 // extra column of their own when the owner's stage name isn't one of ours. `showOwn` hides the agent's own cards (the "TC deals" filter),
 // `toolbarLeft` is the view/filter controls, and `view="list"` swaps the columns for whatever `renderList` draws.
-export default function PeopleBoard({ group, renderOverview, foreignDeals = [], onOpenForeign, onMoveForeign, toolbarLeft, view = "board", showOwn = true, renderList, personFilter, cardExtra, onPeopleChanged, foreignOpenId, onOwnOpened, peek: peekProp, initialOpenId }) {
+export default function PeopleBoard({ group, overviewOnly = false, renderOverview, foreignDeals = [], onOpenForeign, onMoveForeign, toolbarLeft, view = "board", showOwn = true, renderList, personFilter, cardExtra, onPeopleChanged, foreignOpenId, onOwnOpened, peek: peekProp, initialOpenId }) {
   const board = BOARDS[group];
   const { people, setPeople, loading, error, refresh } = usePeople();
   const { progress, reload: reloadProgress } = useTransactionProgress(group === "transaction");
@@ -659,7 +659,7 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
       {boardError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{boardError}</p>}
 
       {/* The controls that belong to the board itself, right above it: view and filter on the left, adding a column on the right. */}
-      <div className="flex flex-wrap items-center gap-3">
+      {!overviewOnly && <div className="flex flex-wrap items-center gap-3">
         {typeof toolbarLeft === "function" ? toolbarLeft({ ownCount: active.length }) : toolbarLeft}
         {view === "board" && (
           <>
@@ -700,16 +700,16 @@ export default function PeopleBoard({ group, renderOverview, foreignDeals = [], 
         )}
           </>
         )}
-      </div>
+      </div>}
 
       {/* The board is a fixed-height strip: it scrolls sideways, and each
           column scrolls up and down on its own. The strip is the full board
           height (not just as tall as the shortest column), so the horizontal
           scrollbar stays pinned near the bottom of the screen. */}
-      {view === "list" && renderList ? (
+      {overviewOnly ? null : view === "list" && renderList ? (
         renderList({ own: showOwn ? active : [], foreign, progress, closedStage, stages, openDeal: setSelectedId, openForeign: onOpenForeign, cadenceFor })
       ) : (
-      <div ref={boardRef} className="flex gap-3 overflow-x-auto overflow-y-hidden h-[calc(100vh-14rem)] min-h-[26rem] -mx-1 px-1 pb-1">
+      <div ref={boardRef} className="flex gap-3 overflow-x-auto overflow-y-hidden h-[calc(100vh-19rem)] min-h-[26rem] -mx-1 px-1 pb-1">
         {displayStages.map((stage, stageIndex) => {
           const isForeignCol = stageIndex >= stages.length;
           const col = [...(showOwn && !isForeignCol ? sortCol(active.filter((p) => p.stage === stage)) : []), ...sortCol(foreign.filter((p) => columnOf(p) === stage))];

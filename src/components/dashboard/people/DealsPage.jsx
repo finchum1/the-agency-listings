@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../../../hooks/useAuth";
 import { dealAccess } from "../../../lib/deals";
 import { useDealAttention } from "../../../hooks/useDealAttention";
@@ -37,10 +38,11 @@ function useRemembered(key, initial, allowed) {
 const seg = "inline-flex rounded-full bg-black/5 dark:bg-white/10 p-0.5";
 const segBtn = (on) => `rounded-full px-3 py-1.5 text-xs font-semibold ${on ? "bg-white dark:bg-[#2a2a2a] shadow-sm" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"}`;
 
-// Deals, on one page. An agent gets their overview and a board (or list) of their deals. A coordinator sees the deals they coordinate for other
+// Deals is two pages: the Overview (where everything stands, what needs you, what is coming up; the page the Deals menu entry opens) and the Board, which
+// has nothing above it but a one-line "needs you" link back to the overview, so every deal fits on one screen. An agent gets a board (or list) of their deals. A coordinator sees the deals they coordinate for other
 // agents on that same board, with a filter for just those. A compliance reviewer with deals of their own gets the rest of the office as a
 // review section below; a coordinator or reviewer with no board of their own gets the office list.
-export default function DealsPage() {
+export default function DealsPage({ page = "board" }) {
   const { profile, user } = useAuth();
   const access = dealAccess(profile);
   const attention = useDealAttention(access.any);
@@ -55,6 +57,9 @@ export default function DealsPage() {
   const [justStarted, setJustStarted] = useState(null);
   const [startNote, setStartNote] = useState("");
   const viewer = access.isCompliance ? "compliance" : "tc";
+  // A link to a particular deal (?deal=..., from an email, the search or a quick add) opens it on the board, not on the overview. Decided once, on arrival:
+  // opening a deal from the overview later puts ?deal= in its address too, and that must not send you away.
+  const [toBoard] = useState(() => page === "overview" && new URLSearchParams(window.location.search).get("deal"));
 
   // A link to one of the deals you coordinate (?deal=...) opens it once the list has loaded. Your own deals open from the board itself.
   useUrlParamSync("deal", openForeignId);
@@ -65,6 +70,8 @@ export default function DealsPage() {
       linkedDeal.current = null;
     }
   }, [coordinated.deals]);
+
+  if (toBoard) return <Navigate to={`/dashboard/deals/board${window.location.search}`} replace />;
 
   if (access.team && !access.mine) {
     const intro = access.isCompliance
@@ -86,8 +93,10 @@ export default function DealsPage() {
   const agentCounts = new Map();
   for (const d of coordinated.deals) if (d._agent) agentCounts.set(d.owner_id, { name: d._agent, n: (agentCounts.get(d.owner_id)?.n || 0) + 1 });
   const agentOptions = [...agentCounts.entries()].sort((a, b) => a[1].name.localeCompare(b[1].name));
-  const agentOn = tcMode && agent && agentCounts.has(agent) ? agent : "";
-  const effectiveMode = tcMode ? (agentOn ? "tc" : mode) : "mine";
+  // The All / Mine / TC deals filter lives on the board; the overview always counts everything.
+  const onBoard = page === "board";
+  const agentOn = onBoard && tcMode && agent && agentCounts.has(agent) ? agent : "";
+  const effectiveMode = tcMode ? (agentOn ? "tc" : onBoard ? mode : "all") : "mine";
   const foreignShown = tcMode && effectiveMode !== "mine" ? (agentOn ? coordinated.deals.filter((d) => d.owner_id === agentOn) : coordinated.deals) : [];
   const openForeign = coordinated.deals.find((d) => d.id === openForeignId);
 
@@ -161,6 +170,7 @@ export default function DealsPage() {
     <div className="space-y-10">
       <PeopleBoard
         key={boardKey}
+        overviewOnly={!onBoard}
         initialOpenId={justStarted}
         group="transaction"
         view={view}
@@ -183,8 +193,20 @@ export default function DealsPage() {
           // goes to the coordinator panel; your own open in the board's panel.
           const foreignIds = new Set(foreignShown.map((d) => d.id));
           const merged = { ...props, deals: [...(effectiveMode !== "tc" ? props.deals : []), ...foreignShown], openDeal: (id) => (foreignIds.has(id) ? setOpenForeignId(id) : props.openDeal(id)) };
+          if (onBoard) return <DealsHome {...merged} lineOnly />;
           return (
           <>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link to="/dashboard/deals/board" className="rounded-full border border-black/15 dark:border-white/20 px-4 py-2 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10">
+                Open the board
+              </Link>
+              {access.mine && (
+                <button type="button" onClick={() => setStarting(true)} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-4 py-2 hover:bg-[#1c1a17]/90">
+                  + Start a deal
+                </button>
+              )}
+              {startNote && <p role="status" className="basis-full text-sm text-amber-700 dark:text-amber-400">{startNote}</p>}
+            </div>
             {waiting > 0 && (
               <button
                 type="button"

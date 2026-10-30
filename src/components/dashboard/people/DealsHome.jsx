@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { onDealWork } from "../../../lib/dealEvents";
 import { effectiveDue } from "../../../lib/checklists";
@@ -19,7 +20,6 @@ const KEY_DATES = [
 ];
 const UPCOMING_DAYS = 14;
 const SHOW = 5;
-const OPEN_KEY = "dealsOverviewOpen";
 
 const sum = (list, key) => list.reduce((t, p) => t + (Number(p[key]) || 0), 0);
 const title = (p) => p.property_address || p.name;
@@ -50,17 +50,11 @@ function Row({ onClick, primary, secondary, right, urgent, onCheck }) {
   );
 }
 
-// The home spot of Deals: where everything stands, what needs you, and what's coming up. It sits above the board, can be folded away, and every
+// The home spot of Deals: where everything stands, what needs you, and what's coming up. It is the Overview page (`lineOnly` shrinks it to just the
+// "needs you" link, for the board page), and every
 // row opens that deal in the side panel (`openDeal`). `deals` are the agent's live (not archived) deals; the board already has them, so nothing here is
 // fetched twice except the open tasks and waiting drafts.
-export default function DealsHome({ deals, closedStage, openDeal, selectedId }) {
-  const [open, setOpen] = useState(() => {
-    try {
-      return localStorage.getItem(OPEN_KEY) !== "0";
-    } catch {
-      return true;
-    }
-  });
+export default function DealsHome({ deals, closedStage, openDeal, selectedId, lineOnly = false }) {
   const [tasks, setTasks] = useState([]);
   const [drafts, setDrafts] = useState([]);
   const [more, setMore] = useState({});
@@ -68,16 +62,6 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
   const [taskError, setTaskError] = useState("");
   const undoTimer = useRef(null);
   useEffect(() => () => clearTimeout(undoTimer.current), []);
-
-  const toggle = () =>
-    setOpen((v) => {
-      try {
-        localStorage.setItem(OPEN_KEY, v ? "0" : "1");
-      } catch {
-        /* a remembered fold is a convenience */
-      }
-      return !v;
-    });
 
   const load = useCallback(async () => {
     const [{ data: t }, { data: d }] = await Promise.all([
@@ -160,18 +144,15 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
     ...waitingDrafts.map((d) => ({ key: `d-${d.id}`, person: byId.get(d.person_id), primary: `Draft ${d.channel === "email" ? "email" : d.channel === "text" ? "text" : "call"} waiting`, secondary: `${title(byId.get(d.person_id))}${d.subject ? ` · ${d.subject}` : ""}` })),
   ];
 
-  if (!open) {
+  // On the board page the overview is just this one line, so what needs you stays in view without taking the board's room.
+  if (lineOnly) {
+    if (attention === 0) return null;
     return (
-      <div className={`${card} flex flex-wrap items-center justify-between gap-3 px-4 py-3`}>
-        <p className="text-sm">
-          <span className="font-semibold">{openDeals.length}</span> <span className={muted}>open · </span>
-          <span className="font-semibold">{compact.format(sum(ownOpen, "commission"))}</span> <span className={muted}>expected commission</span>
-          {attention > 0 && <span className="font-semibold text-red-600 dark:text-red-400"> · {attention} need{attention === 1 ? "s" : ""} you</span>}
-        </p>
-        <button type="button" onClick={toggle} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
-          Show overview
-        </button>
-      </div>
+      <Link to="/dashboard/deals" className="inline-flex items-center gap-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:underline">
+        {attention} need{attention === 1 ? "s" : ""} you
+        <span aria-hidden="true">→</span>
+        <span className="sr-only">Open the overview</span>
+      </Link>
     );
   }
 
@@ -198,13 +179,6 @@ export default function DealsHome({ deals, closedStage, openDeal, selectedId }) 
 
   return (
     <section className="@container space-y-4" aria-label="Deals overview">
-      <div className="flex items-center justify-between">
-        <h2 className="font-display text-lg font-semibold">Overview</h2>
-        <button type="button" onClick={toggle} className="text-xs font-semibold text-[#1c1a17]/55 dark:text-[#faf9f7]/55 hover:underline">
-          Hide overview
-        </button>
-      </div>
-
       <div className="grid grid-cols-2 gap-3 @3xl:grid-cols-4">
         <Tile label="Open deals" value={openDeals.length} sub={`${money.format(sum(openDeals, "price"))} volume${hasForeign ? ` · ${openDeals.length - ownOpen.length} coordinated` : ""}`} />
         <Tile label="Expected commission" value={hasForeign && ownOpen.length === 0 ? "–" : money.format(sum(ownOpen, "commission"))} sub={hasForeign ? "Your own deals only" : "From open deals"} />

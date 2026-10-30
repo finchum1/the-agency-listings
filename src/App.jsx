@@ -427,7 +427,8 @@ export default function App() {
           <Route path="transactions" element={<Navigate to="/dashboard/deals" replace />} />
         </Route>
         <Route path="deals" element={<DealsGate />}>
-          <Route index element={<DealsPage />} />
+          <Route index element={<DealsPage key="overview" page="overview" />} />
+          <Route path="board" element={<DealsPage key="board" page="board" />} />
         </Route>
         {/* Old separate routes, now combined into one "Upcoming" tab —
             redirect rather than 404 in case either was already bookmarked. */}

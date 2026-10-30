@@ -2,6 +2,7 @@
 const NAMES = {
   "/dashboard": "Home",
   "/dashboard/deals": "Deals",
+  "/dashboard/deals/board": "Deals board",
   "/dashboard/listings": "Listings",
   "/dashboard/listings/new": "New listing",
   "/dashboard/upcoming": "Upcoming",
@@ -38,7 +39,7 @@ export function tabTitle(url) {
   const [pathname, search = ""] = String(url).split("?");
   const path = pathname.replace(/\/+$/, "") || "/dashboard";
   const params = new URLSearchParams(search);
-  if (path === "/dashboard/deals" && params.get("deal")) return "Deal";
+  if ((path === "/dashboard/deals" || path === "/dashboard/deals/board") && params.get("deal")) return "Deal";
   if ((path === "/dashboard/site/blog" || path === "/dashboard/site/content") && (params.get("new") || params.get("edit"))) return params.get("new") ? "New blog post" : "Edit blog post";
   if (path === "/dashboard/people/contacts" && params.get("contact")) return "Contact";
   if (NAMES[path]) return NAMES[path];
