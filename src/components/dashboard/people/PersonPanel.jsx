@@ -906,7 +906,7 @@ export default function PersonPanel({
             </>
           ) : (
             <>
-              <DealContacts values={form} editing={false} onChange={contactChange} onCommit={contactCommit} cash={form.is_cash} />
+              <DealContacts values={form} editing={false} onChange={contactChange} onCommit={contactCommit} cash={form.is_cash} ccEmail={signedInEmail} />
               <DetailGroup
                 title="Follow-up"
                 rows={[

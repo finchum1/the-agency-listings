@@ -392,7 +392,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
               {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
               {!(edit && editingDetails) && (
                 <div className="space-y-6">
-                  <DealContacts values={fresh} editing={false} onChange={contactChange} onCommit={contactCommit} cash={!!fresh.is_cash} />
+                  <DealContacts values={fresh} editing={false} onChange={contactChange} onCommit={contactCommit} cash={!!fresh.is_cash} ccEmail={agentEmail} />
                   <DetailGroup
                     title="Deal"
                     rows={[

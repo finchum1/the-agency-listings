@@ -24,11 +24,13 @@ const TEAMS = [
   { label: "Other agent & TC", emails: ["other_agent_email", "other_agent_tc_email"] },
   { label: "Lender & processor", emails: ["lender_email", "loan_processor_email"], cashHides: true },
 ];
-const mailtoFor = (values, team) => {
+// The agent on the file is copied on every one of them (`cc`), unless they are already a recipient.
+const mailtoFor = (values, team, cc) => {
   const to = [...new Set(team.emails.map((k) => String(values[k] || "").trim()).filter(Boolean))];
   if (to.length === 0) return null;
-  const subject = values.property_address ? `Re: ${values.property_address}` : "";
-  return `mailto:${to.join(",")}${subject ? `?subject=${encodeURIComponent(subject)}` : ""}`;
+  const copy = cc && !to.some((a) => a.toLowerCase() === cc.toLowerCase()) ? cc : "";
+  const query = [copy && `cc=${encodeURIComponent(copy)}`, values.property_address && `subject=${encodeURIComponent(`Re: ${values.property_address}`)}`].filter(Boolean).join("&");
+  return `mailto:${to.join(",")}${query ? `?${query}` : ""}`;
 };
 
 const initials = (name) => {
@@ -61,8 +63,9 @@ function CopyButton({ text }) {
  *   editing    true shows inputs inside each card (every role, so an empty one can be filled in); false shows only the cards that have something
  *   onChange(column, value)   a field changed          onCommit(column)   the field was left (save it)
  *   cash       a cash purchase has no lender
+ *   ccEmail    the agent on the file, copied on the team emails
  */
-export default function DealContacts({ values, editing, onChange, onCommit, cash = false }) {
+export default function DealContacts({ values, editing, onChange, onCommit, cash = false, ccEmail = "" }) {
   const roles = CONTACT_ROLES.filter((r) => !(cash && r.cashHides));
   const filled = (r) => Boolean(values[r.name] || values[r.email] || (r.phone && values[r.phone]));
   const shown = editing ? roles : roles.filter(filled);
@@ -73,9 +76,11 @@ export default function DealContacts({ values, editing, onChange, onCommit, cash
       <h4 className="text-xs font-semibold uppercase tracking-wide text-[#1c1a17]/50 dark:text-[#faf9f7]/50">People on this deal</h4>
       {!editing && (
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Email a team">
-          {TEAMS.filter((t) => !(cash && t.cashHides)).map((t) => {
-            const href = mailtoFor(values, t);
-            const cls = "inline-flex items-center gap-1.5 rounded-full border border-black/10 dark:border-white/15 px-3 py-1.5 text-xs font-medium";
+          {[...TEAMS.filter((t) => !(cash && t.cashHides)), { label: "all", all: true, emails: roles.map((r) => r.email) }].map((t) => {
+            const href = mailtoFor(values, t, ccEmail);
+            const cls = `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium ${
+              t.all ? "border-[#1c1a17] dark:border-[#faf9f7] bg-[#1c1a17] dark:bg-[#faf9f7] text-white dark:text-[#1c1a17]" : "border-black/10 dark:border-white/15"
+            }`;
             const icon = (
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
                 <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -83,14 +88,14 @@ export default function DealContacts({ values, editing, onChange, onCommit, cash
               </svg>
             );
             return href ? (
-              <a key={t.label} href={href} title={`Email ${href.slice(7).split("?")[0].replace(/,/g, ", ")}`} className={`${cls} hover:bg-black/5 dark:hover:bg-white/10`}>
+              <a key={t.label} href={href} title={`Email ${href.slice(7).split("?")[0].replace(/,/g, ", ")}${/[?&]cc=/.test(href) ? `, copying ${ccEmail}` : ""}`} className={`${cls} ${t.all ? "hover:opacity-90" : "hover:bg-black/5 dark:hover:bg-white/10"}`}>
                 {icon}
-                Email {t.label}
+                {t.all ? "Email everyone" : `Email ${t.label}`}
               </a>
             ) : (
               <span key={t.label} title="No email addresses added yet" className={`${cls} cursor-not-allowed opacity-40`}>
                 {icon}
-                Email {t.label}
+                {t.all ? "Email everyone" : `Email ${t.label}`}
               </span>
             );
           })}
