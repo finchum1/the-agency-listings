@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { onDealWork } from "../../../lib/dealEvents";
 import { effectiveDue } from "../../../lib/checklists";
-import { addDays, dayLabel, daysBetween, toKey } from "../../../lib/homeDates";
+import { addDays, dayLabel, toKey } from "../../../lib/homeDates";
 import { clockLabel } from "../../../lib/timeline";
 import { ComplianceChip } from "./DealCompliance";
 
@@ -185,54 +185,44 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
     })
     .filter((seg) => seg.n > 0);
 
-  // Open deals with something that could go wrong soon. A deal sent back by compliance is already under "Needs your attention", so it is not repeated.
-  const SOON = 5;
-  // "today" and "tomorrow" read mid-sentence in lower case; a date ("Thu, Nov 5") stays as it is.
-  const soonLabel = (date) => {
-    const l = dayLabel(date, today);
-    return /^(Today|Tomorrow)$/.test(l) ? l.toLowerCase() : l;
-  };
-  const risks = [];
-  for (const p of openDeals) {
-    const why = [];
-    let urgent = false;
-    let when = "9999";
-    const flag = (text, date, isUrgent = false) => {
-      why.push(text);
-      if (isUrgent) urgent = true;
-      if (date && date < when) when = date;
-    };
-    const within = (date, days) => date && date >= today && date <= toKey(addDays(now, days));
-    if (within(p.inspection_period_end, 3)) flag(`Inspection period ends ${soonLabel(p.inspection_period_end)}`, p.inspection_period_end);
-    if (!p.is_cash && p.financing_deadline) {
-      if (p.financing_deadline < today) flag(`Financing deadline passed ${daysBetween(p.financing_deadline, today)} day${daysBetween(p.financing_deadline, today) === 1 ? "" : "s"} ago`, p.financing_deadline, true);
-      else if (within(p.financing_deadline, SOON)) flag(`Financing deadline ${soonLabel(p.financing_deadline)}`, p.financing_deadline);
-    }
-    if (Number(p.earnest_money) > 0 && !p.earnest_money_delivered && p.contract_date && daysBetween(p.contract_date, today) >= 3) flag(`Earnest money not delivered (${daysBetween(p.contract_date, today)} days since contract)`, today, true);
-    if (p.closing_date && p.closing_date < today) flag(`Closing date passed ${daysBetween(p.closing_date, today)} day${daysBetween(p.closing_date, today) === 1 ? "" : "s"} ago`, p.closing_date, true);
-    else if (within(p.closing_date, 7)) {
-      const pr = progress[p.id]?.tasks;
-      if (pr && pr.total > 0 && pr.done < pr.total) flag(`Closes ${soonLabel(p.closing_date)}, ${pr.done} of ${pr.total} tasks done`, p.closing_date);
-      if (p.compliance_status !== "approved" && p.compliance_status !== "needs_changes") flag(`Closes ${soonLabel(p.closing_date)}, compliance not approved`, p.closing_date);
-    }
-    if (why.length) risks.push({ person: p, why, urgent, when });
-  }
-  risks.sort((a, b) => Number(b.urgent) - Number(a.urgent) || a.when.localeCompare(b.when));
-  const riskItems = risks.map((r) => ({ key: `r-${r.person.id}`, person: r.person, primary: title(r.person), secondary: `${r.why.join(" · ")}${where(r.person)}`, urgent: r.urgent }));
-
-  // The next two weeks as an agenda: key dates and tasks, grouped by day (tasks already due or overdue are under "Needs your attention").
-  const agenda = new Map();
-  const put = (date, entry) => agenda.set(date, [...(agenda.get(date) || []), entry]);
+  // The next two weeks, in two lists: the key dates of the open deals, and the tasks that fall due (tasks already due or overdue are under "Needs your attention").
+  const dateAgenda = new Map();
+  const taskAgenda = new Map();
+  const put = (map, date, entry) => map.set(date, [...(map.get(date) || []), entry]);
   for (const u of upcoming) {
     const time = u.label === "Inspection" && u.person.inspection_time ? clockLabel(u.person.inspection_time) : "";
-    put(u.date, { key: `${u.person.id}-${u.label}`, kind: "date", person: u.person, primary: `${u.label} · ${title(u.person)}`, secondary: `${u.person.property_address ? u.person.name : ""}${where(u.person)}`.replace(/^ · /, ""), time });
+    put(dateAgenda, u.date, { key: `${u.person.id}-${u.label}`, person: u.person, primary: `${u.label} · ${title(u.person)}`, secondary: `${u.person.property_address ? u.person.name : ""}${where(u.person)}`.replace(/^ · /, ""), time });
   }
   for (const t of tasks) {
     const p = openDeals.find((d) => d.id === t.person_id);
     const due = p && effectiveDue(t, p);
-    if (p && due && due > today && due <= horizon) put(due, { key: `t-${t.id}`, kind: "task", person: p, primary: t.text, secondary: `${title(p)}${where(p)}`, task: t });
+    if (p && due && due > today && due <= horizon) put(taskAgenda, due, { key: `t-${t.id}`, person: p, primary: t.text, secondary: `${title(p)}${where(p)}`, task: t });
   }
-  const days = [...agenda.keys()].sort();
+  const dateDays = [...dateAgenda.keys()].sort();
+  const taskDays = [...taskAgenda.keys()].sort();
+
+  // A list of days, each with its heading and rows.
+  const dayList = (days, agenda, { checks = false, columns = false } = {}) => (
+    <div className={columns ? "grid grid-cols-1 gap-x-8 gap-y-5 @3xl:grid-cols-2" : "space-y-5"}>
+      {days.map((date) => (
+        <section key={date} aria-label={dayLabel(date, today)}>
+          <h4 className={`mb-1.5 text-sm font-semibold ${date === today ? "text-amber-700 dark:text-amber-400" : ""}`}>{dayLabel(date, today)}</h4>
+          <ul className="space-y-1.5">
+            {agenda.get(date).map((a) => (
+              <Row
+                key={a.key}
+                onClick={() => openDeal(a.person.id)}
+                primary={a.primary}
+                secondary={a.secondary}
+                right={a.time ? <span className={`shrink-0 text-xs font-medium ${muted}`}>{a.time}</span> : null}
+                onCheck={checks ? () => completeTask(a.task) : undefined}
+              />
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
 
   return (
     <section className="@container space-y-4" aria-label="Deals overview">
@@ -297,38 +287,14 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
           {taskError && <p className="text-xs text-red-600 dark:text-red-400">{taskError}</p>}
         </div>
         <div className={`${card} p-4 space-y-2.5`}>
-          <h3 className="font-display text-base font-semibold">At risk</h3>
-          {riskItems.length === 0 ? <p className={`text-sm ${muted}`}>No deadlines are close or overdue, and nothing is missing before a closing.</p> : list("risks", riskItems)}
+          <h3 className="font-display text-base font-semibold">Tasks · next {UPCOMING_DAYS} days</h3>
+          {taskDays.length === 0 ? <p className={`text-sm ${muted}`}>No tasks fall due in the next {UPCOMING_DAYS} days.</p> : dayList(taskDays, taskAgenda, { checks: true })}
         </div>
       </div>
 
-      <div className={`${card} p-4`}>
-        <h3 className="font-display text-base font-semibold">Next {UPCOMING_DAYS} days</h3>
-        {days.length === 0 ? (
-          <p className={`mt-2 text-sm ${muted}`}>No contract, inspection, appraisal, financing or closing dates, or tasks, coming up.</p>
-        ) : (
-          <div className="mt-3 grid grid-cols-1 gap-x-8 gap-y-5 @3xl:grid-cols-2">
-            {days.map((date) => (
-              <section key={date} aria-label={dayLabel(date, today)}>
-                <h4 className="mb-1.5">
-                  <span className={`text-sm font-semibold ${date === today ? "text-amber-700 dark:text-amber-400" : ""}`}>{dayLabel(date, today)}</span>
-                </h4>
-                <ul className="space-y-1.5">
-                  {agenda.get(date).map((a) => (
-                    <Row
-                      key={a.key}
-                      onClick={() => openDeal(a.person.id)}
-                      primary={a.primary}
-                      secondary={a.secondary}
-                      right={a.time ? <span className={`shrink-0 text-xs font-medium ${muted}`}>{a.time}</span> : a.kind === "task" ? <span className={`shrink-0 text-[10px] font-semibold uppercase tracking-wide ${muted}`}>Task</span> : null}
-                      onCheck={a.kind === "task" ? () => completeTask(a.task) : undefined}
-                    />
-                  ))}
-                </ul>
-              </section>
-            ))}
-          </div>
-        )}
+      <div className={`${card} p-4 space-y-2.5`}>
+        <h3 className="font-display text-base font-semibold">Key dates · next {UPCOMING_DAYS} days</h3>
+        {dateDays.length === 0 ? <p className={`text-sm ${muted}`}>No contract, inspection, appraisal, financing or closing dates coming up.</p> : dayList(dateDays, dateAgenda, { columns: true })}
       </div>
 
       <p className={`text-xs ${muted}`}>
