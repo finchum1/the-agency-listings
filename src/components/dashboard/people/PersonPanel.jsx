@@ -38,7 +38,7 @@ const DATE_FIELDS = ["next_follow_up", "contract_date", "inspection_date", "insp
 const NUMBER_FIELDS = ["price", "commission", "earnest_money"];
 const TEXT_FIELDS = [
   "name", "email", "phone", "source", "property_address", "other_agent", "title_company", "lender",
-  "client2_name", "client2_email", "other_agent_email", "other_agent_tc_name", "other_agent_tc_email", "title_company_email", "title_processor_name", "title_processor_email", "lender_email",
+  "client2_name", "client2_email", "other_agent_email", "other_agent_tc_name", "other_agent_tc_email", "title_company_email", "title_processor_name", "title_processor_email", "lender_email", "loan_processor_name", "loan_processor_email",
 ];
 // Earnest money is delivered or not; ticking it also stamps when (see flush).
 const FIELDS = [...TEXT_FIELDS, ...DATE_FIELDS, ...NUMBER_FIELDS, "side", "earnest_money_delivered", "is_cash"];

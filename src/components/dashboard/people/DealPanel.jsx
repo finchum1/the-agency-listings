@@ -36,6 +36,8 @@ const TEXT = [
   ["title_processor_email", "Title processor email"],
   ["lender", "Lender"],
   ["lender_email", "Lender email"],
+  ["loan_processor_name", "Loan processor"],
+  ["loan_processor_email", "Loan processor email"],
 ];
 // The second client sits at the top of the details, right under the first.
 // The first client's name, phone and email, editable here so a coordinator can fix them.

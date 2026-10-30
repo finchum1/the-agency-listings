@@ -15,6 +15,7 @@ export const CONTACT_ROLES = [
   { key: "title", label: "Title company", name: "title_company", email: "title_company_email", nameLabel: "Company" },
   { key: "processor", label: "Title processor", name: "title_processor_name", email: "title_processor_email", nameLabel: "Name" },
   { key: "lender", label: "Lender", name: "lender", email: "lender_email", nameLabel: "Name or company", cashHides: true },
+  { key: "loan_processor", label: "Loan processor", name: "loan_processor_name", email: "loan_processor_email", nameLabel: "Name", cashHides: true },
 ];
 
 const initials = (name) => {
