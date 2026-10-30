@@ -30,6 +30,13 @@ function readNav() {
   return { open: true, px: DEFAULT_OPEN_PX };
 }
 
+// What the People menu offers beside the row (Overview is the row itself).
+const PEOPLE_MENU = [
+  { to: "/dashboard/people/contacts", label: "Contacts" },
+  { to: "/dashboard/people/leads", label: "Leads" },
+  { to: "/dashboard/people/pipeline", label: "Pipeline" },
+];
+
 const ICON_PATHS = {
   home: <path d="M4 11l8-7 8 7v8.5a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19.5z" />,
   website: (
@@ -136,6 +143,11 @@ export default function DashboardLayout() {
   // Closed rail: a name tag on hover, and a small menu beside the icon for the groups that have pages inside them.
   const [railTip, setRailTip] = useState(null); // { label, x, y }
   const [railMenu, setRailMenu] = useState(null); // { label, items, x, y }
+  // People: a mouse over the row opens a small menu beside it with Contacts, Leads and Pipeline; clicking the row goes to the overview.
+  // A finger has no hover, so a tap opens the same menu (with Overview added to it) instead of leaving the page.
+  const [peopleMenu, setPeopleMenu] = useState(null); // { x, y, w, touch }
+  const peopleTimer = useRef(null);
+  const peoplePointer = useRef("mouse");
   const navWidth = navLive ?? (nav.open ? nav.px : RAIL_PX);
   const showRail = navWidth < 140;
 
@@ -187,9 +199,59 @@ export default function DashboardLayout() {
     onDoubleClick: toggleNav,
   };
 
+  const openPeopleMenu = (el, touch) => {
+    clearTimeout(peopleTimer.current);
+    const r = el.getBoundingClientRect();
+    setRailTip(null);
+    // On a phone the menu hangs under the row (there is no room beside the drawer); otherwise it sits to the right of the row.
+    setPeopleMenu(window.innerWidth < 768 ? { x: r.left, y: r.bottom + 4, w: r.width, touch } : { x: r.right + 6, y: r.top, touch });
+  };
+  const closePeopleMenu = (delay = 0) => {
+    clearTimeout(peopleTimer.current);
+    if (delay) peopleTimer.current = setTimeout(() => setPeopleMenu(null), delay);
+    else setPeopleMenu(null);
+  };
+  const peopleTrigger = (onNavigate) => ({
+    "data-people-trigger": "",
+    "aria-haspopup": "menu",
+    "aria-expanded": Boolean(peopleMenu),
+    onPointerDown: (e) => {
+      peoplePointer.current = e.pointerType;
+    },
+    onPointerEnter: (e) => e.pointerType === "mouse" && openPeopleMenu(e.currentTarget, false),
+    onPointerLeave: (e) => e.pointerType === "mouse" && closePeopleMenu(160),
+    onClick: (e) => {
+      // detail 0 is the keyboard (Enter on the link): that just goes to the overview.
+      if (e.detail > 0 && peoplePointer.current !== "mouse") {
+        e.preventDefault();
+        if (peopleMenu) closePeopleMenu();
+        else openPeopleMenu(e.currentTarget, true);
+        return;
+      }
+      closePeopleMenu();
+      onNavigate?.();
+    },
+  });
+  useEffect(() => {
+    if (!peopleMenu) return;
+    const onDown = (e) => {
+      if (e.target instanceof Element && e.target.closest("[data-people-menu], [data-people-trigger]")) return;
+      setPeopleMenu(null);
+    };
+    const onKey = (e) => e.key === "Escape" && setPeopleMenu(null);
+    document.addEventListener("pointerdown", onDown, true);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown, true);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [peopleMenu]);
+  useEffect(() => () => clearTimeout(peopleTimer.current), []);
+
   useEffect(() => {
     setRailMenu(null);
     setRailTip(null);
+    setPeopleMenu(null);
   }, [location.pathname]);
   useEffect(() => {
     if (!railMenu) return;
@@ -363,11 +425,11 @@ export default function DashboardLayout() {
       };
       const tipOff = () => setRailTip(null);
       // An icon with nothing inside it goes straight to its page; one with pages inside opens a small menu of them.
-      const railItem = (label, icon, active, { to, items, badge = 0 }) => {
+      const railItem = (label, icon, active, { to, items, badge = 0, extra }) => {
         const handlers = { onMouseEnter: tipOn(label), onMouseLeave: tipOff, onFocus: tipOn(label), onBlur: tipOff };
         if (!items) {
           return (
-            <Link key={label} to={to} onClick={onNavigate} aria-label={label} aria-current={active ? "page" : undefined} className={itemClass(active, false)} {...handlers}>
+            <Link key={label} to={to} onClick={onNavigate} aria-label={label} aria-current={active ? "page" : undefined} className={itemClass(active, false)} {...handlers} {...extra}>
               <NavIcon name={icon} />
               {badge > 0 && <span aria-hidden="true" className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-[#ed2127] dark:bg-[#f2454b] ring-2 ring-white dark:ring-[#161616]" />}
             </Link>
@@ -400,7 +462,7 @@ export default function DashboardLayout() {
           <div className="flex flex-col gap-1.5">
             {!workingElsewhere && railItem("Home", "home", path === "/dashboard" || path === "/dashboard/", { to: "/dashboard" })}
             {!workingElsewhere && siteAccess !== "none" && railItem("Website", "website", inSite, { to: siteHome })}
-            {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { to: "/dashboard/people/overview" })}
+            {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { to: "/dashboard/people/overview", extra: peopleTrigger(onNavigate) })}
             {!workingElsewhere && deals.any && railItem("Deals", "deals", path.startsWith("/dashboard/deals"), { to: "/dashboard/deals", badge: dealsAttention.total })}
             {NAV_ITEMS.map((item) => railItem(item.label, item.icon, item.activeWhen(path), { to: item.to }))}
           </div>
@@ -475,9 +537,12 @@ export default function DashboardLayout() {
         )}
         {!workingElsewhere && profile?.people_enabled && (
           <div className="mt-1 space-y-1">
-            <Link to="/dashboard/people/overview" onClick={onNavigate} className={`${navLinkClass(inPeople)} flex items-center gap-3`}>
+            <Link to="/dashboard/people/overview" {...peopleTrigger(onNavigate)} className={`${navLinkClass(inPeople)} flex items-center gap-3`}>
               <NavIcon name="people" />
-              People
+              <span className="flex-1">People</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0 text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
+                <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </Link>
           </div>
         )}
@@ -688,7 +753,7 @@ export default function DashboardLayout() {
         </div>
       </div>
 
-      {showRail && railTip && !railMenu &&
+      {showRail && railTip && !railMenu && !peopleMenu &&
         createPortal(
           <div
             role="tooltip"
@@ -715,6 +780,36 @@ export default function DashboardLayout() {
                 to={item.to}
                 role="menuitem"
                 onClick={() => setRailMenu(null)}
+                className={navLinkClass(location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>,
+          document.body,
+        )}
+
+      {peopleMenu &&
+        createPortal(
+          <div
+            data-people-menu=""
+            role="menu"
+            aria-label="People"
+            onPointerEnter={(e) => e.pointerType === "mouse" && clearTimeout(peopleTimer.current)}
+            onPointerLeave={(e) => e.pointerType === "mouse" && closePeopleMenu(160)}
+            style={{ left: peopleMenu.x, top: Math.max(8, Math.min(peopleMenu.y, window.innerHeight - 220)), ...(peopleMenu.w ? { width: peopleMenu.w } : {}) }}
+            className="fixed z-[60] min-w-[200px] rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] p-1.5 text-[#1c1a17] dark:text-[#faf9f7] shadow-xl print:hidden"
+          >
+            <p className="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/40 dark:text-[#faf9f7]/40">People</p>
+            {[...(peopleMenu.touch ? [{ to: "/dashboard/people/overview", label: "Overview" }] : []), ...PEOPLE_MENU].map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                role="menuitem"
+                onClick={() => {
+                  setPeopleMenu(null);
+                  setMobileNavOpen(false);
+                }}
                 className={navLinkClass(location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))}
               >
                 {item.label}
