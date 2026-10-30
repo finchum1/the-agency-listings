@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient";
-import { onDealWork } from "../../../lib/dealEvents";
+import { announceDealWork, onDealWork } from "../../../lib/dealEvents";
 import { effectiveDue } from "../../../lib/checklists";
 import { addDays, dayLabel, toKey } from "../../../lib/homeDates";
 import { clockLabel } from "../../../lib/timeline";
@@ -91,6 +91,7 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
       return;
     }
     setJustDone(task);
+    announceDealWork(); // the Deals bubble in the menu counts one fewer
     clearTimeout(undoTimer.current);
     undoTimer.current = setTimeout(() => setJustDone(null), 8000);
   };
@@ -104,7 +105,7 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
     if (error) {
       setTasks((list) => list.filter((t) => t.id !== task.id));
       setTaskError(error.message);
-    }
+    } else announceDealWork();
   };
 
   const now = new Date();

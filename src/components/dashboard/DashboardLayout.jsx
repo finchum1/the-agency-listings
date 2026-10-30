@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { dealAccess } from "../../lib/deals";
 import { useDealAttention } from "../../hooks/useDealAttention";
 import { usePeopleAttention } from "../../hooks/usePeopleAttention";
+import { useDealTaskAttention } from "../../hooks/useDealTaskAttention";
 import { createPortal } from "react-dom";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
@@ -418,6 +419,9 @@ export default function DashboardLayout() {
   const workingElsewhere = Boolean(isPlatformAdmin && org && profile?.org_id && org.id !== profile.org_id);
   const deals = dealAccess(profile);
   const dealsAttention = useDealAttention(deals.any && !workingElsewhere);
+  // Deals' bubble: sent back, waiting for review and unread messages, plus the deal tasks that are overdue or due today.
+  const dealTasksDue = useDealTaskAttention((deals.mine || deals.isTc) && !workingElsewhere, profile?.id, deals.isTc, location.pathname);
+  const dealsBadge = dealsAttention.total + dealTasksDue;
   const peopleAttention = usePeopleAttention(Boolean(profile?.people_enabled) && !workingElsewhere, profile?.id, location.pathname);
   // The red number beside an item that has something waiting (99+ when it is a lot).
   const bubble = (n) =>
@@ -492,7 +496,7 @@ export default function DashboardLayout() {
             {!workingElsewhere && railItem("Home", "home", path === "/dashboard" || path === "/dashboard/", { to: "/dashboard" })}
             {!workingElsewhere && siteAccess !== "none" && railItem("Website", "website", inSite, { to: siteHome, extra: siteAccess === "limited" ? undefined : flyTrigger("site", onNavigate) })}
             {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { to: "/dashboard/people/overview", badge: peopleAttention.total, extra: flyTrigger("people", onNavigate) })}
-            {!workingElsewhere && deals.any && railItem("Deals", "deals", path.startsWith("/dashboard/deals"), { to: "/dashboard/deals", badge: dealsAttention.total, extra: deals.mine ? flyTrigger("deals", onNavigate) : undefined })}
+            {!workingElsewhere && deals.any && railItem("Deals", "deals", path.startsWith("/dashboard/deals"), { to: "/dashboard/deals", badge: dealsBadge, extra: deals.mine ? flyTrigger("deals", onNavigate) : undefined })}
             {NAV_ITEMS.map((item) => railItem(item.label, item.icon, item.activeWhen(path), { to: item.to }))}
           </div>
           {isAdmin && (
@@ -547,7 +551,7 @@ export default function DashboardLayout() {
             <Link to="/dashboard/deals" {...(deals.mine ? flyTrigger("deals", onNavigate) : { onClick: onNavigate })} className={`${navLinkClass(path.startsWith("/dashboard/deals"))} flex items-center gap-3`}>
               <NavIcon name="deals" />
               <span className="flex-1">Deals</span>
-              {dealsAttention.total > 0 && <span aria-label={`${dealsAttention.total} need attention`} className="rounded-full bg-[#ed2127] dark:bg-[#f2454b] px-1.5 py-px text-[10px] font-semibold text-white">{dealsAttention.total}</span>}
+              {bubble(dealsBadge)}
               {deals.mine && (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0 text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
                   <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
