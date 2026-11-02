@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { runMyPlans, startPlan } from "../../../lib/plansApi";
 import { dayLabel, toKey } from "../../../lib/homeDates";
@@ -16,6 +17,7 @@ const plusDays = (key, n) => {
 export default function PlanSection({ person, contactId }) {
   const [rows, setRows] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const today = toKey(new Date());
@@ -34,6 +36,7 @@ export default function PlanSection({ person, contactId }) {
     ]);
     setRows(e || []);
     setPlans((p || []).filter((x) => !isOccasion(x.starts_when)));
+    setReady(true);
   }, [person?.id, contactId]);
   useEffect(() => {
     load();
@@ -68,8 +71,6 @@ export default function PlanSection({ person, contactId }) {
   };
 
   const available = plans.filter((p) => !rows.some((r) => r.plan_id === p.id && (r.status === "active" || r.status === "paused")));
-  if (rows.length === 0 && plans.length === 0) return null;
-
   return (
     <section aria-label="Plans" className="rounded-2xl border border-black/10 dark:border-white/15 p-4 space-y-3">
       <p className={`text-xs font-semibold uppercase tracking-wide ${muted}`}>Plans</p>
@@ -111,6 +112,12 @@ export default function PlanSection({ person, contactId }) {
           </div>
         );
       })}
+      {ready && rows.length === 0 && plans.length === 0 && (
+        <p className={`text-sm ${muted}`}>
+          No plans set up yet. <Link to="/dashboard/people/plans" className="font-semibold underline">Create one in People &gt; Plans</Link> and you can start it here.
+        </p>
+      )}
+      {ready && rows.length === 0 && plans.length > 0 && available.length > 0 && <p className={`text-sm ${muted}`}>Not on a plan.</p>}
       {available.length > 0 && (
         <label className="flex items-center gap-2 text-sm">
           <span className={muted}>Start a plan</span>
