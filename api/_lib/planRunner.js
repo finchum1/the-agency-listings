@@ -2,8 +2,8 @@
 // dashboard when it opens, and right after a website inquiry arrives, so the first steps of a plan happen within moments of a new lead.
 // A step is CLAIMED (the enrollment's next_step moves on) before it runs, so two runners at once can't do the same step twice.
 import { BOARDS } from "../../src/lib/peopleStages.js";
-import { mergeContext, renderTemplate } from "../../src/lib/plans.js";
-import { cleanList } from "../../src/lib/taskLists.js";
+import { DEFAULT_OCCASION_RELATIONSHIPS, OCCASIONS, mergeContext, occasionContext, renderTemplate } from "../../src/lib/plans.js";
+import { cleanList, newStepId } from "../../src/lib/taskLists.js";
 
 const centralDay = (d = new Date()) => d.toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
 const plusDays = (key, n) => {
@@ -104,6 +104,80 @@ async function runOne(admin, enrollment, today) {
   return last - first;
 }
 
+// ---- birthday / home anniversary plans: run on contacts, once a year each ----
+const MAX_CONTACTS_PER_DAY = 40; // more than this on one date is almost surely a placeholder date from an import, not real birthdays
+
+async function runOccasionPlan(admin, plan, owner, today) {
+  const kind = plan.starts_when.type;
+  const occ = OCCASIONS[kind];
+  const ahead = Number(plan.starts_when.ahead) || 0;
+  const on = plusDays(today, ahead);
+  const { data: found, error } = await admin.rpc("plans_due_occasions", { p_owner: plan.owner_id, p_kind: kind, p_on: on });
+  if (error) throw new Error(error.message);
+  const rels = Array.isArray(plan.starts_when.relationships) && plan.starts_when.relationships.length ? plan.starts_when.relationships : DEFAULT_OCCASION_RELATIONSHIPS;
+  const yearsOf = (c) => Number(on.slice(0, 4)) - Number(String(c.occasion_date).slice(0, 4));
+  const due = (found || []).filter((c) => rels.includes(c.relationship) && (kind === "birthday" || yearsOf(c) >= 1));
+  if (!due.length) return 0;
+  if (due.length > MAX_CONTACTS_PER_DAY) {
+    const title = `${plan.name}: ${due.length} contacts share a ${occ.noun} on ${on}, so it was skipped. Check for placeholder dates.`.slice(0, 300);
+    const { count } = await admin.from("agent_tasks").select("id", { count: "exact", head: true }).eq("owner_id", plan.owner_id).eq("title", title).eq("due_date", today);
+    if (!count) await admin.from("agent_tasks").insert({ owner_id: plan.owner_id, title, due_date: today, list: cleanList(plan.name) });
+    return 0;
+  }
+  // Claim each contact for this year's occasion before doing anything, so two runners can't both act on it.
+  const { data: claimed, error: claimErr } = await admin
+    .from("plan_occasion_runs")
+    .upsert(due.map((c) => ({ plan_id: plan.id, contact_id: c.contact_id, owner_id: plan.owner_id, occasion_on: on })), { onConflict: "plan_id,contact_id,occasion_on", ignoreDuplicates: true })
+    .select("contact_id");
+  if (claimErr) throw new Error(claimErr.message);
+  const mine = new Set((claimed || []).map((r) => r.contact_id));
+  let made = 0;
+  for (const c of due.filter((x) => mine.has(x.contact_id))) {
+    const ctx = occasionContext(c, owner, kind, on, c.occasion_date);
+    const who = ctx.first_name || ctx.name || "them";
+    for (const step of plan.steps) {
+      let row;
+      if (step.type === "task") {
+        row = { title: renderTemplate(step.title, ctx) || `Reach out to ${who} for their ${occ.noun}` };
+      } else if (step.type === "draft") {
+        const verb = step.channel === "email" ? "Email" : step.channel === "call" ? "Call" : "Text";
+        const body = renderTemplate(step.body, ctx);
+        if (!body) continue;
+        const subject = step.channel === "email" ? renderTemplate(step.subject, ctx) : "";
+        row = {
+          title: `${verb} ${who} for their ${occ.noun}${ahead ? ` (${ctx.occasion_date})` : ""}`,
+          checklist: [...(subject ? [{ id: newStepId(), text: `Subject: ${subject}`.slice(0, 300), done: false }] : []), { id: newStepId(), text: body.slice(0, 2000), done: false }],
+        };
+      } else continue;
+      const { error: err } = await admin.from("agent_tasks").insert({ owner_id: plan.owner_id, title: row.title.slice(0, 300), due_date: today, list: cleanList(plan.name), contact_id: c.contact_id, ...(row.checklist ? { checklist: row.checklist } : {}) });
+      if (!err) made++;
+    }
+  }
+  return made;
+}
+
+/** Runs the active birthday / anniversary plans for today. Returns how many to-dos it made. */
+export async function runOccasions(admin, { ownerId } = {}) {
+  const today = centralDay();
+  let q = admin.from("plans").select("id, owner_id, name, steps, starts_when").eq("active", true).or("starts_when->>type.eq.birthday,starts_when->>type.eq.anniversary").limit(500);
+  if (ownerId) q = q.eq("owner_id", ownerId);
+  const { data: plans, error } = await q;
+  if (error) throw new Error(error.message);
+  const owners = new Map();
+  let made = 0;
+  for (const plan of plans || []) {
+    try {
+      if (!owners.has(plan.owner_id)) owners.set(plan.owner_id, (await admin.from("profiles").select("full_name, phone, people_enabled").eq("id", plan.owner_id).maybeSingle()).data);
+      const owner = owners.get(plan.owner_id);
+      if (!owner?.people_enabled) continue;
+      made += await runOccasionPlan(admin, plan, owner, today);
+    } catch (err) {
+      console.error("occasion plan failed:", plan.id, err);
+    }
+  }
+  return made;
+}
+
 /** Runs every plan step that is due. `ownerId` / `personId` narrow it (a person's own dashboard, or just-arrived lead). Returns how many steps ran. */
 export async function runPlans(admin, { ownerId, personId } = {}) {
   const today = centralDay();
@@ -118,6 +192,13 @@ export async function runPlans(admin, { ownerId, personId } = {}) {
       ran += (await runOne(admin, e, today)) || 0;
     } catch (err) {
       console.error("plan step failed:", e.id, err);
+    }
+  }
+  if (!personId) {
+    try {
+      ran += await runOccasions(admin, { ownerId });
+    } catch (err) {
+      console.error("occasion plans failed:", err);
     }
   }
   return ran;

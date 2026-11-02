@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { runMyPlans } from "../../../lib/plansApi";
 import { dayLabel, toKey } from "../../../lib/homeDates";
-import { stepSummary } from "../../../lib/plans";
+import { isOccasion, stepSummary } from "../../../lib/plans";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const ghost = "rounded-full border border-black/15 dark:border-white/20 px-3 py-1 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10";
@@ -23,10 +23,10 @@ export default function PlanSection({ person }) {
   const load = useCallback(async () => {
     const [{ data: e }, { data: p }] = await Promise.all([
       supabase.from("plan_enrollments").select("*, plan:plans(id, name, steps)").eq("person_id", person.id).order("created_at"),
-      supabase.from("plans").select("id, name, steps").order("created_at"),
+      supabase.from("plans").select("id, name, steps, starts_when").order("created_at"),
     ]);
     setRows(e || []);
-    setPlans(p || []);
+    setPlans((p || []).filter((x) => !isOccasion(x.starts_when)));
   }, [person.id]);
   useEffect(() => {
     load();

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { SOURCES } from "../../../lib/peopleStages";
-import { CHANNELS, MERGE_FIELDS, STARTER_PLANS, STEP_TYPES, cleanPlan, startText, stepSummary } from "../../../lib/plans";
+import { CHANNELS, DEFAULT_OCCASION_RELATIONSHIPS, MAX_AHEAD_DAYS, MERGE_FIELDS, OCCASIONS, OCCASION_MERGE_FIELDS, STARTER_PLANS, STEP_TYPES, cleanPlan, isOccasion, startText, stepSummary } from "../../../lib/plans";
+import { RELATIONSHIPS } from "../../../lib/contacts";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
@@ -10,8 +11,9 @@ const control = "w-full rounded-lg border border-black/10 dark:border-white/15 b
 const ghost = "rounded-full border border-black/15 dark:border-white/20 px-3.5 py-1.5 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10";
 const solid = "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] px-5 py-2 text-sm font-semibold text-white disabled:opacity-50";
 
-const startValue = (sw) => (sw?.type === "source" ? `source:${sw.value}` : sw?.type === "column" ? `column:${sw.group}:${sw.stage}` : "manual");
-const startFrom = (v) => {
+const startValue = (sw) => (sw?.type === "source" ? `source:${sw.value}` : sw?.type === "column" ? `column:${sw.group}:${sw.stage}` : OCCASIONS[sw?.type] ? `occasion:${sw.type}` : "manual");
+const startFrom = (v, was) => {
+  if (v.startsWith("occasion:")) return { type: v.slice(9), ahead: was?.ahead || 0, relationships: was?.relationships || DEFAULT_OCCASION_RELATIONSHIPS };
   if (v.startsWith("source:")) return { type: "source", value: v.slice(7) };
   if (v.startsWith("column:")) {
     const [, group, ...rest] = v.split(":");
@@ -27,6 +29,14 @@ function PlanEditor({ plan, stages, onSave, onCancel }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const setStep = (i, patch) => setDraft((d) => ({ ...d, steps: d.steps.map((s, j) => (j === i ? { ...s, ...patch } : s)) }));
+  const occasion = isOccasion(draft.starts_when);
+  const setStart = (value) =>
+    setDraft((d) => {
+      const starts_when = startFrom(value, d.starts_when);
+      // A birthday / anniversary plan has no days and no moves: everything happens on the day.
+      return isOccasion(starts_when) ? { ...d, starts_when, steps: d.steps.filter((s) => s.type !== "move").map((s) => ({ ...s, day: 0 })).concat(d.steps.every((s) => s.type === "move") ? [{ day: 0, type: "task", title: "" }] : []) } : { ...d, starts_when };
+    });
+  const stepTypes = occasion ? STEP_TYPES.filter((t) => t.value !== "move") : STEP_TYPES;
   const changeType = (i, type) => setDraft((d) => ({ ...d, steps: d.steps.map((s, j) => (j === i ? newStep(type, s.day) : s)) }));
   const move = (i, dir) =>
     setDraft((d) => {
@@ -61,8 +71,13 @@ function PlanEditor({ plan, stages, onSave, onCancel }) {
         </label>
         <label className="block text-sm">
           <span className={`mb-1 block text-xs font-medium ${muted}`}>Starts</span>
-          <select value={startValue(draft.starts_when)} onChange={(e) => setDraft({ ...draft, starts_when: startFrom(e.target.value) })} className={control}>
+          <select value={startValue(draft.starts_when)} onChange={(e) => setStart(e.target.value)} className={control}>
             <option value="manual">When I start it myself</option>
+            <optgroup label="Every year, on a contact's…">
+              {Object.entries(OCCASIONS).map(([k, o]) => (
+                <option key={k} value={`occasion:${k}`}>{o.label}</option>
+              ))}
+            </optgroup>
             <optgroup label="When someone is added from…">
               {SOURCES.map((s) => (
                 <option key={s} value={`source:${s}`}>{s}</option>
@@ -79,17 +94,44 @@ function PlanEditor({ plan, stages, onSave, onCancel }) {
         </label>
       </div>
 
+      {occasion && (
+        <div className="space-y-3 rounded-xl bg-black/[0.03] dark:bg-white/5 p-3.5">
+          <label className="flex flex-wrap items-center gap-2 text-sm">
+            <span>Make the to-dos</span>
+            <input type="number" min={0} max={MAX_AHEAD_DAYS} value={draft.starts_when.ahead} onChange={(e) => setDraft({ ...draft, starts_when: { ...draft.starts_when, ahead: e.target.value === "" ? "" : Number(e.target.value) } })} className={`${control} !w-20`} aria-label="Days ahead" />
+            <span>days before their {OCCASIONS[draft.starts_when.type].noun} (0 = on the day)</span>
+          </label>
+          <fieldset>
+            <legend className={`mb-1.5 text-xs font-medium ${muted}`}>For these contacts</legend>
+            <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+              {RELATIONSHIPS.map((r) => (
+                <label key={r.value} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={draft.starts_when.relationships.includes(r.value)}
+                    onChange={(e) => setDraft({ ...draft, starts_when: { ...draft.starts_when, relationships: e.target.checked ? [...draft.starts_when.relationships, r.value] : draft.starts_when.relationships.filter((x) => x !== r.value) } })}
+                    className="h-4 w-4 accent-[#ed2127]"
+                  />
+                  {r.label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <p className={`text-xs ${muted}`}>Runs once a year for each contact who has this date saved, skipping anyone marked do not contact. Each step becomes a to-do on your list (a drafted message is inside the to-do), linked to the contact.</p>
+        </div>
+      )}
+
       <div className="space-y-3">
-        <p className={`text-xs font-semibold uppercase tracking-wide ${muted}`}>Steps (days count from when they start the plan)</p>
+        <p className={`text-xs font-semibold uppercase tracking-wide ${muted}`}>{occasion ? "Steps (all happen the same day)" : "Steps (days count from when they start the plan)"}</p>
         {draft.steps.map((s, i) => (
           <div key={i} className="rounded-xl border border-black/10 dark:border-white/15 p-3 space-y-2.5">
             <div className="flex flex-wrap items-center gap-2">
-              <label className="flex items-center gap-1.5 text-sm">
+              {!occasion && <label className="flex items-center gap-1.5 text-sm">
                 <span className={muted}>Day</span>
                 <input type="number" min={0} max={730} value={s.day} onChange={(e) => setStep(i, { day: e.target.value === "" ? "" : Number(e.target.value) })} className={`${control} !w-20`} aria-label={`Step ${i + 1} day`} />
-              </label>
+              </label>}
               <select value={s.type} onChange={(e) => changeType(i, e.target.value)} className={`${control} !w-auto`} aria-label={`Step ${i + 1} type`}>
-                {STEP_TYPES.map((t) => (
+                {stepTypes.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
               </select>
@@ -128,14 +170,14 @@ function PlanEditor({ plan, stages, onSave, onCancel }) {
           </div>
         ))}
         <div className="flex flex-wrap gap-2">
-          {STEP_TYPES.map((t) => (
+          {stepTypes.map((t) => (
             <button key={t.value} type="button" onClick={() => setDraft((d) => ({ ...d, steps: [...d.steps, newStep(t.value, d.steps[d.steps.length - 1]?.day ?? 0)] }))} disabled={draft.steps.length >= 20} className={ghost}>
               + {t.label}
             </button>
           ))}
         </div>
         <p className={`text-xs ${muted}`}>
-          You can use {MERGE_FIELDS.map(([k]) => `{${k}}`).join(", ")} in a title or message. Drafts are never sent: they wait on the person's card for you to send. A plan stops by itself when you move the person to another column or archive them.
+          You can use {(occasion ? [...MERGE_FIELDS.filter(([k]) => k !== "property_address" && k !== "source"), ...OCCASION_MERGE_FIELDS] : MERGE_FIELDS).map(([k]) => `{${k}}`).join(", ")} in a title or message. Drafts are never sent. {occasion ? "A drafted message sits inside its to-do for you to copy and send." : "They wait on the person's card for you to send. A plan stops by itself when you move the person to another column or archive them."}
         </p>
       </div>
 
@@ -158,7 +200,7 @@ export default function PlansPage() {
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const [{ data: p, error: e1 }, { data: en }] = await Promise.all([supabase.from("plans").select("*").order("created_at"), supabase.from("plan_enrollments").select("plan_id, status")]);
+    const [{ data: p, error: e1 }, { data: en }, { data: oc }] = await Promise.all([supabase.from("plans").select("*").order("created_at"), supabase.from("plan_enrollments").select("plan_id, status"), supabase.from("plan_occasion_runs").select("plan_id").limit(20000)]);
     if (e1) setError(e1.message);
     setPlans(p || []);
     const c = {};
@@ -166,6 +208,10 @@ export default function PlansPage() {
       c[r.plan_id] ||= { active: 0, done: 0 };
       if (r.status === "active" || r.status === "paused") c[r.plan_id].active += 1;
       else if (r.status === "done") c[r.plan_id].done += 1;
+    }
+    for (const r of oc || []) {
+      c[r.plan_id] ||= { active: 0, done: 0 };
+      c[r.plan_id].ran = (c[r.plan_id].ran || 0) + 1;
     }
     setCounts(c);
     setLoading(false);
@@ -207,7 +253,7 @@ export default function PlansPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-display font-semibold">Plans</h1>
-          <p className={`mt-1 text-sm ${muted}`}>Follow-up that runs itself: timed to-dos and drafted messages for new leads, so no one is forgotten. Nothing is sent for you.</p>
+          <p className={`mt-1 text-sm ${muted}`}>Follow-up that runs itself: timed to-dos and drafted messages for new leads, plus birthdays and home anniversaries, so no one is forgotten. Nothing is sent for you.</p>
         </div>
         {editing === null && (
           <div className="flex gap-2">
@@ -243,19 +289,19 @@ export default function PlansPage() {
             <ol className="mt-3 space-y-1">
               {p.steps.map((s, i) => (
                 <li key={i} className="flex gap-3 text-sm">
-                  <span className={`w-14 shrink-0 text-xs ${muted}`}>Day {s.day}</span>
+                  <span className={`w-14 shrink-0 text-xs ${muted}`}>{isOccasion(p.starts_when) ? "On the day" : `Day ${s.day}`}</span>
                   <span className="min-w-0 truncate">{stepSummary(s)}</span>
                 </li>
               ))}
             </ol>
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <span className={`text-xs ${muted}`}>{counts[p.id]?.active || 0} on it now · {counts[p.id]?.done || 0} finished</span>
+              <span className={`text-xs ${muted}`}>{isOccasion(p.starts_when) ? `Made to-dos for ${counts[p.id]?.ran || 0} contact${counts[p.id]?.ran === 1 ? "" : "s"} so far` : `${counts[p.id]?.active || 0} on it now · ${counts[p.id]?.done || 0} finished`}</span>
               <span className="ml-auto flex gap-2">
                 <button type="button" onClick={() => setEditing(p.id)} className={ghost}>Edit</button>
                 <button type="button" onClick={() => remove(p)} className={`${ghost} hover:!text-red-600`}>Delete</button>
               </span>
             </div>
-            {!p.active && p.starts_when?.type !== "manual" && <p className={`mt-2 text-xs ${muted}`}>It's off, so people won't start it automatically. Turn it on to begin with the next new person.</p>}
+            {!p.active && p.starts_when?.type !== "manual" && <p className={`mt-2 text-xs ${muted}`}>It's off, so {isOccasion(p.starts_when) ? "nothing will be made for birthdays or anniversaries. Turn it on to begin today." : "people won't start it automatically. Turn it on to begin with the next new person."}</p>}
           </div>
         ),
       )}

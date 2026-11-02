@@ -2,7 +2,7 @@
 // description, switch it on or off, and put a lead on it or take them off. A plan's steps only create to-dos and DRAFT messages (nothing is sent) and
 // move people between columns, and a plan stops by itself when the person is moved or archived.
 import { HttpError } from "./bots/util.js";
-import { cleanPlan, startText, stepSummary } from "../../src/lib/plans.js";
+import { MAX_AHEAD_DAYS, cleanPlan, isOccasion, startText, stepSummary } from "../../src/lib/plans.js";
 import { serviceClient } from "./authUser.js";
 import { runPlans } from "./planRunner.js";
 import { WRITES, bool, change, obj, str } from "./mcpWriteTools.js";
@@ -32,8 +32,15 @@ const STEP = {
 };
 const STARTS = {
   type: "object",
-  description: 'How it starts: { "type": "manual" } (the agent or AI starts it), { "type": "source", "value": "Website inquiry" } (a new person with that source), or { "type": "column", "group": "lead", "stage": "New" } (someone enters that column)',
-  properties: { type: { type: "string", enum: ["manual", "source", "column"] }, value: str(""), group: { type: "string", enum: ["lead", "pipeline"] }, stage: str("") },
+  description: 'How it starts: { "type": "manual" } (the agent or AI starts it), { "type": "source", "value": "Website inquiry" } (a new person with that source), or { "type": "column", "group": "lead", "stage": "New" } (someone enters that column), or { "type": "birthday" | "anniversary", "ahead": 0, "relationships": ["client","past_client"] } (runs every year on each CONTACT (not a person card) on their birthday or home anniversary, ahead = days before to make the to-dos, relationships = which kinds of contact; steps must be to-dos or drafts, all on day 0, and a draft becomes a to-do with the message inside it)',
+  properties: {
+    type: { type: "string", enum: ["manual", "source", "column", "birthday", "anniversary"] },
+    value: str(""),
+    group: { type: "string", enum: ["lead", "pipeline"] },
+    stage: str(""),
+    ahead: { type: "integer", minimum: 0, maximum: MAX_AHEAD_DAYS },
+    relationships: { type: "array", items: { type: "string" } },
+  },
   required: ["type"],
   additionalProperties: false,
 };
@@ -87,10 +94,11 @@ async function updatePlan(sb, userId, a) {
 async function enroll(sb, userId, a) {
   return change("enroll_in_plan", sb, userId, async () => {
     const [{ data: plan }, { data: person }] = await Promise.all([
-      sb.from("plans").select("id, name, steps").eq("id", a.plan_id).eq("owner_id", userId).maybeSingle(),
+      sb.from("plans").select("id, name, steps, starts_when").eq("id", a.plan_id).eq("owner_id", userId).maybeSingle(),
       sb.from("people").select("id, name, stage_group, archived").eq("id", a.person_id).eq("owner_id", userId).maybeSingle(),
     ]);
     if (!plan) throw new HttpError(404, "No plan with that id.");
+    if (isOccasion(plan.starts_when)) throw new HttpError(400, `“${plan.name}” runs by itself on contacts' ${plan.starts_when.type === "birthday" ? "birthdays" : "home anniversaries"}; nobody is put on it by hand.`);
     if (!person) throw new HttpError(404, "No person with that id in your People.");
     if (person.archived) throw new HttpError(400, `${person.name} is archived.`);
     if (person.stage_group === "transaction") throw new HttpError(400, `${person.name} is a deal; plans are for leads and pipeline people.`);

@@ -24,6 +24,22 @@ export const MERGE_FIELDS = [
   ["agent_phone", "Your phone number"],
 ];
 
+// Plans that start on a contact's birthday or home anniversary instead of when someone enters a column. They run on Contacts, once a year each, and
+// their steps all happen on that day (or `ahead` days before it). Drafts ride along on the to-do; nothing is sent.
+export const OCCASIONS = {
+  birthday: { field: "birthday", label: "Birthday", noun: "birthday" },
+  anniversary: { field: "home_anniversary", label: "Home anniversary", noun: "home anniversary" },
+};
+export const isOccasion = (startsWhen) => Boolean(startsWhen && OCCASIONS[startsWhen.type]);
+export const DEFAULT_OCCASION_RELATIONSHIPS = ["client", "past_client", "sphere", "referral_partner"];
+export const MAX_AHEAD_DAYS = 30;
+export const OCCASION_MERGE_FIELDS = [
+  ["occasion", "birthday or home anniversary"],
+  ["occasion_date", "e.g. Nov 5"],
+  ["years", "years since the home anniversary, as a number"],
+  ["years_text", "e.g. 1 year or 3 years"],
+];
+
 export function renderTemplate(template, ctx) {
   return String(template || "")
     .replace(/\{(\w+)\}/g, (_, key) => (ctx[key] == null ? "" : String(ctx[key])))
@@ -31,6 +47,27 @@ export function renderTemplate(template, ctx) {
     .replace(/ {2,}/g, " ")
     .trim();
 }
+
+/** Merge fields for a contact on their birthday / home anniversary. `on` is the day it is celebrated (YYYY-MM-DD), `date` the stored date. */
+export const occasionContext = (contact, owner, kind, on, date) => {
+  const first = (x) => String(x || "").trim().split(/\s+/)[0] || "";
+  const name = [contact.first_name, contact.last_name].filter(Boolean).join(" ") || contact.company || "";
+  const d = new Date(`${on}T12:00:00Z`);
+  const yrs = date ? Number(on.slice(0, 4)) - Number(String(date).slice(0, 4)) : null;
+  return {
+    first_name: contact.first_name || first(name),
+    name,
+    property_address: "",
+    source: "",
+    agent_first_name: first(owner?.full_name),
+    agent_name: owner?.full_name || "",
+    agent_phone: owner?.phone || "",
+    occasion: OCCASIONS[kind]?.noun || "",
+    occasion_date: d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }),
+    years: yrs == null ? "" : String(yrs),
+    years_text: yrs == null ? "" : `${yrs} year${yrs === 1 ? "" : "s"}`,
+  };
+};
 
 export const mergeContext = (person, owner) => {
   const first = (s) => String(s || "").trim().split(/\s+/)[0] || "";
@@ -50,6 +87,7 @@ export function startText(startsWhen) {
   const s = startsWhen || { type: "manual" };
   if (s.type === "source") return `Starts when someone is added from “${s.value}”`;
   if (s.type === "column") return `Starts when someone enters ${s.group === "pipeline" ? "Pipeline" : "Leads"} › ${s.stage}`;
+  if (OCCASIONS[s.type]) return `Runs on each contact's ${OCCASIONS[s.type].noun}${s.ahead ? `, ${s.ahead} day${s.ahead === 1 ? "" : "s"} ahead` : ""}`;
   return "You start it yourself";
 }
 
@@ -75,13 +113,20 @@ export function cleanPlan(raw) {
   } else if (sw.type === "column") {
     if (!["lead", "pipeline"].includes(sw.group) || !String(sw.stage || "").trim()) fail('A column start needs group ("lead" or "pipeline") and stage.');
     starts_when = { type: "column", group: sw.group, stage: String(sw.stage).trim().slice(0, 60) };
-  } else if (sw.type && sw.type !== "manual") fail('starts_when.type must be "manual", "source" or "column".');
+  } else if (OCCASIONS[sw.type]) {
+    const ahead = sw.ahead === undefined || sw.ahead === null || sw.ahead === "" ? 0 : Number(sw.ahead);
+    if (!Number.isInteger(ahead) || ahead < 0 || ahead > MAX_AHEAD_DAYS) fail(`"Days ahead" must be a whole number from 0 to ${MAX_AHEAD_DAYS}.`);
+    const rels = Array.isArray(sw.relationships) && sw.relationships.length ? sw.relationships.map(String) : DEFAULT_OCCASION_RELATIONSHIPS;
+    starts_when = { type: sw.type, ahead, relationships: [...new Set(rels)] };
+  } else if (sw.type && sw.type !== "manual") fail('starts_when.type must be "manual", "source", "column", "birthday" or "anniversary".');
   const list = Array.isArray(raw?.steps) ? raw.steps : fail("A plan needs steps.");
   if (list.length < 1 || list.length > 20) fail("A plan has 1 to 20 steps.");
   let last = 0;
+  const occasion = OCCASIONS[starts_when.type];
   const steps = list.map((s, i) => {
     const n = i + 1;
-    const day = Number(s?.day);
+    if (occasion && s?.type === "move") fail(`Step ${n}: a ${occasion.noun} plan runs on contacts, which aren't on a board, so it can't move anyone. Use a to-do or a draft.`);
+    const day = occasion ? 0 : Number(s?.day);
     if (!Number.isInteger(day) || day < 0 || day > 730) fail(`Step ${n}: day must be a whole number from 0 to 730.`);
     if (day < last) fail(`Step ${n}: days must go up (this is day ${day} after day ${last}).`);
     last = day;
@@ -109,6 +154,23 @@ const NEW_LEAD_TEXT =
   "Hi {first_name}, it's {agent_first_name}. Thanks for reaching out! I saw your message and I'd love to help. When's a good time for a quick call?";
 
 export const STARTER_PLANS = [
+  {
+    key: "birthday",
+    name: "Birthday wishes",
+    description: "A to-do and a ready-to-send message on each client's birthday.",
+    starts_when: { type: "birthday", ahead: 0, relationships: DEFAULT_OCCASION_RELATIONSHIPS },
+    steps: [{ day: 0, type: "draft", channel: "text", body: "Happy birthday, {first_name}! Hope it's a great one. It's {agent_first_name}, thinking of you today." }],
+  },
+  {
+    key: "housiversary",
+    name: "Home anniversary",
+    description: "A note on the anniversary of each client's closing, with a nudge to ask about referrals.",
+    starts_when: { type: "anniversary", ahead: 0, relationships: ["client", "past_client"] },
+    steps: [
+      { day: 0, type: "draft", channel: "text", body: "Happy home anniversary, {first_name}! It's been {years_text} since you closed. I hope you're loving it. If you know anyone thinking of buying or selling, I'd be grateful for the introduction." },
+      { day: 0, type: "task", title: "Check in with {name}: {years_text} in their home" },
+    ],
+  },
   {
     key: "new-web-lead",
     name: "New web lead",
