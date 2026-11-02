@@ -280,6 +280,7 @@ export default function ContactsPage() {
           ) : (
             <span key={l.id} className={`inline-flex items-center rounded-full text-xs font-semibold ${activeList === l.id ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "bg-black/5 dark:bg-white/10"}`}>
               <button type="button" onClick={() => { setFilters({ ...EMPTY_FILTERS, ...l.filters }); setActiveList(l.id); setShown(PAGE); }} className="pl-3.5 pr-1.5 py-1.5">{l.name}</button>
+              <button type="button" aria-label={`Rename the list ${l.name}`} title="Rename" onClick={() => { const name = prompt("Rename this smart list", l.name); if (name?.trim() && name.trim() !== l.name) crm.renameList(l.id, name); }} className="px-1 py-1.5 opacity-60 hover:opacity-100">✎</button>
               <button type="button" aria-label={`Delete the list ${l.name}`} onClick={() => confirm(`Delete the list “${l.name}”? The contacts aren't affected.`) && crm.deleteList(l.id)} className="pr-2.5 pl-1 py-1.5 opacity-60 hover:opacity-100">×</button>
             </span>
           ),

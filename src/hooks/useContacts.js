@@ -166,6 +166,14 @@ export function useContacts() {
     return e ? fail(e) : true;
   };
 
+  const renameList = async (id, name) => {
+    const clean = name.trim().slice(0, 60);
+    if (!clean) return false;
+    setLists((l) => l.map((x) => (x.id === id ? { ...x, name: clean } : x)));
+    const { error: e } = await supabase.from("contact_smart_lists").update({ name: clean }).eq("id", id);
+    return e ? fail(e) : true;
+  };
+
   // `ids` is the whole list order; only the lists whose place changed are saved.
   const reorderLists = async (ids) => {
     const byId = new Map(lists.map((l) => [l.id, l]));
@@ -184,5 +192,5 @@ export function useContacts() {
     return {};
   };
 
-  return { contacts, tags, cards, tasks, ctx, lists, loading, error, reload: load, addContact, updateContact, updateMany, deleteContact, ensureTag, tagMany, untagMany, updateTag, deleteTag, saveList, deleteList, reorderLists, merge };
+  return { contacts, tags, cards, tasks, ctx, lists, loading, error, reload: load, addContact, updateContact, updateMany, deleteContact, ensureTag, tagMany, untagMany, updateTag, deleteTag, saveList, deleteList, renameList, reorderLists, merge };
 }
