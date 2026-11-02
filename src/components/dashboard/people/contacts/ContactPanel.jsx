@@ -158,11 +158,17 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-sm font-semibold text-white">{initials(contact)}</span>
             <div className="min-w-0">
               <h2 className="font-display text-xl font-semibold truncate">{fullName(contact)}</h2>
-              <p className={`text-xs truncate ${muted}`}>
-                {RELATIONSHIPS.find((r) => r.value === contact.relationship)?.label}
-                {cityLine(contact) ? ` · ${cityLine(contact)}` : ""}
-                {contact.archived ? " · Archived" : ""}
-              </p>
+              <div className={`flex items-center gap-1 text-xs ${muted}`}>
+                <select value={contact.relationship} onChange={(e) => set({ relationship: e.target.value })} aria-label="Relationship" title="Change relationship" className="rounded-md border border-black/10 dark:border-white/15 bg-transparent py-0.5 pl-1.5 pr-0.5 text-xs font-semibold text-[#1c1a17] dark:text-[#faf9f7] cursor-pointer">
+                  {RELATIONSHIPS.map((r) => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+                <span className="truncate">
+                  {cityLine(contact) ? ` · ${cityLine(contact)}` : ""}
+                  {contact.archived ? " · Archived" : ""}
+                </span>
+              </div>
             </div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">

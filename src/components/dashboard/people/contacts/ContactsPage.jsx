@@ -431,7 +431,11 @@ export default function ContactsPage() {
                       ))}
                       {mine.length > 3 && <span className={`text-[10px] font-semibold self-center ${muted}`}>+{mine.length - 3}</span>}
                     </div>
-                    <span className={`hidden md:block text-xs ${muted}`}>{relationshipLabel(c.relationship)}</span>
+                    <select value={c.relationship} onChange={(e) => crm.updateContact(c.id, { relationship: e.target.value })} aria-label={`Relationship for ${fullName(c)}`} className="hidden md:block w-full min-w-0 rounded-md border border-transparent hover:border-black/15 dark:hover:border-white/20 bg-transparent py-0.5 pl-0 text-xs cursor-pointer text-[#1c1a17]/60 dark:text-[#faf9f7]/60">
+                      {RELATIONSHIPS.map((r) => (
+                        <option key={r.value} value={r.value}>{r.label}</option>
+                      ))}
+                    </select>
                     <span className={`hidden md:block text-xs ${touchDue(c) ? "font-semibold text-red-600 dark:text-red-400" : muted}`} title={touchDue(c) ? "Due for a touch" : ""}>{lastContactLabel(c)}</span>
                     <span className={`hidden md:block text-xs ${next && next < today ? "font-semibold text-red-600 dark:text-red-400" : muted}`}>{next === undefined ? "–" : next ? dayLabel(next, today) : "No date"}</span>
                   </div>
