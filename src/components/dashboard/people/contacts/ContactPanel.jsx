@@ -11,6 +11,7 @@ import { addDays, dayLabel, toKey } from "../../../../lib/homeDates";
 import { NOTE_KINDS, RELATIONSHIPS, TOUCH_OPTIONS, cityLine, digits, fullName, initials, lastContactLabel, touchDue } from "../../../../lib/contacts";
 import { TagChip, TagPicker } from "./TagParts";
 import DealTabs from "../DealTabs";
+import PlanSection from "../PlanSection";
 
 const input = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
 const label = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1";
@@ -272,6 +273,7 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
                 </div>
               </section>
 
+              {!contact.archived && <PlanSection contactId={contact.id} />}
             </div>
           )}
           {tab === "activity" && (

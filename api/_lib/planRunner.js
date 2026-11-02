@@ -20,6 +20,35 @@ async function stageNames(admin, ownerId, group) {
   return Array.isArray(custom) && custom.length ? custom : [...BOARDS[group].stages];
 }
 
+// A drafted message for a contact with no People card can't sit on a card, so it becomes a to-do ("Text Sam") with the message inside it, to copy.
+const VERBS = { text: "Text", email: "Email", call: "Call" };
+function draftAsTask(step, ctx, who, suffix = "") {
+  const body = renderTemplate(step.body, ctx);
+  if (!body) return null;
+  const subject = step.channel === "email" ? renderTemplate(step.subject, ctx) : "";
+  return {
+    title: `${VERBS[step.channel] || "Text"} ${who}${suffix}`,
+    checklist: [...(subject ? [{ id: newStepId(), text: `Subject: ${subject}`.slice(0, 300), done: false }] : []), { id: newStepId(), text: body.slice(0, 2000), done: false }],
+  };
+}
+
+// One step for a contact that is on a plan without a card: to-dos only (a draft is a to-do with the message inside), no moves.
+async function doContactStep(admin, enrollment, plan, contact, owner, step) {
+  const today = centralDay();
+  const name = [contact.first_name, contact.last_name].filter(Boolean).join(" ") || contact.company || "";
+  const ctx = { ...mergeContext({ name, property_address: "", source: contact.source }, owner), first_name: contact.first_name || mergeContext({ name }, owner).first_name };
+  const who = ctx.first_name || name || "them";
+  let row;
+  if (step.type === "task") row = { title: renderTemplate(step.title, ctx) || `Follow up with ${who}` };
+  else if (step.type === "draft") {
+    row = draftAsTask(step, ctx, who);
+    if (!row) return "skipped: the message came out empty";
+  } else if (step.type === "move") return "skipped: a contact without a card isn't on a board";
+  else return `skipped: unknown step type ${step.type}`;
+  const { error } = await admin.from("agent_tasks").insert({ owner_id: enrollment.owner_id, title: row.title.slice(0, 300), due_date: today, list: cleanList(plan.name), contact_id: contact.id, ...(row.checklist ? { checklist: row.checklist } : {}) });
+  return error ? `couldn't add the to-do: ${error.message}` : `to-do added: ${row.title}`;
+}
+
 // One step. Returns what happened, as a short line for the plan's log.
 async function doStep(admin, enrollment, plan, person, owner, step) {
   const ctx = mergeContext(person, owner);
@@ -65,13 +94,17 @@ async function runOne(admin, enrollment, today) {
   const plan = enrollment.plan;
   const steps = Array.isArray(plan?.steps) ? plan.steps : [];
   const stop = (reason) => admin.from("plan_enrollments").update({ status: "stopped", stop_reason: reason }).eq("id", enrollment.id).eq("status", "active");
+  const forContact = !enrollment.person_id;
   const [{ data: person }, { data: owner }] = await Promise.all([
-    admin.from("people").select("id, owner_id, name, email, phone, source, property_address, stage_group, stage, archived, contact_id").eq("id", enrollment.person_id).maybeSingle(),
+    forContact
+      ? admin.from("contacts").select("id, owner_id, first_name, last_name, company, source, archived, do_not_contact").eq("id", enrollment.contact_id).maybeSingle()
+      : admin.from("people").select("id, owner_id, name, email, phone, source, property_address, stage_group, stage, archived, contact_id").eq("id", enrollment.person_id).maybeSingle(),
     admin.from("profiles").select("full_name, phone").eq("id", enrollment.owner_id).maybeSingle(),
   ]);
-  if (!person || person.owner_id !== enrollment.owner_id) return stop("Person not found");
+  if (!person || person.owner_id !== enrollment.owner_id) return stop(forContact ? "Contact not found" : "Person not found");
   if (person.archived) return stop("Archived");
-  if (person.stage_group === "transaction") return stop("Became a deal");
+  if (forContact && person.do_not_contact) return stop("Marked do not contact");
+  if (!forContact && person.stage_group === "transaction") return stop("Became a deal");
 
   // Which steps are due now: those whose day has come, in order, a few at a time.
   const first = enrollment.next_step;
@@ -94,7 +127,7 @@ async function runOne(admin, enrollment, today) {
   for (let i = first; i < last; i++) {
     let result;
     try {
-      result = await doStep(admin, enrollment, plan, person, owner, steps[i]);
+      result = forContact ? await doContactStep(admin, enrollment, plan, person, owner, steps[i]) : await doStep(admin, enrollment, plan, person, owner, steps[i]);
     } catch (err) {
       result = `failed: ${String(err.message || err).slice(0, 120)}`;
     }
@@ -140,14 +173,8 @@ async function runOccasionPlan(admin, plan, owner, today) {
       if (step.type === "task") {
         row = { title: renderTemplate(step.title, ctx) || `Reach out to ${who} for their ${occ.noun}` };
       } else if (step.type === "draft") {
-        const verb = step.channel === "email" ? "Email" : step.channel === "call" ? "Call" : "Text";
-        const body = renderTemplate(step.body, ctx);
-        if (!body) continue;
-        const subject = step.channel === "email" ? renderTemplate(step.subject, ctx) : "";
-        row = {
-          title: `${verb} ${who} for their ${occ.noun}${ahead ? ` (${ctx.occasion_date})` : ""}`,
-          checklist: [...(subject ? [{ id: newStepId(), text: `Subject: ${subject}`.slice(0, 300), done: false }] : []), { id: newStepId(), text: body.slice(0, 2000), done: false }],
-        };
+        row = draftAsTask(step, ctx, who, ` for their ${occ.noun}${ahead ? ` (${ctx.occasion_date})` : ""}`);
+        if (!row) continue;
       } else continue;
       const { error: err } = await admin.from("agent_tasks").insert({ owner_id: plan.owner_id, title: row.title.slice(0, 300), due_date: today, list: cleanList(plan.name), contact_id: c.contact_id, ...(row.checklist ? { checklist: row.checklist } : {}) });
       if (!err) made++;

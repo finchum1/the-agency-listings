@@ -91,7 +91,35 @@ async function updatePlan(sb, userId, a) {
   });
 }
 
+// A contact with a live card goes on a plan through the card; one without goes on as a contact (its steps become to-dos on the contact).
+async function enrollContact(sb, userId, a) {
+  return change("enroll_in_plan", sb, userId, async () => {
+    const [{ data: plan }, { data: contact }] = await Promise.all([
+      sb.from("plans").select("id, name, steps, starts_when").eq("id", a.plan_id).eq("owner_id", userId).maybeSingle(),
+      sb.from("contacts").select("id, first_name, last_name, company, archived, do_not_contact").eq("id", a.contact_id).eq("owner_id", userId).maybeSingle(),
+    ]);
+    if (!plan) throw new HttpError(404, "No plan with that id.");
+    if (isOccasion(plan.starts_when)) throw new HttpError(400, `“${plan.name}” runs by itself on contacts' ${plan.starts_when.type === "birthday" ? "birthdays" : "home anniversaries"}; nobody is put on it by hand.`);
+    if (!contact) throw new HttpError(404, "No contact with that id.");
+    const name = [contact.first_name, contact.last_name].filter(Boolean).join(" ") || contact.company;
+    if (contact.archived) throw new HttpError(400, `${name} is archived.`);
+    if (contact.do_not_contact) throw new HttpError(400, `${name} is marked do not contact.`);
+    const { data: card } = await sb.from("people").select("id").eq("contact_id", contact.id).eq("owner_id", userId).eq("archived", false).neq("stage_group", "transaction").limit(1).maybeSingle();
+    if (card) return enroll(sb, userId, { plan_id: a.plan_id, person_id: card.id });
+    const t = today();
+    const fresh = { started_on: t, next_step: 0, next_due: plus(t, plan.steps[0].day), status: "active", stop_reason: "", log: [] };
+    const { data: existing } = await sb.from("plan_enrollments").select("id, status").eq("plan_id", plan.id).eq("contact_id", contact.id).maybeSingle();
+    if (existing?.status === "active" || existing?.status === "paused") throw new HttpError(409, `${name} is already on “${plan.name}”.`);
+    const { error } = existing ? await sb.from("plan_enrollments").update(fresh).eq("id", existing.id) : await sb.from("plan_enrollments").insert({ plan_id: plan.id, contact_id: contact.id, ...fresh });
+    if (error) throw new HttpError(500, error.message);
+    const ran = await runPlans(serviceClient(), { ownerId: userId }).catch(() => 0);
+    return { text: `${name} is on “${plan.name}”, as a contact (no card), so its steps are to-dos on their contact.${ran ? ` ${ran} step${ran === 1 ? "" : "s"} ran straight away.` : ""}`, audit: `contact ${contact.id} on plan ${plan.id}` };
+  });
+}
+
 async function enroll(sb, userId, a) {
+  if (!a.person_id && a.contact_id) return enrollContact(sb, userId, a);
+  if (!a.person_id) throw new HttpError(400, "Give person_id (a Leads or Pipeline card) or contact_id.");
   return change("enroll_in_plan", sb, userId, async () => {
     const [{ data: plan }, { data: person }] = await Promise.all([
       sb.from("plans").select("id, name, steps, starts_when").eq("id", a.plan_id).eq("owner_id", userId).maybeSingle(),
@@ -115,7 +143,9 @@ async function enroll(sb, userId, a) {
 
 async function stop(sb, userId, a) {
   return change("stop_plan_for_person", sb, userId, async () => {
-    let q = sb.from("plan_enrollments").update({ status: "stopped", stop_reason: a.reason ? String(a.reason).slice(0, 80) : "Stopped by AI" }).eq("person_id", a.person_id).eq("owner_id", userId).in("status", ["active", "paused"]);
+    if (!a.person_id && !a.contact_id) throw new HttpError(400, "Give person_id or contact_id.");
+    let q = sb.from("plan_enrollments").update({ status: "stopped", stop_reason: a.reason ? String(a.reason).slice(0, 80) : "Stopped by AI" }).eq("owner_id", userId).in("status", ["active", "paused"]);
+    q = a.person_id ? q.eq("person_id", a.person_id) : q.eq("contact_id", a.contact_id);
     if (a.plan_id) q = q.eq("plan_id", a.plan_id);
     const { data, error } = await q.select("id");
     if (error) throw new HttpError(500, error.message);
@@ -137,12 +167,12 @@ export const PLAN_TOOLS = [
   },
   {
     name: "enroll_in_plan", title: "Put someone on a plan", scope: "write_people", annotations: WRITES, run: enroll,
-    description: "Start a lead or pipeline person on a plan now. Its first steps (a to-do, a drafted message) happen right away.",
-    inputSchema: obj({ plan_id: str("Plan id from list_plans"), person_id: str("Person id from find_person") }, ["plan_id", "person_id"]),
+    description: "Start a lead or pipeline person on a plan now (person_id), or a contact (contact_id: if they have a Leads/Pipeline card they go on through the card, otherwise the plan's steps become to-dos on the contact and a move step is skipped). Give one of the two. Its first steps happen right away.",
+    inputSchema: obj({ plan_id: str("Plan id from list_plans"), person_id: str("Person id from find_person"), contact_id: str("Contact id from find_contact") }, ["plan_id"]),
   },
   {
     name: "stop_plan_for_person", title: "Take someone off a plan", scope: "write_people", annotations: WRITES, run: stop,
-    description: "Stop one plan (or all of them) for a person, for example because they replied. Nothing is deleted.",
-    inputSchema: obj({ person_id: str("Person id"), plan_id: str("Only this plan; leave out to stop all"), reason: str("Why, e.g. They replied") }, ["person_id"]),
+    description: "Stop one plan (or all of them) for a person or a contact, for example because they replied. Nothing is deleted.",
+    inputSchema: obj({ person_id: str("Person id"), contact_id: str("Contact id, for a contact on a plan without a card"), plan_id: str("Only this plan; leave out to stop all"), reason: str("Why, e.g. They replied") }, []),
   },
 ];

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
-import { runMyPlans } from "../../../lib/plansApi";
+import { runMyPlans, startPlan } from "../../../lib/plansApi";
 import { dayLabel, toKey } from "../../../lib/homeDates";
 import { isOccasion, stepSummary } from "../../../lib/plans";
 
@@ -13,7 +13,7 @@ const plusDays = (key, n) => {
 };
 
 // The plans a person is on, on their card: where each one is, what comes next, and pause / skip / stop. Also a way to start one.
-export default function PlanSection({ person }) {
+export default function PlanSection({ person, contactId }) {
   const [rows, setRows] = useState([]);
   const [plans, setPlans] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -21,13 +21,20 @@ export default function PlanSection({ person }) {
   const today = toKey(new Date());
 
   const load = useCallback(async () => {
+    // On a contact: the plans on the contact itself, plus those on any card it has.
+    let enrollments = supabase.from("plan_enrollments").select("*, plan:plans(id, name, steps)").order("created_at");
+    if (contactId) {
+      const { data: cards } = await supabase.from("people").select("id").eq("contact_id", contactId);
+      const ids = (cards || []).map((c) => c.id);
+      enrollments = enrollments.or(`contact_id.eq.${contactId}${ids.length ? `,person_id.in.(${ids.join(",")})` : ""}`);
+    } else enrollments = enrollments.eq("person_id", person.id);
     const [{ data: e }, { data: p }] = await Promise.all([
-      supabase.from("plan_enrollments").select("*, plan:plans(id, name, steps)").eq("person_id", person.id).order("created_at"),
+      enrollments,
       supabase.from("plans").select("id, name, steps, starts_when").order("created_at"),
     ]);
     setRows(e || []);
     setPlans((p || []).filter((x) => !isOccasion(x.starts_when)));
-  }, [person.id]);
+  }, [person?.id, contactId]);
   useEffect(() => {
     load();
   }, [load]);
@@ -50,11 +57,12 @@ export default function PlanSection({ person }) {
     if (!plan) return;
     setBusy(true);
     setError("");
-    const existing = rows.find((r) => r.plan_id === planId);
-    const fresh = { started_on: today, next_step: 0, next_due: plusDays(today, plan.steps[0].day), status: "active", stop_reason: "", log: [] };
-    const { error: err } = existing ? await supabase.from("plan_enrollments").update(fresh).eq("id", existing.id) : await supabase.from("plan_enrollments").insert({ plan_id: planId, person_id: person.id, ...fresh });
-    if (err) setError(err.message);
-    else await runMyPlans();
+    try {
+      const r = await startPlan(plan, contactId ? { contactIds: [contactId] } : { personIds: [person.id] });
+      if (r.skipped.length) setError(`Not started: ${r.skipped[0]}.`);
+    } catch (err) {
+      setError(err.message);
+    }
     await load();
     setBusy(false);
   };

@@ -3,6 +3,7 @@ import { dayLabel, toKey } from "../../../lib/homeDates";
 import { lastContactLabel, relationshipLabel } from "../../../lib/contacts";
 import { TagChip } from "./contacts/TagParts";
 import { SIDE_TAGS } from "../../../lib/peopleSides";
+import StartPlanModal from "./StartPlanModal";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const control = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -18,8 +19,19 @@ const SORTS = {
 // talked and when you're due to again. Opening a row opens the same panel a board card does.
 export default function ProspectsList({ own, stages, openDeal, info, tagById, cadenceFor, group, title }) {
   const [sort, setSort] = useState("followup");
+  const [picked, setPicked] = useState(() => new Set());
+  const [planOpen, setPlanOpen] = useState(false);
   const today = toKey(new Date());
   const rows = useMemo(() => [...own].sort((a, b) => SORTS[sort][1](a, b, info, stages) || a.name.localeCompare(b.name)), [own, sort, info, stages]);
+
+  const toggle = (id) =>
+    setPicked((s) => {
+      const n = new Set(s);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  const allPicked = rows.length > 0 && rows.every((p) => picked.has(p.id));
+  const pickedIds = rows.filter((p) => picked.has(p.id)).map((p) => p.id);
 
   const followUp = (p) =>
     p.next_follow_up ? (
@@ -57,6 +69,15 @@ export default function ProspectsList({ own, stages, openDeal, info, tagById, ca
         </select>
       </div>
 
+      {pickedIds.length > 0 && (
+        <div className="sticky top-14 z-20 flex flex-wrap items-center gap-2 rounded-2xl bg-[#1c1a17] text-white px-4 py-3 shadow-lg" role="region" aria-label="Bulk actions">
+          <span className="text-sm font-semibold mr-1">{pickedIds.length} selected</span>
+          <button type="button" onClick={() => setPlanOpen(true)} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Start a plan</button>
+          <button type="button" onClick={() => setPicked(new Set())} className="ml-auto text-xs font-semibold text-white/70 hover:text-white">Clear</button>
+        </div>
+      )}
+      {planOpen && <StartPlanModal personIds={pickedIds} onClose={() => setPlanOpen(false)} onDone={() => setPicked(new Set())} />}
+
       {rows.length === 0 ? (
         <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] p-10 text-center">
           <p className={muted}>No one matches.</p>
@@ -67,7 +88,10 @@ export default function ProspectsList({ own, stages, openDeal, info, tagById, ca
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-black/5 dark:border-white/10 text-left text-xs uppercase tracking-wider text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
-                  <th className="px-5 py-3 font-medium">Name</th>
+                  <th className="w-10 pl-5 py-3">
+                    <input type="checkbox" checked={allPicked} onChange={() => setPicked(allPicked ? new Set() : new Set(rows.map((p) => p.id)))} aria-label="Select everyone shown" className="accent-[#ed2127]" />
+                  </th>
+                  <th className="px-3 py-3 font-medium">Name</th>
                   <th className="px-3 py-3 font-medium">Column</th>
                   <th className="px-3 py-3 font-medium">Relationship</th>
                   <th className="px-3 py-3 font-medium">Tags</th>
@@ -78,7 +102,10 @@ export default function ProspectsList({ own, stages, openDeal, info, tagById, ca
               <tbody>
                 {rows.map((p) => (
                   <tr key={p.id} onClick={() => openDeal(p.id)} className="cursor-pointer border-b border-black/5 dark:border-white/10 last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.04]">
-                    <td className="px-5 py-3.5 min-w-[13rem]">
+                    <td className="pl-5 py-3.5 w-10" onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" checked={picked.has(p.id)} onChange={() => toggle(p.id)} aria-label={`Select ${p.name}`} className="accent-[#ed2127]" />
+                    </td>
+                    <td className="px-3 py-3.5 min-w-[13rem]">
                       <p className="flex items-center gap-2 font-medium">
                         {p.name}
                         {side(p)}

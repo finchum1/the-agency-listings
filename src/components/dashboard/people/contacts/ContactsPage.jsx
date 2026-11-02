@@ -8,6 +8,7 @@ import { ManageTags, TagChip, TagPicker } from "./TagParts";
 import ContactPanel from "./ContactPanel";
 import ImportContacts from "./ImportContacts";
 import useUrlParamSync from "../../../../hooks/useUrlParamSync";
+import StartPlanModal from "../StartPlanModal";
 
 const select = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
 const pill = "rounded-full border border-black/10 dark:border-white/15 px-3.5 py-2 text-sm font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
@@ -332,6 +333,7 @@ export default function ContactsPage() {
             ))}
           </select>
           <button type="button" onClick={() => setModal("followup")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Schedule follow-up</button>
+          {!filters.archived && <button type="button" onClick={() => setModal("plan")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Start a plan</button>}
           {picked.length === 2 && <button type="button" onClick={() => setModal("merge")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Merge</button>}
           <button type="button" onClick={() => exportCsv(picked)} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Export</button>
           <button type="button" onClick={() => crm.updateMany(picked.map((c) => c.id), { archived: !filters.archived }).then(() => { setSelected(new Set()); flash(filters.archived ? "Restored." : "Archived."); })} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">{filters.archived ? "Restore" : "Archive"}</button>
@@ -427,6 +429,7 @@ export default function ContactsPage() {
       {modal === "add" && <AddContact onClose={(c) => { setModal(null); if (c) setOpenId(c.id); }} onAdd={crm.addContact} />}
       {modal === "import" && <ImportContacts existing={contacts} tags={tags} ensureTag={crm.ensureTag} onClose={() => setModal(null)} onDone={crm.reload} />}
       {modal === "tags" && <ManageTags tags={tags} links={crm.ctx.tagsByContact ? [...crm.ctx.tagsByContact].flatMap(([c, ts]) => ts.map((t) => ({ contact_id: c, tag_id: t }))) : []} onClose={() => setModal(null)} onUpdate={crm.updateTag} onDelete={crm.deleteTag} />}
+      {modal === "plan" && <StartPlanModal contactIds={picked.map((c) => c.id)} onClose={() => setModal(null)} onDone={() => setSelected(new Set())} />}
       {modal === "followup" && <BulkFollowUp count={picked.length} onClose={() => setModal(null)} onSave={bulkFollowUp} />}
       {modal === "merge" && picked.length === 2 && <MergeModal pair={picked} onClose={() => { setModal(null); setSelected(new Set()); }} onMerge={crm.merge} />}
     </div>

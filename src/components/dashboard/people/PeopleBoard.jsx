@@ -15,6 +15,7 @@ import { usePeopleDrafts } from "../../../hooks/usePeopleDrafts";
 import { usePeekWidth } from "../../../hooks/usePeekWidth";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import useUrlParamSync from "../../../hooks/useUrlParamSync";
+import StartPlanModal from "./StartPlanModal";
 
 const COLUMN_DRAG_TYPE = "application/x-people-column";
 
@@ -190,7 +191,7 @@ const ExpandIcon = () => (
 const menuItem =
   "w-full text-left px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-40 disabled:hover:bg-transparent";
 
-function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleClosed, onDelete, cadence, onCadence }) {
+function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleClosed, onDelete, cadence, onCadence, onStartPlan }) {
   const [open, setOpen] = useState(false);
   const [days, setDays] = useState(String(cadence || ""));
   useEffect(() => setDays(String(cadence || "")), [cadence]);
@@ -239,6 +240,11 @@ function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleCl
                 <span className="mt-1 block text-[11px] leading-snug text-[#1c1a17]/50 dark:text-[#faf9f7]/50">When someone lands in this column their next follow-up is set that many days out. Leave blank for none.</span>
               </form>
             )}
+            {onStartPlan && (
+              <button type="button" className={menuItem} onClick={run(onStartPlan)}>
+                Start a plan for everyone here
+              </button>
+            )}
             {isTransactions && (
               <button type="button" className={menuItem} disabled={isClosed} onClick={run(onToggleClosed)}>
                 {isClosed ? "✓ Counts as closed deals" : "Count as closed deals"}
@@ -271,6 +277,7 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
   const nextStageNames = board.next ? allStages[board.next.group] : null;
   const prevStageNames = board.prev ? allStages[board.prev.group] : null;
 
+  const [planFor, setPlanFor] = useState(null); // everyone in a column, for "Start a plan for everyone here"
   const [selectedId, setSelectedId] = useState(() => (group === "transaction" ? initialOpenId || new URLSearchParams(window.location.search).get("deal") : new URLSearchParams(window.location.search).get("person"))); // ?person= opens a lead or pipeline card (the dashboard search and quick add use it)
   useUrlParamSync(group === "transaction" ? "deal" : "person", selectedId); // the open card is in the address, so a dashboard tab remembers it
   // One side panel at a time: opening a deal you coordinate (the page's own panel, `foreignOpenId`) closes this one, and opening one of
@@ -799,6 +806,7 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
                     onDelete={() => handleDeleteColumn(stage)}
                     cadence={group === "transaction" ? null : cadenceFor(group, stage)}
                     onCadence={group === "transaction" ? undefined : (d) => runStageChange(() => setCadence(group, stage, d))}
+                    onStartPlan={group === "transaction" || isForeignCol || active.every((p) => p.stage !== stage) ? undefined : () => setPlanFor({ ids: active.filter((p) => p.stage === stage).map((p) => p.id), label: stage })}
                   />
                 </div>
               </div>
@@ -988,6 +996,8 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
           </div>,
           document.body,
         )}
+
+      {planFor && <StartPlanModal personIds={planFor.ids} label={planFor.label} onClose={() => setPlanFor(null)} />}
 
       {archived.length > 0 && (
         <div>
