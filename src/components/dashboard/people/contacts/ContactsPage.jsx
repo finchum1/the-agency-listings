@@ -131,7 +131,7 @@ function MergeModal({ pair, onClose, onMerge }) {
 export default function ContactsPage() {
   const crm = useContacts();
   const { contacts, tags, cards, ctx, lists, loading, error } = crm;
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [filters, setFilters] = useState(() => ({ ...EMPTY_FILTERS, dates: new URLSearchParams(window.location.search).get("dates") || "" }));
   const [sort, setSort] = useState("name");
   const [activeList, setActiveList] = useState("");
   const [selected, setSelected] = useState(() => new Set());
@@ -310,6 +310,13 @@ export default function ContactsPage() {
           <option value="overdue">Follow-up overdue</option>
           <option value="week">Follow-up this week</option>
           <option value="none">No follow-up scheduled</option>
+        </select>
+        <select value={filters.dates} onChange={(e) => set({ dates: e.target.value })} aria-label="Birthday and anniversary" className={select}>
+          <option value="">Any birthday / anniversary</option>
+          <option value="no_birthday">No birthday saved</option>
+          <option value="has_birthday">Has a birthday</option>
+          <option value="no_anniversary">No home anniversary saved</option>
+          <option value="has_anniversary">Has a home anniversary</option>
         </select>
         <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={filters.touch} onChange={(e) => set({ touch: e.target.checked })} className="accent-[#ed2127]" /> Due for a touch</label>
         <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={filters.archived} onChange={(e) => set({ archived: e.target.checked })} className="accent-[#ed2127]" /> Archived</label>

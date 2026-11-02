@@ -70,10 +70,10 @@ export function touchDue(c) {
 }
 
 // ---- filtering: the same shape of `filters` is what a saved smart list stores ----
-export const EMPTY_FILTERS = { q: "", relationship: "", tags: [], board: "", contacted: "", followup: "", touch: false, archived: false };
+export const EMPTY_FILTERS = { q: "", relationship: "", tags: [], board: "", contacted: "", followup: "", touch: false, dates: "", archived: false };
 
 export function hasFilters(f) {
-  return Boolean(f.q || f.relationship || f.tags?.length || f.board || f.contacted || f.followup || f.touch || f.archived);
+  return Boolean(f.q || f.relationship || f.tags?.length || f.board || f.contacted || f.followup || f.touch || f.dates || f.archived);
 }
 
 /**
@@ -112,6 +112,10 @@ export function applyFilters(contacts, f, ctx) {
       if (f.followup === "none" && due) return false;
     }
     if (f.touch && !touchDue(c)) return false;
+    if (f.dates) {
+      const field = f.dates.endsWith("birthday") ? "birthday" : "home_anniversary";
+      if (f.dates.startsWith("has_") !== !!c[field]) return false;
+    }
     return true;
   });
 }

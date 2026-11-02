@@ -4,6 +4,7 @@ import { SOURCES } from "../../../lib/peopleStages";
 import { CHANNELS, DEFAULT_OCCASION_RELATIONSHIPS, MAX_AHEAD_DAYS, MERGE_FIELDS, OCCASIONS, OCCASION_MERGE_FIELDS, STARTER_PLANS, STEP_TYPES, cleanPlan, isOccasion, startText, stepSummary } from "../../../lib/plans";
 import { RELATIONSHIPS } from "../../../lib/contacts";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
+import OccasionCoverage from "./OccasionCoverage";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const card = "rounded-2xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] p-5";
@@ -195,6 +196,7 @@ export default function PlansPage() {
   const { stages } = usePeopleStages();
   const [plans, setPlans] = useState([]);
   const [counts, setCounts] = useState({});
+  const [contacts, setContacts] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // plan id, "new", or null
   const [error, setError] = useState("");
@@ -215,6 +217,16 @@ export default function PlansPage() {
     }
     setCounts(c);
     setLoading(false);
+    // Only the birthday / anniversary plans need the contact list (to show who has a date and who doesn't). Read a page at a time: one response caps at 1000.
+    if ((p || []).some((x) => isOccasion(x.starts_when))) {
+      const all = [];
+      for (let from = 0; ; from += 1000) {
+        const { data } = await supabase.from("contacts").select("id, first_name, last_name, company, relationship, birthday, home_anniversary, archived, do_not_contact").order("id").range(from, from + 999);
+        all.push(...(data || []));
+        if (!data || data.length < 1000) break;
+      }
+      setContacts(all);
+    }
   }, []);
   useEffect(() => {
     load();
@@ -301,6 +313,7 @@ export default function PlansPage() {
                 <button type="button" onClick={() => remove(p)} className={`${ghost} hover:!text-red-600`}>Delete</button>
               </span>
             </div>
+            {isOccasion(p.starts_when) && <OccasionCoverage plan={p} contacts={contacts} />}
             {!p.active && p.starts_when?.type !== "manual" && <p className={`mt-2 text-xs ${muted}`}>It's off, so {isOccasion(p.starts_when) ? "nothing will be made for birthdays or anniversaries. Turn it on to begin today." : "people won't start it automatically. Turn it on to begin with the next new person."}</p>}
           </div>
         ),

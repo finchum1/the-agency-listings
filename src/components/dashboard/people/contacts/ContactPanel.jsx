@@ -273,7 +273,7 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
                 </div>
               </section>
 
-              {!contact.archived && <PlanSection contactId={contact.id} />}
+              {!contact.archived && <PlanSection contactId={contact.id} contact={contact} />}
             </div>
           )}
           {tab === "activity" && (

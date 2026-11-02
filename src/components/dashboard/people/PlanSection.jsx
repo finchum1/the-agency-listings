@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { runMyPlans, startPlan } from "../../../lib/plansApi";
 import { dayLabel, toKey } from "../../../lib/homeDates";
-import { isOccasion, stepSummary } from "../../../lib/plans";
+import { relationshipLabel } from "../../../lib/contacts";
+import { DEFAULT_OCCASION_RELATIONSHIPS, OCCASIONS, isOccasion, nextOccurrence, stepSummary } from "../../../lib/plans";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const ghost = "rounded-full border border-black/15 dark:border-white/20 px-3 py-1 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10";
@@ -14,9 +15,10 @@ const plusDays = (key, n) => {
 };
 
 // The plans a person is on, on their card: where each one is, what comes next, and pause / skip / stop. Also a way to start one.
-export default function PlanSection({ person, contactId }) {
+export default function PlanSection({ person, contactId, contact }) {
   const [rows, setRows] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [occasions, setOccasions] = useState([]);
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -32,10 +34,11 @@ export default function PlanSection({ person, contactId }) {
     } else enrollments = enrollments.eq("person_id", person.id);
     const [{ data: e }, { data: p }] = await Promise.all([
       enrollments,
-      supabase.from("plans").select("id, name, steps, starts_when").order("created_at"),
+      supabase.from("plans").select("id, name, steps, starts_when, active").order("created_at"),
     ]);
     setRows(e || []);
     setPlans((p || []).filter((x) => !isOccasion(x.starts_when)));
+    setOccasions((p || []).filter((x) => isOccasion(x.starts_when)));
     setReady(true);
   }, [person?.id, contactId]);
   useEffect(() => {
@@ -112,7 +115,21 @@ export default function PlanSection({ person, contactId }) {
           </div>
         );
       })}
-      {ready && rows.length === 0 && plans.length === 0 && (
+      {contact && occasions.map((p) => {
+        const kind = OCCASIONS[p.starts_when.type];
+        const rels = p.starts_when.relationships?.length ? p.starts_when.relationships : DEFAULT_OCCASION_RELATIONSHIPS;
+        const date = contact[kind.field];
+        const on = nextOccurrence(date, today);
+        const dateText = on ? new Date(`${on}T12:00:00`).toLocaleDateString([], { month: "long", day: "numeric" }) : "";
+        const note = contact.archived || contact.do_not_contact ? "Won't run (archived or do not contact)." : !rels.includes(contact.relationship) ? `Doesn't apply: this plan only runs for ${rels.map((r) => relationshipLabel(r).toLowerCase()).join(", ")} contacts.` : !date ? `No ${kind.noun} saved, so this can't run. Add it in the Details tab.` : !p.active ? `${kind.label} ${dateText}. This plan is turned off.` : `${kind.label} ${dateText}. A to-do is made${p.starts_when.ahead ? ` ${p.starts_when.ahead} day${p.starts_when.ahead === 1 ? "" : "s"} before` : " that day"}.`;
+        return (
+          <div key={p.id} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+            <p className="text-sm font-semibold">{p.name}</p>
+            <p className={`text-xs ${date && p.active ? "" : muted}`}>{note}</p>
+          </div>
+        );
+      })}
+      {ready && rows.length === 0 && plans.length === 0 && occasions.length === 0 && (
         <p className={`text-sm ${muted}`}>
           No plans set up yet. <Link to="/dashboard/people/plans" className="font-semibold underline">Create one in People &gt; Plans</Link> and you can start it here.
         </p>

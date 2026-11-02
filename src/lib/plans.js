@@ -33,6 +33,28 @@ export const OCCASIONS = {
 export const isOccasion = (startsWhen) => Boolean(startsWhen && OCCASIONS[startsWhen.type]);
 export const DEFAULT_OCCASION_RELATIONSHIPS = ["client", "past_client", "sphere", "referral_partner"];
 export const MAX_AHEAD_DAYS = 30;
+
+/** The next day (YYYY-MM-DD) a stored birthday / anniversary date falls on, today or later; Feb 29 is celebrated Feb 28 in a non-leap year. */
+export function nextOccurrence(date, today) {
+  if (!date) return null;
+  const [, m, d] = String(date).slice(0, 10).split("-").map(Number);
+  const year = Number(today.slice(0, 4));
+  const leap = (y) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  const key = (y) => {
+    const day = m === 2 && d === 29 && !leap(y) ? 28 : d;
+    return `${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  };
+  const k = key(year);
+  return k >= today ? k : key(year + 1);
+}
+
+/** Who an occasion plan is for: contacts (not archived or do-not-contact) in its relationships, split by whether the date is saved. */
+export function occasionAudience(plan, contacts) {
+  const kind = OCCASIONS[plan.starts_when?.type];
+  const rels = plan.starts_when?.relationships?.length ? plan.starts_when.relationships : DEFAULT_OCCASION_RELATIONSHIPS;
+  const mine = contacts.filter((c) => !c.archived && !c.do_not_contact && rels.includes(c.relationship));
+  return { have: mine.filter((c) => c[kind.field]), missing: mine.filter((c) => !c[kind.field]), field: kind.field };
+}
 export const OCCASION_MERGE_FIELDS = [
   ["occasion", "birthday or home anniversary"],
   ["occasion_date", "e.g. Nov 5"],
