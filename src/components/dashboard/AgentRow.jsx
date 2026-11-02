@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import ImageUploadField from "./ImageUploadField";
+import { adminApi } from "../../lib/adminApi";
 
 const AVATAR_FALLBACK =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4' fill='%23e5e0d8'/%3E%3Cpath d='M4 20c0-4 4-6 8-6s8 2 8 6' fill='%23e5e0d8'/%3E%3C/svg%3E";
@@ -71,6 +72,28 @@ export default function AgentRow({
     phone: agent.phone || "",
   });
   const [status, setStatus] = useState("");
+  const [emailEdit, setEmailEdit] = useState(null); // null = not editing, otherwise the address being typed
+  const [emailBusy, setEmailBusy] = useState(false);
+
+  const saveEmail = async (e) => {
+    e.preventDefault();
+    const next = emailEdit.trim().toLowerCase();
+    if (!next || next === (agent.email || "").toLowerCase()) {
+      setEmailEdit(null);
+      return;
+    }
+    setEmailBusy(true);
+    try {
+      await adminApi({ action: "change-email", agentId: agent.id, email: next });
+      onError("");
+      setStatus("Email changed");
+      setEmailEdit(null);
+      onSaved();
+    } catch (err) {
+      onError(err.message);
+    }
+    setEmailBusy(false);
+  };
 
   const patch = async (changes) => {
     setStatus("Saving…");
@@ -174,7 +197,41 @@ export default function AgentRow({
                 <input value={form.phone} onChange={setText("phone")} onBlur={saveText("phone")} className={inputClass} />
               </div>
             </div>
-            <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">Email: {agent.email}</p>
+            {emailEdit === null ? (
+              <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span>Email: {agent.email}</span>
+                <button type="button" onClick={() => setEmailEdit(agent.email || "")} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                  Change email
+                </button>
+              </p>
+            ) : (
+              <form onSubmit={saveEmail} className="space-y-2">
+                <label className={labelClass} htmlFor={`email-${agent.id}`}>Email</label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    id={`email-${agent.id}`}
+                    type="email"
+                    autoFocus
+                    required
+                    value={emailEdit}
+                    onChange={(e) => setEmailEdit(e.target.value)}
+                    onKeyDown={(e) => e.key === "Escape" && setEmailEdit(null)}
+                    className={`${inputClass} sm:max-w-sm`}
+                  />
+                  <button type="submit" disabled={emailBusy} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2 disabled:opacity-60">
+                    {emailBusy ? "Saving…" : "Save email"}
+                  </button>
+                  <button type="button" onClick={() => setEmailEdit(null)} className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:underline">
+                    Cancel
+                  </button>
+                </div>
+                <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
+                  {agent.login_enabled
+                    ? "This is the address they log in with and where their alerts go. It changes right away with no email sent; their password stays the same."
+                    : "This is where their alerts go. It changes right away with no email sent."}
+                </p>
+              </form>
+            )}
             <ImageUploadField
               bucket="profile-photos"
               folder={agent.id}

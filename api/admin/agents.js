@@ -34,6 +34,10 @@
 //   this checks first and returns a clear, actionable error instead of a
 //   raw FK violation.
 //
+// action: "change-email" — changes the email an agent logs in with and is contacted at, in both places it lives (their auth account and their
+//   profile). Done by an admin, so it takes effect at once with no confirmation email; their password and everything they own stay as is, they just
+//   sign in with the new address from now on. Limited to the admin's own organization (the platform owner may change anyone's).
+//
 // action: "list-sitemap" / "import-post" — the blog importer for moving a
 //   client's posts over from another site (see api/_lib/importPost.js).
 //   Folded into this function, like the rest, to stay under the 12-function cap.
@@ -64,8 +68,8 @@ export default async function handler(req, res) {
   }
 
   const { action } = req.body || {};
-  if (!["add", "delete", "list-sitemap", "import-post"].includes(action)) {
-    return res.status(400).json({ error: 'action must be "add", "delete", "list-sitemap" or "import-post".' });
+  if (!["add", "delete", "change-email", "list-sitemap", "import-post"].includes(action)) {
+    return res.status(400).json({ error: 'action must be "add", "delete", "change-email", "list-sitemap" or "import-post".' });
   }
 
   const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
@@ -95,7 +99,7 @@ export default async function handler(req, res) {
   const { data: platformRow } = await admin.from("platform_admins").select("user_id").eq("user_id", user.id).maybeSingle();
   const isPlatform = !!platformRow;
   if (!isPlatform && callerProfile?.role !== "admin") {
-    return res.status(403).json({ error: `Only admins can ${action} agents.` });
+    return res.status(403).json({ error: action === "change-email" ? "Only admins can change an agent's email." : `Only admins can ${action} agents.` });
   }
 
   if (action === "add") {
@@ -178,6 +182,30 @@ export default async function handler(req, res) {
       // plain agent with login off, the safe default). Edit them from Agents.
       ...(updateError ? { warning: "The agent was created, but some details didn't save. Please review them." } : {}),
     });
+  }
+
+  if (action === "change-email") {
+    const { agentId } = req.body || {};
+    const email = String(req.body?.email || "").trim().toLowerCase();
+    if (!agentId) return res.status(400).json({ error: "agentId is required." });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 254) return res.status(400).json({ error: "That doesn't look like an email address." });
+    const { data: target } = await admin.from("profiles").select("org_id, email").eq("id", agentId).maybeSingle();
+    if (!target) return res.status(404).json({ error: "That agent wasn't found." });
+    if (!isPlatform && target.org_id !== callerProfile?.org_id) return res.status(403).json({ error: "That agent isn't in your organization." });
+    if ((target.email || "").toLowerCase() === email) return res.status(200).json({ ok: true, email, unchanged: true });
+    const { data: taken } = await admin.from("profiles").select("id").ilike("email", email.replace(/[\\%_]/g, (c) => `\\${c}`)).neq("id", agentId).limit(1);
+    if (taken?.length) return res.status(409).json({ error: "Another account already uses that email address." });
+    const { error: authError } = await admin.auth.admin.updateUserById(agentId, { email, email_confirm: true });
+    if (authError) {
+      console.error("Change email error:", authError);
+      return res.status(400).json({ error: /already|registered|exists/i.test(authError.message) ? "Another account already uses that email address." : authError.message });
+    }
+    const { error: profileError } = await admin.from("profiles").update({ email }).eq("id", agentId);
+    if (profileError) {
+      console.error("Change email: profile update failed after the account changed:", profileError);
+      return res.status(500).json({ error: "Their login email changed, but the profile didn't update. Try again." });
+    }
+    return res.status(200).json({ ok: true, email });
   }
 
   // action === "list-sitemap" — blog importer step 1: find the addresses on
