@@ -172,7 +172,7 @@ export async function leadAlertContext(admin, agentId, primaryEmail) {
 }
 
 // The formatted lead alert. Everything the visitor typed is escaped.
-export function renderLeadEmailHtml({ heading, agentName, notice, about, fields, message, dashboardUrl }) {
+export function renderLeadEmailHtml({ heading, agentName, notice, about, fields, message, dashboardUrl, actions = [] }) {
   const first = escapeHtml((agentName || "").split(" ")[0] || "there");
   const rows = fields
     .map(
@@ -191,6 +191,7 @@ ${about ? `<p style="margin:0;font-size:14px;color:#6b6762">${escapeHtml(about)}
 ${notice ? `<tr><td style="padding:8px 28px 0"><div style="background:#fbf3e4;border:1px solid #efdcb4;border-radius:8px;padding:10px 12px;font-size:14px;color:#6a4b10">${escapeHtml(notice)}</div></td></tr>` : ""}
 <tr><td style="padding:12px 28px 0"><table role="presentation" cellspacing="0" cellpadding="0">${rows}</table></td></tr>
 <tr><td style="padding:12px 28px 4px"><div style="background:#f7f5f1;border-radius:8px;padding:14px 16px;font-size:15px;line-height:1.55;color:#1c1a17;white-space:pre-wrap">${escapeHtml(message || "(no message)")}</div></td></tr>
+${actions.length ? `<tr><td style="padding:16px 28px 0"><p style="margin:0 0 8px;font-size:13px;color:#6b6762">Reply now, one tap:</p>${actions.map((a) => `<a href="${escapeHtml(a.href)}" style="display:inline-block;background:#e8623f;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:11px 20px;border-radius:99px;margin:0 8px 8px 0">${escapeHtml(a.label)}</a>`).join("")}</td></tr>` : ""}
 <tr><td style="padding:20px 28px 8px"><a href="${escapeHtml(dashboardUrl)}" style="display:inline-block;background:#1c1a17;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:12px 22px;border-radius:99px">Open in your dashboard</a></td></tr>
 <tr><td style="padding:8px 28px 26px;font-size:13px;line-height:1.5;color:#6b6762">Just reply to this email to answer them directly.</td></tr>
 </table></td></tr></table></body></html>`;

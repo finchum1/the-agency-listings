@@ -1,6 +1,7 @@
 // The name a dashboard tab shows for a page, from its address.
 const NAMES = {
   "/dashboard": "Home",
+  "/dashboard/people/plans": "Plans",
   "/dashboard/deals": "Deals",
   "/dashboard/deals/board": "Deals board",
   "/dashboard/listings": "Listings",

@@ -58,6 +58,7 @@ import BrokerageSiteEditor from "./components/dashboard/BrokerageSiteEditor";
 import PeopleGate from "./components/dashboard/people/PeopleGate";
 import ProspectsPage from "./components/dashboard/people/ProspectsPage";
 import PeopleLayout from "./components/dashboard/people/PeopleLayout";
+import PlansPage from "./components/dashboard/people/PlansPage";
 import PeopleOverview from "./components/dashboard/people/PeopleOverview";
 import SettingsPage from "./components/dashboard/people/SettingsPage";
 import BrandSettingsPage from "./components/dashboard/BrandSettingsPage";
@@ -425,6 +426,7 @@ export default function App() {
             <Route path="contacts" element={<ContactsPage />} />
             <Route path="leads" element={<ProspectsPage group="lead" />} />
             <Route path="pipeline" element={<ProspectsPage group="pipeline" />} />
+            <Route path="plans" element={<PlansPage />} />
           </Route>
           <Route path="transactions" element={<Navigate to="/dashboard/deals" replace />} />
         </Route>

@@ -1,3 +1,4 @@
+import ResponseTimer from "./ResponseTimer";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ComplianceChip } from "./DealCompliance";
 import { createPortal } from "react-dom";
@@ -105,6 +106,7 @@ function PersonCardBody({ p, group, progress, today, extra }) {
           {overdue && " · overdue"}
         </p>
       )}
+      {group === "lead" && <ResponseTimer person={p} />}
       {extra}
       {group === "transaction" && (
         <div className="flex items-center gap-3 pt-0.5">

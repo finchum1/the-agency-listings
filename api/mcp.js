@@ -10,8 +10,9 @@ import { WRITE_TOOLS } from "./_lib/mcpWriteTools.js";
 import { TASK_TOOLS } from "./_lib/mcpTaskTools.js";
 import { ADMIN_TOOLS } from "./_lib/mcpAdminTools.js";
 import { DEAL_TOOLS, DRAFT_TOOLS } from "./_lib/mcpDealTools.js";
+import { PLAN_TOOLS } from "./_lib/mcpPlanTools.js";
 
-const TOOLS = [...READ_TOOLS, ...WRITE_TOOLS, ...TASK_TOOLS, ...DEAL_TOOLS, ...DRAFT_TOOLS, ...ADMIN_TOOLS];
+const TOOLS = [...READ_TOOLS, ...WRITE_TOOLS, ...TASK_TOOLS, ...DEAL_TOOLS, ...DRAFT_TOOLS, ...PLAN_TOOLS, ...ADMIN_TOOLS];
 
 const SERVER = { name: "latchpoint-real-estate", title: "Latchpoint Real Estate", version: "1.0.0" };
 const SUPPORTED = ["2025-06-18", "2025-03-26", "2024-11-05"];

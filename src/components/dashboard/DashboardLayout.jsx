@@ -3,6 +3,7 @@ import { dealAccess } from "../../lib/deals";
 import { useDealAttention } from "../../hooks/useDealAttention";
 import { usePeopleAttention } from "../../hooks/usePeopleAttention";
 import { useDealTaskAttention } from "../../hooks/useDealTaskAttention";
+import { runMyPlans } from "../../lib/plansApi";
 import { createPortal } from "react-dom";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
@@ -42,6 +43,7 @@ const FLYOUTS = {
       { to: "/dashboard/people/contacts", label: "Contacts" },
       { to: "/dashboard/people/leads", label: "Leads" },
       { to: "/dashboard/people/pipeline", label: "Pipeline" },
+      { to: "/dashboard/people/plans", label: "Plans" },
       { to: "/dashboard/settings", label: "Settings" },
     ],
   },
@@ -422,6 +424,11 @@ export default function DashboardLayout() {
   // Deals' bubble: sent back, waiting for review and unread messages, plus the deal tasks that are overdue or due today.
   const dealTasksDue = useDealTaskAttention((deals.mine || deals.isTc) && !workingElsewhere, profile?.id, deals.isTc, location.pathname);
   const dealsBadge = dealsAttention.total + dealTasksDue;
+  // Follow-up plans: run anything that has come due when the dashboard opens, so a step due this morning is a to-do by the time you look.
+  useEffect(() => {
+    if (profile?.people_enabled && !workingElsewhere) runMyPlans();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.id, profile?.people_enabled]);
   const peopleAttention = usePeopleAttention(Boolean(profile?.people_enabled) && !workingElsewhere, profile?.id, location.pathname);
   // The red number beside an item that has something waiting (99+ when it is a lot).
   const bubble = (n) =>

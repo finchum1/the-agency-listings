@@ -211,11 +211,18 @@
     {
       "path": "/api/deal-updates",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/plans",
+      "schedule": "*/15 * * * *"
     }
   ],
   "functions": {
     "api/admin/agents.js": {
       "maxDuration": 30
+    },
+    "api/plans.js": {
+      "maxDuration": 60
     },
     "api/domain-monitor.js": {
       "maxDuration": 60

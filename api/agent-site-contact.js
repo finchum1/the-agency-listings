@@ -28,6 +28,7 @@ import {
   sendConfirmation,
   sendNotification,
 } from "./_lib/inquiry.js";
+import { respondToNewLead } from "./_lib/leadResponse.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -109,6 +110,9 @@ export default async function handler(req, res) {
 
   try {
     const alert = await leadAlertContext(supabaseAdmin, site.agent_id, site.agent.email);
+    // The agent's plans start now (a task to call, a drafted text), and the email gets one-tap reply buttons.
+    const reply = await respondToNewLead(supabaseAdmin, { agentId: site.agent_id, agentName: site.agent.full_name, lead: { name, email, phone } });
+    if (reply.dashboardUrl) alert.dashboardUrl = reply.dashboardUrl;
     const notice = existingPerson ? `Already in your People: ${describePerson(existingPerson)}` : "";
     const sent = await sendNotification(apiKey, {
       from: fromEmail,
@@ -124,6 +128,7 @@ export default async function handler(req, res) {
         "",
         message || "(no message)",
         "",
+        ...(reply.actions.length ? ["Reply now:", ...reply.actions.map((a) => `${a.label}: ${a.href}`), ""] : []),
         `Open in your dashboard: ${alert.dashboardUrl}`,
       ].join("\n"),
       html: renderLeadEmailHtml({
@@ -133,6 +138,7 @@ export default async function handler(req, res) {
         fields: [["Name", name], ["Email", email], ["Phone", phone || "—"], ...(page && address ? [["Property", address]] : [])],
         message,
         dashboardUrl: alert.dashboardUrl,
+        actions: reply.actions,
       }),
     });
     if (!sent) return res.status(502).json({ error: "Failed to send email." });

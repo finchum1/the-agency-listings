@@ -9,6 +9,7 @@ import { useContacts } from "../../../hooks/useContacts";
 import { usePeople } from "../../../hooks/usePeople";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
 import ContactButtons from "./ContactButtons";
+import { formatWait } from "./ResponseTimer";
 import PersonPanel from "./PersonPanel";
 
 const DRAFTS_SHOWN = 3; // draft messages listed before the "show more" switch
@@ -126,6 +127,16 @@ export default function PeopleOverview() {
   const dueSoon = followUps.filter((p) => p.next_follow_up > today);
   const peopleDrafts = drafts.filter((d) => people.some((p) => p.id === d.person_id));
 
+  // Speed to lead: the median time from a website inquiry arriving to the first reach-out, over the last 30 days (older leads were counted as handled
+  // when this began, so they are left out), and how many new ones are waiting now.
+  const gaps = live
+    .filter((p) => p.lead_id && p.first_response_at && p.created_at >= monthAgo)
+    .map((p) => new Date(p.first_response_at) - new Date(p.created_at))
+    .filter((ms) => ms >= 1000)
+    .sort((a, b) => a - b);
+  const responseMedian = gaps.length ? gaps[Math.floor(gaps.length / 2)] : null;
+  const waitingLeads = live.filter((p) => p.lead_id && p.stage_group === "lead" && !p.first_response_at && new Date(p.created_at) > addDays(now, -3)).length;
+
   const selected = people.find((p) => p.id === selectedId) || null;
   const toggleMore = (key) => setExpanded((x) => ({ ...x, [key]: !x[key] }));
   const moreButton = (key, total) =>
@@ -185,11 +196,12 @@ export default function PeopleOverview() {
         <BoardTile group="pipeline" people={people} stages={stages.pipeline} />
       </div>
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
         <Stat label="Due for a touch" value={dueTouch.length} sub="Contacts you haven't reached in a while" to="/dashboard/people/contacts" />
         <Stat label="Added in 30 days" value={newContacts} sub="New contacts" to="/dashboard/people/contacts" />
         <Stat label="New leads" value={newLeads} sub={`In "${stages.lead[0] || "New"}"`} to={boardPath("lead")} />
         <Stat label="Follow-ups due" value={dueNow.length + contactTasks.filter((t) => t.due_date <= today).length} sub="Today and overdue" />
+        <Stat label="First response time" value={responseMedian == null ? "–" : formatWait(responseMedian)} sub={`${waitingLeads} new lead${waitingLeads === 1 ? "" : "s"} waiting · median, last 30 days`} to={boardPath("lead")} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

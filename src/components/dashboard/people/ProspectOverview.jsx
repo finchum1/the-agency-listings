@@ -3,6 +3,8 @@ import { addDays, dayLabel, daysBetween, toKey } from "../../../lib/homeDates";
 import { RELATIONSHIPS, lastContactLabel } from "../../../lib/contacts";
 import { TagChip, TagPicker } from "./contacts/TagParts";
 import { ActivityList } from "./ProspectActivity";
+import ResponseTimer, { markResponded } from "./ResponseTimer";
+import PlanSection from "./PlanSection";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const card = "rounded-2xl border border-black/10 dark:border-white/15 p-4";
@@ -37,11 +39,15 @@ export default function ProspectOverview({ person, nextFollowUp, cadence, column
           <div>
             <p className={`text-xs font-semibold uppercase tracking-wide ${muted}`}>Follow-up</p>
             <p className={`mt-0.5 text-base font-semibold ${state.tone === "alert" ? "text-red-600 dark:text-red-400" : ""}`}>{state.label}</p>
+            <ResponseTimer person={person} className="mt-0.5" />
             {nextFollowUp && <p className={`text-xs ${muted}`}>{dayLabel(nextFollowUp, today)}</p>}
           </div>
           <button
             type="button"
-            onClick={() => onFollowUp(cadence ? plus(cadence) : null)}
+            onClick={() => {
+              markResponded(person);
+              onFollowUp(cadence ? plus(cadence) : null);
+            }}
             className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] px-4 py-2 text-sm font-semibold text-white"
           >
             Followed up
@@ -60,6 +66,8 @@ export default function ProspectOverview({ person, nextFollowUp, cadence, column
           <input type="date" value={nextFollowUp || ""} onChange={(e) => onFollowUp(e.target.value || null)} aria-label="Pick a follow-up date" className={control} />
         </div>
       </section>
+
+      <PlanSection person={person} />
 
       <section aria-label="In Contacts" className={card}>
         <div className="flex items-center justify-between gap-3">

@@ -43,6 +43,7 @@ import {
   sendConfirmation,
   sendNotification,
 } from "./_lib/inquiry.js";
+import { respondToNewLead } from "./_lib/leadResponse.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -155,12 +156,15 @@ export default async function handler(req, res) {
   try {
     const finalSubject = existingPerson ? `Repeat ${subject.charAt(0).toLowerCase()}${subject.slice(1)}` : subject;
     const alert = await leadAlertContext(isValuation ? null : supabaseAdmin, leadAgentId, recipientEmail);
+    // The agent's plans start now (a task to call, a drafted text), and the email gets one-tap reply buttons.
+    const reply = await respondToNewLead(supabaseAdmin, { agentId: leadAgentId, agentName, lead: { name, email, phone } });
+    if (reply.dashboardUrl) alert.dashboardUrl = reply.dashboardUrl;
     const sent = await sendNotification(apiKey, {
       from: fromEmail,
       to: alert.to,
       replyTo: email,
       subject: finalSubject,
-      text: [...bodyLines, "", `Open in your dashboard: ${alert.dashboardUrl}`].join("\n"),
+      text: [...bodyLines, "", ...(reply.actions.length ? ["Reply now:", ...reply.actions.map((a) => `${a.label}: ${a.href}`), ""] : []), `Open in your dashboard: ${alert.dashboardUrl}`].join("\n"),
       html: renderLeadEmailHtml({
         heading: finalSubject,
         agentName,
@@ -168,6 +172,7 @@ export default async function handler(req, res) {
         fields: [...(isValuation ? [["Property", address]] : []), ["Name", name], ["Email", email], ["Phone", phone || "—"]],
         message,
         dashboardUrl: alert.dashboardUrl,
+        actions: reply.actions,
       }),
     });
     if (!sent) return res.status(502).json({ error: "Failed to send email." });
