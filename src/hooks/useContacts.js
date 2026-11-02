@@ -37,7 +37,7 @@ export function useContacts() {
       fetchAll(() => supabase.from("contact_tag_links").select("contact_id, tag_id").order("contact_id").order("tag_id")),
       fetchAll(() => supabase.from("people").select("id, contact_id, stage_group, stage, archived").eq("owner_id", user?.id).not("contact_id", "is", null).eq("archived", false).order("id")),
       fetchAll(() => supabase.from("agent_tasks").select("id, contact_id, title, due_date, recurrence").not("contact_id", "is", null).eq("done", false).order("id")),
-      supabase.from("contact_smart_lists").select("*").order("created_at"),
+      supabase.from("contact_smart_lists").select("*").order("position").order("created_at"),
     ]);
     const err = c.error || t.error || l.error || p.error || k.error || s.error;
     if (err) setError(err.message);
@@ -153,7 +153,8 @@ export function useContacts() {
   };
 
   const saveList = async (name, filters) => {
-    const { data, error: e } = await supabase.from("contact_smart_lists").insert({ name: name.trim().slice(0, 60), filters }).select("*").single();
+    const position = lists.reduce((m, l) => Math.max(m, l.position || 0), 0) + 1;
+    const { data, error: e } = await supabase.from("contact_smart_lists").insert({ name: name.trim().slice(0, 60), filters, position }).select("*").single();
     if (e) return fail(e);
     setLists((l) => [...l, data]);
     return true;
@@ -165,6 +166,17 @@ export function useContacts() {
     return e ? fail(e) : true;
   };
 
+  // `ids` is the whole list order; only the lists whose place changed are saved.
+  const reorderLists = async (ids) => {
+    const byId = new Map(lists.map((l) => [l.id, l]));
+    const next = ids.map((id, i) => ({ ...byId.get(id), position: i + 1 }));
+    setLists(next);
+    const changed = next.filter((l) => byId.get(l.id).position !== l.position);
+    const results = await Promise.all(changed.map((l) => supabase.from("contact_smart_lists").update({ position: l.position }).eq("id", l.id)));
+    const bad = results.find((r) => r.error);
+    return bad ? fail(bad.error) : true;
+  };
+
   const merge = async (keepId, removeId) => {
     const { error: e } = await supabase.rpc("merge_contacts", { p_keep: keepId, p_remove: removeId });
     if (e) return { error: e.message };
@@ -172,5 +184,5 @@ export function useContacts() {
     return {};
   };
 
-  return { contacts, tags, cards, tasks, ctx, lists, loading, error, reload: load, addContact, updateContact, updateMany, deleteContact, ensureTag, tagMany, untagMany, updateTag, deleteTag, saveList, deleteList, merge };
+  return { contacts, tags, cards, tasks, ctx, lists, loading, error, reload: load, addContact, updateContact, updateMany, deleteContact, ensureTag, tagMany, untagMany, updateTag, deleteTag, saveList, deleteList, reorderLists, merge };
 }

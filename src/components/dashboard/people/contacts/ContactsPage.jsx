@@ -141,6 +141,8 @@ export default function ContactsPage() {
   const [shown, setShown] = useState(PAGE);
   const [note, setNote] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [arranging, setArranging] = useState(false);
+  const [dragId, setDragId] = useState(null);
 
   const filtered = useMemo(() => sortContacts(applyFilters(contacts, filters, ctx), sort, ctx), [contacts, filters, sort, ctx]);
   const visible = filtered.slice(0, shown);
@@ -166,6 +168,13 @@ export default function ContactsPage() {
     setShown(PAGE);
   };
 
+  const moveList = (id, to) => {
+    const ids = lists.map((l) => l.id);
+    const from = ids.indexOf(id);
+    if (from < 0 || to < 0 || to >= ids.length || to === from) return;
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    crm.reorderLists(ids);
+  };
   const flash = (m) => {
     setNote(m);
     setTimeout(() => setNote((n) => (n === m ? "" : n)), 3500);
@@ -253,12 +262,33 @@ export default function ContactsPage() {
         <button type="button" onClick={() => { setFilters(EMPTY_FILTERS); setActiveList(""); setShown(PAGE); }} className={`rounded-full px-3.5 py-1.5 text-xs font-semibold ${!filtersOn && !activeList ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "bg-black/5 dark:bg-white/10 hover:bg-black/10"}`}>
           All contacts
         </button>
-        {lists.map((l) => (
-          <span key={l.id} className={`inline-flex items-center rounded-full text-xs font-semibold ${activeList === l.id ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "bg-black/5 dark:bg-white/10"}`}>
-            <button type="button" onClick={() => { setFilters({ ...EMPTY_FILTERS, ...l.filters }); setActiveList(l.id); setShown(PAGE); }} className="pl-3.5 pr-1.5 py-1.5">{l.name}</button>
-            <button type="button" aria-label={`Delete the list ${l.name}`} onClick={() => confirm(`Delete the list “${l.name}”? The contacts aren't affected.`) && crm.deleteList(l.id)} className="pr-2.5 pl-1 py-1.5 opacity-60 hover:opacity-100">×</button>
-          </span>
-        ))}
+        {lists.map((l, i) =>
+          arranging ? (
+            <span
+              key={l.id}
+              draggable
+              onDragStart={() => setDragId(l.id)}
+              onDragOver={(e) => dragId && e.preventDefault()}
+              onDrop={() => { dragId && moveList(dragId, i); setDragId(null); }}
+              onDragEnd={() => setDragId(null)}
+              className={`inline-flex items-center rounded-full bg-black/5 dark:bg-white/10 text-xs font-semibold cursor-grab ${dragId === l.id ? "opacity-40" : ""}`}
+            >
+              <button type="button" aria-label={`Move ${l.name} earlier`} disabled={i === 0} onClick={() => moveList(l.id, i - 1)} className="pl-2.5 pr-1 py-1.5 disabled:opacity-25">←</button>
+              <span className="px-1 py-1.5 select-none">{l.name}</span>
+              <button type="button" aria-label={`Move ${l.name} later`} disabled={i === lists.length - 1} onClick={() => moveList(l.id, i + 1)} className="pl-1 pr-2.5 py-1.5 disabled:opacity-25">→</button>
+            </span>
+          ) : (
+            <span key={l.id} className={`inline-flex items-center rounded-full text-xs font-semibold ${activeList === l.id ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "bg-black/5 dark:bg-white/10"}`}>
+              <button type="button" onClick={() => { setFilters({ ...EMPTY_FILTERS, ...l.filters }); setActiveList(l.id); setShown(PAGE); }} className="pl-3.5 pr-1.5 py-1.5">{l.name}</button>
+              <button type="button" aria-label={`Delete the list ${l.name}`} onClick={() => confirm(`Delete the list “${l.name}”? The contacts aren't affected.`) && crm.deleteList(l.id)} className="pr-2.5 pl-1 py-1.5 opacity-60 hover:opacity-100">×</button>
+            </span>
+          ),
+        )}
+        {lists.length > 1 && (
+          <button type="button" onClick={() => { setArranging((v) => !v); setDragId(null); }} aria-pressed={arranging} className="rounded-full px-3 py-1.5 text-xs font-semibold text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:underline">
+            {arranging ? "Done" : "Rearrange"}
+          </button>
+        )}
         {filtersOn && !activeList && (
           <button
             type="button"
