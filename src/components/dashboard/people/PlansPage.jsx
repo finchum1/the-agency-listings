@@ -262,9 +262,9 @@ export default function PlansPage() {
     await supabase.from("plans").delete().eq("id", p.id);
     load();
   };
-  const missingStarters = STARTER_PLANS.filter((s) => !plans.some((p) => p.name === s.name));
+  const missingStarters = STARTER_PLANS.filter((s) => !plans.some((p) => p.starter_key === s.key || p.name === s.name));
   const addStarters = async () => {
-    const { error: err } = await supabase.from("plans").insert(missingStarters.map(({ name, starts_when, steps }) => ({ name, starts_when, steps, active: false })));
+    const { error: err } = await supabase.from("plans").insert(missingStarters.map(({ key, name, starts_when, steps }) => ({ starter_key: key, name, starts_when, steps, active: false })));
     if (err) setError(err.message);
     load();
   };
