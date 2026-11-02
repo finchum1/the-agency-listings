@@ -247,6 +247,16 @@ export default function PlansPage() {
       load();
     }
   };
+  const rename = async (p) => {
+    const name = prompt("Rename this plan", p.name)?.trim().slice(0, 80);
+    if (!name || name === p.name) return;
+    setPlans((list) => list.map((x) => (x.id === p.id ? { ...x, name } : x)));
+    const { error: err } = await supabase.from("plans").update({ name }).eq("id", p.id);
+    if (err) {
+      setError(err.message);
+      load();
+    }
+  };
   const remove = async (p) => {
     if (!confirm(`Delete “${p.name}”? People on it stop getting its steps. Tasks and drafts it already made stay.`)) return;
     await supabase.from("plans").delete().eq("id", p.id);
@@ -290,7 +300,10 @@ export default function PlansPage() {
           <div key={p.id} className={card}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-base font-semibold">{p.name}</p>
+                <p className="text-base font-semibold">
+                  {p.name}
+                  <button type="button" aria-label={`Rename the plan ${p.name}`} title="Rename" onClick={() => rename(p)} className="ml-2 text-sm font-normal opacity-50 hover:opacity-100">✎</button>
+                </p>
                 <p className={`text-sm ${muted}`}>{startText(p.starts_when)}</p>
               </div>
               <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
