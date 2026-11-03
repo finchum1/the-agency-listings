@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [notice, setNotice] = useState("");
   const navigate = useNavigate();
   const platform = !orgLoading && !org; // no organization's brand to wear: this is the product's own sign-in
 
@@ -36,6 +37,18 @@ export default function LoginPage() {
     // Sent here from another page that needs a sign-in (an AI app asking to connect): go back to it. Only a path on this site is followed.
     const next = new URLSearchParams(window.location.search).get("next");
     navigate(next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard", { replace: true });
+  };
+
+  const forgot = async () => {
+    setError("");
+    setNotice("");
+    if (!email.trim()) {
+      setError("Type your email above first, then choose Forgot password.");
+      return;
+    }
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/accept-invite` });
+    if (err) setError(err.message);
+    else setNotice("If that email has an account, a link to choose a new password is on its way.");
   };
 
   return (
@@ -79,6 +92,7 @@ export default function LoginPage() {
             </div>
 
             {error && <p className="text-sm text-red-600">{error}</p>}
+            {notice && <p className="text-sm text-emerald-700">{notice}</p>}
 
             <button
               type="submit"
@@ -88,6 +102,9 @@ export default function LoginPage() {
               {submitting ? "Signing in…" : "Sign In"}
             </button>
           </form>
+          <button type="button" onClick={forgot} className="mt-4 block w-full text-center text-xs text-[#1c1a17]/50 hover:text-[#1c1a17]/80 underline underline-offset-2">
+            Forgot password?
+          </button>
         </div>
         <p className="text-xs text-center text-[#1c1a17]/40 mt-6">
           Don't have an account? Ask your admin to invite you.

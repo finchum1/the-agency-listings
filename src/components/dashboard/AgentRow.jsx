@@ -314,7 +314,18 @@ export default function AgentRow({
           <section className="space-y-3">
             <h3 className={sectionTitle}>Login</h3>
             {agent.login_enabled ? (
-              <p className="text-sm text-emerald-700 dark:text-emerald-400">This agent can log in.</p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <p className="text-sm text-emerald-700 dark:text-emerald-400">This agent can log in.</p>
+                <button
+                  type="button"
+                  onClick={onEnableLogin}
+                  disabled={enabling}
+                  className="rounded-full border border-black/15 dark:border-white/20 px-4 py-1.5 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60"
+                >
+                  {enabling ? "Sending…" : "Send a new password link"}
+                </button>
+                <p className="w-full text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Emails {agent.email} a link to choose a new password. Their old one keeps working until they use it.</p>
+              </div>
             ) : (
               <div className="flex items-center gap-3 flex-wrap">
                 <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60">No login yet.</p>
