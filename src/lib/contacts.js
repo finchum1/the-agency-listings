@@ -50,6 +50,7 @@ export const TAG_COLOR_NAMES = Object.keys(TAG_COLORS);
 export const fullName = (c) => [c.first_name, c.last_name].filter(Boolean).join(" ").trim() || c.company || "Unnamed";
 export const initials = (c) => (((c.first_name || "")[0] || "") + ((c.last_name || "")[0] || "") || (c.company || "?")[0]).toUpperCase();
 export const digits = (s) => String(s || "").replace(/\D/g, "");
+export const addressLine = (c) => [c.address_line1, [c.city, c.state].filter(Boolean).join(", "), c.zip].filter(Boolean).join(c.address_line1 ? ", " : " ");
 export const cityLine = (c) => [c.city, c.state].filter(Boolean).join(", ");
 
 const todayKey = () => toKey(new Date());
@@ -125,10 +126,25 @@ export const SORTS = [
   { value: "recent", label: "Recently added" },
   { value: "contacted", label: "Longest since contact" },
   { value: "followup", label: "Next follow-up" },
+  { value: "phone", label: "Phone number" },
+  { value: "email", label: "Email" },
+  { value: "address", label: "Address" },
+  { value: "relationship", label: "Relationship" },
 ];
 
-export function sortContacts(list, sort, ctx) {
+// Text columns put contacts with nothing in them last, whichever way the column is sorted.
+export function sortContacts(list, sort, ctx, desc = false) {
+  const text = (get) => (a, b) => {
+    const x = String(get(a) || "").toLowerCase();
+    const y = String(get(b) || "").toLowerCase();
+    if (!x !== !y) return x ? -1 : 1;
+    return (desc ? -1 : 1) * x.localeCompare(y, undefined, { numeric: true }) || fullName(a).localeCompare(fullName(b), undefined, { sensitivity: "base" });
+  };
   const by = {
+    phone: text((c) => digits(c.phone)),
+    email: text((c) => c.email),
+    address: text((c) => addressLine(c)),
+    relationship: text((c) => relationshipLabel(c.relationship)),
     name: (a, b) => fullName(a).localeCompare(fullName(b), undefined, { sensitivity: "base" }),
     recent: (a, b) => b.created_at.localeCompare(a.created_at),
     contacted: (a, b) => (a.last_contacted_at || "").localeCompare(b.last_contacted_at || "") || fullName(a).localeCompare(fullName(b)),
@@ -138,7 +154,9 @@ export function sortContacts(list, sort, ctx) {
       return da.localeCompare(db) || fullName(a).localeCompare(fullName(b));
     },
   };
-  return [...list].sort(by[sort] || by.name);
+  const base = by[sort] || by.name;
+  const textual = ["phone", "email", "address", "relationship"].includes(sort);
+  return [...list].sort(textual || !desc ? base : (a, b) => base(b, a));
 }
 
 // ---- CSV ----

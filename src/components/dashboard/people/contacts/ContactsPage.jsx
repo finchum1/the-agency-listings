@@ -3,13 +3,15 @@ import { supabase } from "../../../../lib/supabaseClient";
 import { useContacts } from "../../../../hooks/useContacts";
 import { addDays, dayLabel, toKey } from "../../../../lib/homeDates";
 import { BOARDS } from "../../../../lib/peopleStages";
-import { EMPTY_FILTERS, RELATIONSHIPS, SORTS, applyFilters, cityLine, fullName, hasFilters, initials, lastContactLabel, relationshipLabel, sortContacts, toCsv, touchDue } from "../../../../lib/contacts";
+import { EMPTY_FILTERS, RELATIONSHIPS, SORTS, addressLine, applyFilters, cityLine, fullName, hasFilters, initials, lastContactLabel, relationshipLabel, sortContacts, toCsv, touchDue } from "../../../../lib/contacts";
 import { ManageTags, TagChip, TagPicker } from "./TagParts";
 import ContactPanel from "./ContactPanel";
 import ImportContacts from "./ImportContacts";
 import useUrlParamSync from "../../../../hooks/useUrlParamSync";
 import StartPlanModal from "../StartPlanModal";
 
+const COLS = "grid-cols-[2.5rem_minmax(10rem,1.5fr)_8.5rem_minmax(10.5rem,1.5fr)_minmax(9rem,1.4fr)_minmax(6rem,1fr)_8.5rem_5.5rem_5.5rem]";
+const ROW_COLS = "grid-cols-[2.5rem_minmax(0,1fr)] md:grid-cols-[2.5rem_minmax(10rem,1.5fr)_8.5rem_minmax(10.5rem,1.5fr)_minmax(9rem,1.4fr)_minmax(6rem,1fr)_8.5rem_5.5rem_5.5rem]";
 const select = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
 const pill = "rounded-full border border-black/10 dark:border-white/15 px-3.5 py-2 text-sm font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 const primary = "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 disabled:opacity-60";
@@ -133,6 +135,7 @@ export default function ContactsPage() {
   const { contacts, tags, cards, ctx, lists, loading, error } = crm;
   const [filters, setFilters] = useState(() => ({ ...EMPTY_FILTERS, dates: new URLSearchParams(window.location.search).get("dates") || "" }));
   const [sort, setSort] = useState("name");
+  const [desc, setDesc] = useState(false);
   const [activeList, setActiveList] = useState("");
   const [selected, setSelected] = useState(() => new Set());
   const [openId, setOpenId] = useState(() => new URLSearchParams(window.location.search).get("contact"));
@@ -144,7 +147,7 @@ export default function ContactsPage() {
   const [arranging, setArranging] = useState(false);
   const [dragId, setDragId] = useState(null);
 
-  const filtered = useMemo(() => sortContacts(applyFilters(contacts, filters, ctx), sort, ctx), [contacts, filters, sort, ctx]);
+  const filtered = useMemo(() => sortContacts(applyFilters(contacts, filters, ctx), sort, ctx, desc), [contacts, filters, sort, desc, ctx]);
   const visible = filtered.slice(0, shown);
   const picked = filtered.filter((c) => selected.has(c.id));
   const open = contacts.find((c) => c.id === openId);
@@ -168,6 +171,13 @@ export default function ContactsPage() {
     setShown(PAGE);
   };
 
+  const sortBy = (key) => {
+    if (sort === key) setDesc((d) => !d);
+    else {
+      setSort(key);
+      setDesc(false);
+    }
+  };
   const moveList = (id, to) => {
     const ids = lists.map((l) => l.id);
     const from = ids.indexOf(id);
@@ -351,7 +361,7 @@ export default function ContactsPage() {
         </select>
         <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={filters.touch} onChange={(e) => set({ touch: e.target.checked })} className="accent-[#ed2127]" /> Due for a touch</label>
         <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={filters.archived} onChange={(e) => set({ archived: e.target.checked })} className="accent-[#ed2127]" /> Archived</label>
-        <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort" className={`${select} sm:ml-auto`}>
+        <select value={sort} onChange={(e) => { setSort(e.target.value); setDesc(false); }} aria-label="Sort" className={`${select} sm:ml-auto`}>
           {SORTS.map((s) => (
             <option key={s.value} value={s.value}>{s.label}</option>
           ))}
@@ -399,9 +409,20 @@ export default function ContactsPage() {
         </div>
       ) : (
         <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] overflow-hidden">
-          <div className="hidden md:grid grid-cols-[2.5rem_minmax(0,2.2fr)_minmax(0,1.6fr)_7rem_7rem_7rem] items-center gap-3 border-b border-black/5 dark:border-white/10 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-[#1c1a17]/45 dark:text-[#faf9f7]/45">
+          <div className="overflow-x-auto">
+          <div className="md:min-w-[74rem]">
+          <div className={`hidden md:grid ${COLS} items-center gap-3 border-b border-black/5 dark:border-white/10 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-[#1c1a17]/45 dark:text-[#faf9f7]/45`}>
             <input type="checkbox" checked={allShownSelected} onChange={() => setSelected((s) => { const n = new Set(s); visible.forEach((c) => (allShownSelected ? n.delete(c.id) : n.add(c.id))); return n; })} aria-label="Select all shown" className="accent-[#ed2127]" />
-            <span>Name</span><span>Tags</span><span>Relationship</span><span>Last in touch</span><span>Follow-up</span>
+            {[["name", "Name"], ["phone", "Phone"], ["email", "Email"], ["address", "Address"], ["tags", "Tags"], ["relationship", "Relationship"], ["contacted", "Last in touch"], ["followup", "Follow-up"]].map(([key, title]) =>
+              key === "tags" ? (
+                <span key={key}>{title}</span>
+              ) : (
+                <button key={key} type="button" onClick={() => sortBy(key)} aria-label={`Sort by ${title}`} className={`flex items-center gap-1 text-left uppercase tracking-wider hover:text-[#1c1a17] dark:hover:text-[#faf9f7] ${sort === key ? "text-[#1c1a17] dark:text-[#faf9f7]" : ""}`}>
+                  {title}
+                  <span aria-hidden="true" className="text-[10px]">{sort === key ? (desc ? "↓" : "↑") : ""}</span>
+                </button>
+              ),
+            )}
           </div>
           <ul>
             {visible.map((c) => {
@@ -411,7 +432,7 @@ export default function ContactsPage() {
               const today = toKey(new Date());
               return (
                 <li key={c.id} className="border-b border-black/5 dark:border-white/10 last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
-                  <div className="grid grid-cols-[2.5rem_minmax(0,1fr)] md:grid-cols-[2.5rem_minmax(0,2.2fr)_minmax(0,1.6fr)_7rem_7rem_7rem] items-center gap-x-3 gap-y-1.5 px-4 py-3">
+                  <div className={`grid ${ROW_COLS} items-center gap-x-3 gap-y-1.5 px-4 py-3`}>
                     <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} aria-label={`Select ${fullName(c)}`} className="accent-[#ed2127]" />
                     <button type="button" onClick={() => setOpenId(c.id)} className="flex items-center gap-3 min-w-0 text-left">
                       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-black/[0.07] dark:bg-white/10 text-xs font-semibold">{initials(c)}</span>
@@ -422,9 +443,17 @@ export default function ContactsPage() {
                             <span key={g} title={`On ${BOARDS[g].title}`} className="shrink-0 grid h-4 w-4 place-items-center rounded bg-[#1c1a17]/80 dark:bg-white/20 text-[9px] font-bold text-white">{BOARD_LETTER[g][0]}</span>
                           ))}
                         </span>
-                        <span className={`block text-xs truncate ${muted}`}>{[c.company && c.first_name ? c.company : "", c.email || c.phone, cityLine(c)].filter(Boolean).join(" · ") || "No details yet"}</span>
+                        <span className={`block text-xs truncate md:hidden ${muted}`}>{[c.company && c.first_name ? c.company : "", c.email || c.phone, cityLine(c)].filter(Boolean).join(" · ") || "No details yet"}</span>
+                        {c.company && c.first_name && <span className={`hidden md:block text-xs truncate ${muted}`}>{c.company}</span>}
                       </span>
                     </button>
+                    <span className="hidden md:block min-w-0 truncate text-xs">
+                      {c.phone ? <a href={`tel:${c.phone}`} className="hover:underline">{c.phone}</a> : <span className={muted}>–</span>}
+                    </span>
+                    <span className="hidden md:block min-w-0 truncate text-xs">
+                      {c.email ? <a href={`mailto:${c.email}`} title={c.email} className="hover:underline">{c.email}</a> : <span className={muted}>–</span>}
+                    </span>
+                    <span className={`hidden md:block min-w-0 truncate text-xs ${addressLine(c) ? "" : muted}`} title={addressLine(c)}>{addressLine(c) || "–"}</span>
                     <div className="col-start-2 md:col-start-auto flex flex-wrap gap-1 min-w-0">
                       {mine.slice(0, 3).map((t) => (
                         <TagChip key={t.id} tag={t} size="sm" />
@@ -443,6 +472,8 @@ export default function ContactsPage() {
               );
             })}
           </ul>
+          </div>
+          </div>
           {filtered.length > shown && (
             <button type="button" onClick={() => setShown((n) => n + PAGE)} className="w-full border-t border-black/5 dark:border-white/10 py-3 text-sm font-semibold text-[#ed2127] dark:text-[#f2454b] hover:bg-black/[0.02]">
               Show {Math.min(PAGE, filtered.length - shown)} more ({filtered.length - shown} left)
