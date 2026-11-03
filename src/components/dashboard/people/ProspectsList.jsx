@@ -17,7 +17,7 @@ const SORTS = {
 
 // A Leads or Pipeline board as a list, laid out like the Contacts list: who they are, where they are, relationship and tags, when you last
 // talked and when you're due to again. Opening a row opens the same panel a board card does.
-export default function ProspectsList({ own, stages, openDeal, info, tagById, cadenceFor, group, title }) {
+export default function ProspectsList({ own, stages, openDeal, info, tagById, cadenceFor, group, title, setSide }) {
   const [sort, setSort] = useState("followup");
   const [picked, setPicked] = useState(() => new Set());
   const [planOpen, setPlanOpen] = useState(false);
@@ -56,6 +56,25 @@ export default function ProspectsList({ own, stages, openDeal, info, tagById, ca
     );
   };
   const side = (p) => (SIDE_TAGS[p.side] ? <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${SIDE_TAGS[p.side].className}`}>{SIDE_TAGS[p.side].label}</span> : null);
+
+  // On the desktop list the buyer / seller / both tag is a dropdown, so it changes without opening the card.
+  const sidePicker = (p) =>
+    setSide ? (
+      <select
+        value={p.side || ""}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => setSide(p.id, e.target.value)}
+        aria-label={`Buyer, seller or both for ${p.name}`}
+        className={`rounded-full border-0 py-0.5 pl-2 pr-1 text-[10px] font-semibold cursor-pointer ${SIDE_TAGS[p.side]?.className || "bg-black/5 dark:bg-white/10 text-[#1c1a17]/50 dark:text-[#faf9f7]/50"}`}
+      >
+        <option value="">Buyer or seller</option>
+        <option value="buyer">Buyer</option>
+        <option value="seller">Seller</option>
+        <option value="both">Buyer &amp; seller</option>
+      </select>
+    ) : (
+      side(p)
+    );
 
   return (
     <div className="space-y-3">
@@ -108,7 +127,7 @@ export default function ProspectsList({ own, stages, openDeal, info, tagById, ca
                     <td className="px-3 py-3.5 min-w-[13rem]">
                       <p className="flex items-center gap-2 font-medium">
                         {p.name}
-                        {side(p)}
+                        {sidePicker(p)}
                       </p>
                       <p className={`text-xs ${muted}`}>{[p.phone, p.email].filter(Boolean).join(" · ") || "No phone or email"}</p>
                     </td>

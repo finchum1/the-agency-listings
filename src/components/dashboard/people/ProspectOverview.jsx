@@ -24,7 +24,7 @@ export function followUpState(nextFollowUp, today = toKey(new Date())) {
 // Contacts (relationship, tags, last contact), the latest activity, and the move to the next board. Drafts and the move block are added by the
 // panel around it (`children`: { top, bottom }).
 //   cadence     days between follow-ups for this column, or null     onFollowUp(dateKey | null) sets the next follow-up
-export default function ProspectOverview({ person, nextFollowUp, cadence, columnName, onFollowUp, card: contactCard, activity, onTab, children }) {
+export default function ProspectOverview({ person, side, onSide, nextFollowUp, cadence, columnName, onFollowUp, card: contactCard, activity, onTab, children }) {
   const today = toKey(new Date());
   const state = followUpState(nextFollowUp, today);
   const plus = (n) => toKey(addDays(new Date(), n));
@@ -33,6 +33,26 @@ export default function ProspectOverview({ person, nextFollowUp, cadence, column
   return (
     <div className="space-y-6">
       {children?.top}
+
+      {onSide && (
+        <section aria-label="Buyer or seller" className="flex flex-wrap items-center gap-3">
+          <p className={`text-xs font-semibold uppercase tracking-wide ${muted}`}>Looking to</p>
+          <div role="group" aria-label="Buyer, seller or both" className="inline-flex overflow-hidden rounded-full border border-black/15 dark:border-white/20">
+            {[["buyer", "Buy"], ["seller", "Sell"], ["both", "Both"]].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={side === value}
+                onClick={() => onSide(side === value ? "" : value)}
+                className={`px-4 py-1.5 text-sm font-semibold ${side === value ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "hover:bg-black/5 dark:hover:bg-white/10"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {!side && <span className={`text-xs ${muted}`}>Not set</span>}
+        </section>
+      )}
 
       <section aria-label="Follow-up" className={card}>
         <div className="flex flex-wrap items-center justify-between gap-3">

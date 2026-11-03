@@ -270,6 +270,15 @@ function ColumnMenu({ index, count, isTransactions, isClosed, onMove, onToggleCl
 export default function PeopleBoard({ group, overviewOnly = false, renderOverview, foreignDeals = [], onOpenForeign, onMoveForeign, toolbarLeft, view = "board", showOwn = true, renderList, personFilter, cardExtra, onPeopleChanged, foreignOpenId, onOwnOpened, peek: peekProp, initialOpenId }) {
   const board = BOARDS[group];
   const { people, setPeople, loading, error, refresh } = usePeople();
+  const setSide = async (id, side) => {
+    const was = people.find((p) => p.id === id)?.side ?? null;
+    setPeople((list) => list.map((p) => (p.id === id ? { ...p, side: side || null } : p)));
+    const { error: err } = await supabase.from("people").update({ side: side || null }).eq("id", id);
+    if (err) {
+      setPeople((list) => list.map((p) => (p.id === id ? { ...p, side: was } : p)));
+      setBoardError(err.message);
+    }
+  };
   const { progress, reload: reloadProgress } = useTransactionProgress(group === "transaction");
   const { draftCounts, reloadDrafts } = usePeopleDrafts();
   const { stages: allStages, closedStage, cadenceFor, setCadence, renameStage, addStage, moveStage, removeStage, setClosedStage } = usePeopleStages();
@@ -700,7 +709,7 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
           height (not just as tall as the shortest column), so the horizontal
           scrollbar stays pinned near the bottom of the screen. */}
       {overviewOnly ? null : view === "list" && renderList ? (
-        renderList({ own: showOwn ? active : [], foreign, progress, closedStage, stages, openDeal: setSelectedId, openForeign: onOpenForeign, cadenceFor })
+        renderList({ own: showOwn ? active : [], foreign, progress, closedStage, stages, openDeal: setSelectedId, openForeign: onOpenForeign, cadenceFor, setSide })
       ) : (
       <div ref={boardRef} style={boardH ? { height: boardH } : undefined} className="flex gap-3 overflow-x-auto overflow-y-hidden h-[calc(100vh-14rem)] min-h-[26rem] -mx-1 px-1 pb-1">
         {displayStages.map((stage, stageIndex) => {

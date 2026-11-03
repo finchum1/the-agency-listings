@@ -985,6 +985,8 @@ export default function PersonPanel({
       {tab === "overview" && (
         <ProspectOverview
           person={person}
+          side={form.side}
+          onSide={(v) => changeDate("side", v)}
           nextFollowUp={form.next_follow_up}
           cadence={cadence}
           columnName={person.stage}
