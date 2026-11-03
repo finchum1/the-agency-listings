@@ -68,6 +68,14 @@ function PersonCardBody({ p, group, progress, today, extra }) {
       )}
       <div className="flex items-center justify-between gap-2 min-w-0">
         <p className="text-sm font-medium truncate">{p.name}</p>
+        {group === "transaction" && p.closing_date && (
+          <span
+            className={`shrink-0 text-[11px] font-semibold ${p.closing_date < today ? "text-emerald-700 dark:text-emerald-400" : "text-[#1c1a17]/70 dark:text-[#faf9f7]/70"}`}
+            title={`${p.closing_date < today ? "Closed" : "Closing"} ${followUpLabel(p.closing_date)}`}
+          >
+            {p.closing_date < today ? "Closed" : "Closes"} {followUpLabel(p.closing_date)}
+          </span>
+        )}
         {group !== "transaction" && SIDE_TAGS[p.side] && (
           <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${SIDE_TAGS[p.side].className}`}>{SIDE_TAGS[p.side].label}</span>
         )}
