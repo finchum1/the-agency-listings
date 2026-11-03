@@ -7,7 +7,7 @@ import { BOARDS } from "../../../lib/peopleStages";
 import { usePeople } from "../../../hooks/usePeople";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
 import { SIDE_TAGS } from "../../../lib/peopleSides";
-import ProgressRing from "./ProgressRing";
+import DealTimelineStrip from "./DealTimelineStrip";
 import { useTransactionProgress } from "../../../hooks/useTransactionProgress";
 import PersonPanel from "./PersonPanel";
 import DraftBadge from "./DraftBadge";
@@ -85,9 +85,6 @@ function PersonCardBody({ p, group, progress, today, extra }) {
               .filter(Boolean)
               .join(" · ")}
           </p>
-          {p.closing_date && (
-            <p className="text-xs font-medium text-[#1c1a17]/70 dark:text-[#faf9f7]/70">Closes {followUpLabel(p.closing_date)}</p>
-          )}
         </div>
       )}
       {group !== "transaction" && (p.phone || p.email) && (
@@ -109,22 +106,7 @@ function PersonCardBody({ p, group, progress, today, extra }) {
       )}
       {group === "lead" && <ResponseTimer person={p} />}
       {extra}
-      {group === "transaction" && (
-        <div className="flex items-center gap-3 pt-0.5">
-          {[
-            ["Tasks", progress[p.id]?.tasks],
-            ["Docs", progress[p.id]?.docs],
-          ].map(([label, v]) => (
-            <div key={label} className="flex items-center gap-2 min-w-0" title={v?.total ? `${label}: ${v.done} of ${v.total} done` : `No ${label.toLowerCase()} yet`}>
-              <ProgressRing done={v?.done || 0} total={v?.total || 0} size={34} stroke={4} textClass="text-[9px]" />
-              <div className="leading-tight min-w-0">
-                <p className="text-[11px] font-semibold">{label}</p>
-                <p className="text-[11px] text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">{v?.total ? `${v.done} of ${v.total}` : "None"}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {group === "transaction" && <DealTimelineStrip deal={p} today={today} />}
     </>
   );
 }
