@@ -275,6 +275,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0 }) {
       footer_cta_button: s.footer_cta_button || "",
       footer_blurb: s.footer_blurb || "",
       nav_order: Array.isArray(s.nav_order) ? s.nav_order : [],
+      nav_menu: Array.isArray(s.nav_menu) ? s.nav_menu : null,
       button_style: s.button_style || "square",
       font_pairing: s.font_pairing || "playfair-jost",
       accent_color: s.accent_color || "",
@@ -384,6 +385,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0 }) {
       footer_cta_button: form.footer_cta_button.trim(),
       footer_blurb: form.footer_blurb.trim(),
       nav_order: form.nav_order,
+      nav_menu: form.nav_menu,
       button_style: form.button_style,
       font_pairing: form.font_pairing,
       accent_color: form.accent_color || null,
@@ -602,8 +604,8 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0 }) {
 
           <div>
             <label className={labelClass}>Menu order</label>
-            <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mb-2.5">The order of the pages in the header and the footer. Drag a page, or use the arrows.</p>
-            <MenuOrderEditor homeSections={form.home_sections} landing={form.landing} value={form.nav_order} onChange={(v) => set("nav_order", v)} hasSales={salesCount > 0} />
+            <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mb-2.5">The order of the pages in the header and the footer. Drag a page, or use the arrows. Choose which pages sit in the header and which go in the menu button beside your phone number.</p>
+            <MenuOrderEditor homeSections={form.home_sections} landing={form.landing} value={form.nav_order} navMenu={form.nav_menu} onNavMenu={(v) => set("nav_menu", v)} onChange={(v) => set("nav_order", v)} hasSales={salesCount > 0} />
           </div>
 
           <div>

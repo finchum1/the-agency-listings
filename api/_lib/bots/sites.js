@@ -22,6 +22,7 @@ export const siteView = (s, req) => ({
   header_style: s.header_style,
   footer_style: s.footer_style,
   nav_order: s.nav_order,
+  nav_menu: s.nav_menu,
   button_style: s.button_style,
   home_sections: s.home_sections,
   custom_domain: s.custom_domain,
@@ -51,6 +52,11 @@ function readFields(body) {
     const order = body.nav_order;
     if (!Array.isArray(order) || order.length > 20 || order.some((p) => typeof p !== "string" || !/^\/[a-z0-9-]*$/.test(p))) throw bad("nav_order must be a list of page paths like /about, /sellers, /contact.");
     set("nav_order", order);
+  }
+  if (body.nav_menu !== undefined) {
+    const menu = body.nav_menu;
+    if (menu !== null && (!Array.isArray(menu) || menu.length > 20 || menu.some((p) => typeof p !== "string" || !/^\/[a-z0-9-]*$/.test(p)))) throw bad("nav_menu must be null or a list of page paths like /blog, /sellers.");
+    set("nav_menu", menu);
   }
   set("footer_cta_heading", text(body, "footer_cta_heading", { max: 80 }));
   set("footer_cta_text", text(body, "footer_cta_text", { max: 160 }));

@@ -34,3 +34,17 @@ export function navPages({ homeSections, landing, navOrder, hasSales = false }) 
   const standard = [...base.filter((p) => p.path !== "/contact"), ...landingPages, ...base.filter((p) => p.path === "/contact")];
   return orderByNav(standard, navOrder).map(({ path, label }) => ({ path, label }));
 }
+
+// The pages that stay in the header bar when the agent has not chosen: with more than six pages the rest go in the menu button beside the phone number.
+export const MAIN_PATHS = ["/about", "/listings", "/areas", "/contact"];
+
+/**
+ * Splits the menu pages between the header bar and the menu button beside the phone number. `navMenu` is agent_sites.nav_menu: null or missing is
+ * the standard split (everything in the bar up to six pages, the MAIN_PATHS in the bar above that), a list is the agent's own choice, the paths that go
+ * in the menu (an empty list puts everything in the bar). `pages` are already in the agent's order. Returns { bar, more }.
+ */
+export function splitNav(pages, navMenu) {
+  const custom = Array.isArray(navMenu);
+  const inMenu = (page) => (custom ? navMenu.includes(page.path) : pages.length > 6 && !MAIN_PATHS.includes(page.path));
+  return { bar: pages.filter((p) => !inMenu(p)), more: pages.filter(inMenu) };
+}

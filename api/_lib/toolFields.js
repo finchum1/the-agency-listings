@@ -23,6 +23,7 @@ export const siteFields = {
   footer_style: str("", { enum: ["classic", "centered", "cta", "wide", "slim"] }),
   footer_cta_heading: str("Headline of the call to action footer band (empty for the default)"), footer_cta_text: str("Line under the headline"), footer_cta_button: str("Button label"), footer_blurb: str("Short blurb in the four-column footer"),
   nav_order: { type: "array", items: { type: "string" }, description: "Page paths in the order of the header and footer menus, e.g. [\"/about\", \"/sellers\", \"/contact\"]. Empty for the standard order." },
+  nav_menu: { type: "array", items: { type: "string" }, description: "Page paths that go in the header's menu button (beside the phone number) instead of the bar, e.g. [\"/blog\", \"/sellers\"]. Null for the standard split, an empty list for everything in the bar." },
   button_style: str("", { enum: ["square", "pill"] }),
   home_sections: { type: "array", items: { type: "string", enum: ["bio", "testimonials", "cards", "listings", "areas", "blog"] }, description: "Which home page sections show, in order. cards is the Sellers / Home Value / Buyers cards." },
   bio_markdown: str("The About text in markdown (headings, bold, italic, links)"),

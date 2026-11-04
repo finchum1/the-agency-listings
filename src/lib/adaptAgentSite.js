@@ -44,6 +44,8 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     footerStyle: ["centered", "cta", "wide", "slim"].includes(site.footer_style) ? site.footer_style : "classic",
     // The agent's own order for the header and footer menus, a list of page paths (see lib/siteNav.js).
     navOrder: Array.isArray(site.nav_order) ? site.nav_order : [],
+    // Page paths the agent put in the header's menu button instead of the bar; null is the standard split (see splitNav in lib/siteNav.js).
+    navMenu: Array.isArray(site.nav_menu) ? site.nav_menu : null,
     // "square" (original) or "pill" — see index.css [data-buttons="pill"] .as-btn.
     buttonStyle: site.button_style === "pill" ? "pill" : "square",
     fontPairing: site.font_pairing || "playfair-jost",

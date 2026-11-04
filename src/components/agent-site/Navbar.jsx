@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { agentSiteHref } from "../../lib/agentSiteLinks";
-import { navPages } from "../../lib/siteNav";
+import { navPages, splitNav } from "../../lib/siteNav";
 import SiteLink from "./SiteLink";
 import BrandLogo from "../BrandLogo";
 import { LIGHT_HERO_LAYOUTS } from "./layouts";
@@ -19,8 +19,6 @@ import { LIGHT_HERO_LAYOUTS } from "./layouts";
 // With more than six pages the bar keeps only the main ones (MAIN_PATHS) and a menu button to the right of the phone number holds the rest, so the
 // header never crowds. A small screen still gets the one menu button with every page in it.
 // The pages and their order come from lib/siteNav.js (the agent can reorder them in the site editor).
-const MAIN_PATHS = ["/about", "/listings", "/areas", "/contact"];
-
 export default function Navbar() {
   const { site } = useAgentSiteContext();
   const location = useLocation();
@@ -63,16 +61,17 @@ export default function Navbar() {
   const solid = scrolled || open || !isHome || LIGHT_HERO_LAYOUTS.includes(site.layout);
 
   const visiblePages = navPages({ ...site, hasSales: (site.sales || []).length > 0 });
-  // Up to six pages fit in the bar. With more, the bar keeps the main ones (in the agent's own order) and the rest go in the menu beside the phone number.
-  const overflow = visiblePages.length > 6;
-  const barPages = overflow ? visiblePages.filter((p) => MAIN_PATHS.includes(p.path)) : visiblePages;
-  const morePages = overflow ? visiblePages.filter((p) => !MAIN_PATHS.includes(p.path)) : [];
+  // Which pages sit in the bar and which in the menu beside the phone number: the agent's own choice (agent_sites.nav_menu), else up to six pages all in
+  // the bar and, above that, only the main ones. A bar with more than six pages still needs an extra-large window, as it always has: below it, the menu
+  // button, the agent's name beside the logo is left out, and the gaps tighten.
+  const { bar: barPages, more: morePages } = splitNav(visiblePages, site.navMenu);
+  const many = barPages.length > 6;
   const style = ["floating", "centered", "centered_pill", "stacked", "minimal"].includes(site.headerStyle) ? site.headerStyle : "classic";
   const pill = style === "floating" || style === "centered_pill";
   const alwaysMenu = style === "minimal";
-  const showDesktop = alwaysMenu ? "hidden" : "hidden lg:flex";
-  const showGrid = alwaysMenu ? "hidden" : "hidden lg:grid";
-  const hideDesktop = alwaysMenu ? "" : "lg:hidden";
+  const showDesktop = alwaysMenu ? "hidden" : many ? "hidden xl:flex" : "hidden lg:flex";
+  const showGrid = alwaysMenu ? "hidden" : many ? "hidden xl:grid" : "hidden lg:grid";
+  const hideDesktop = alwaysMenu ? "" : many ? "xl:hidden" : "lg:hidden";
   // The logo goes in the middle of the centered styles, so the agent's name beside it stays out of the way there too.
   const centeredLogo = style === "centered" || style === "centered_pill" || style === "stacked";
 
@@ -103,7 +102,7 @@ export default function Navbar() {
         </>
       )}
       {!centeredLogo && (
-        <span className={`${overflow || alwaysMenu ? "hidden" : "hidden sm:block"} ml-2 text-sm font-display tracked-wide whitespace-nowrap text-[var(--as-on-dark)]`}>
+        <span className={`${many || morePages.length > 0 || alwaysMenu ? "hidden" : "hidden sm:block"} ml-2 text-sm font-display tracked-wide whitespace-nowrap text-[var(--as-on-dark)]`}>
           {site.agent.name}
         </span>
       )}
@@ -117,7 +116,7 @@ export default function Navbar() {
   );
 
   const linkClass = pill
-    ? `text-xs font-medium tracked-wide uppercase transition-colors whitespace-nowrap px-4 py-2 rounded-full`
+    ? `text-xs font-medium tracked-wide uppercase transition-colors whitespace-nowrap ${many ? "px-3" : "px-4"} py-2 rounded-full`
     : "text-xs font-medium tracked-wide uppercase transition-colors whitespace-nowrap text-[var(--as-on-dark)]/75 hover:text-[var(--as-on-dark)]";
   const ctaClass = pill
     ? "text-xs font-medium tracked-wide uppercase px-5 py-2.5 rounded-full border border-[var(--as-on-dark)]/70 text-[var(--as-on-dark)] whitespace-nowrap transition-colors hover:bg-[var(--as-on-dark)] hover:text-[var(--as-dark)]"
@@ -139,7 +138,7 @@ export default function Navbar() {
     );
   };
 
-  const gap = pill ? "gap-1" : "gap-6 xl:gap-8";
+  const gap = pill ? "gap-1" : many ? "gap-5 2xl:gap-8" : "gap-6 xl:gap-8";
 
   // The menu button beside the phone number (desktop only): a panel with the pages that are not in the bar.
   const moreActive = morePages.some((page) => location.pathname === agentSiteHref(site.slug, page.path));
@@ -190,7 +189,8 @@ export default function Navbar() {
         {logo}
         <nav className={`flex items-center justify-start ${gap}`}>
           {barPages.slice(half).map(pageLink)}
-          {contactCta(`${ctaClass} ml-2`)}
+          {/* With many pages the phone button would push the logo off-center, so it stays in the menu there. */}
+          {!many && contactCta(`${ctaClass} ml-2`)}
           {moreMenu}
         </nav>
       </div>
