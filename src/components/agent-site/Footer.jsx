@@ -171,8 +171,13 @@ export default function Footer() {
 
   const shell = "mt-auto bg-[var(--as-dark)] text-[var(--as-on-dark)]/65 px-6 lg:px-10";
 
-  const columns = (
-    <div className="grid sm:grid-cols-3 gap-12 text-sm items-start">
+  // `split` (the call to action footer) puts the Sellers / Home Value / Buyers / Relocation pages in a "Buy And Sell" column of their own, beside Explore.
+  const buySellLinks = landing.cards.filter((c) => c.on && site.homeSections.includes("cards"));
+  const columnsFor = (split) => {
+    const buySell = split ? buySellLinks : [];
+    const explore = buySell.length ? visibleLinks.filter((l) => !buySell.some((c) => c.path === l.path)) : visibleLinks;
+    return (
+    <div className={`grid gap-12 text-sm items-start ${buySell.length ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
       <div>
         <div className="mb-6">{logo}</div>
         {agentLine("mb-2")}
@@ -185,10 +190,30 @@ export default function Footer() {
       </div>
       <div>
         <p className={heading}>Explore</p>
-        <div className="space-y-1.5">{links()}</div>
+        <div className="space-y-1.5">
+          {explore.map((link) => (
+            <SiteLink key={link.path} slug={site.slug} path={link.path} className={hoverLink}>
+              {link.label(firstName)}
+            </SiteLink>
+          ))}
+        </div>
       </div>
+      {buySell.length > 0 && (
+        <div>
+          <p className={heading}>Buy And Sell</p>
+          <div className="space-y-1.5">
+            {buySell.map((c) => (
+              <SiteLink key={c.path} slug={site.slug} path={c.path} className={hoverLink}>
+                {c.nav}
+              </SiteLink>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
-  );
+    );
+  };
+  const columns = columnsFor(false);
 
   if (style === "centered") {
     return (
@@ -239,7 +264,7 @@ export default function Footer() {
         </div>
         <div className={`${shell} py-16`}>
           <div className="mx-auto max-w-6xl">
-            {columns}
+            {columnsFor(true)}
             {disclaimer(false)}
           </div>
         </div>
