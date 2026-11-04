@@ -19,7 +19,9 @@ function slugify(str) {
     .replace(/(^-|-$)/g, "");
 }
 
-export default function AreasManager({ agentSiteId, areas, onChanged }) {
+// Edits an agent site's areas by default. With `table="area_template_areas"` and the organization's id as `ownerId` (`ownerColumn="org_id"`) it
+// edits the template every new site in that organization starts with instead; `photoFolder` is where uploaded photos go.
+export default function AreasManager({ agentSiteId, areas, onChanged, table = "agent_site_areas", ownerColumn = "agent_site_id", ownerId = agentSiteId, photoFolder = agentSiteId, title = "Areas of Expertise" }) {
   const [editingId, setEditingId] = useState(null); // null = closed, "new" = adding
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -80,9 +82,9 @@ export default function AreasManager({ agentSiteId, areas, onChanged }) {
     const { error } =
       editingId === "new"
         ? await supabase
-            .from("agent_site_areas")
-            .insert({ ...payload, agent_site_id: agentSiteId, sort_order: areas.length })
-        : await supabase.from("agent_site_areas").update(payload).eq("id", editingId);
+            .from(table)
+            .insert({ ...payload, [ownerColumn]: ownerId, sort_order: areas.length })
+        : await supabase.from(table).update(payload).eq("id", editingId);
 
     setSaving(false);
     if (error) {
@@ -98,27 +100,27 @@ export default function AreasManager({ agentSiteId, areas, onChanged }) {
     const swapWith = areas[idx + direction];
     if (!swapWith) return;
     await Promise.all([
-      supabase.from("agent_site_areas").update({ sort_order: swapWith.sort_order }).eq("id", area.id),
-      supabase.from("agent_site_areas").update({ sort_order: area.sort_order }).eq("id", swapWith.id),
+      supabase.from(table).update({ sort_order: swapWith.sort_order }).eq("id", area.id),
+      supabase.from(table).update({ sort_order: area.sort_order }).eq("id", swapWith.id),
     ]);
     onChanged?.();
   };
 
   const remove = async (area) => {
     if (!confirm(`Delete "${area.name}"?`)) return;
-    await supabase.from("agent_site_areas").delete().eq("id", area.id);
+    await supabase.from(table).delete().eq("id", area.id);
     onChanged?.();
   };
 
   // For the photo uploader we need a real agent_site_id-scoped folder —
   // works fine even for a not-yet-saved new area, since the upload just
   // needs the site id, not the area's own id.
-  const newAreaTempId = agentSiteId;
+  const newAreaTempId = photoFolder;
 
   return (
     <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-lg font-semibold">Areas of Expertise</h2>
+        <h2 className="font-display text-lg font-semibold">{title}</h2>
         {editingId === null && (
           <button
             type="button"

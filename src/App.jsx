@@ -63,6 +63,7 @@ import PeopleOverview from "./components/dashboard/people/PeopleOverview";
 import SettingsPage from "./components/dashboard/people/SettingsPage";
 import BrandSettingsPage from "./components/dashboard/BrandSettingsPage";
 import OrganizationsPage from "./components/dashboard/OrganizationsPage";
+import AreaTemplatesPage from "./components/dashboard/AreaTemplatesPage";
 
 import HomeSections from "./components/agent-site/HomeSections";
 import Bio from "./components/agent-site/Bio";
@@ -459,6 +460,14 @@ export default function App() {
           element={
             <ProtectedRoute adminOnly>
               <BrandSettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="area-templates"
+          element={
+            <ProtectedRoute adminOnly>
+              <AreaTemplatesPage />
             </ProtectedRoute>
           }
         />

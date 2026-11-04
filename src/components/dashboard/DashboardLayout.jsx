@@ -363,7 +363,7 @@ export default function DashboardLayout() {
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileNavOpen]);
   const inAdminArea = (path) =>
-    [...ADMIN_ITEMS.map((i) => i.to), "/dashboard/brand", "/dashboard/organizations"].some((to) => path === to || path.startsWith(`${to}/`));
+    [...ADMIN_ITEMS.map((i) => i.to), "/dashboard/brand", "/dashboard/area-templates", "/dashboard/organizations"].some((to) => path === to || path.startsWith(`${to}/`));
 
   // On recent iOS the installed app's status bar area is drawn by the
   // system, in the page's <body> background color (cached at launch).
@@ -413,6 +413,7 @@ export default function DashboardLayout() {
   const adminItems = [
     ...ADMIN_ITEMS,
     { to: "/dashboard/brand", label: "Brand" },
+    { to: "/dashboard/area-templates", label: "Area Templates" },
     ...(isPlatformAdmin ? [{ to: "/dashboard/organizations", label: "Organizations" }] : []),
   ];
   // The platform owner working inside someone else's organization is there to run it (agents, brand, brokerage site), not
