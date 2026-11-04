@@ -76,10 +76,10 @@ export default function DealContacts({ values, editing, onChange, onCommit, cash
       <h4 className="text-xs font-semibold uppercase tracking-wide text-[#1c1a17]/50 dark:text-[#faf9f7]/50">People on this deal</h4>
       {!editing && (
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Email a team">
-          {[...TEAMS.filter((t) => !(cash && t.cashHides)), { label: "all", all: true, emails: roles.filter((r) => r.key !== "client" && r.key !== "client2").map((r) => r.email) }].map((t) => {
+          {[{ label: "clients", clients: true, emails: ["email", "client2_email"] }, ...TEAMS.filter((t) => !(cash && t.cashHides)), { label: "all", all: true, emails: roles.filter((r) => r.key !== "client" && r.key !== "client2").map((r) => r.email) }].map((t) => {
             const href = mailtoFor(values, t, ccEmail);
             const cls = `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium ${
-              t.all ? "border-[#1c1a17] dark:border-[#faf9f7] bg-[#1c1a17] dark:bg-[#faf9f7] text-white dark:text-[#1c1a17]" : "border-black/10 dark:border-white/15"
+              t.all ? "border-[#1c1a17] dark:border-[#faf9f7] bg-[#1c1a17] dark:bg-[#faf9f7] text-white dark:text-[#1c1a17]" : t.clients ? "border-[#ed2127] dark:border-[#f2454b] bg-[#ed2127] dark:bg-[#f2454b] text-white" : "border-black/10 dark:border-white/15"
             }`;
             const icon = (
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -88,7 +88,7 @@ export default function DealContacts({ values, editing, onChange, onCommit, cash
               </svg>
             );
             return href ? (
-              <a key={t.label} href={href} title={`Email ${href.slice(7).split("?")[0].replace(/,/g, ", ")}${/[?&]cc=/.test(href) ? `, copying ${ccEmail}` : ""}`} className={`${cls} ${t.all ? "hover:opacity-90" : "hover:bg-black/5 dark:hover:bg-white/10"}`}>
+              <a key={t.label} href={href} title={`Email ${href.slice(7).split("?")[0].replace(/,/g, ", ")}${/[?&]cc=/.test(href) ? `, copying ${ccEmail}` : ""}`} className={`${cls} ${t.all || t.clients ? "hover:opacity-90" : "hover:bg-black/5 dark:hover:bg-white/10"}`}>
                 {icon}
                 {t.all ? "Email everyone" : `Email ${t.label}`}
               </a>
