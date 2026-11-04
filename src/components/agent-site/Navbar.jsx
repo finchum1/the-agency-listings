@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { agentSiteHref } from "../../lib/agentSiteLinks";
@@ -16,12 +16,18 @@ import { LIGHT_HERO_LAYOUTS } from "./layouts";
 //   - "centered_pill": the same, as the floating pill.
 //   - "stacked": the logo centered on one row, the pages centered on a row under it.
 //   - "minimal": the logo, the phone number and a menu button at every width; the pages open in a panel.
+// With more than six pages the bar keeps only the main ones (MAIN_PATHS) and a menu button to the right of the phone number holds the rest, so the
+// header never crowds. A small screen still gets the one menu button with every page in it.
 // The pages and their order come from lib/siteNav.js (the agent can reorder them in the site editor).
+const MAIN_PATHS = ["/about", "/listings", "/areas", "/contact"];
+
 export default function Navbar() {
   const { site } = useAgentSiteContext();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -35,21 +41,38 @@ export default function Navbar() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
+  // The "more" panel closes on a new page, a click anywhere else or Escape.
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [location.pathname]);
+  useEffect(() => {
+    if (!moreOpen) return undefined;
+    const onDown = (e) => {
+      if (moreRef.current && !moreRef.current.contains(e.target)) setMoreOpen(false);
+    };
+    const onKey = (e) => e.key === "Escape" && setMoreOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [moreOpen]);
   const isHome = location.pathname === agentSiteHref(site.slug) || location.pathname === "/";
   // Some layouts open on a light page, not a photo, so their nav can't be clear-with-light-text at the top.
   const solid = scrolled || open || !isHome || LIGHT_HERO_LAYOUTS.includes(site.layout);
 
   const visiblePages = navPages({ ...site, hasSales: (site.sales || []).length > 0 });
-  // With the three landing pages in the menu there are eight links plus the phone button, which needs a wider screen than the usual six: the full
-  // menu waits for an extra-large window (below it, the menu button), the agent's name beside the logo is left out (the page is only 1280 wide inside, so there
-  // is never room for it), and the gaps tighten.
-  const many = visiblePages.length > 6;
+  // Up to six pages fit in the bar. With more, the bar keeps the main ones (in the agent's own order) and the rest go in the menu beside the phone number.
+  const overflow = visiblePages.length > 6;
+  const barPages = overflow ? visiblePages.filter((p) => MAIN_PATHS.includes(p.path)) : visiblePages;
+  const morePages = overflow ? visiblePages.filter((p) => !MAIN_PATHS.includes(p.path)) : [];
   const style = ["floating", "centered", "centered_pill", "stacked", "minimal"].includes(site.headerStyle) ? site.headerStyle : "classic";
   const pill = style === "floating" || style === "centered_pill";
   const alwaysMenu = style === "minimal";
-  const showDesktop = alwaysMenu ? "hidden" : many ? "hidden xl:flex" : "hidden lg:flex";
-  const showGrid = alwaysMenu ? "hidden" : many ? "hidden xl:grid" : "hidden lg:grid";
-  const hideDesktop = alwaysMenu ? "" : many ? "xl:hidden" : "lg:hidden";
+  const showDesktop = alwaysMenu ? "hidden" : "hidden lg:flex";
+  const showGrid = alwaysMenu ? "hidden" : "hidden lg:grid";
+  const hideDesktop = alwaysMenu ? "" : "lg:hidden";
   // The logo goes in the middle of the centered styles, so the agent's name beside it stays out of the way there too.
   const centeredLogo = style === "centered" || style === "centered_pill" || style === "stacked";
 
@@ -80,7 +103,7 @@ export default function Navbar() {
         </>
       )}
       {!centeredLogo && (
-        <span className={`${many || alwaysMenu ? "hidden" : "hidden sm:block"} ml-2 text-sm font-display tracked-wide whitespace-nowrap text-[var(--as-on-dark)]`}>
+        <span className={`${overflow || alwaysMenu ? "hidden" : "hidden sm:block"} ml-2 text-sm font-display tracked-wide whitespace-nowrap text-[var(--as-on-dark)]`}>
           {site.agent.name}
         </span>
       )}
@@ -94,7 +117,7 @@ export default function Navbar() {
   );
 
   const linkClass = pill
-    ? `text-xs font-medium tracked-wide uppercase transition-colors whitespace-nowrap ${many ? "px-3" : "px-4"} py-2 rounded-full`
+    ? `text-xs font-medium tracked-wide uppercase transition-colors whitespace-nowrap px-4 py-2 rounded-full`
     : "text-xs font-medium tracked-wide uppercase transition-colors whitespace-nowrap text-[var(--as-on-dark)]/75 hover:text-[var(--as-on-dark)]";
   const ctaClass = pill
     ? "text-xs font-medium tracked-wide uppercase px-5 py-2.5 rounded-full border border-[var(--as-on-dark)]/70 text-[var(--as-on-dark)] whitespace-nowrap transition-colors hover:bg-[var(--as-on-dark)] hover:text-[var(--as-dark)]"
@@ -116,29 +139,68 @@ export default function Navbar() {
     );
   };
 
-  const gap = pill ? "gap-1" : many ? "gap-5 2xl:gap-8" : "gap-6 xl:gap-8";
+  const gap = pill ? "gap-1" : "gap-6 xl:gap-8";
+
+  // The menu button beside the phone number (desktop only): a panel with the pages that are not in the bar.
+  const moreActive = morePages.some((page) => location.pathname === agentSiteHref(site.slug, page.path));
+  const moreMenu = morePages.length > 0 && (
+    <div ref={moreRef} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setMoreOpen((v) => !v)}
+        aria-label="More pages"
+        aria-expanded={moreOpen}
+        aria-haspopup="true"
+        className={`p-2 text-[var(--as-on-dark)] transition-opacity ${moreActive || moreOpen ? "" : "opacity-80 hover:opacity-100"}`}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          {moreOpen ? <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" /> : <path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round" />}
+        </svg>
+        {moreActive && !moreOpen && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--as-accent)]" aria-hidden="true" />}
+      </button>
+      {moreOpen && (
+        <div className={`absolute right-0 top-full mt-3 min-w-[13rem] bg-[var(--as-dark)] text-[var(--as-on-dark)] border border-[var(--as-on-dark)]/10 shadow-[0_16px_36px_-16px_rgba(0,0,0,0.45)] py-2 ${pill ? "rounded-2xl" : ""}`}>
+          {morePages.map((page) => {
+            const active = location.pathname === agentSiteHref(site.slug, page.path);
+            return (
+              <SiteLink
+                key={page.path}
+                slug={site.slug}
+                path={page.path}
+                onClick={() => setMoreOpen(false)}
+                className={`block px-5 py-2.5 text-xs font-medium tracked-wide uppercase whitespace-nowrap transition-colors hover:bg-[var(--as-on-dark)]/10 ${active ? "text-[var(--as-on-dark)]" : "text-[var(--as-on-dark)]/75 hover:text-[var(--as-on-dark)]"}`}
+              >
+                {page.label}
+              </SiteLink>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 
   // The pages, laid out for the chosen style (at desktop width).
   let desktop;
   if (style === "centered" || style === "centered_pill") {
     // Half the pages each side of the logo (the extra one goes on the left); the phone button closes the right side.
-    const half = Math.ceil(visiblePages.length / 2);
+    const half = Math.ceil(barPages.length / 2);
     desktop = (
       <div className={`${showGrid} flex-1 grid-cols-[1fr_auto_1fr] items-center gap-6`}>
-        <nav className={`flex items-center justify-end ${gap}`}>{visiblePages.slice(0, half).map(pageLink)}</nav>
+        <nav className={`flex items-center justify-end ${gap}`}>{barPages.slice(0, half).map(pageLink)}</nav>
         {logo}
         <nav className={`flex items-center justify-start ${gap}`}>
-          {visiblePages.slice(half).map(pageLink)}
-          {/* With many pages the phone button would push the logo off-center, so it stays in the menu there. */}
-          {!many && contactCta(`${ctaClass} ml-2`)}
+          {barPages.slice(half).map(pageLink)}
+          {contactCta(`${ctaClass} ml-2`)}
+          {moreMenu}
         </nav>
       </div>
     );
   } else if (style === "stacked") {
     desktop = (
       <nav className={`${showDesktop} items-center justify-center ${gap} w-full`}>
-        {visiblePages.map(pageLink)}
+        {barPages.map(pageLink)}
         {contactCta(`${ctaClass} ml-2`)}
+        {moreMenu}
       </nav>
     );
   } else if (style === "minimal") {
@@ -146,8 +208,9 @@ export default function Navbar() {
   } else {
     desktop = (
       <nav className={`${showDesktop} items-center ${gap} shrink-0 ${pill ? "ml-auto" : ""}`}>
-        {visiblePages.map(pageLink)}
+        {barPages.map(pageLink)}
         {contactCta(`${ctaClass} ${pill ? "ml-2" : ""}`)}
+        {moreMenu}
       </nav>
     );
   }
