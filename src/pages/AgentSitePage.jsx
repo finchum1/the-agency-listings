@@ -1,3 +1,4 @@
+import { useColorMode } from "../hooks/useColorMode";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { adaptAgentSite } from "../lib/adaptAgentSite";
@@ -38,7 +39,9 @@ export default function AgentSitePage({
   const overrides = useMemo(() => (site ? readPreviewOverrides(location.search, getPreviewBase() ? "share" : site.slug) : null), [site, location.search]);
   const previewing = Boolean(overrides) || Boolean(getPreviewBase());
   const shown = site && overrides ? { ...site, ...(overrides.layout ? { layout: overrides.layout } : {}), ...(overrides.theme ? { theme: overrides.theme } : {}), ...(overrides.header ? { header_style: overrides.header } : {}), ...(overrides.footer ? { footer_style: overrides.footer } : {}) } : site;
-  const adapted = shown ? adaptAgentSite({ site: shown, agent, testimonials, areas, posts, listings, sales }) : null;
+  // The light / dark switch (agent_sites.color_toggle) is off while a preview is showing another theme.
+  const { site: modeSite, colorMode } = useColorMode(shown, { disabled: previewing });
+  const adapted = modeSite ? adaptAgentSite({ site: modeSite, agent, testimonials, areas, posts, listings, sales }) : null;
   // "about" | "listings" | "areas" | "blog" | "contact" | undefined (Home)
   // — matches buildAgentSitePageMeta's page keys 1:1 since pageTitle is
   // always one of "About"/"Listings"/"Areas"/"Blog"/"Contact" (App.jsx).
@@ -155,7 +158,7 @@ export default function AgentSitePage({
   }
 
   return (
-    <AgentSiteProvider value={{ site: adapted, siteId: site.id, isStandalonePage: Boolean(pageKey) }}>
+    <AgentSiteProvider value={{ site: adapted, siteId: site.id, isStandalonePage: Boolean(pageKey), colorMode }}>
       <div
         className="min-h-screen flex flex-col bg-[var(--as-bg)] font-agent-sans"
         data-theme={adapted.theme}

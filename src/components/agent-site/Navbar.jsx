@@ -20,7 +20,7 @@ import { LIGHT_HERO_LAYOUTS } from "./layouts";
 // header never crowds. A small screen still gets the one menu button with every page in it.
 // The pages and their order come from lib/siteNav.js (the agent can reorder them in the site editor).
 export default function Navbar() {
-  const { site } = useAgentSiteContext();
+  const { site, colorMode } = useAgentSiteContext();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -109,6 +109,28 @@ export default function Navbar() {
     </SiteLink>
   );
 
+  // The light / dark switch, when the agent turned it on (agent_sites.color_toggle).
+  const modeButton = colorMode?.enabled && (
+    <button
+      type="button"
+      onClick={colorMode.toggle}
+      aria-label={colorMode.isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={colorMode.isDark ? "Light mode" : "Dark mode"}
+      className="p-2 shrink-0 text-[var(--as-on-dark)] opacity-80 hover:opacity-100 transition-opacity"
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {colorMode.isDark ? (
+          <>
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+          </>
+        ) : (
+          <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />
+        )}
+      </svg>
+    </button>
+  );
+
   const menuButton = (
     <button className={`${hideDesktop} p-2 shrink-0 text-[var(--as-on-dark)]`} onClick={() => setOpen((v) => !v)} aria-label="Toggle menu" aria-expanded={open}>
       {menuIcon}
@@ -191,6 +213,7 @@ export default function Navbar() {
           {barPages.slice(half).map(pageLink)}
           {/* With many pages the phone button would push the logo off-center, so it stays in the menu there. */}
           {!many && contactCta(`${ctaClass} ml-2`)}
+          {modeButton}
           {moreMenu}
         </nav>
       </div>
@@ -200,7 +223,8 @@ export default function Navbar() {
       <nav className={`${showDesktop} items-center justify-center ${gap} w-full`}>
         {barPages.map(pageLink)}
         {contactCta(`${ctaClass} ml-2`)}
-        {moreMenu}
+        {modeButton}
+          {moreMenu}
       </nav>
     );
   } else if (style === "minimal") {
@@ -210,7 +234,8 @@ export default function Navbar() {
       <nav className={`${showDesktop} items-center ${gap} shrink-0 ${pill ? "ml-auto" : ""}`}>
         {barPages.map(pageLink)}
         {contactCta(`${ctaClass} ${pill ? "ml-2" : ""}`)}
-        {moreMenu}
+        {modeButton}
+          {moreMenu}
       </nav>
     );
   }
@@ -245,7 +270,10 @@ export default function Navbar() {
   const mobileRow = (
     <div className={`${hideDesktop} flex w-full items-center justify-between`}>
       {logo}
-      {menuButton}
+      <div className="flex items-center">
+        {modeButton}
+        {menuButton}
+      </div>
     </div>
   );
 
@@ -273,6 +301,7 @@ export default function Navbar() {
         {logo}
         <div className="flex items-center gap-4">
           {minimalPhone}
+          {modeButton}
           {menuButton}
         </div>
       </div>
@@ -282,7 +311,10 @@ export default function Navbar() {
       <>
         {logo}
         {desktop}
-        {menuButton}
+        <div className={`${hideDesktop} flex items-center`}>
+          {modeButton}
+          {menuButton}
+        </div>
       </>
     );
   }

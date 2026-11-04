@@ -23,6 +23,7 @@ export const siteView = (s, req) => ({
   footer_style: s.footer_style,
   nav_order: s.nav_order,
   nav_menu: s.nav_menu,
+  color_toggle: s.color_toggle,
   button_style: s.button_style,
   home_sections: s.home_sections,
   custom_domain: s.custom_domain,
@@ -64,6 +65,10 @@ function readFields(body) {
   set("footer_blurb", text(body, "footer_blurb", { max: 200 }));
   set("footer_style", oneOf(body, "footer_style", ["classic", "centered", "cta", "wide", "slim"]));
   set("button_style", oneOf(body, "button_style", ["square", "pill"]));
+  if (body.color_toggle !== undefined) {
+    if (typeof body.color_toggle !== "boolean") throw bad("color_toggle must be true or false.");
+    set("color_toggle", body.color_toggle);
+  }
   set("logo_variant", oneOf(body, "logo_variant", ["red", "white", "black"]));
   set("seo_title", text(body, "seo_title", { max: 120 }));
   set("seo_description", text(body, "seo_description", { max: 300 }));

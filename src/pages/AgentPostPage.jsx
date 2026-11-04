@@ -1,3 +1,4 @@
+import { useColorMode } from "../hooks/useColorMode";
 import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { adaptAgentSite } from "../lib/adaptAgentSite";
@@ -21,8 +22,9 @@ import ShareButtons from "../components/ShareButtons";
 // (CustomDomainAgentPostPage.jsx). Takes the raw shape returned by
 // useAgentPost().
 export default function AgentPostPage({ site, agent, post, loading, notFound }) {
-  const adapted = site
-    ? adaptAgentSite({ site, agent, testimonials: [], areas: [], posts: [], listings: [] })
+  const { site: modeSite, colorMode } = useColorMode(site);
+  const adapted = modeSite
+    ? adaptAgentSite({ site: modeSite, agent, testimonials: [], areas: [], posts: [], listings: [] })
     : null;
   // Same canonical-URL logic as the meta effect below (app-host vs. the
   // site's own custom domain) — hoisted so ShareButtons can use it too.
@@ -75,7 +77,7 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
   }
 
   return (
-    <AgentSiteProvider value={{ site: adapted, siteId: site.id }}>
+    <AgentSiteProvider value={{ site: adapted, siteId: site.id, colorMode }}>
       <div
         className="min-h-screen flex flex-col bg-[var(--as-bg)] font-agent-sans"
         data-theme={adapted.theme}

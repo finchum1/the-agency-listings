@@ -283,6 +283,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0 }) {
       home_sections: s.home_sections?.length ? s.home_sections : DEFAULT_HOME_SECTIONS,
       landing: s.landing && typeof s.landing === "object" ? s.landing : {},
       idx_enabled: !!s.idx_enabled,
+      color_toggle: !!s.color_toggle,
       secondary_logo_url: s.secondary_logo_url || "",
       hero_photo_url: s.hero_photo_url || "",
       hero_video_url: s.hero_video_url || "",
@@ -393,6 +394,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0 }) {
       home_sections: form.home_sections,
       landing: form.landing,
       idx_enabled: form.idx_enabled,
+      color_toggle: form.color_toggle,
       secondary_logo_url: form.secondary_logo_url || null,
       hero_photo_url: form.hero_photo_url || null,
       hero_video_url: form.hero_video_url || null,
@@ -580,6 +582,17 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0 }) {
               ))}
             </div>
           </div>
+
+          <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
+            <input type="checkbox" checked={form.color_toggle} onChange={(e) => set("color_toggle", e.target.checked)} className="mt-0.5 accent-[#ed2127] dark:accent-[#f2454b]" />
+            <span>
+              <span className="block text-sm font-medium">Light / dark switch</span>
+              <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5">
+                Adds a sun / moon button to your header so a visitor can switch your site between your color theme and the Dark theme. Their choice is remembered on
+                their device. Your site still opens in the theme you picked above. Off by default.
+              </span>
+            </span>
+          </label>
 
           <div>
             <label className={labelClass}>Header style</label>

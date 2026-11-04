@@ -1,3 +1,4 @@
+import { useColorMode } from "../hooks/useColorMode";
 import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { adaptAgentSite } from "../lib/adaptAgentSite";
@@ -25,8 +26,9 @@ import IdxListings from "../components/brokerage-site/IdxListings";
 // search component (see IdxListings.jsx's own comment on why that's safe
 // outside a BrokerageSiteProvider).
 export default function AgentAreaPage({ site, agent, area, loading, notFound }) {
-  const adapted = site
-    ? adaptAgentSite({ site, agent, testimonials: [], areas: [], posts: [], listings: [] })
+  const { site: modeSite, colorMode } = useColorMode(site);
+  const adapted = modeSite
+    ? adaptAgentSite({ site: modeSite, agent, testimonials: [], areas: [], posts: [], listings: [] })
     : null;
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export default function AgentAreaPage({ site, agent, area, loading, notFound }) 
   }
 
   return (
-    <AgentSiteProvider value={{ site: adapted, siteId: site.id }}>
+    <AgentSiteProvider value={{ site: adapted, siteId: site.id, colorMode }}>
       <div
         className="min-h-screen flex flex-col bg-[var(--as-bg)] font-agent-sans"
         data-theme={adapted.theme}
