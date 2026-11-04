@@ -16,11 +16,13 @@ const DATES = [
 const CASH_SKIPS = ["appraisal_date", "financing_deadline"];
 const shortDate = (key) => new Date(`${key}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
-function Row({ onClick, title, note, tone, onCheck }) {
+// `indent` keeps a row without a checkbox in line with the rows that have one (the box's width and gap), so a list's rows share both edges.
+function Row({ onClick, title, note, tone, onCheck, indent = false }) {
   return (
-    <li className={onCheck ? "flex items-center gap-2.5" : undefined}>
+    <li className={onCheck || indent ? "flex items-center gap-2.5" : undefined}>
       {onCheck && <input type="checkbox" checked={false} onChange={onCheck} aria-label={`Mark done: ${title}`} className="h-4 w-4 shrink-0 accent-[#ed2127] cursor-pointer" />}
-      <button type="button" onClick={onClick} className="flex w-full items-center justify-between gap-3 rounded-xl border border-black/10 dark:border-white/15 px-3 py-2.5 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
+      {!onCheck && indent && <span className="h-4 w-4 shrink-0" aria-hidden="true" />}
+      <button type="button" onClick={onClick} className="flex w-full min-w-0 flex-1 items-center justify-between gap-3 rounded-xl border border-black/10 dark:border-white/15 px-3 py-2.5 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
         <span className="min-w-0 truncate text-sm">{title}</span>
         <span className={`shrink-0 text-xs ${tone === "alert" ? "font-semibold text-red-600 dark:text-red-400" : muted}`}>{note}</span>
       </button>
@@ -61,7 +63,7 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
         ) : (
           <ul className="space-y-1.5">
             {needs.map((n) => (
-              <Row key={n.key} onClick={() => onTab(n.tab)} title={n.title} note={n.note} tone={n.tone} onCheck={n.task && onCheckTask ? () => onCheckTask(n.task) : undefined} />
+              <Row key={n.key} onClick={() => onTab(n.tab)} title={n.title} note={n.note} tone={n.tone} onCheck={n.task && onCheckTask ? () => onCheckTask(n.task) : undefined} indent={Boolean(onCheckTask)} />
             ))}
           </ul>
         )}
