@@ -96,7 +96,7 @@ const hoverLink = "block hover:text-[var(--as-on-dark)] transition-colors";
 
 // Footer styles (agent_sites.footer_style, adapted as site.footerStyle; see the "Footer style" picker in SiteForm.jsx). All of them draw from the same
 // pieces below, so what's in the footer (the pages, the contact details, the social links, the disclaimer) never differs by style, only how it's arranged:
-//   classic  three columns: the agent, how to reach them, the pages.      centered  everything in one centered stack.
+//   classic  columns: the agent, how to reach them, the pages, and the buy and sell pages (three columns when those are off).   centered  everything in one centered stack.
 //   cta      a "thinking of making a move?" band over the classic columns.   wide  four columns, with the buy and sell pages and the areas.
 //   slim     one line: logo, pages, phone.
 export default function Footer() {
@@ -171,7 +171,7 @@ export default function Footer() {
 
   const shell = "mt-auto bg-[var(--as-dark)] text-[var(--as-on-dark)]/65 px-6 lg:px-10";
 
-  // `split` (the call to action footer) puts the Sellers / Home Value / Buyers / Relocation pages in a "Buy And Sell" column of their own, beside Explore.
+  // The Sellers / Home Value / Buyers / Relocation pages sit in a "Buy And Sell" column of their own, beside Explore (the classic and call to action footers).
   const buySellLinks = landing.cards.filter((c) => c.on && site.homeSections.includes("cards"));
   const columnsFor = (split) => {
     const buySell = split ? buySellLinks : [];
@@ -213,7 +213,7 @@ export default function Footer() {
     </div>
     );
   };
-  const columns = columnsFor(false);
+  const columns = columnsFor(true);
 
   if (style === "centered") {
     return (
@@ -264,7 +264,7 @@ export default function Footer() {
         </div>
         <div className={`${shell} py-16`}>
           <div className="mx-auto max-w-6xl">
-            {columnsFor(true)}
+            {columns}
             {disclaimer(false)}
           </div>
         </div>
