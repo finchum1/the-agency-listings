@@ -7,9 +7,14 @@ function digits(phone) {
   return (phone || "").replace(/[^\d+]/g, "");
 }
 
-export default function ContactButtons({ person, size = "md" }) {
+// `cc` copies someone on the email (a deal copies its agent), and `extraTo` adds more recipients (a deal's second client); `subject` fills the subject line.
+export default function ContactButtons({ person, size = "md", cc = "", extraTo = [], subject = "" }) {
   const phone = digits(person.phone);
   const email = (person.email || "").trim();
+  const to = [...new Set([email, ...extraTo.map((a) => String(a || "").trim())].filter(Boolean))];
+  const copy = cc && !to.some((a) => a.toLowerCase() === cc.toLowerCase()) ? cc : "";
+  const query = [copy && `cc=${encodeURIComponent(copy)}`, subject && `subject=${encodeURIComponent(subject)}`].filter(Boolean).join("&");
+  const mailto = to.length ? `mailto:${to.join(",")}${query ? `?${query}` : ""}` : "";
   const base =
     size === "sm"
       ? "px-2 py-1 text-[11px]"
@@ -34,7 +39,7 @@ export default function ContactButtons({ person, size = "md" }) {
         <span className={cls(false)}>Text</span>
       )}
       {email ? (
-        <a href={`mailto:${email}`} onClick={reached} className={cls(true)}>Email</a>
+        <a href={mailto} onClick={reached} title={copy ? `Copying ${copy}` : undefined} className={cls(true)}>Email</a>
       ) : (
         <span className={cls(false)}>Email</span>
       )}

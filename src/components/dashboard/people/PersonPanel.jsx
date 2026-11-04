@@ -106,6 +106,8 @@ export default function PersonPanel({
 
   // A deal opens on a short Overview with the rest behind tabs; the other boards keep the plain form.
   const isDeal = person.stage_group === "transaction";
+  // On a deal the header Email goes to both clients, copies the agent, and is titled with the property.
+  const dealMail = isDeal ? { cc: signedInEmail, extraTo: [form.client2_email], subject: form.property_address ? `Re: ${form.property_address}` : "" } : {};
   const [tab, setTab] = useState("overview");
   const [menuOpen, setMenuOpen] = useState(false);
   const [dealModal, setDealModal] = useState(null); // share | back | archive
@@ -671,7 +673,7 @@ export default function PersonPanel({
         </div>
 
         {isDeal ? dealChips : prospectChips}
-        <ContactButtons person={{ ...person, phone: form.phone, email: form.email }} />
+        <ContactButtons person={{ ...person, phone: form.phone, email: form.email }} {...dealMail} />
       </div>
   );
 
@@ -702,7 +704,7 @@ export default function PersonPanel({
           </button>
         </div>
       </div>
-      <ContactButtons person={{ ...person, phone: form.phone, email: form.email }} />
+      <ContactButtons person={{ ...person, phone: form.phone, email: form.email }} {...dealMail} />
       {draftCount > 0 && (
         <button
           type="button"
