@@ -37,6 +37,7 @@ import SellersPage from "../components/agent-site/landing/SellersPage";
 import SoldHomes from "../components/agent-site/SoldHomes";
 import BuyersPage from "../components/agent-site/landing/BuyersPage";
 import HomeValuePage from "../components/agent-site/landing/HomeValuePage";
+import RelocationPage from "../components/agent-site/landing/RelocationPage";
 
 // "/" on a custom domain: try a listing first, then an agent site, then
 // the brokerage site — all three looked up by custom_domain instead of
@@ -261,6 +262,7 @@ export default function CustomDomainSitePage() {
       <Route path="/sellers" element={<AgentOnlyCustomDomainPage pageTitle="Sellers"><SellersPage /></AgentOnlyCustomDomainPage>} />
       <Route path="/buyers" element={<AgentOnlyCustomDomainPage pageTitle="Buyers"><BuyersPage /></AgentOnlyCustomDomainPage>} />
       <Route path="/home-value" element={<AgentOnlyCustomDomainPage pageTitle="Home Value"><HomeValuePage /></AgentOnlyCustomDomainPage>} />
+      <Route path="/relocation" element={<AgentOnlyCustomDomainPage pageTitle="Relocation"><RelocationPage /></AgentOnlyCustomDomainPage>} />
       <Route path="/blog/:postSlug" element={<SharedCustomDomainPostPage />} />
       <Route
         path="/search"

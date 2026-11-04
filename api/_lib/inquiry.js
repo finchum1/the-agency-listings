@@ -38,6 +38,7 @@ export const LANDING_PAGES = {
   sellers: { label: "listing consultation request", title: "Listing consultation request" },
   buyers: { label: "buyer wish list", title: "Buyer wish list" },
   home_value: { label: "home value request", title: "Home value request" },
+  relocation: { label: "relocation inquiry", title: "Relocation inquiry" },
 };
 const list = (v, max = 12) => (Array.isArray(v) ? v.slice(0, max).map((x) => oneLine(x, 60)).filter(Boolean) : []);
 
@@ -50,6 +51,16 @@ export function describeLanding(page, details, { address, message }) {
     lines.push(specs, line("Condition", oneLine(d.condition, 40)), line("Thinking of selling", oneLine(d.timeline, 40)));
   } else if (page === "sellers") {
     lines.push(line("Thinking of selling", oneLine(d.timeline, 40)));
+  } else if (page === "relocation") {
+    lines.push(
+      line("Moving from", oneLine(d.from, 80)),
+      line("Moving", oneLine(d.when, 60)),
+      line("Reason", oneLine(d.reason, 60)),
+      line("Areas of interest", list(d.areas).join(", ")),
+      line("Price range", oneLine(d.budget, 60)),
+      line("Has a home to sell", oneLine(d.has_home, 20)),
+      line("What matters most", list(d.priorities).join(", ")),
+    );
   } else if (page === "buyers") {
     lines.push(
       line("Location", list(d.locations).join(", ")),

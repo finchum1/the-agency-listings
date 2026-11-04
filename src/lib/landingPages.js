@@ -1,10 +1,12 @@
-// The three landing pages on an agent's site (Sellers, Home Value, Buyers) and the three cards that lead to them from the home page.
+// The landing pages on an agent's site (Sellers, Home Value, Buyers, and the optional Relocation page) and the cards that lead to them from the home page.
 // agent_sites.landing (adapted as site.landing) holds the agent's own settings; anything missing falls back to the defaults here.
 //   { order: ["sellers","value","buyers"], menu: true, comps_task: true,
 //     sellers: { on: true, title: "", blurb: "", photo_url: "" }, value: {...}, buyers: {...} }
 // The photos are from The Agency's seller and buyer guides until the agent has their own (see public/landing).
 
-export const LANDING_KEYS = ["sellers", "value", "buyers"];
+export const LANDING_KEYS = ["sellers", "value", "buyers", "relocation"];
+// Pages an agent has to turn on themselves (the first three are on until turned off).
+export const OPT_IN_KEYS = ["relocation"];
 
 export const LANDING_DEFAULTS = {
   sellers: {
@@ -37,6 +39,16 @@ export const LANDING_DEFAULTS = {
     cta: "Read the buyer's guide",
     photo: "/landing/buyers-family.jpg",
   },
+  relocation: {
+    path: "/relocation",
+    nav: "Relocation",
+    kind: "Relocation",
+    eyebrow: "Moving to Oklahoma",
+    title: "Moving to Oklahoma?",
+    blurb: "Relocating from out of state? {first} guides you from your first question to your first night in your new home, even from a distance.",
+    cta: "Plan your move",
+    photo: "/landing/okc-skyline.jpg",
+  },
 };
 
 const clean = (v) => (typeof v === "string" ? v.trim() : "");
@@ -52,7 +64,7 @@ export function resolveLanding(landing, agentFirstName = "") {
     const mine = l[key] && typeof l[key] === "object" ? l[key] : {};
     return {
       key,
-      on: mine.on !== false,
+      on: OPT_IN_KEYS.includes(key) ? mine.on === true : mine.on !== false,
       path: d.path,
       nav: d.nav,
       kind: d.kind,

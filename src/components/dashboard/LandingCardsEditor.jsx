@@ -26,8 +26,9 @@ export default function LandingCardsEditor({ siteId, siteSlug, value, onChange }
   return (
     <div className="space-y-4">
       <p className={`text-xs ${muted}`}>
-        Three cards that sit together on your home page and lead to a page of their own. Reorder them, turn any off, or change the photo and wording. Until you
-        add your own photos, the pages use photos from The Agency's guides.
+        Cards that sit together on your home page and lead to a page of their own. Reorder them, turn any off, or change the photo and wording. Relocation
+        (for clients moving to Oklahoma) starts turned off: tick Show to add it to your site and menu. Until you add your own photos, the pages use photos
+        from The Agency's guides.
       </p>
       <div className="space-y-3">
         {landing.cards.map((c, i) => {

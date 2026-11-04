@@ -118,7 +118,7 @@ export function buildAgentSiteMeta(site, agent) {
 // Without these, every subpage under one site shared buildAgentSiteMeta's
 // single description verbatim — a classic duplicate-meta-description
 // issue when Google (or anyone) compares pages within the same site.
-const AGENT_SITE_PAGE_LABELS = { about: "About", listings: "Listings", "past-sales": "Past Sales", areas: "Areas", blog: "Blog", contact: "Contact", sellers: "Selling Your Home", buyers: "Buying a Home", "home-value": "What's Your Home Worth?" };
+const AGENT_SITE_PAGE_LABELS = { about: "About", listings: "Listings", "past-sales": "Past Sales", areas: "Areas", blog: "Blog", contact: "Contact", sellers: "Selling Your Home", buyers: "Buying a Home", "home-value": "What's Your Home Worth?", relocation: "Moving to Oklahoma" };
 const AGENT_SITE_PAGE_DESCRIPTIONS = {
   about: (site, agent, brokerage) =>
     `Learn about ${agent?.full_name || "this agent"}${
@@ -142,6 +142,8 @@ const AGENT_SITE_PAGE_DESCRIPTIONS = {
     `A step-by-step guide to selling your home with ${agent?.full_name || "this agent"} at ${brokerage.name}: preparing, pricing, showings, offers and closing day.`,
   buyers: (site, agent, brokerage) =>
     `A step-by-step guide to buying a home with ${agent?.full_name || "this agent"} at ${brokerage.name}: pre-approval, the search, the offer and closing.`,
+  relocation: (site, agent, brokerage) =>
+    `Moving to Oklahoma? ${agent?.full_name || "This agent"} at ${brokerage.name} guides relocating buyers from the first question to the keys: choosing an area, touring from a distance, making an offer and closing.`,
   "home-value": (site, agent, brokerage) =>
     `Request a free, personal home valuation from ${agent?.full_name || "this agent"} at ${brokerage.name}. Real comparable sales, a custom valuation within one business day.`,
 };

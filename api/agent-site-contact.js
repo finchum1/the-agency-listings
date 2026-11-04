@@ -149,7 +149,7 @@ export default async function handler(req, res) {
         visitor: { name, email },
         agentName: site.agent.full_name,
         agentEmail: site.agent.email,
-        ...(page === "home_value" ? { about: "your home value", when: "within one business day" } : {}),
+        ...(page === "home_value" ? { about: "your home value", when: "within one business day" } : page === "relocation" ? { about: "your move to Oklahoma", when: "within one business day" } : {}),
       });
     }
 

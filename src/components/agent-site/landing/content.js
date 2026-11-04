@@ -95,3 +95,25 @@ export const PILLARS = [
   { title: "We do it all", body: "Selling, commercial space, investment property or relocation: it is all in-house." },
   { title: "We know our markets", body: "The best agents in each location, who understand every neighborhood, backed by global reach." },
 ];
+
+// The Relocation page ("Moving to Oklahoma"). Kept general: nothing here quotes a price, a statistic or a rule that could go out of date.
+export const RELOCATION_STEPS = [
+  { title: "Tell me about your move", tag: "A short, no-pressure conversation", body: "Where you are coming from, when you need to be here, who is moving with you and what a good day looks like in your new home. Ten minutes on the phone or a video call is enough for me to start narrowing things down." },
+  { title: "Choose where to live", tag: "Oklahoma is more than one place", body: "A city street, a quiet cul-de-sac, a few acres or a lake house all exist within an hour of each other. I walk you through the areas that fit your commute, schools, budget and lifestyle, and tell you the honest trade-offs of each." },
+  { title: "Tour from anywhere", tag: "Video walkthroughs and live tours", body: "Before you book a flight, I tour homes for you on video, answer the questions photos cannot (noise, light, the street, the neighbors) and send you what I see. You only travel for the homes that earn a visit." },
+  { title: "Plan one focused trip", tag: "House-hunting weekend, or none at all", body: "If you do visit, I line up showings, neighborhood drives and the lender, inspector and movers you may want to meet, so a weekend does the work of weeks. Buying without visiting first is possible, and I will tell you plainly when I think that is a good idea and when it is not." },
+  { title: "Make an offer from a distance", tag: "Everything signs electronically", body: "Offers, disclosures and contracts are all signed online, and I explain each page before you sign. If you also own a home where you live now, we talk early about how to line up the sale and the purchase." },
+  { title: "Inspect, appraise, close", tag: "I am your eyes on the ground", body: "I coordinate the inspection, follow up on repairs, keep your lender and the title company on schedule and do the final walk-through for you. Many relocation buyers close without being in town, and I keep you updated at each step." },
+  { title: "Settle in", tag: "Your first weeks in Oklahoma", body: "Utilities, internet, schools, a driver's license and vehicle registration, the doctor, the dentist and the best pizza. I share the local contacts I trust, and I am a phone call away long after the keys change hands." },
+];
+
+export const RELOCATION_FAQ = [
+  { q: "Can I buy a home in Oklahoma without visiting first?", a: "Many relocation clients do. With video tours, detailed photos, a pre-inspection and me as your eyes on the ground, it is workable. My advice depends on the home and on you, and I will give you a straight answer." },
+  { q: "How early should I start?", a: "As early as you can: three to six months before your move gives the most choice, and I can start the conversation sooner than that. If your timeline is shorter, we compress the plan and still get it done." },
+  { q: "I still own a home where I live now. What then?", a: "We plan the sale and the purchase together so one does not leave you stranded without the other, and we talk through your options before you make an offer here." },
+  { q: "How do I get to know the different areas?", a: "I give you an honest picture of each area that fits your list: how the commute feels, what the schools and parks are like, and what you get for your budget. If it helps, I put together a short list of neighborhoods to drive on your trip." },
+];
+
+export const RELOCATION_REASONS = ["A job or transfer", "Family", "Retirement", "Military", "Lifestyle or cost of living", "Coming home", "Something else"];
+export const RELOCATION_WHEN = ["Within 3 months", "3 to 6 months", "6 to 12 months", "Just exploring"];
+export const RELOCATION_PRIORITIES = ["Good schools", "A short commute", "Room to spread out", "A newer home", "Character and history", "Low maintenance", "Close to family", "Outdoors and trails"];

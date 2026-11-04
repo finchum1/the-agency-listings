@@ -31,6 +31,7 @@ import SellersPage from "./components/agent-site/landing/SellersPage";
 import SoldHomes from "./components/agent-site/SoldHomes";
 import BuyersPage from "./components/agent-site/landing/BuyersPage";
 import HomeValuePage from "./components/agent-site/landing/HomeValuePage";
+import RelocationPage from "./components/agent-site/landing/RelocationPage";
 import VendorSharePage from "./pages/VendorSharePage";
 import MyProfilePage from "./components/dashboard/MyProfilePage";
 import MySitePage from "./components/dashboard/MySitePage";
@@ -215,6 +216,7 @@ export default function App() {
       <Route path="/sites/:slug/sellers" element={<PublicAgentSitePage pageTitle="Sellers"><SellersPage /></PublicAgentSitePage>} />
       <Route path="/sites/:slug/buyers" element={<PublicAgentSitePage pageTitle="Buyers"><BuyersPage /></PublicAgentSitePage>} />
       <Route path="/sites/:slug/home-value" element={<PublicAgentSitePage pageTitle="Home Value"><HomeValuePage /></PublicAgentSitePage>} />
+      <Route path="/sites/:slug/relocation" element={<PublicAgentSitePage pageTitle="Relocation"><RelocationPage /></PublicAgentSitePage>} />
       <Route path="/sites/:slug/blog/:postSlug" element={<PublicAgentPostPage />} />
 
       {/* Template comparison share links: no sign-in, the token in the address is the credential. /preview/:token is the
