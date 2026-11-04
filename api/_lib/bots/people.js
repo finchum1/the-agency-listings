@@ -101,6 +101,8 @@ function readFields(body) {
   }
   const clock = timeKey(body, "inspection_time");
   set("inspection_time", clock === "" ? null : clock);
+  const closeClock = timeKey(body, "closing_time");
+  set("closing_time", closeClock === "" ? null : closeClock);
   if (body.side !== undefined) set("side", body.side === null ? null : oneOf(body, "side", SIDES));
   return f;
 }

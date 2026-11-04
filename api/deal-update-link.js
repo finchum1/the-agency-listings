@@ -71,6 +71,7 @@ export default async function handler(req, res) {
       earnest_money_delivered: deal.earnest_money_delivered,
       earnest_money_delivered_at: deal.earnest_money_delivered_at,
       closing_date: deal.closing_date,
+      closing_time: deal.closing_time,
     },
     counts: { tasksDone: s.tasksDone, tasksTotal: s.tasksTotal, docsDone: s.docsDone, docsTotal: s.docsTotal },
     openTasks: withDue.filter((t) => !t.done).sort(byDue).slice(0, 60),

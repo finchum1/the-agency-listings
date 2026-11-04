@@ -191,7 +191,8 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
   const taskAgenda = new Map();
   const put = (map, date, entry) => map.set(date, [...(map.get(date) || []), entry]);
   for (const u of upcoming) {
-    const time = u.label === "Inspection" && u.person.inspection_time ? clockLabel(u.person.inspection_time) : "";
+    const clock = u.label === "Inspection" ? u.person.inspection_time : u.label === "Closing" ? u.person.closing_time : "";
+    const time = clock ? clockLabel(clock) : "";
     put(dateAgenda, u.date, { key: `${u.person.id}-${u.label}`, person: u.person, primary: `${u.label} · ${title(u.person)}`, secondary: `${u.person.property_address ? u.person.name : ""}${where(u.person)}`.replace(/^ · /, ""), time });
   }
   for (const t of tasks) {
@@ -242,7 +243,7 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
       <div className="grid grid-cols-2 gap-3 @3xl:grid-cols-4">
         <Tile label="Open deals" value={openDeals.length} sub={`${money.format(sum(openDeals, "price"))} volume${hasForeign ? ` · ${openDeals.length - ownOpen.length} coordinated` : ""}`} />
         <Tile label="Expected commission" value={hasForeign && ownOpen.length === 0 ? "–" : money.format(sum(ownOpen, "commission"))} sub={hasForeign ? "Your own deals only" : "From open deals"} />
-        <Tile label="Closing in 30 days" value={closingSoon.length} sub={closingSoon[0] ? `Next: ${title(closingSoon[0])}, ${dayLabel(closingSoon[0].closing_date, today)}` : "Nothing scheduled"} />
+        <Tile label="Closing in 30 days" value={closingSoon.length} sub={closingSoon[0] ? `Next: ${title(closingSoon[0])}, ${dayLabel(closingSoon[0].closing_date, today)}${closingSoon[0].closing_time ? ` at ${clockLabel(closingSoon[0].closing_time)}` : ""}` : "Nothing scheduled"} />
         <Tile label="Needs you" value={attention} tone={attention ? "alert" : undefined} sub={attention ? [sentBack.length && `${sentBack.length} sent back`, overdue.length && `${overdue.length} overdue or due today`, waitingDrafts.length && `${waitingDrafts.length} draft${waitingDrafts.length === 1 ? "" : "s"}`].filter(Boolean).join(" · ") : "All caught up"} />
       </div>
 

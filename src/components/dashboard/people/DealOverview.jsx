@@ -110,6 +110,7 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
                   <span className={`block text-[11px] font-medium leading-tight ${muted}`} style={{ overflowWrap: "anywhere" }}>{label}</span>
                   <span className={`block truncate text-xs font-semibold ${value ? "" : muted}`}>{value ? shortDate(value) : onDate ? "Add" : "–"}</span>
                   {value && key === "inspection_date" && dates.inspection_time && <span className="block truncate text-[10px] font-medium">{clockLabel(dates.inspection_time)}</span>}
+                  {value && key === "closing_date" && dates.closing_time && <span className="block truncate text-[10px] font-medium">{clockLabel(dates.closing_time)}</span>}
                   {value && <span className={`block truncate text-[10px] ${muted}`}>{diff === 0 ? "today" : diff > 0 ? `in ${diff}d` : `${-diff}d ago`}</span>}
                   {onDate && (
                     <input
@@ -132,20 +133,26 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
             );
           })}
         </div>
-        {onDate && dates.inspection_date && (
-          <div className="flex items-center gap-2 pt-1">
-            <label htmlFor="inspection-time" className={`text-xs ${muted}`}>Inspection time</label>
-            <input
-              id="inspection-time"
-              type="time"
-              value={(dates.inspection_time || "").slice(0, 5)}
-              onChange={(e) => onDate("inspection_time", e.target.value)}
-              className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
-            />
-            {dates.inspection_time && (
-              <button type="button" onClick={() => onDate("inspection_time", "")} className={`text-xs underline underline-offset-2 ${muted} hover:opacity-80`}>
-                Clear
-              </button>
+        {onDate && (dates.inspection_date || dates.closing_date) && (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 pt-1">
+            {[["inspection_date", "inspection_time", "Inspection time"], ["closing_date", "closing_time", "Closing time"]].map(([dateKey, timeKey, label]) =>
+              dates[dateKey] ? (
+                <div key={timeKey} className="flex items-center gap-2">
+                  <label htmlFor={timeKey.replace("_", "-")} className={`text-xs ${muted}`}>{label}</label>
+                  <input
+                    id={timeKey.replace("_", "-")}
+                    type="time"
+                    value={(dates[timeKey] || "").slice(0, 5)}
+                    onChange={(e) => onDate(timeKey, e.target.value)}
+                    className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+                  />
+                  {dates[timeKey] && (
+                    <button type="button" onClick={() => onDate(timeKey, "")} className={`text-xs underline underline-offset-2 ${muted} hover:opacity-80`}>
+                      Clear
+                    </button>
+                  )}
+                </div>
+              ) : null,
             )}
           </div>
         )}

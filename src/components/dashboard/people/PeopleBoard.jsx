@@ -7,6 +7,7 @@ import { BOARDS } from "../../../lib/peopleStages";
 import { usePeople } from "../../../hooks/usePeople";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
 import { SIDE_TAGS } from "../../../lib/peopleSides";
+import { clockLabel } from "../../../lib/timeline";
 import DealTimelineStrip from "./DealTimelineStrip";
 import { useTransactionProgress } from "../../../hooks/useTransactionProgress";
 import PersonPanel from "./PersonPanel";
@@ -74,6 +75,7 @@ function PersonCardBody({ p, group, progress, today, extra }) {
             title={`${p.closing_date < today ? "Closed" : "Closing"} ${followUpLabel(p.closing_date)}`}
           >
             {p.closing_date < today ? "Closed" : "Closes"} {followUpLabel(p.closing_date)}
+            {p.closing_time && p.closing_date >= today ? `, ${clockLabel(p.closing_time).replace(":00", "")}` : ""}
           </span>
         )}
         {group !== "transaction" && SIDE_TAGS[p.side] && (

@@ -31,7 +31,7 @@ function useDealDates(enabled, userId) {
     let active = true;
     supabase
       .from("people")
-      .select("id, name, property_address, stage, contract_date, inspection_date, inspection_time, inspection_period_end, appraisal_date, financing_deadline, closing_date, is_cash")
+      .select("id, name, property_address, stage, contract_date, inspection_date, inspection_time, inspection_period_end, appraisal_date, financing_deadline, closing_date, closing_time, is_cash")
       .eq("owner_id", userId)
       .eq("stage_group", "transaction")
       .eq("archived", false)
@@ -180,6 +180,10 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
           if (field === "inspection_date" && p.inspection_time) {
             const startMin = toMin(p.inspection_time);
             add(p[field], { ...base, date: p[field], allDay: false, start: new Date(`${p[field]}T${p.inspection_time.slice(0, 5)}:00`).toISOString(), startMin, endMin: Math.min(DAY_MIN, startMin + 90) });
+          } else if (field === "closing_date" && p.closing_time) {
+            // A closing with a time of day sits in the hour grid too (an hour).
+            const startMin = toMin(p.closing_time);
+            add(p[field], { ...base, date: p[field], allDay: false, start: new Date(`${p[field]}T${p.closing_time.slice(0, 5)}:00`).toISOString(), startMin, endMin: Math.min(DAY_MIN, startMin + 60) });
           } else add(p[field], { ...base, allDay: true });
         }
       }

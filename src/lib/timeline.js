@@ -79,7 +79,7 @@ export function buildTimeline(deal, today) {
   const source = { ...deal, earnest_money_delivered: delivered };
   const items = Object.keys(COPY)
     .filter((k) => source[k] && !(deal.is_cash && (k === "appraisal_date" || k === "financing_deadline")))
-    .map((k) => ({ key: k, label: COPY[k].label, icon: COPY[k].icon, text: COPY[k][side], doneText: COPY[k].done[side], date: source[k], time: k === "inspection_date" ? deal.inspection_time || "" : "", days: daysBetween(today, source[k]) }))
+    .map((k) => ({ key: k, label: COPY[k].label, icon: COPY[k].icon, text: COPY[k][side], doneText: COPY[k].done[side], date: source[k], time: k === "inspection_date" ? deal.inspection_time || "" : k === "closing_date" ? deal.closing_time || "" : "", days: daysBetween(today, source[k]) }))
     .sort((a, b) => a.date.localeCompare(b.date));
   // Earnest money is only on the timeline once it is checked off, so it is always done, even on the day it was ticked.
   const isDone = (m) => m.days < 0 || m.key === "earnest_money_delivered";
