@@ -16,6 +16,8 @@ import ListingsTable from "./components/dashboard/ListingsTable";
 import NewListingPage from "./components/dashboard/NewListingPage";
 import EditListingPage from "./components/dashboard/EditListingPage";
 import SocialPostPage from "./components/dashboard/SocialPostPage";
+import MarketingHome from "./components/dashboard/MarketingHome";
+import HolidayPostPage from "./components/dashboard/HolidayPostPage";
 import FlyerPage from "./components/dashboard/FlyerPage";
 import AgentsPage from "./components/dashboard/AgentsPage";
 import UpcomingModule from "./components/dashboard/UpcomingModule";
@@ -401,6 +403,8 @@ export default function App() {
         <Route path="listings/:id/edit" element={<EditListingPage />} />
         <Route path="listings/:id/flyer" element={<FlyerPage />} />
         <Route path="listings/:id/social" element={<SocialPostPage />} />
+        <Route path="marketing" element={<MarketingHome />} />
+        <Route path="marketing/holiday" element={<HolidayPostPage />} />
         <Route path="listings/:id/analytics" element={<ListingAnalyticsPage />} />
         <Route path="profile" element={<MyProfilePage />} />
         <Route path="site" element={<DashboardHome />} />

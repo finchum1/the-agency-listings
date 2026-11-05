@@ -103,6 +103,7 @@ const ICON_PATHS = {
       <path d="M14.5 6.5a3.5 3.5 0 0 0-4.6 4.4L4 16.8V20h3.2l5.9-5.9a3.5 3.5 0 0 0 4.4-4.6l-2.3 2.3-2-.6-.6-2z" />
     </>
   ),
+  marketing: <path d="M4 10v4h3l5 4V6L7 10H4zM16 9.5a4 4 0 0 1 0 5M18.5 7a7.5 7.5 0 0 1 0 10" />,
   admin: <path d="M12 3l7.5 3v5.5c0 4.6-3.1 8.2-7.5 9.5-4.4-1.3-7.5-4.9-7.5-9.5V6z" />,
   signout: <path d="M10 4.5H6.5A1.5 1.5 0 0 0 5 6v12a1.5 1.5 0 0 0 1.5 1.5H10M15 8l4 4-4 4M19 12H9.5" />,
 };
@@ -117,6 +118,7 @@ function NavIcon({ name, className = "" }) {
 // Plain top-level tabs. (The /dashboard index route just redirects to the right first page for each agent, see DashboardHome.jsx.)
 const NAV_ITEMS = [
   { to: "/dashboard/listings", label: "Listings", icon: "listings", activeWhen: (p) => p === "/dashboard/listings" || p.startsWith("/dashboard/listings/") },
+  { to: "/dashboard/marketing", label: "Marketing", icon: "marketing", activeWhen: (p) => p === "/dashboard/marketing" || p.startsWith("/dashboard/marketing/") },
   { to: "/dashboard/upcoming", label: "Upcoming", icon: "upcoming", activeWhen: (p) => p === "/dashboard/upcoming" },
   { to: "/dashboard/vendors", label: "Vendors", icon: "vendors", activeWhen: (p) => p === "/dashboard/vendors" },
 ];
