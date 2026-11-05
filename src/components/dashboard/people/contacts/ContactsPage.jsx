@@ -11,8 +11,29 @@ import useUrlParamSync from "../../../../hooks/useUrlParamSync";
 import StartPlanModal from "../StartPlanModal";
 import { usePeopleStages } from "../../../../hooks/usePeopleStages";
 
-const COLS = "grid-cols-[2.5rem_minmax(10rem,1.5fr)_8.5rem_minmax(10.5rem,1.5fr)_minmax(9rem,1.4fr)_minmax(6rem,1fr)_8.5rem_5.5rem_5.5rem]";
-const ROW_COLS = "grid-cols-[2.5rem_minmax(0,1fr)] md:grid-cols-[2.5rem_minmax(10rem,1.5fr)_8.5rem_minmax(10.5rem,1.5fr)_minmax(9rem,1.4fr)_minmax(6rem,1fr)_8.5rem_5.5rem_5.5rem]";
+// The list's columns on a wide screen. A column is either a fixed width (`fixed`) or flexible (`min` pixels and a share `fr` of the spare room). Dragging a
+// header's right edge sets a width of your own (kept in this browser); until then a column uses these.
+const COLUMNS = [
+  { key: "name", title: "Name", min: 230, fr: 1.5 },
+  { key: "phone", title: "Phone", fixed: 136 },
+  { key: "email", title: "Email", min: 190, fr: 1.5 },
+  { key: "address", title: "Address", min: 144, fr: 1.4 },
+  { key: "tags", title: "Tags", min: 96, fr: 1 },
+  { key: "relationship", title: "Relationship", fixed: 136 },
+  { key: "contacted", title: "Last in touch", fixed: 88 },
+  { key: "followup", title: "Follow-up", fixed: 88 },
+];
+const WIDTHS_KEY = "contactsColumnWidths";
+const readWidths = () => {
+  try {
+    const v = JSON.parse(window.localStorage.getItem(WIDTHS_KEY) || "{}");
+    return v && typeof v === "object" ? v : {};
+  } catch {
+    return {};
+  }
+};
+const gridFor = (widths) => ["40px", ...COLUMNS.map((c) => (widths[c.key] ? `${widths[c.key]}px` : c.fixed ? `${c.fixed}px` : `minmax(${c.min}px,${c.fr}fr)`))].join(" ");
+const minWidthFor = (widths) => 40 + 24 + COLUMNS.reduce((n, c) => n + (widths[c.key] || c.fixed || c.min) + 12, 0);
 const select = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
 const pill = "rounded-full border border-black/10 dark:border-white/15 px-3.5 py-2 text-sm font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 const primary = "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 disabled:opacity-60";
@@ -207,6 +228,7 @@ export default function ContactsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [arranging, setArranging] = useState(false);
   const [dragId, setDragId] = useState(null);
+  const [widths, setWidths] = useState(readWidths);
 
   const filtered = useMemo(() => sortContacts(applyFilters(contacts, filters, ctx), sort, ctx, desc), [contacts, filters, sort, desc, ctx]);
   const visible = filtered.slice(0, shown);
@@ -232,6 +254,46 @@ export default function ContactsPage() {
     setShown(PAGE);
   };
 
+  const saveWidths = (next) => {
+    setWidths(next);
+    try {
+      window.localStorage.setItem(WIDTHS_KEY, JSON.stringify(next));
+    } catch {
+      /* the widths just last until the page reloads */
+    }
+  };
+  // Drag the right edge of a header to resize that column (or use the arrow keys on it); double-click puts it back.
+  const startResize = (key) => (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const cell = e.currentTarget.parentElement;
+    const startX = e.clientX;
+    const startW = cell.getBoundingClientRect().width;
+    let latest = widths;
+    const move = (ev) => {
+      latest = { ...widths, [key]: Math.round(Math.min(700, Math.max(64, startW + ev.clientX - startX))) };
+      setWidths(latest);
+    };
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      saveWidths(latest);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+  const nudge = (key) => (e) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const cell = e.currentTarget.parentElement;
+    const now = widths[key] || Math.round(cell.getBoundingClientRect().width);
+    saveWidths({ ...widths, [key]: Math.min(700, Math.max(64, now + (e.key === "ArrowRight" ? 24 : -24))) });
+  };
+  const resetWidth = (key) => {
+    const { [key]: _gone, ...rest } = widths;
+    saveWidths(rest);
+  };
+  const customWidths = Object.keys(widths).length > 0;
   const sortBy = (key) => {
     if (sort === key) setDesc((d) => !d);
     else {
@@ -486,20 +548,40 @@ export default function ContactsPage() {
         </div>
       ) : (
         <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] overflow-hidden">
+          {customWidths && (
+            <div className="hidden md:flex justify-end border-b border-black/5 dark:border-white/10 px-4 py-1.5">
+              <button type="button" onClick={() => saveWidths({})} className={`text-xs font-semibold hover:underline ${muted}`}>
+                Reset column widths
+              </button>
+            </div>
+          )}
           <div className="overflow-x-auto">
-          <div className="md:min-w-[74rem]">
-          <div className={`hidden md:grid ${COLS} items-center gap-3 border-b border-black/5 dark:border-white/10 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-[#1c1a17]/45 dark:text-[#faf9f7]/45`}>
+          <div className="md:min-w-[var(--minw)]" style={{ "--cols": gridFor(widths), "--minw": `${minWidthFor(widths)}px` }}>
+          <div className={`hidden md:grid md:[grid-template-columns:var(--cols)] items-center gap-3 border-b border-black/5 dark:border-white/10 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-[#1c1a17]/45 dark:text-[#faf9f7]/45`}>
             <input type="checkbox" checked={allShownSelected} onChange={() => setSelected((s) => { const n = new Set(s); visible.forEach((c) => (allShownSelected ? n.delete(c.id) : n.add(c.id))); return n; })} aria-label="Select all shown" className="accent-[#ed2127]" />
-            {[["name", "Name"], ["phone", "Phone"], ["email", "Email"], ["address", "Address"], ["tags", "Tags"], ["relationship", "Relationship"], ["contacted", "Last in touch"], ["followup", "Follow-up"]].map(([key, title]) =>
-              key === "tags" ? (
-                <span key={key}>{title}</span>
-              ) : (
-                <button key={key} type="button" onClick={() => sortBy(key)} aria-label={`Sort by ${title}`} className={`flex items-center gap-1 text-left uppercase tracking-wider hover:text-[#1c1a17] dark:hover:text-[#faf9f7] ${sort === key ? "text-[#1c1a17] dark:text-[#faf9f7]" : ""}`}>
-                  {title}
-                  <span aria-hidden="true" className="text-[10px]">{sort === key ? (desc ? "↓" : "↑") : ""}</span>
-                </button>
-              ),
-            )}
+            {COLUMNS.map(({ key, title }) => (
+              <div key={key} className="relative min-w-0">
+                {key === "tags" ? (
+                  <span>{title}</span>
+                ) : (
+                  <button type="button" onClick={() => sortBy(key)} aria-label={`Sort by ${title}`} className={`flex items-center gap-1 text-left uppercase tracking-wider hover:text-[#1c1a17] dark:hover:text-[#faf9f7] ${sort === key ? "text-[#1c1a17] dark:text-[#faf9f7]" : ""}`}>
+                    {title}
+                    <span aria-hidden="true" className="text-[10px]">{sort === key ? (desc ? "↓" : "↑") : ""}</span>
+                  </button>
+                )}
+                <span
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label={`Resize the ${title} column`}
+                  tabIndex={0}
+                  title="Drag to resize. Double-click to reset."
+                  onPointerDown={startResize(key)}
+                  onKeyDown={nudge(key)}
+                  onDoubleClick={() => resetWidth(key)}
+                  className="absolute -right-2 top-[-6px] bottom-[-6px] w-3 cursor-col-resize touch-none select-none after:absolute after:left-1/2 after:top-1 after:bottom-1 after:w-px after:bg-black/10 dark:after:bg-white/15 hover:after:bg-[#ed2127] focus:outline-none focus-visible:after:bg-[#ed2127] focus-visible:after:w-0.5"
+                />
+              </div>
+            ))}
           </div>
           <ul>
             {visible.map((c) => {
@@ -509,13 +591,13 @@ export default function ContactsPage() {
               const today = toKey(new Date());
               return (
                 <li key={c.id} className="border-b border-black/5 dark:border-white/10 last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
-                  <div className={`grid ${ROW_COLS} items-center gap-x-3 gap-y-1.5 px-4 py-3`}>
+                  <div className="grid grid-cols-[2.5rem_minmax(0,1fr)] md:[grid-template-columns:var(--cols)] items-center gap-x-3 gap-y-1.5 px-4 py-3">
                     <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} aria-label={`Select ${fullName(c)}`} className="accent-[#ed2127]" />
                     <button type="button" onClick={() => setOpenId(c.id)} className="flex items-center gap-3 min-w-0 text-left">
                       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-black/[0.07] dark:bg-white/10 text-xs font-semibold">{initials(c)}</span>
                       <span className="min-w-0">
                         <span className="flex items-center gap-1.5 min-w-0">
-                          <span className="font-medium truncate">{fullName(c)}</span>
+                          <span className="font-medium truncate" title={fullName(c)}>{fullName(c)}</span>
                           {boards.map((g) => (
                             <span key={g} title={`On ${BOARDS[g].title}`} className="shrink-0 grid h-4 w-4 place-items-center rounded bg-[#1c1a17]/80 dark:bg-white/20 text-[9px] font-bold text-white">{BOARD_LETTER[g][0]}</span>
                           ))}
