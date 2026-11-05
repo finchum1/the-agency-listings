@@ -72,7 +72,7 @@ export function startingText(listing, agent, type, openHouses) {
     detailDay: oh?.day || "",
     detailTime: oh?.time || "",
     showAgent: true,
-    agent: [agent?.full_name, agent?.phone].filter(Boolean).join("  ·  "),
+    agent: agent?.full_name ? `Listed by: ${agent.full_name}` : "",
   };
 }
 
