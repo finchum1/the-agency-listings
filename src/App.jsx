@@ -18,6 +18,9 @@ import EditListingPage from "./components/dashboard/EditListingPage";
 import SocialPostPage from "./components/dashboard/SocialPostPage";
 import MarketingHome from "./components/dashboard/MarketingHome";
 import HolidayPostPage from "./components/dashboard/HolidayPostPage";
+import NewslettersPage from "./components/dashboard/NewslettersPage";
+import NewsletterEditor from "./components/dashboard/NewsletterEditor";
+import UnsubscribePage from "./pages/UnsubscribePage";
 import FlyerPage from "./components/dashboard/FlyerPage";
 import AgentsPage from "./components/dashboard/AgentsPage";
 import UpcomingModule from "./components/dashboard/UpcomingModule";
@@ -229,6 +232,7 @@ export default function App() {
       <Route path="/vendors/:token" element={<VendorSharePage />} />
       {/* A seller's private activity report for one listing: same idea, token in the address. */}
       <Route path="/report/:token" element={<ListingReportPage />} />
+      <Route path="/unsubscribe/:token" element={<UnsubscribePage />} />
       {/* A buyer's or seller's private closing timeline. */}
       <Route path="/timeline/:token" element={<TransactionTimelinePage />} />
       {/* A coordinator's update on one deal, for the agent who owns it: same idea, token in the address. */}
@@ -405,6 +409,8 @@ export default function App() {
         <Route path="listings/:id/social" element={<SocialPostPage />} />
         <Route path="marketing" element={<MarketingHome />} />
         <Route path="marketing/holiday" element={<HolidayPostPage />} />
+        <Route path="marketing/newsletters" element={<NewslettersPage />} />
+        <Route path="marketing/newsletters/:id" element={<NewsletterEditor />} />
         <Route path="listings/:id/analytics" element={<ListingAnalyticsPage />} />
         <Route path="profile" element={<MyProfilePage />} />
         <Route path="site" element={<DashboardHome />} />

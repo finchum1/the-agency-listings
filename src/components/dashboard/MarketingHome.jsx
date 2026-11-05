@@ -75,9 +75,14 @@ export default function MarketingHome() {
           </Link>
         </section>
 
-        <section className={`${card} space-y-2 md:col-span-2 opacity-70`}>
-          <h2 className="font-display text-lg font-semibold">Newsletters</h2>
-          <p className={`text-sm ${muted}`}>Coming next: build a newsletter from your listings and send it to your contacts from here.</p>
+        <section className={`${card} space-y-4 md:col-span-2`}>
+          <div>
+            <h2 className="font-display text-lg font-semibold">Newsletters</h2>
+            <p className={`mt-1 text-sm ${muted}`}>Email your contacts a note, your listings and your blog posts. Sent from here, with a one-click unsubscribe and results on opens and clicks.</p>
+          </div>
+          <Link to="/dashboard/marketing/newsletters" className={`${pill} inline-block`}>
+            Open newsletters
+          </Link>
         </section>
       </div>
     </div>
