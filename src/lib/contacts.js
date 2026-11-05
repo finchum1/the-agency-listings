@@ -291,3 +291,65 @@ export function rowToContact(row, map, defaults) {
     tagNames: get("tags").split(/[;,|]/).map((t) => t.trim()).filter(Boolean),
   };
 }
+
+// ---- repeated people -----------------------------------------------------------------------------------------------------------------------
+
+const phoneKey = (v) => {
+  const d = String(v || "").replace(/\D/g, "");
+  return d.length >= 10 ? d.slice(-10) : "";
+};
+
+/**
+ * Groups of contacts that look like the same person: they share an email (primary or other), a phone number (last ten digits), or the same first and last
+ * name. People joined by any of those end up in one group. Returns [{ id, members, reasons }] where `reasons` says what they share ("email", "phone", "name"),
+ * strongest first: a group sharing only a name is listed last, since two different people can have the same name. Archived contacts are left out.
+ */
+export function duplicateGroups(contacts) {
+  const live = contacts.filter((c) => !c.archived);
+  const parent = new Map(live.map((c) => [c.id, c.id]));
+  const find = (x) => {
+    while (parent.get(x) !== x) {
+      parent.set(x, parent.get(parent.get(x)));
+      x = parent.get(x);
+    }
+    return x;
+  };
+  const union = (a, b) => parent.set(find(a), find(b));
+  const byKey = new Map();
+  const keysOf = (c) => {
+    const keys = [];
+    for (const e of [c.email, ...(c.other_emails || [])]) if (e && e.trim()) keys.push(["email", `e:${e.trim().toLowerCase()}`]);
+    for (const p of [c.phone, ...(c.other_phones || [])]) if (phoneKey(p)) keys.push(["phone", `p:${phoneKey(p)}`]);
+    const first = (c.first_name || "").trim().toLowerCase();
+    const last = (c.last_name || "").trim().toLowerCase();
+    if (first && last) keys.push(["name", `n:${first} ${last}`]);
+    return keys;
+  };
+  for (const c of live) {
+    for (const [kind, key] of keysOf(c)) {
+      const entry = byKey.get(key);
+      if (entry) {
+        entry.ids.add(c.id);
+        union(c.id, [...entry.ids][0]);
+      } else byKey.set(key, { kind, ids: new Set([c.id]) });
+    }
+  }
+  const groups = new Map();
+  for (const c of live) {
+    const root = find(c.id);
+    if (!groups.has(root)) groups.set(root, { members: [], reasons: new Set() });
+    groups.get(root).members.push(c);
+  }
+  for (const { kind, ids } of byKey.values()) if (ids.size > 1) groups.get(find([...ids][0])).reasons.add(kind);
+  const order = ["email", "phone", "name"];
+  return [...groups.values()]
+    .filter((g) => g.members.length > 1)
+    .map((g) => ({ id: g.members.map((m) => m.id).sort().join("|"), members: g.members, reasons: order.filter((r) => g.reasons.has(r)) }))
+    .sort((a, b) => order.indexOf(a.reasons[0]) - order.indexOf(b.reasons[0]) || b.members.length - a.members.length);
+}
+
+/** Which member of a group is the best one to keep: the one with the most filled in, then the oldest. */
+export function bestToKeep(members) {
+  const score = (c) => ["email", "phone", "address_line1", "company", "about", "birthday"].filter((k) => c[k]).length;
+  return [...members].sort((a, b) => score(b) - score(a) || String(a.created_at).localeCompare(String(b.created_at)))[0];
+}

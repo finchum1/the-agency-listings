@@ -481,6 +481,31 @@ export default function PersonPanel({
   ];
   const tabsBar = <DealTabs tabs={isDeal ? dealTabs(summary, person) : prospectTabs} active={tab} onChange={setTab} />;
 
+  // A card is not in Contacts unless it matches someone already there. This puts it there (linking to a contact with the same email if there is one) and opens it.
+  const addToContacts = async () => {
+    setMenuOpen(false);
+    const email = (form.email || "").trim();
+    let contactId = null;
+    if (email) {
+      const { data } = await supabase.from("contacts").select("id").ilike("email", email.replace(/[\\%_]/g, "\\$&")).limit(1);
+      contactId = data?.[0]?.id || null;
+    }
+    if (!contactId) {
+      const parts = (form.name || person.name || "").trim().split(/\s+/).filter(Boolean);
+      const last = parts.length > 1 ? parts.pop() : "";
+      const { data, error: err } = await supabase
+        .from("contacts")
+        .insert({ first_name: parts.join(" ") || "Unnamed", last_name: last, email, phone: form.phone || "", relationship: isDeal ? "client" : "lead", source: person.source || "" })
+        .select("id")
+        .single();
+      if (err) return setError(err.message);
+      contactId = data.id;
+    }
+    const { error: linkErr } = await supabase.from("people").update({ contact_id: contactId }).eq("id", person.id);
+    if (linkErr) return setError(linkErr.message);
+    onChangedRef.current();
+    navigate(`/dashboard/people/contacts?contact=${contactId}`);
+  };
   const dealMenu = (
     <div className="relative">
       <button type="button" onClick={() => setMenuOpen((v) => !v)} aria-label="More actions" aria-haspopup="menu" aria-expanded={menuOpen} className="grid h-7 w-7 place-items-center rounded-full text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/5 dark:hover:bg-white/10">
@@ -491,7 +516,8 @@ export default function PersonPanel({
           <button type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)} className="fixed inset-0 z-[55] cursor-default" />
           <div role="menu" className="absolute right-0 z-[60] mt-1 w-64 rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1f1f1f] py-1 shadow-xl">
             {[
-              ...(isDeal ? [["Share a timeline with the client", () => setDealModal("share")]] : person.contact_id ? [["Open in Contacts", () => navigate(`/dashboard/people/contacts?contact=${person.contact_id}`)]] : []),
+              ...(isDeal ? [["Share a timeline with the client", () => setDealModal("share")]] : []),
+              person.contact_id ? ["Open in Contacts", () => navigate(`/dashboard/people/contacts?contact=${person.contact_id}`)] : ["Add to Contacts", addToContacts],
               ...(isDeal && board.prev && !person.archived ? [[board.prev.label, () => setDealModal("back")]] : []),
               person.archived ? [`Restore to ${board.title}`, handleRestore] : ["Archive", () => setDealModal("archive")],
               ["Delete permanently", handleDelete, true],

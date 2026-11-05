@@ -3,7 +3,7 @@ import { supabase } from "../../../../lib/supabaseClient";
 import { useContacts } from "../../../../hooks/useContacts";
 import { addDays, dayLabel, toKey } from "../../../../lib/homeDates";
 import { BOARDS } from "../../../../lib/peopleStages";
-import { EMPTY_FILTERS, RELATIONSHIPS, SORTS, addressLine, applyFilters, cityLine, fullName, hasFilters, initials, lastContactLabel, relationshipLabel, sortContacts, toCsv, touchDue } from "../../../../lib/contacts";
+import { EMPTY_FILTERS, RELATIONSHIPS, SORTS, addressLine, applyFilters, bestToKeep, duplicateGroups, cityLine, fullName, hasFilters, initials, lastContactLabel, relationshipLabel, sortContacts, toCsv, touchDue } from "../../../../lib/contacts";
 import { ManageTags, TagChip, TagPicker } from "./TagParts";
 import ContactPanel from "./ContactPanel";
 import ImportContacts from "./ImportContacts";
@@ -168,6 +168,89 @@ function AddToBoardModal({ picked, cards, stages, onClose, onAdd }) {
           {busy ? "Adding…" : `Add ${eligible.length} to ${BOARDS[group].title}`}
         </button>
       </div>
+    </Modal>
+  );
+}
+
+const DUP_KEY = "contactsNotDuplicates";
+const readNotDupes = () => {
+  try {
+    return new Set(JSON.parse(window.localStorage.getItem(DUP_KEY) || "[]"));
+  } catch {
+    return new Set();
+  }
+};
+const REASON = { email: "Same email", phone: "Same phone", name: "Same name" };
+
+// Contacts that look like the same person, grouped, with a button to merge each group into the one you keep. Merging moves notes, tags, follow-ups and
+// board cards onto the kept contact and fills in what it was missing. A group you say is not the same person is hidden from now on (in this browser).
+function DuplicatesModal({ groups, boardsByContact, onClose, onMerge }) {
+  const [hidden, setHidden] = useState(readNotDupes);
+  const [keep, setKeep] = useState({});
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+  const shown = groups.filter((g) => !hidden.has(g.id));
+  const notSame = (g) => {
+    const next = new Set(hidden).add(g.id);
+    setHidden(next);
+    try {
+      window.localStorage.setItem(DUP_KEY, JSON.stringify([...next]));
+    } catch {
+      /* hidden until the page reloads */
+    }
+  };
+  const merge = async (g) => {
+    const keepId = keep[g.id] || bestToKeep(g.members).id;
+    setBusy(g.id);
+    setError("");
+    for (const m of g.members.filter((x) => x.id !== keepId)) {
+      const r = await onMerge(keepId, m.id);
+      if (r.error) {
+        setError(r.error);
+        break;
+      }
+    }
+    setBusy("");
+  };
+  return (
+    <Modal title={shown.length ? `${shown.length} possible repeat${shown.length === 1 ? "" : "s"}` : "No repeats found"} onClose={onClose} width="max-w-2xl">
+      <p className={`text-sm ${muted}`}>People who share an email, a phone number or a name. Pick the one to keep in each group and merge. "Same name only" is the weakest match, so look before you merge.</p>
+      {shown.length === 0 && <p className={`mt-4 text-sm ${muted}`}>Nothing to merge right now.</p>}
+      <div className="mt-4 space-y-4">
+        {shown.map((g) => {
+          const keepId = keep[g.id] || bestToKeep(g.members).id;
+          return (
+            <div key={g.id} className="rounded-xl border border-black/10 dark:border-white/15 p-3">
+              <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${muted}`}>{g.reasons.length === 1 && g.reasons[0] === "name" ? "Same name only" : g.reasons.map((r) => REASON[r]).join(" · ")}</p>
+              <div className="space-y-1.5">
+                {g.members.map((c) => (
+                  <label key={c.id} className={`flex items-start gap-3 rounded-lg border p-2.5 cursor-pointer ${keepId === c.id ? "border-[#ed2127] dark:border-[#f2454b] bg-[#ed2127]/[0.04]" : "border-black/10 dark:border-white/15"}`}>
+                    <input type="radio" name={`keep-${g.id}`} checked={keepId === c.id} onChange={() => setKeep((k) => ({ ...k, [g.id]: c.id }))} className="mt-1 accent-[#ed2127]" />
+                    <span className="min-w-0 text-sm">
+                      <span className="flex items-center gap-1.5">
+                        <span className="font-semibold">{fullName(c)}</span>
+                        {[...(boardsByContact.get(c.id) || [])].map((b) => (
+                          <span key={b} title={`On ${BOARDS[b].title}`} className="grid h-4 w-4 place-items-center rounded bg-[#1c1a17]/80 text-[9px] font-bold text-white">{BOARD_LETTER[b][0]}</span>
+                        ))}
+                      </span>
+                      <span className={`block truncate ${muted}`}>{[c.email, c.phone, cityLine(c), relationshipLabel(c.relationship)].filter(Boolean).join(" · ")}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-2.5 flex flex-wrap items-center gap-3">
+                <button type="button" onClick={() => merge(g)} disabled={Boolean(busy)} className={`${primary} !px-4 !py-2 !text-xs`}>
+                  {busy === g.id ? "Merging…" : `Merge ${g.members.length} into the one I picked`}
+                </button>
+                <button type="button" onClick={() => notSame(g)} disabled={Boolean(busy)} className={`text-xs font-semibold hover:underline ${muted}`}>
+                  Not the same person
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {error && <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
     </Modal>
   );
 }
@@ -353,6 +436,7 @@ export default function ContactsPage() {
     flash(`Added ${rows.length} to ${BOARDS[group].title} (${stage}).${already ? ` ${already} ${already === 1 ? "was" : "were"} already there.` : ""}`);
     return null;
   };
+  const dupes = useMemo(() => duplicateGroups(contacts).filter((g) => !readNotDupes().has(g.id)), [contacts, modal]);
   const exportCsv = (list) => {
     const head = ["First name", "Last name", "Company", "Email", "Phone", "Address", "City", "State", "Zip", "Relationship", "Source", "Tags", "Birthday", "Home anniversary", "Last contacted", "Notes"];
     const rows = list.map((c) => [c.first_name, c.last_name, c.company, c.email, c.phone, c.address_line1, c.city, c.state, c.zip, relationshipLabel(c.relationship), c.source, (ctx.tagsByContact.get(c.id) || []).map((id) => ctx.tagById.get(id)?.name).filter(Boolean).join("; "), c.birthday || "", c.home_anniversary || "", c.last_contacted_at ? c.last_contacted_at.slice(0, 10) : "", c.about]);
@@ -400,6 +484,7 @@ export default function ContactsPage() {
           <button type="button" onClick={() => setModal("tags")} className={pill}>Tags</button>
           <button type="button" onClick={() => setModal("import")} className={pill}>Import</button>
           <button type="button" onClick={() => exportCsv(filtered)} className={pill}>Export</button>
+          <button type="button" onClick={() => setModal("dupes")} className={pill} title="People who share an email, a phone number or a name">Find repeats{dupes.length ? ` (${dupes.length})` : ""}</button>
           <button type="button" onClick={() => setModal("add")} className={primary}>+ Add contact</button>
         </div>
       </div>
@@ -663,6 +748,7 @@ export default function ContactsPage() {
       {modal === "tags" && <ManageTags tags={tags} links={crm.ctx.tagsByContact ? [...crm.ctx.tagsByContact].flatMap(([c, ts]) => ts.map((t) => ({ contact_id: c, tag_id: t }))) : []} onClose={() => setModal(null)} onUpdate={crm.updateTag} onDelete={crm.deleteTag} />}
       {modal === "plan" && <StartPlanModal contactIds={picked.map((c) => c.id)} onClose={() => setModal(null)} onDone={() => setSelected(new Set())} />}
       {modal === "board" && <AddToBoardModal picked={picked} cards={cards} stages={stages} onClose={() => setModal(null)} onAdd={addToBoard} />}
+      {modal === "dupes" && <DuplicatesModal groups={duplicateGroups(contacts)} boardsByContact={ctx.boardsByContact} onClose={() => setModal(null)} onMerge={crm.merge} />}
       {modal === "followup" && <BulkFollowUp count={picked.length} onClose={() => setModal(null)} onSave={bulkFollowUp} />}
       {modal === "merge" && picked.length === 2 && <MergeModal pair={picked} onClose={() => { setModal(null); setSelected(new Set()); }} onMerge={crm.merge} />}
     </div>
