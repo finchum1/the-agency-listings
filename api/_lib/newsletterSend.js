@@ -5,7 +5,6 @@
 //   dispatch         sends the queued rows, 100 to a request, claiming rows first so two runs never send the same one.
 //   runNewsletters   what the schedule does every few minutes: starts newsletters whose time has come and keeps sending the ones in progress.
 import crypto from "node:crypto";
-import { fromAs, viaOrg } from "./inquiry.js";
 import { SITE_ORIGIN } from "../../src/lib/seo.js";
 import { brandFromOrg } from "../../src/lib/brand.js";
 import { listingCardData, postCardData, renderNewsletter } from "../../src/lib/newsletterHtml.js";
@@ -20,6 +19,22 @@ export const checkSignature = (token, url, sig) => {
   const want = sign(token, url);
   return typeof sig === "string" && sig.length === want.length && crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(want));
 };
+
+/**
+ * Who a newsletter says it is from: the agent's name on an address made for newsletters (NEWSLETTER_FROM_EMAIL if it is set; otherwise "news@" on the same
+ * domain the app already sends from, which is verified with the email service). It is not the website-inquiry address. Replies go to the agent (reply_to).
+ */
+export function newsletterFrom(agentName, orgName) {
+  const configured = process.env.NEWSLETTER_FROM_EMAIL || "";
+  const bare = (v) => ((String(v).match(/<([^>]+)>/) || [])[1] || String(v)).trim();
+  let address = configured ? bare(configured) : "";
+  if (!address) {
+    const domain = bare(process.env.LEAD_FROM_EMAIL || "").split("@")[1];
+    address = domain ? `news@${domain}` : "onboarding@resend.dev";
+  }
+  const name = String(agentName || orgName || "The Agency").replace(/["<>\r\n]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
+  return `${name} <${address}>`;
+}
 
 /** The links one recipient's copy carries: the open pixel, how a block link is wrapped for click tracking, and the unsubscribe links. */
 function linksFor(token, track) {
@@ -95,7 +110,7 @@ export function buildEmail(ctx, newsletter, { token, first, to, test = false }) 
     wrap: links.wrap,
   });
   return {
-    from: fromAs(viaOrg(ctx.agent.name, ctx.agentRow?.org?.name)),
+    from: newsletterFrom(ctx.agent.name, ctx.agentRow?.org?.name),
     to: [to],
     ...(ctx.agent.email ? { reply_to: ctx.agent.email } : {}),
     subject: test ? `[Test] ${subject}` : subject,
