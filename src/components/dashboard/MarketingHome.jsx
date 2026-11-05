@@ -12,8 +12,7 @@ const localToday = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-// The Marketing module's home: the tools to make something to post or send. Social posts start from one of the agent's listings; holiday posts and
-// do not need one.
+// The Marketing module's home: the tools to make something to post. Social posts start from one of the agent's listings; holiday posts do not need one.
 export default function MarketingHome() {
   const { user, isAdmin } = useAuth();
   const [listings, setListings] = useState([]);
