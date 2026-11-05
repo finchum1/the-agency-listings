@@ -13,7 +13,7 @@ const localToday = () => {
 };
 
 // The Marketing module's home: the tools to make something to post or send. Social posts start from one of the agent's listings; holiday posts and
-// (next) newsletters do not need one.
+// do not need one.
 export default function MarketingHome() {
   const { user, isAdmin } = useAuth();
   const [listings, setListings] = useState([]);
@@ -75,15 +75,6 @@ export default function MarketingHome() {
           </Link>
         </section>
 
-        <section className={`${card} space-y-4 md:col-span-2`}>
-          <div>
-            <h2 className="font-display text-lg font-semibold">Newsletters</h2>
-            <p className={`mt-1 text-sm ${muted}`}>Email your contacts a note, your listings and your blog posts. Sent from here, with a one-click unsubscribe and results on opens and clicks.</p>
-          </div>
-          <Link to="/dashboard/marketing/newsletters" className={`${pill} inline-block`}>
-            Open newsletters
-          </Link>
-        </section>
       </div>
     </div>
   );

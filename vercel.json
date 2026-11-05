@@ -205,10 +205,6 @@
       "schedule": "0 14 * * 1"
     },
     {
-      "path": "/api/newsletters",
-      "schedule": "*/5 * * * *"
-    },
-    {
       "path": "/api/domain-monitor",
       "schedule": "*/15 * * * *"
     },
