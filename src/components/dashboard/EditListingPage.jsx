@@ -55,6 +55,9 @@ export default function EditListingPage() {
           <Link to={`/dashboard/listings/${listing.id}/flyer`} className={pillLinkClass}>
             Flyer
           </Link>
+          <Link to={`/dashboard/listings/${listing.id}/social`} className={pillLinkClass}>
+            Social post
+          </Link>
           {listing.status !== "draft" && (
             <a href={`/listings/${listing.slug}`} target="_blank" rel="noopener noreferrer" className={pillLinkClass}>
               View live site
