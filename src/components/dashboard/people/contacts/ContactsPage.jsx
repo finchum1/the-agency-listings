@@ -9,6 +9,7 @@ import ContactPanel from "./ContactPanel";
 import ImportContacts from "./ImportContacts";
 import useUrlParamSync from "../../../../hooks/useUrlParamSync";
 import StartPlanModal from "../StartPlanModal";
+import { usePeopleStages } from "../../../../hooks/usePeopleStages";
 
 const COLS = "grid-cols-[2.5rem_minmax(10rem,1.5fr)_8.5rem_minmax(10.5rem,1.5fr)_minmax(9rem,1.4fr)_minmax(6rem,1fr)_8.5rem_5.5rem_5.5rem]";
 const ROW_COLS = "grid-cols-[2.5rem_minmax(0,1fr)] md:grid-cols-[2.5rem_minmax(10rem,1.5fr)_8.5rem_minmax(10.5rem,1.5fr)_minmax(9rem,1.4fr)_minmax(6rem,1fr)_8.5rem_5.5rem_5.5rem]";
@@ -91,6 +92,65 @@ function BulkFollowUp({ count, onClose, onSave }) {
   );
 }
 
+// Puts the picked contacts on the Leads or Pipeline board, in the column you choose. They stay in Contacts too: each card is linked to its contact, so their
+// notes, tags and follow-ups are the same on both sides. Anyone already on that board, archived, or marked do not contact is left out.
+function AddToBoardModal({ picked, cards, stages, onClose, onAdd }) {
+  const [group, setGroup] = useState("lead");
+  const [stage, setStage] = useState(stages.lead[0]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const onBoard = (c) => cards.some((x) => x.contact_id === c.id && x.stage_group === group);
+  const blocked = picked.filter((c) => c.archived || c.do_not_contact);
+  const already = picked.filter((c) => !c.archived && !c.do_not_contact && onBoard(c));
+  const eligible = picked.filter((c) => !c.archived && !c.do_not_contact && !onBoard(c));
+  const pickGroup = (g) => {
+    setGroup(g);
+    setStage(stages[g][0]);
+  };
+  return (
+    <Modal title={`Add ${picked.length} contact${picked.length === 1 ? "" : "s"} to a board`} onClose={onClose}>
+      <div className="space-y-4">
+        <p className={`text-sm ${muted}`}>They stay in Contacts. Each one also gets a card on the board, linked to their contact, so notes and follow-ups stay together.</p>
+        <div className="flex gap-2" role="group" aria-label="Board">
+          {["lead", "pipeline"].map((g) => (
+            <button key={g} type="button" aria-pressed={group === g} onClick={() => pickGroup(g)} className={`${pill} ${group === g ? "bg-[#1c1a17] text-white border-[#1c1a17] dark:bg-[#f2454b] dark:border-[#f2454b]" : ""}`}>
+              {BOARDS[g].title}
+            </button>
+          ))}
+        </div>
+        <div>
+          <label htmlFor="board-stage" className={`mb-1.5 block text-xs font-medium ${muted}`}>Put them in this column</label>
+          <select id="board-stage" value={stage} onChange={(e) => setStage(e.target.value)} className={`${select} w-full`}>
+            {stages[group].map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+        <ul className={`space-y-1 text-sm ${muted}`}>
+          <li><strong className="text-[#1c1a17] dark:text-[#faf9f7]">{eligible.length}</strong> will be added to {BOARDS[group].title}.</li>
+          {already.length > 0 && <li>{already.length} already {already.length === 1 ? "has a card" : "have cards"} there and will be left alone.</li>}
+          {blocked.length > 0 && <li>{blocked.length} {blocked.length === 1 ? "is" : "are"} archived or marked do not contact and will be skipped.</li>}
+        </ul>
+        {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        <button
+          type="button"
+          disabled={busy || eligible.length === 0}
+          onClick={async () => {
+            setBusy(true);
+            const err = await onAdd(group, stage, eligible, already.length);
+            setBusy(false);
+            if (err) setError(err);
+            else onClose();
+          }}
+          className={primary}
+        >
+          {busy ? "Adding…" : `Add ${eligible.length} to ${BOARDS[group].title}`}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
 function MergeModal({ pair, onClose, onMerge }) {
   const [keep, setKeep] = useState(pair[0].id);
   const [busy, setBusy] = useState(false);
@@ -132,6 +192,7 @@ function MergeModal({ pair, onClose, onMerge }) {
 // use as smart lists, act on many people at once, and open anyone for their details, follow-ups and history.
 export default function ContactsPage() {
   const crm = useContacts();
+  const { stages } = usePeopleStages();
   const { contacts, tags, cards, ctx, lists, loading, error } = crm;
   const [filters, setFilters] = useState(() => ({ ...EMPTY_FILTERS, dates: new URLSearchParams(window.location.search).get("dates") || "" }));
   const [sort, setSort] = useState("name");
@@ -214,6 +275,21 @@ export default function ContactsPage() {
       flash(`Scheduled ${rows.length} follow-up${rows.length === 1 ? "" : "s"} for ${dayLabel(due, toKey(new Date()))}.`);
       crm.reload();
     }
+  };
+  // One card per contact on the board, in the chosen column. Returns an error message, or null when it worked.
+  const addToBoard = async (group, stage, list, already) => {
+    const rows = list.map((c) => ({ name: fullName(c), email: c.email || "", phone: c.phone || "", source: "From Contacts", stage_group: group, stage, contact_id: c.id }));
+    for (let i = 0; i < rows.length; i += 200) {
+      const { error: err } = await supabase.from("people").insert(rows.slice(i, i + 200));
+      if (err) {
+        crm.reload();
+        return `${err.message}${i ? ` (${i} were added before it stopped.)` : ""}`;
+      }
+    }
+    crm.reload();
+    setSelected(new Set());
+    flash(`Added ${rows.length} to ${BOARDS[group].title} (${stage}).${already ? ` ${already} ${already === 1 ? "was" : "were"} already there.` : ""}`);
+    return null;
   };
   const exportCsv = (list) => {
     const head = ["First name", "Last name", "Company", "Email", "Phone", "Address", "City", "State", "Zip", "Relationship", "Source", "Tags", "Birthday", "Home anniversary", "Last contacted", "Notes"];
@@ -381,6 +457,7 @@ export default function ContactsPage() {
             ))}
           </select>
           <button type="button" onClick={() => setModal("followup")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Schedule follow-up</button>
+          {!filters.archived && <button type="button" onClick={() => setModal("board")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Add to Leads / Pipeline</button>}
           {!filters.archived && <button type="button" onClick={() => setModal("plan")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Start a plan</button>}
           {picked.length === 2 && <button type="button" onClick={() => setModal("merge")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Merge</button>}
           <button type="button" onClick={() => exportCsv(picked)} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Export</button>
@@ -503,6 +580,7 @@ export default function ContactsPage() {
       {modal === "import" && <ImportContacts existing={contacts} tags={tags} ensureTag={crm.ensureTag} onClose={() => setModal(null)} onDone={crm.reload} />}
       {modal === "tags" && <ManageTags tags={tags} links={crm.ctx.tagsByContact ? [...crm.ctx.tagsByContact].flatMap(([c, ts]) => ts.map((t) => ({ contact_id: c, tag_id: t }))) : []} onClose={() => setModal(null)} onUpdate={crm.updateTag} onDelete={crm.deleteTag} />}
       {modal === "plan" && <StartPlanModal contactIds={picked.map((c) => c.id)} onClose={() => setModal(null)} onDone={() => setSelected(new Set())} />}
+      {modal === "board" && <AddToBoardModal picked={picked} cards={cards} stages={stages} onClose={() => setModal(null)} onAdd={addToBoard} />}
       {modal === "followup" && <BulkFollowUp count={picked.length} onClose={() => setModal(null)} onSave={bulkFollowUp} />}
       {modal === "merge" && picked.length === 2 && <MergeModal pair={picked} onClose={() => { setModal(null); setSelected(new Set()); }} onMerge={crm.merge} />}
     </div>
