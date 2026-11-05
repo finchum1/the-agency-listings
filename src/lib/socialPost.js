@@ -7,9 +7,19 @@ export const FORMATS = {
   story: { label: "Story", note: "1080 × 1920", w: 1080, h: 1920 },
 };
 
+// The layouts a post can have. Each draws the same words and photo a different way (see drawPost).
+export const TEMPLATES = {
+  classic: { label: "Classic", note: "Photo with the words at the bottom, left aligned." },
+  centered: { label: "Centered", note: "Everything centered, the logo on top." },
+  band: { label: "Band", note: "The photo above a solid color band that holds the words." },
+  card: { label: "Card", note: "A white card floating over the photo." },
+  bold: { label: "Bold", note: "A huge headline over a darkened photo." },
+};
+
 // `badge` is the big word on the post; `price` says whether the price shows to start with (an agent often leaves it off a sold or under contract post).
 export const POST_TYPES = {
   new: { label: "New Listing", badge: "Just Listed", price: true },
+  sale: { label: "For Sale", badge: "For Sale", price: true },
   contract: { label: "Under Contract", badge: "Under Contract", price: false },
   open: { label: "Open House", badge: "Open House", price: true },
   closed: { label: "Closed", badge: "Just Sold", price: false },
@@ -138,8 +148,201 @@ function fitLines(ctx, text, maxWidth, maxLines, fontFor, size, minSize) {
   return { lines: [String(text)], size: minSize };
 }
 
+/** Draws the photo to fill (x, y, w, h), `zoom` of 1 or more, `ox` / `oy` from -1 to 1 placing the frame in the spare picture. */
+function drawPhoto(ctx, img, x, y, w, h, post) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.fillStyle = "#14130f";
+  ctx.fillRect(x, y, w, h);
+  if (img) {
+    const base = Math.max(w / img.naturalWidth, h / img.naturalHeight) * Math.max(1, post.zoom || 1);
+    const dw = img.naturalWidth * base;
+    const dh = img.naturalHeight * base;
+    ctx.drawImage(img, x + (w - dw) / 2 + ((post.ox || 0) * (dw - w)) / 2, y + (h - dh) / 2 + ((post.oy || 0) * (dh - h)) / 2, dw, dh);
+  }
+  ctx.restore();
+}
+
+function shade(ctx, x, y, w, h, from, to, a0, a1) {
+  const g = ctx.createLinearGradient(0, y + h * from, 0, y + h * to);
+  g.addColorStop(0, `rgba(12,11,9,${a0})`);
+  g.addColorStop(1, `rgba(12,11,9,${a1})`);
+  ctx.fillStyle = g;
+  ctx.fillRect(x, y, w, h);
+}
+
+function drawLogo(ctx, logo, x, y, lh, align = "left") {
+  if (!logo) return;
+  const lw = (logo.naturalWidth / logo.naturalHeight) * lh;
+  ctx.drawImage(logo, align === "center" ? x - lw / 2 : x, y, lw, lh);
+}
+
+// The pill that carries the kind of post: outlined in the text color, or filled with the accent. `draw(left, top)` paints it.
+function badgeBox(ctx, label, story, mode, ink, accent) {
+  const size = story ? 32 : 28;
+  ctx.font = `600 ${size}px ${SANS}`;
+  const text = label.toUpperCase();
+  const padX = 30;
+  const padY = 17;
+  const bw = spacedWidth(ctx, text, 6) + padX * 2;
+  const bh = size + padY * 2;
+  return {
+    bw,
+    bh,
+    draw: (left, top) => {
+      ctx.beginPath();
+      ctx.roundRect(left + 1, top + 1, bw, bh - 2, bh / 2);
+      if (mode === "solid") {
+        ctx.fillStyle = accent;
+        ctx.fill();
+      } else {
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = ink;
+        ctx.stroke();
+      }
+      ctx.font = `600 ${size}px ${SANS}`;
+      ctx.fillStyle = mode === "solid" ? "#ffffff" : ink;
+      ctx.textAlign = "left";
+      spaced(ctx, text, left + padX + 1, top + padY + size * 0.78, 6);
+    },
+  };
+}
+
 /**
- * Draws the post. `post` = { format, type, photo, zoom, ox, oy, logo, text }, `pictures` = { photo, logo } (loaded images, either may be missing).
+ * The words as a list of blocks, lowest first: { h, gap, draw(y) } where `y` is the block's baseline (its bottom edge) and `h` is how far it reaches
+ * above it. `S` = { x, maxW, align, ink, soft, rule, badge: "outline" | "solid" | "giant", stack, story }.
+ * `stack` puts the price on a line of its own (centered looks), instead of at the right of the details.
+ */
+function buildBlocks(ctx, post, S) {
+  const t = post.text;
+  const { x, maxW, align, ink, soft, story } = S;
+  const blocks = [];
+  ctx.textBaseline = "alphabetic";
+  const put = (str, px, py) => {
+    ctx.textAlign = align === "center" ? "center" : "left";
+    ctx.fillText(str, px, py);
+    ctx.textAlign = "left";
+  };
+
+  if (t.agent && t.showAgent) {
+    const size = story ? 30 : 27;
+    blocks.push({ h: 34, gap: 38, draw: (y) => {
+      ctx.font = `400 ${size}px ${SANS}`;
+      ctx.fillStyle = soft;
+      put(t.agent, x, y);
+    } });
+  }
+
+  const specSize = story ? 36 : 33;
+  const priceSize = Math.round((story ? 64 : 58) * 0.82);
+  const hasSpecs = Boolean(t.specs);
+  const hasPrice = t.showPrice && t.price;
+  const specText = (t.specs || "").replace(/\s{2,}/g, "  ");
+  if (S.stack) {
+    if (hasSpecs) {
+      blocks.push({ h: specSize * 0.8, gap: hasPrice ? 26 : 34, draw: (y) => {
+        ctx.font = `500 ${specSize}px ${SANS}`;
+        const fit = fitLines(ctx, specText, maxW, 1, (s2) => `500 ${s2}px ${SANS}`, specSize, 22);
+        ctx.font = `500 ${fit.size}px ${SANS}`;
+        ctx.fillStyle = ink;
+        put(fit.lines[0], x, y);
+      } });
+    }
+    if (hasPrice) {
+      blocks.push({ h: priceSize * 0.74, gap: 34, draw: (y) => {
+        ctx.font = `600 ${priceSize}px ${SANS}`;
+        ctx.fillStyle = ink;
+        put(t.price, x, y);
+      } });
+    }
+  } else if (hasSpecs || hasPrice) {
+    blocks.push({ h: hasPrice ? priceSize * 0.74 : specSize * 0.8, gap: 34, draw: (y) => {
+      if (hasPrice) {
+        // the price is in the sans face: the serif's numerals are old-style (some digits hang below the line)
+        ctx.font = `600 ${priceSize}px ${SANS}`;
+        ctx.fillStyle = ink;
+        ctx.textAlign = "right";
+        ctx.fillText(t.price, x + maxW, y);
+        ctx.textAlign = "left";
+      }
+      if (hasSpecs) {
+        ctx.font = `600 ${priceSize}px ${SANS}`;
+        const room = hasPrice ? maxW - ctx.measureText(t.price).width - 40 : maxW;
+        const fit = fitLines(ctx, specText, room, 1, (s2) => `500 ${s2}px ${SANS}`, specSize, 22);
+        ctx.font = `500 ${fit.size}px ${SANS}`;
+        ctx.fillStyle = ink;
+        ctx.fillText(fit.lines[0], x, y);
+      }
+    } });
+  }
+
+  blocks.push({ h: 4, gap: 34, draw: (y) => {
+    ctx.fillStyle = S.rule;
+    ctx.fillRect(align === "center" ? x - 60 : x, y - 4, 120, 4);
+  } });
+
+  if (t.place) {
+    blocks.push({ h: 30, gap: 26, draw: (y) => {
+      ctx.font = `500 ${story ? 30 : 27}px ${SANS}`;
+      ctx.fillStyle = soft;
+      spaced(ctx, t.place.toUpperCase(), x, y, 5, align === "center" ? "center" : "left");
+    } });
+  }
+
+  if (t.address) {
+    const size = story ? 96 : 84;
+    const fit = fitLines(ctx, t.address, maxW, 2, (s2) => `600 ${s2}px ${SERIF}`, size, 44);
+    const lineH = fit.size * 1.08;
+    blocks.push({ h: lineH * (fit.lines.length - 1) + fit.size * 0.72, gap: S.addrGap ?? 46, draw: (y) => {
+      ctx.font = `600 ${fit.size}px ${SERIF}`;
+      ctx.fillStyle = ink;
+      fit.lines.forEach((l, i) => put(l, x, y - lineH * (fit.lines.length - 1 - i)));
+    } });
+  }
+
+  if (post.type === "open" && (t.detailDay || t.detailTime)) {
+    const size = story ? 52 : 46;
+    blocks.push({ h: size + 6, gap: 46, draw: (y) => {
+      const text = [t.detailDay, t.detailTime].filter(Boolean).join("   ·   ");
+      const fit = fitLines(ctx, text, maxW, 1, (s2) => `500 ${s2}px ${SERIF}`, size, 26);
+      ctx.font = `500 ${fit.size}px ${SERIF}`;
+      ctx.fillStyle = ink;
+      put(fit.lines[0], x, y);
+    } });
+  }
+
+  if (t.badge && (S.badge === "outline" || S.badge === "solid")) {
+    const box = badgeBox(ctx, t.badge, story, S.badge, ink, S.accent);
+    blocks.push({ h: box.bh, gap: 0, draw: (y) => box.draw(align === "center" ? x - box.bw / 2 : x, y - box.bh) });
+  }
+
+  // The giant headline of the Bold layout: each word on its own line, as large as the width allows.
+  if (t.badge && S.badge === "giant") {
+    const words = t.badge.toUpperCase().split(/\s+/).filter(Boolean).slice(0, 3);
+    const fit = fitLines(ctx, words.reduce((a, b) => (a.length >= b.length ? a : b), ""), maxW, 1, (s2) => `700 ${s2}px ${SANS}`, story ? 190 : 150, 70);
+    const lineH = fit.size * 0.98;
+    blocks.push({ h: lineH * (words.length - 1) + fit.size * 0.72, gap: 54, draw: (y) => {
+      ctx.font = `700 ${fit.size}px ${SANS}`;
+      ctx.fillStyle = ink;
+      words.forEach((w, i) => put(w, x, y - lineH * (words.length - 1 - i)));
+    } });
+  }
+  return blocks;
+}
+
+const stackHeight = (blocks) => blocks.reduce((a, b) => a + b.h + b.gap, 0) - (blocks.length ? blocks[blocks.length - 1].gap : 0);
+function paint(blocks, bottom) {
+  let y = bottom;
+  for (const b of blocks) {
+    b.draw(y);
+    y -= b.h + b.gap;
+  }
+}
+
+/**
+ * Draws the post. `post` = { format, template, type, zoom, ox, oy, text }, `pictures` = { photo, logo } (loaded images, either may be missing).
  * `zoom` is 1 or more (1 fills the frame), `ox` / `oy` are -1 to 1: where in the spare picture the frame sits.
  */
 export function drawPost(canvas, post, pictures) {
@@ -148,150 +351,87 @@ export function drawPost(canvas, post, pictures) {
   canvas.height = H;
   const ctx = canvas.getContext("2d");
   const story = post.format === "story";
-  const t = post.text;
-
-  // The photo, filling the frame.
-  ctx.fillStyle = "#14130f";
-  ctx.fillRect(0, 0, W, H);
-  const img = pictures.photo;
-  if (img) {
-    const base = Math.max(W / img.naturalWidth, H / img.naturalHeight) * Math.max(1, post.zoom || 1);
-    const dw = img.naturalWidth * base;
-    const dh = img.naturalHeight * base;
-    const dx = (W - dw) / 2 + ((post.ox || 0) * (dw - W)) / 2;
-    const dy = (H - dh) / 2 + ((post.oy || 0) * (dh - H)) / 2;
-    ctx.drawImage(img, dx, dy, dw, dh);
-  }
-
-  // Darker at the bottom, where the words sit, and a little at the top for the logo.
-  const bottomShade = ctx.createLinearGradient(0, H * (story ? 0.45 : 0.4), 0, H);
-  bottomShade.addColorStop(0, "rgba(12,11,9,0)");
-  bottomShade.addColorStop(1, "rgba(12,11,9,0.9)");
-  ctx.fillStyle = bottomShade;
-  ctx.fillRect(0, 0, W, H);
-  const topShade = ctx.createLinearGradient(0, 0, 0, H * 0.22);
-  topShade.addColorStop(0, "rgba(12,11,9,0.45)");
-  topShade.addColorStop(1, "rgba(12,11,9,0)");
-  ctx.fillStyle = topShade;
-  ctx.fillRect(0, 0, W, H);
-
-  // Margins. A Story keeps its words and logo clear of the strips the app covers at the top and bottom.
+  const template = TEMPLATES[post.template] ? post.template : "classic";
+  const { photo, logo } = pictures;
+  const ACCENT = "#ed2127";
   const M = 88;
+  // A Story keeps its words and logo clear of the strips the app covers at the top and bottom.
   const topY = story ? 250 : 84;
   const bottomY = H - (story ? 280 : 88);
-  const maxW = W - M * 2;
+  const white = { ink: "#ffffff", soft: "rgba(255,255,255,0.8)", rule: ACCENT, accent: ACCENT, story };
 
-  // The logo, top left.
-  const logo = pictures.logo;
-  if (logo) {
-    const lh = story ? 112 : 96;
-    const lw = (logo.naturalWidth / logo.naturalHeight) * lh;
-    ctx.drawImage(logo, M, topY, lw, lh);
+  if (template === "centered") {
+    drawPhoto(ctx, photo, 0, 0, W, H, post);
+    shade(ctx, 0, 0, W, H, story ? 0.4 : 0.34, 1, 0, 0.92);
+    shade(ctx, 0, 0, W, H, 0, 0.24, 0.45, 0);
+    drawLogo(ctx, logo, W / 2, topY, story ? 104 : 90, "center");
+    const blocks = buildBlocks(ctx, post, { ...white, x: W / 2, maxW: W - M * 2, align: "center", badge: "outline", stack: true });
+    paint(blocks, bottomY);
+    return;
   }
 
-  // The words, built from the bottom up: first work out what each line is, then stack them.
-  const blocks = [];
-  ctx.textBaseline = "alphabetic";
-
-  if (t.agent && t.showAgent) {
-    ctx.font = `400 ${story ? 30 : 27}px ${SANS}`;
-    blocks.push({ h: 34, gap: 38, draw: (y) => {
-      ctx.font = `400 ${story ? 30 : 27}px ${SANS}`;
-      ctx.fillStyle = "rgba(255,255,255,0.78)";
-      ctx.fillText(t.agent, M, y);
-    } });
+  if (template === "band") {
+    // The band is only as tall as its words need (an open house's date line makes it taller); the photo gets the rest.
+    const blocks = buildBlocks(ctx, post, { ...white, x: M, maxW: W - M * 2, align: "left", badge: "none" });
+    const box = post.text.badge ? badgeBox(ctx, post.text.badge, story, "solid", "#ffffff", ACCENT) : null;
+    const bandBottom = H - (story ? 280 : 76);
+    const wanted = bandBottom - stackHeight(blocks) - (box ? box.bh / 2 : 0) - 52;
+    const photoH = Math.round(Math.min(H * (story ? 0.62 : 0.56), Math.max(H * 0.36, wanted)));
+    drawPhoto(ctx, photo, 0, 0, W, photoH, post);
+    shade(ctx, 0, 0, W, photoH * 0.3, 0, 1, 0.4, 0);
+    ctx.fillStyle = "#14130f";
+    ctx.fillRect(0, photoH, W, H - photoH);
+    ctx.fillStyle = ACCENT;
+    ctx.fillRect(0, photoH, W, 8);
+    drawLogo(ctx, logo, M, topY, story ? 104 : 88);
+    // The kind of post sits on the edge between the photo and the band.
+    if (box) box.draw(M, photoH + 4 - box.bh / 2);
+    paint(blocks, bandBottom);
+    return;
   }
 
-  const specSize = story ? 36 : 33;
-  const hasSpecs = Boolean(t.specs);
-  const hasPrice = t.showPrice && t.price;
-  if (hasSpecs || hasPrice) {
-    ctx.font = `500 ${specSize}px ${SANS}`;
-    const priceSize = story ? 64 : 58;
-    blocks.push({ h: hasPrice ? priceSize * 0.74 : specSize * 0.8, gap: 34, draw: (y) => {
-      if (hasPrice) {
-        // the price is in the sans face: the serif's numerals are old-style (some digits hang below the line)
-        ctx.font = `600 ${Math.round(priceSize * 0.82)}px ${SANS}`;
-        ctx.fillStyle = "#ffffff";
-        ctx.textAlign = "right";
-        ctx.fillText(t.price, W - M, y);
-        ctx.textAlign = "left";
-      }
-      if (hasSpecs) {
-        ctx.font = `500 ${specSize}px ${SANS}`;
-        ctx.fillStyle = "#ffffff";
-        ctx.font = `600 ${Math.round(priceSize * 0.82)}px ${SANS}`;
-        const room = hasPrice ? maxW - ctx.measureText(t.price).width - 40 : maxW;
-        ctx.font = `500 ${specSize}px ${SANS}`;
-        // the details drop to a smaller size rather than run into the price
-        const fit = fitLines(ctx, t.specs.replace(/\s{2,}/g, "  "), room, 1, (s) => `500 ${s}px ${SANS}`, specSize, 22);
-        ctx.font = `500 ${fit.size}px ${SANS}`;
-        ctx.fillText(fit.lines[0], M, y);
-      }
-    } });
+  if (template === "card") {
+    drawPhoto(ctx, photo, 0, 0, W, H, post);
+    shade(ctx, 0, 0, W, H, 0, 0.25, 0.4, 0);
+    shade(ctx, 0, 0, W, H, 0.6, 1, 0, 0.35);
+    drawLogo(ctx, logo, M, topY, story ? 104 : 88);
+    const pad = 56;
+    const cardX = 52;
+    const cardW = W - cardX * 2;
+    const ink = { ink: "#1c1a17", soft: "rgba(28,26,23,0.62)", rule: ACCENT, accent: ACCENT, story };
+    const blocks = buildBlocks(ctx, post, { ...ink, x: cardX + pad, maxW: cardW - pad * 2, align: "left", badge: "solid" });
+    const inner = stackHeight(blocks);
+    const cardBottom = bottomY + (story ? 40 : 36);
+    const cardTop = Math.max(topY + 140, cardBottom - inner - pad * 2 + 14);
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.35)";
+    ctx.shadowBlur = 40;
+    ctx.shadowOffsetY = 12;
+    ctx.fillStyle = "#faf9f7";
+    ctx.beginPath();
+    ctx.roundRect(cardX, cardTop, cardW, cardBottom - cardTop, 28);
+    ctx.fill();
+    ctx.restore();
+    paint(blocks, cardBottom - pad);
+    return;
   }
 
-  blocks.push({ h: 4, gap: 34, draw: (y) => {
-    ctx.fillStyle = "#ed2127";
-    ctx.fillRect(M, y - 4, 120, 4);
-  } });
-
-  if (t.place) {
-    blocks.push({ h: 30, gap: 26, draw: (y) => {
-      ctx.font = `500 ${story ? 30 : 27}px ${SANS}`;
-      ctx.fillStyle = "rgba(255,255,255,0.82)";
-      spaced(ctx, t.place.toUpperCase(), M, y, 5);
-    } });
+  if (template === "bold") {
+    drawPhoto(ctx, photo, 0, 0, W, H, post);
+    ctx.fillStyle = "rgba(12,11,9,0.38)";
+    ctx.fillRect(0, 0, W, H);
+    shade(ctx, 0, 0, W, H, 0.45, 1, 0, 0.7);
+    drawLogo(ctx, logo, M, topY, story ? 104 : 88);
+    const blocks = buildBlocks(ctx, post, { ...white, x: M, maxW: W - M * 2, align: "left", badge: "giant", addrGap: 72 });
+    paint(blocks, bottomY);
+    return;
   }
 
-  if (t.address) {
-    const size = story ? 96 : 84;
-    const fit = fitLines(ctx, t.address, maxW, 2, (s) => `600 ${s}px ${SERIF}`, size, 44);
-    const lineH = fit.size * 1.08;
-    blocks.push({ h: lineH * (fit.lines.length - 1) + fit.size * 0.72, gap: 46, draw: (y) => {
-      ctx.font = `600 ${fit.size}px ${SERIF}`;
-      ctx.fillStyle = "#ffffff";
-      fit.lines.forEach((l, i) => ctx.fillText(l, M, y - lineH * (fit.lines.length - 1 - i)));
-    } });
-  }
-
-  if (post.type === "open" && (t.detailDay || t.detailTime)) {
-    blocks.push({ h: story ? 50 : 46, gap: 46, draw: (y) => {
-      ctx.font = `500 ${story ? 52 : 46}px ${SERIF}`;
-      ctx.fillStyle = "#ffffff";
-      const text = [t.detailDay, t.detailTime].filter(Boolean).join("   ·   ");
-      const fit = fitLines(ctx, text, maxW, 1, (s) => `500 ${s}px ${SERIF}`, story ? 52 : 46, 26);
-      ctx.font = `500 ${fit.size}px ${SERIF}`;
-      ctx.fillText(fit.lines[0], M, y);
-    } });
-  }
-
-  if (t.badge) {
-    const size = story ? 32 : 28;
-    ctx.font = `600 ${size}px ${SANS}`;
-    const label = t.badge.toUpperCase();
-    const textW = spacedWidth(ctx, label, 6);
-    const padX = 30;
-    const padY = 17;
-    blocks.push({ h: size + padY * 2, gap: 0, draw: (y) => {
-      const bw = textW + padX * 2;
-      const bh = size + padY * 2;
-      const top = y - bh;
-      ctx.lineWidth = 2.5;
-      ctx.strokeStyle = "#ffffff";
-      ctx.beginPath();
-      ctx.roundRect(M + 1, top + 1, bw, bh - 2, bh / 2);
-      ctx.stroke();
-      ctx.font = `600 ${size}px ${SANS}`;
-      ctx.fillStyle = "#ffffff";
-      spaced(ctx, label, M + padX + 1, top + padY + size * 0.78, 6);
-    } });
-  }
-
-  // Stack them upward from the bottom edge, the first block (the agent line) lowest.
-  let y = bottomY;
-  for (const b of blocks) {
-    b.draw(y);
-    y -= b.h + b.gap;
-  }
+  // classic
+  drawPhoto(ctx, photo, 0, 0, W, H, post);
+  shade(ctx, 0, 0, W, H, story ? 0.45 : 0.4, 1, 0, 0.9);
+  shade(ctx, 0, 0, W, H, 0, 0.22, 0.45, 0);
+  drawLogo(ctx, logo, M, topY, story ? 112 : 96);
+  const blocks = buildBlocks(ctx, post, { ...white, x: M, maxW: W - M * 2, align: "left", badge: "outline" });
+  paint(blocks, bottomY);
 }

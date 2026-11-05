@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useListing } from "../../hooks/useListing";
 import { brandFromOrg } from "../../lib/brand";
-import { FORMATS, POST_TYPES, defaultType, drawPost, loadPicture, loadPostFonts, startingText } from "../../lib/socialPost";
+import { FORMATS, POST_TYPES, TEMPLATES, defaultType, drawPost, loadPicture, loadPostFonts, startingText } from "../../lib/socialPost";
 
 const muted = "text-[#1c1a17]/55 dark:text-[#faf9f7]/55";
 const inputClass =
@@ -45,6 +45,7 @@ export default function SocialPostPage() {
 
   const [format, setFormat] = useState("square");
   const [type, setType] = useState("new");
+  const [template, setTemplate] = useState("classic");
   const [text, setText] = useState(null);
   const [photoId, setPhotoId] = useState(null);
   const [upload, setUpload] = useState(null); // { url, name } for a picture added from the computer
@@ -100,8 +101,8 @@ export default function SocialPostPage() {
   // Redraw whenever anything the post shows changes.
   useEffect(() => {
     if (!canvasRef.current || !text || !fontsReady) return;
-    drawPost(canvasRef.current, { format, type, zoom, ox, oy, text }, pictures);
-  }, [format, type, zoom, ox, oy, text, pictures, fontsReady]);
+    drawPost(canvasRef.current, { format, template, type, zoom, ox, oy, text }, pictures);
+  }, [format, template, type, zoom, ox, oy, text, pictures, fontsReady]);
 
   const pickType = (next) => {
     setType(next);
@@ -141,7 +142,7 @@ export default function SocialPostPage() {
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
       const slug = (listing.address_line1 || "listing").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-      a.download = `${slug}-${type}-${format}.png`;
+      a.download = `${slug}-${type}-${template}-${format}.png`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     }, "image/png");
@@ -187,6 +188,11 @@ export default function SocialPostPage() {
             <div>
               <label className={labelClass}>Size</label>
               <Segments label="Size" value={format} onChange={setFormat} options={Object.entries(FORMATS).map(([k, f]) => [k, f.label, f.note])} />
+            </div>
+            <div>
+              <label className={labelClass}>Layout</label>
+              <Segments label="Layout" value={template} onChange={setTemplate} options={Object.entries(TEMPLATES).map(([k, t]) => [k, t.label])} />
+              <p className={`mt-1.5 text-xs ${muted}`}>{TEMPLATES[template].note}</p>
             </div>
             <div>
               <label className={labelClass}>Kind of post</label>
