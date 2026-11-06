@@ -156,7 +156,7 @@ export default function SocialPostPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link to={`/dashboard/listings/${listing.id}`} className={`text-xs font-semibold hover:underline ${muted}`}>
+        <Link to={`/dashboard/listings/${listing.id}/edit`} className={`text-xs font-semibold hover:underline ${muted}`}>
           ← {listing.address_line1}
         </Link>
         <h1 className="mt-2 text-2xl font-display font-semibold">Social post</h1>
