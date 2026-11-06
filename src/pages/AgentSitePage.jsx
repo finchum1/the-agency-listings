@@ -8,6 +8,7 @@ import { buildAgentSchema, buildBreadcrumbSchema } from "../lib/structuredData";
 import { startVisit } from "../lib/trackView";
 import { isAgentSiteAppHost } from "../lib/agentSiteLinks";
 import { AgentSiteProvider } from "../context/AgentSiteContext";
+import MobileActionBar from "../components/agent-site/MobileActionBar";
 import { brandFromOrg } from "../lib/brand";
 import { getPreviewBase, readPreviewOverrides } from "../lib/sitePreview";
 
@@ -178,6 +179,7 @@ export default function AgentSitePage({
           children
         )}
         <Footer />
+        <MobileActionBar />
       </div>
     </AgentSiteProvider>
   );

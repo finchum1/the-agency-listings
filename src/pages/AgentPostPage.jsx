@@ -11,6 +11,7 @@ import { brandFromOrg } from "../lib/brand";
 import { startVisit } from "../lib/trackView";
 import { isAgentSiteAppHost } from "../lib/agentSiteLinks";
 import { AgentSiteProvider } from "../context/AgentSiteContext";
+import MobileActionBar from "../components/agent-site/MobileActionBar";
 import Navbar from "../components/agent-site/Navbar";
 import Footer from "../components/agent-site/Footer";
 import SiteLink from "../components/agent-site/SiteLink";
@@ -164,6 +165,7 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
         </article>
 
         <Footer />
+        <MobileActionBar />
       </div>
     </AgentSiteProvider>
   );
