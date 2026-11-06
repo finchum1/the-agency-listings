@@ -78,6 +78,34 @@ async function pickCoordinator(ctx, a) {
   if (hits.length > 1) throw new HttpError(409, `More than one coordinator matches "${a.coordinator}": ${hits.map((c) => c.name).join(", ")}. Use coordinator_id.`);
   return hits[0];
 }
+// The agents a deal can be handed to: others in the office who use Deals.
+async function dealAgents(ctx) {
+  const { data, error } = await ctx.client.from("profiles").select("id, full_name").eq("org_id", ctx.profile.org_id).eq("people_enabled", true).order("full_name");
+  if (error) throw new HttpError(500, error.message);
+  return (data || []).map((p) => ({ id: p.id, name: p.full_name || "Agent" }));
+}
+async function pickAgent(ctx, a) {
+  const all = await dealAgents(ctx);
+  const list = all.map((c) => c.name).join(", ") || "none";
+  if (a.agent_id) {
+    const hit = all.find((c) => c.id === a.agent_id);
+    if (!hit) throw new HttpError(404, `That isn't an agent in your office who uses Deals. Agents: ${list}.`);
+    return hit;
+  }
+  const q = String(a.agent || "").trim().toLowerCase();
+  if (!q) throw bad("Say which agent: agent_id or agent (a name). Use list_deal_agents to see them.");
+  const exact = all.filter((c) => c.name.toLowerCase() === q);
+  const hits = exact.length ? exact : all.filter((c) => c.name.toLowerCase().includes(q));
+  if (hits.length === 0) throw new HttpError(404, `No agent matches "${a.agent}". Agents: ${list}.`);
+  if (hits.length > 1) throw new HttpError(409, `More than one agent matches "${a.agent}": ${hits.map((c) => c.name).join(", ")}. Use agent_id.`);
+  return hits[0];
+}
+const changeDealAgent = async (ctx, a) => {
+  const agent = await pickAgent(ctx, a);
+  const { data, error } = await ctx.client.rpc("deal_change_agent", { p_person: a.deal_id, p_agent: agent.id });
+  if (error) throw new HttpError(/Only the deal|Sign in/.test(error.message) ? 403 : 400, error.message);
+  return { deal: { id: a.deal_id, now_belongs_to: data.to, was: data.from, column: data.stage }, note: `${data.to} now has this deal${data.column_changed ? `, in their "${data.stage}" column` : ""}. Nobody was emailed.${ctx.ownerId === agent.id ? "" : " You can still work it if you are its coordinator; if not, it has left your Deals."}` };
+};
 const wantsCoordinator = (a) => !!(a.coordinator_id || a.coordinator);
 async function assignCoordinator(ctx, dealId, tc) {
   const { error } = await ctx.client.from("deal_tcs").insert({ person_id: dealId, tc_id: tc.id });
@@ -89,7 +117,14 @@ async function assignCoordinator(ctx, dealId, tc) {
 const listDeals = async (ctx, a) => {
   const { people: rows } = await people.listPeople(ctx, { group: "transaction", archived: a.include_archived ? "all" : "false", q: a.query, limit: a.limit || 50, order: "updated" });
   const slim = rows.map((p) => ({ id: p.id, name: p.name, property: p.property_address, side: p.side, column: p.stage, price: p.price, contract: p.contract_date, inspection: p.inspection_date, closing: p.closing_date, archived: p.archived }));
-  return render(`${slim.length} deal${slim.length === 1 ? "" : "s"}:`, slim);
+  // Deals other agents own that this person coordinates (row-level security only returns the ones they may see).
+  let q = ctx.client.from("people").select("id, name, property_address, side, stage, price, contract_date, inspection_date, closing_date, archived, owner:profiles!people_owner_id_fkey(full_name)").eq("stage_group", "transaction").neq("owner_id", ctx.ownerId).order("updated_at", { ascending: false }).limit(a.limit || 50);
+  if (!a.include_archived) q = q.eq("archived", false);
+  if (a.query) q = q.or(`name.ilike.%${String(a.query).replace(/[%,()]/g, " ")}%,property_address.ilike.%${String(a.query).replace(/[%,()]/g, " ")}%`);
+  const { data: others } = await q;
+  const coordinated = (others || []).map((p) => ({ id: p.id, agent: p.owner?.full_name || "Another agent", name: p.name, property: p.property_address, side: p.side, column: p.stage, price: p.price, contract: p.contract_date, inspection: p.inspection_date, closing: p.closing_date, archived: p.archived }));
+  const head = `${slim.length} deal${slim.length === 1 ? "" : "s"}:`;
+  return coordinated.length ? `${render(head, slim)}\n${render(`${coordinated.length} more you coordinate for other agents (work them with the same deal tools):`, coordinated)}` : render(head, slim);
 };
 const getDeal = async (ctx, a) => {
   const [{ person, notes }, checklist] = await Promise.all([people.getPerson(ctx, a.deal_id), people.getChecklist(ctx, a.deal_id)]);
@@ -146,11 +181,22 @@ export const DEAL_TOOLS = [
     "Start a deal (a transaction) for the agent: the client's name, the side (buyer or seller) and the property, with any dates. Name the transaction coordinator with coordinator or coordinator_id (see list_coordinators) to assign them in the same step. Refuses a duplicate email unless the agent confirmed. Afterwards, apply_deal_checklist adds the standard tasks.",
     obj({ ...DEAL_FIELDS, ...COORD, allow_duplicate: bool("Only if the agent confirmed a second person with this email is right"), note: str("A first note") }, ["name", "side"]), addDeal),
   writer("update_deal", "update a deal", "write_deals", "Change a deal's key dates, price, commission, earnest money (and whether it was delivered), cash purchase flag, and who is on it (second client, the other agent and their coordinator, title company and processor, lender and loan processor, each with an email). Send only what changes.", obj({ deal_id: str("Deal id from list_deals"), ...DEAL_FIELDS }, ["deal_id"]), updateDeal),
+  reader("list_deal_agents", "List agents who use Deals", "read", "The agents in the office who use Deals, with ids. A deal can be handed to any of them with change_deal_agent.", obj(), async (ctx) => {
+    const all = await dealAgents(ctx);
+    return render(`${all.length} agent${all.length === 1 ? "" : "s"}:`, all);
+  }),
+  writer("change_deal_agent", "change a deal's agent", "write_deals", "Hand a deal to a different agent in the office, for a deal that was started under the wrong person. Works for the deal's agent or a coordinator on it (a coordinator stays on it). The deal, its checklist, documents and notes move to the new agent's Deals board, in the same column if they have it. It leaves the previous agent's board. Nobody is emailed. Send agent_id or the agent's name (see list_deal_agents).", obj({ deal_id: str("Deal id from list_deals"), agent_id: str("The new agent's id from list_deal_agents"), agent: str("Or the new agent's name") }, ["deal_id"]), changeDealAgent),
   writer("assign_deal_coordinator", "assign a coordinator", "write_deals", "Put a transaction coordinator on one of the agent's deals. They can then see and work that deal (only that one) in their Deals page. Not emailed. Use list_coordinators for the choices; send coordinator_id or the coordinator's name.", obj({ deal_id: str("Deal id from list_deals"), ...COORD }, ["deal_id"]), assignDealCoordinator),
   writer("remove_deal_coordinator", "remove a coordinator", "write_deals", "Take a transaction coordinator off one deal. Nothing is deleted from the deal.", obj({ deal_id: str("Deal id from list_deals"), ...COORD }, ["deal_id"]), removeDealCoordinator),
   writer("add_deal_note", "add a deal note", "write_deals", "Add a note to a deal.", obj({ deal_id: str("Deal id"), text: str("The note") }, ["deal_id", "text"]), async (ctx, a) => {
     const deal = await dealOf(ctx, a.deal_id);
-    await people.addNote(ctx, deal.id, { body: a.text });
+    try {
+      await people.addNote(ctx, deal.id, { body: a.text });
+    } catch (err) {
+      // Notes are the deal's agent's own; a coordinator on someone else's deal keeps in touch through the deal's message thread in the dashboard.
+      if (/row-level security/i.test(err.message)) throw new HttpError(403, "Notes on this deal belong to its agent, so a coordinator can't add one here. Use the deal's Messages tab in the dashboard.");
+      throw err;
+    }
     return { note_added_to: dealName(deal) };
   }),
   writer("apply_deal_checklist", "apply the checklist", "write_deals", "Fill an empty deal with the agent's standard checklist for its side (tasks, documents or both). Refuses if it already has one.", obj({ deal_id: str("Deal id"), kind: { type: "string", enum: ["tasks", "documents", "both"] } }, ["deal_id"]), async (ctx, a) => {

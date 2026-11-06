@@ -49,10 +49,12 @@ async function stageLists(ctx) {
   return { lists, closed: closed || null };
 }
 
+// Someone in your People, or a deal you coordinate for another agent. Row-level security already limits what comes back to those two (a
+// coordinator reads only deals, never another agent's leads), and the check below keeps it that way if the rules ever widen.
 async function loadPerson(ctx, personId) {
-  const { data, error } = await ctx.client.from("people").select("*").eq("owner_id", ctx.ownerId).eq("id", id(personId, "person")).maybeSingle();
+  const { data, error } = await ctx.client.from("people").select("*").eq("id", id(personId, "person")).maybeSingle();
   if (error) fail(error);
-  if (!data) throw new HttpError(404, "No person with that id in your People.");
+  if (!data || (data.owner_id !== ctx.ownerId && data.stage_group !== "transaction")) throw new HttpError(404, "No person with that id in your People.");
   return data;
 }
 

@@ -5,6 +5,7 @@ import { BOARDS, ARCHIVE_REASONS, SOURCES } from "../../../lib/peopleStages";
 import ContactButtons from "./ContactButtons";
 import OutreachDrafts from "./OutreachDrafts";
 import ClientTimelineCard from "./ClientTimelineCard";
+import ChangeAgentForm from "./ChangeAgentForm";
 import { DetailGroup, EditToggle, earnestLine, money } from "./DealDetailList";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { PEEK_WIDTHS } from "../../../hooks/usePeekWidth";
@@ -519,6 +520,7 @@ export default function PersonPanel({
               ...(isDeal ? [["Share a timeline with the client", () => setDealModal("share")]] : []),
               person.contact_id ? ["Open in Contacts", () => navigate(`/dashboard/people/contacts?contact=${person.contact_id}`)] : ["Add to Contacts", addToContacts],
               ...(isDeal && board.prev && !person.archived ? [[board.prev.label, () => setDealModal("back")]] : []),
+              ...(isDeal && !person.archived ? [["Change the agent…", () => setDealModal("agent")]] : []),
               person.archived ? [`Restore to ${board.title}`, handleRestore] : ["Archive", () => setDealModal("archive")],
               ["Delete permanently", handleDelete, true],
             ].map(([label, fn, danger]) => (
@@ -547,10 +549,22 @@ export default function PersonPanel({
       <div className="fixed inset-0 z-[80] grid place-items-center bg-black/40 px-4" onPointerDown={(e) => e.target === e.currentTarget && setDealModal(null)}>
         <div role="dialog" aria-label="Deal action" className="w-full max-w-md max-h-[88vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#1a1a1a] p-6 text-[#1c1a17] dark:text-[#faf9f7] shadow-2xl">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-xl font-semibold">{dealModal === "share" ? "Share with the client" : dealModal === "back" ? board.prev?.label : isDeal ? "Archive this deal" : `Archive ${person.name}`}</h2>
+            <h2 className="font-display text-xl font-semibold">{dealModal === "share" ? "Share with the client" : dealModal === "back" ? board.prev?.label : dealModal === "agent" ? "Change the agent" : isDeal ? "Archive this deal" : `Archive ${person.name}`}</h2>
             <button type="button" onClick={() => setDealModal(null)} aria-label="Close" className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50">✕</button>
           </div>
           {dealModal === "share" && <ClientTimelineCard person={person} dates={dealDates} />}
+          {dealModal === "agent" && (
+            <ChangeAgentForm
+              dealId={person.id}
+              ownerId={person.owner_id}
+              viewer="owner"
+              onDone={() => {
+                setDealModal(null);
+                onChanged();
+                onClose();
+              }}
+            />
+          )}
           {dealModal === "back" && (
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">

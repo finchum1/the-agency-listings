@@ -16,6 +16,7 @@ import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { usePeekWidth, PEEK_WIDTHS } from "../../../hooks/usePeekWidth";
 import { dayLabel, toKey } from "../../../lib/homeDates";
 import ClientTimelineCard from "./ClientTimelineCard";
+import ChangeAgentForm from "./ChangeAgentForm";
 import { useAuth } from "../../../hooks/useAuth";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
@@ -58,7 +59,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
   const peek = peekProp || ownPeek;
   const [entered, setEntered] = useState(false);
   const asideRef = useRef(null);
-  const [modal, setModal] = useState(null); // share | archive
+  const [modal, setModal] = useState(null); // share | archive | agent
   const [menuOpen, setMenuOpen] = useState(false);
   const [archiveReason, setArchiveReason] = useState(ARCHIVE_REASONS[0]);
   // A coordinator opens on the Overview, like the agent does; compliance opens on Documents, which is what they review.
@@ -199,6 +200,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
           <div role="menu" className="absolute right-0 z-[60] mt-1 w-64 rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1f1f1f] text-[#1c1a17] dark:text-[#faf9f7] py-1 shadow-xl">
             {[
               ["Share a timeline with the client", () => setModal("share")],
+              ["Change the agent…", () => setModal("agent")],
               ["Archive", () => setModal("archive")],
               ["Delete permanently", handleDelete, true],
             ].map(([label, fn, danger]) => (
@@ -518,13 +520,24 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
       {modal &&
         createPortal(
         <div className="fixed inset-0 z-[80] grid place-items-center bg-black/40 px-4" onPointerDown={(e) => e.target === e.currentTarget && setModal(null)}>
-          <div role="dialog" aria-label={modal === "share" ? "Share with the client" : "Archive this deal"} className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#1c1c1c] text-[#1c1a17] dark:text-[#faf9f7] p-5 shadow-2xl space-y-4">
+          <div role="dialog" aria-label={modal === "share" ? "Share with the client" : modal === "agent" ? "Change the agent" : "Archive this deal"} className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#1c1c1c] text-[#1c1a17] dark:text-[#faf9f7] p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-xl font-semibold">{modal === "share" ? "Share with the client" : "Archive this deal"}</h2>
+              <h2 className="font-display text-xl font-semibold">{modal === "share" ? "Share with the client" : modal === "agent" ? "Change the agent" : "Archive this deal"}</h2>
               <button type="button" onClick={() => setModal(null)} aria-label="Close" className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50">✕</button>
             </div>
             {modal === "share" ? (
               <ClientTimelineCard person={fresh} dates={dealDates} agentName={agentName || "the agent"} />
+            ) : modal === "agent" ? (
+              <ChangeAgentForm
+                dealId={deal.id}
+                ownerId={deal.owner_id}
+                viewer="tc"
+                onDone={() => {
+                  setModal(null);
+                  onChanged?.();
+                  onClose();
+                }}
+              />
             ) : (
               <div className="space-y-3">
                 <select value={archiveReason} onChange={(e) => setArchiveReason(e.target.value)} className={inputClass}>
