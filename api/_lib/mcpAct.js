@@ -42,4 +42,4 @@ export async function look(sb, userId, extra, opts, fn) {
 }
 
 export const strip = (a, ...keys) => Object.fromEntries(Object.entries(a || {}).filter(([k]) => !keys.includes(k)));
-export const idOf = (result) => result?.agent_id || result?.site?.id || result?.post?.id || result?.listing?.id || result?.person?.id || result?.task?.id || result?.document?.id || result?.outreach?.id || null;
+export const idOf = (result) => result?.agent_id || result?.site?.id || result?.post?.id || result?.listing?.id || result?.person?.id || result?.deal?.id || result?.task?.id || result?.document?.id || result?.outreach?.id || null;
