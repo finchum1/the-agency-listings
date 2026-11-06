@@ -22,7 +22,7 @@ async function emailFor(admin, listing, { dryRun } = {}) {
   if (dryRun) return { ...mail, to: agent.email };
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return { skipped: "email isn't configured" };
-  const ok = await sendNotification(apiKey, { from: fromAs("Listing Reports"), to: [agent.email], subject: mail.subject, text: mail.text, html: mail.html });
+  const ok = await sendNotification(apiKey, { from: fromAs("Listing Reports", "The Agency", "reports"), to: [agent.email], subject: mail.subject, text: mail.text, html: mail.html });
   return ok ? { sent: true } : { skipped: "the email service refused it" };
 }
 

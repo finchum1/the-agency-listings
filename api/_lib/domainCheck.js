@@ -160,6 +160,6 @@ async function sendDomainAlerts(admin, down, back) {
     const mineBack = back.filter((i) => i.org_id === a.org_id).map(view);
     if (!mineDown.length && !mineBack.length) continue;
     const mail = buildDomainAlertEmail({ down: mineDown, back: mineBack, url: `${SITE_ORIGIN}/dashboard/listings` });
-    await sendNotification(apiKey, { from: fromAs("Domain Alerts"), to: [a.email], subject: mail.subject, text: mail.text, html: mail.html });
+    await sendNotification(apiKey, { from: fromAs("Domain Alerts", "The Agency", "alerts"), to: [a.email], subject: mail.subject, text: mail.text, html: mail.html });
   }
 }

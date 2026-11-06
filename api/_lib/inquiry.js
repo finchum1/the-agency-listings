@@ -134,9 +134,21 @@ export const describePerson = (p) =>
 // The From line for a system email: the address configured in LEAD_FROM_EMAIL (the one the email service is set up to send from), under a display
 // name that says what the email really is. The configured name ("Website Inquiries") is right for a visitor's inquiry and wrong for everything
 // else, so a deal email is sent as the person it is from ("Terrence Finchum via The Agency Oklahoma") and replies go to that person.
-export function fromAs(displayName, fallback = "The Agency") {
+//
+// `kind` gives each sort of email its own address on that same domain, so a weekly report doesn't arrive from the address that website
+// inquiries do. No setup in the email service is needed: any address at a verified domain can send. Leave `kind` out for the configured
+// address itself (website inquiries). A MAIL_FROM_<KIND> setting (e.g. MAIL_FROM_REPORTS) overrides the address for one kind.
+const KIND_ADDRESSES = { reports: "reports", deals: "deals", alerts: "alerts" };
+export function fromAs(displayName, fallback = "The Agency", kind = "") {
   const raw = process.env.LEAD_FROM_EMAIL || "onboarding@resend.dev";
-  const address = (raw.match(/<([^>]+)>/) || [])[1] || raw.trim();
+  let address = (raw.match(/<([^>]+)>/) || [])[1] || raw.trim();
+  const override = kind && (process.env[`MAIL_FROM_${kind.toUpperCase()}`] || "").trim();
+  if (override) address = (override.match(/<([^>]+)>/) || [])[1] || override;
+  else if (KIND_ADDRESSES[kind]) {
+    // The email service's shared test domain can't send as other names, so only a real domain gets its own addresses.
+    const domain = address.split("@")[1];
+    if (domain && domain.toLowerCase() !== "resend.dev") address = `${KIND_ADDRESSES[kind]}@${domain}`;
+  }
   const name = String(displayName || "").replace(/["<>\r\n]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80) || fallback;
   return `${name} <${address}>`;
 }

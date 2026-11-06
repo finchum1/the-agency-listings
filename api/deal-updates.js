@@ -9,7 +9,7 @@ import { SITE_ORIGIN } from "../src/lib/seo.js";
 
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 // Sent as the coordinator the update is from ("Terrence Finchum via The Agency Oklahoma"); replies go to them.
-const FROM = (coordinator, org) => fromAs(viaOrg(coordinator, org), "Deals");
+const FROM = (coordinator, org) => fromAs(viaOrg(coordinator, org), "Deals", "deals");
 
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
