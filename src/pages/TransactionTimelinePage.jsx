@@ -99,7 +99,7 @@ export default function TransactionTimelinePage() {
   const team = [
     deal.lender && ["Lender", deal.lender],
     deal.title_company && ["Title company", deal.title_company],
-    deal.other_agent && [deal.side === "seller" ? "Buyer's agent" : "Seller's agent", deal.other_agent],
+    deal.other_agent && [deal.side === "seller" ? "Buyer's agent" : "Seller's agent", [deal.other_agent, deal.other_agent2].filter(Boolean).join(" & ")],
   ].filter(Boolean);
 
   return (

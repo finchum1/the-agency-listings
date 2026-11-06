@@ -76,11 +76,12 @@ function readFields(body) {
   set("source", text(body, "source", { max: 80 }));
   set("property_address", text(body, "property_address", { max: 200 }));
   set("other_agent", text(body, "other_agent", { max: 120 }));
+  set("other_agent2", text(body, "other_agent2", { max: 120 }));
   set("title_company", text(body, "title_company", { max: 120 }));
   set("lender", text(body, "lender", { max: 120 }));
   // The people on a deal: names, and an email for each (checked, lower case).
   for (const k of ["client2_name", "other_agent_tc_name", "title_processor_name", "loan_processor_name"]) set(k, text(body, k, { max: 120 }));
-  for (const k of ["client2_email", "other_agent_email", "other_agent_tc_email", "title_company_email", "title_processor_email", "lender_email", "loan_processor_email"]) {
+  for (const k of ["client2_email", "other_agent_email", "other_agent2_email", "other_agent_tc_email", "title_company_email", "title_processor_email", "lender_email", "loan_processor_email"]) {
     const e = text(body, k, { max: 200 });
     if (e && !EMAIL.test(e)) throw bad(`${k} isn't a valid email address.`);
     set(k, e ? e.toLowerCase() : e);

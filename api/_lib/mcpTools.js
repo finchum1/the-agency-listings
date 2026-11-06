@@ -142,6 +142,7 @@ async function getPerson(sb, userId, args) {
     p.price != null && `Price: ${money(p.price)}`,
     p.commission != null && `Commission: ${money(p.commission)}`,
     p.other_agent && `Other agent: ${p.other_agent}`,
+    p.other_agent2 && `Second agent on the other side: ${p.other_agent2}`,
     p.title_company && `Title company: ${p.title_company}`,
     p.lender && `Lender: ${p.lender}`,
     ...DEAL_DATES.filter(([f]) => p[f] && !(p.is_cash && (f === "appraisal_date" || f === "financing_deadline"))).map(([f, l]) => `${l}: ${p[f]}`),

@@ -11,6 +11,7 @@ export const CONTACT_ROLES = [
   { key: "client", label: "Client", name: "name", email: "email", phone: "phone", nameLabel: "Name" },
   { key: "client2", label: "Second client", name: "client2_name", email: "client2_email", nameLabel: "Name" },
   { key: "agent", label: "Other agent", name: "other_agent", email: "other_agent_email", nameLabel: "Name" },
+  { key: "agent2", label: "Second agent on the other side", name: "other_agent2", email: "other_agent2_email", nameLabel: "Name" },
   { key: "agent_tc", label: "Other agent's TC", name: "other_agent_tc_name", email: "other_agent_tc_email", nameLabel: "Name" },
   { key: "title", label: "Title company", name: "title_company", email: "title_company_email", nameLabel: "Company" },
   { key: "processor", label: "Title processor", name: "title_processor_name", email: "title_processor_email", nameLabel: "Name" },
@@ -21,7 +22,7 @@ export const CONTACT_ROLES = [
 // One click opens a new email to a whole group: the people on that side of the deal, addressed together, with the property as the subject.
 const TEAMS = [
   { label: "Title team", emails: ["title_company_email", "title_processor_email"] },
-  { label: "Other agent & TC", emails: ["other_agent_email", "other_agent_tc_email"] },
+  { label: "Other agent & TC", emails: ["other_agent_email", "other_agent2_email", "other_agent_tc_email"] },
   { label: "Lender & processor", emails: ["lender_email", "loan_processor_email"], cashHides: true },
 ];
 // The agent on the file is copied on every one of them (`cc`), unless they are already a recipient.

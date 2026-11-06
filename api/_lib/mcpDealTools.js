@@ -25,7 +25,8 @@ const MONEY = {
 const WHO = {
   name: str("The client's name"), email: str("The client's email"), phone: str("The client's phone"),
   client2_name: str("Second client"), client2_email: str("Second client's email"),
-  other_agent: str("The other agent"), other_agent_email: str(""), other_agent_tc_name: str("The other agent's transaction coordinator"), other_agent_tc_email: str(""),
+  other_agent: str("The other agent (the listing agent on a buyer's deal)"), other_agent_email: str(""),
+  other_agent2: str("A second agent on the other side, e.g. a co-listing agent"), other_agent2_email: str(""), other_agent_tc_name: str("The other agent's transaction coordinator"), other_agent_tc_email: str(""),
   title_company: str(""), title_company_email: str(""), title_processor_name: str(""), title_processor_email: str(""),
   lender: str(""), lender_email: str(""), loan_processor_name: str(""), loan_processor_email: str(""),
 };
@@ -129,7 +130,7 @@ const listDeals = async (ctx, a) => {
 const getDeal = async (ctx, a) => {
   const [{ person, notes }, checklist] = await Promise.all([people.getPerson(ctx, a.deal_id), people.getChecklist(ctx, a.deal_id)]);
   if (person.stage_group !== "transaction") throw new HttpError(400, `${person.name} isn't a deal.`);
-  const keep = ["id", "name", "email", "phone", "property_address", "side", "stage", "price", "commission", "contract_date", "inspection_date", "inspection_time", "inspection_period_end", "appraisal_date", "financing_deadline", "closing_date", "closing_time", "earnest_money", "earnest_money_delivered", "is_cash", "compliance_status", "other_agent", "other_agent_email", "other_agent_tc_name", "other_agent_tc_email", "title_company", "title_company_email", "title_processor_name", "title_processor_email", "lender", "lender_email", "loan_processor_name", "loan_processor_email", "client2_name", "client2_email"];
+  const keep = ["id", "name", "email", "phone", "property_address", "side", "stage", "price", "commission", "contract_date", "inspection_date", "inspection_time", "inspection_period_end", "appraisal_date", "financing_deadline", "closing_date", "closing_time", "earnest_money", "earnest_money_delivered", "is_cash", "compliance_status", "other_agent", "other_agent_email", "other_agent2", "other_agent2_email", "other_agent_tc_name", "other_agent_tc_email", "title_company", "title_company_email", "title_processor_name", "title_processor_email", "lender", "lender_email", "loan_processor_name", "loan_processor_email", "client2_name", "client2_email"];
   const deal = Object.fromEntries(keep.filter((k) => person[k] !== null && person[k] !== undefined && person[k] !== "").map((k) => [k, person[k]]));
   const [{ data: picked }, { data: wide }, office] = await Promise.all([ctx.client.from("deal_tcs").select("tc_id").eq("person_id", a.deal_id), ctx.client.from("deal_team").select("tc_id").eq("agent_id", ctx.ownerId), officeCoordinators(ctx)]);
   const nameOf = (id) => office.find((c) => c.id === id)?.name || "Coordinator";

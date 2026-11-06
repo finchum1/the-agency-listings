@@ -58,6 +58,7 @@ export default async function handler(req, res) {
       property_address: deal.property_address,
       compliance_status: deal.compliance_status,
       other_agent: deal.other_agent,
+      other_agent2: deal.other_agent2,
       title_company: deal.title_company,
       lender: deal.lender,
       contract_date: deal.contract_date,

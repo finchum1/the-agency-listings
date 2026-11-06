@@ -29,6 +29,8 @@ const TEXT = [
   ["property_address", "Property"],
   ["other_agent", "Other agent"],
   ["other_agent_email", "Other agent's email"],
+  ["other_agent2", "Second agent on the other side"],
+  ["other_agent2_email", "Second agent's email"],
   ["other_agent_tc_name", "Other agent's TC"],
   ["other_agent_tc_email", "Other agent's TC email"],
   ["title_company", "Title company"],

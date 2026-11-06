@@ -101,7 +101,7 @@ export default function AgentUpdatePage() {
   const flagged = docs.filter((d) => d.review_status === "issue");
   const out = signatures.filter((g) => g.status === "pending" || g.status === "sending");
   const attention = overdue.length + flagged.length + out.length + (deal.compliance_status === "needs_changes" ? 1 : 0);
-  const team = [deal.lender && ["Lender", deal.lender], deal.title_company && ["Title company", deal.title_company], deal.other_agent && [deal.side === "seller" ? "Buyer's agent" : "Seller's agent", deal.other_agent]].filter(Boolean);
+  const team = [deal.lender && ["Lender", deal.lender], deal.title_company && ["Title company", deal.title_company], deal.other_agent && [deal.side === "seller" ? "Buyer's agent" : "Seller's agent", [deal.other_agent, deal.other_agent2].filter(Boolean).join(" & ")]].filter(Boolean);
 
   return (
     <div className="min-h-screen bg-[#f7f4ee] text-[#1c1a17]">
