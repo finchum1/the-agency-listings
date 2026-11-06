@@ -20,7 +20,7 @@ const HOW = [
 // email in api/agent-site-contact.js.
 export default function HomeValuePage() {
   const { site } = useAgentSiteContext();
-  const first = (site.agent.name || "").split(" ")[0] || "Your agent";
+  const first = site.agent.first || "Your agent";
   const quote = site.testimonials[0];
 
   return (
@@ -103,7 +103,7 @@ function ValueForm() {
   const [step, setStep] = useState(fromCard ? 2 : 1);
   const [f, setF] = useState({ address: fromCard, beds: "", baths: "", sqft: "", condition: "", timeline: "", name: "", email: "", phone: "" });
   const set = (k) => (e) => setF((cur) => ({ ...cur, [k]: e.target.value }));
-  const first = (site.agent.name || "").split(" ")[0] || "Your agent";
+  const first = site.agent.first || "Your agent";
 
   const send = async (e) => {
     e.preventDefault();

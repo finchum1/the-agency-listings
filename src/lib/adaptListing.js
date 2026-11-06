@@ -2,6 +2,7 @@ import { brandFromOrg } from "./brand";
 import { parseVideoLink } from "./videoEmbed";
 import { STATUS_LABELS } from "./format";
 import { adaptTeam } from "./teams";
+import { logoForTheme } from "./brandChoices";
 
 // Shapes a Supabase `listings` row (+ agent profile + photos) into the
 // exact object shape property-site-template/src/data/listing.js used to
@@ -25,7 +26,7 @@ export function adaptListing({ listing, agent, photos }) {
     // own matching/near-matching background.
     brokerage: {
       ...brokerage,
-      logo: listing.theme === "red" ? (brokerage.logos.white || brokerage.logo) : brokerage.logos[listing.logo_variant] || brokerage.logo,
+      logo: logoForTheme(listing.theme) ? (brokerage.logos.white || brokerage.logo) : brokerage.logos[listing.logo_variant] || brokerage.logo,
     },
     siteTemplate: listing.site_template || "classic",
     // "classic" (flush full-width bar) or "floating" (clear at the top, a detached rounded pill once scrolled).

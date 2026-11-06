@@ -2,7 +2,7 @@ import { HttpError, bad, cleanHtml, dateKey, downloadImage, isUuid, markdownToHt
 import { requireScope } from "./context.js";
 import { insertSales, saleView } from "./sales.js";
 
-const THEMES = ["classic", "dark", "sand", "red", "linen"];
+const THEMES = ["classic", "dark", "sand", "red", "linen", "velvet", "velvet-night"];
 const LAYOUTS = ["classic", "editorial", "bold", "portrait", "listings", "luxury", "warm", "guide"];
 const FONTS = ["playfair-jost", "fraunces-inter", "cormorant-worksans", "libre-karla", "bodoni-manrope", "dmserif-dmsans"];
 const SECTIONS = ["bio", "testimonials", "cards", "listings", "areas", "blog", "team"];

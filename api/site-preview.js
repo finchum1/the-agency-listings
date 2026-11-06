@@ -7,10 +7,11 @@ import crypto from "node:crypto";
 import { serviceClient } from "./_lib/authUser.js";
 import { publishedOrDueFilter } from "../src/lib/seo.js";
 import { sendNotification } from "./_lib/inquiry.js";
+import { TEAM_EMBED, teamAgentIds } from "../src/lib/teams.js";
 
 const TOKEN = /^pv[0-9a-f]{64}$/;
 const LAYOUTS = ["classic", "editorial", "bold", "portrait", "listings", "luxury", "warm", "guide"];
-const THEMES = ["classic", "dark", "sand", "red", "linen"];
+const THEMES = ["classic", "dark", "sand", "red", "linen", "velvet", "velvet-night"];
 const HEADERS = { classic: "Classic bar", floating: "Floating pill", centered: "Centered logo", centered_pill: "Centered logo, floating", stacked: "Stacked", minimal: "Minimal" };
 const FOOTERS = { classic: "Three columns", centered: "Centered", cta: "Call to action", wide: "Four columns", slim: "Slim bar" };
 const LAYOUT_NAMES = { classic: "Classic", editorial: "Minimal editorial", bold: "Bold statement", portrait: "Portrait split", listings: "Listings first", luxury: "Luxury minimal", warm: "Warm editorial", guide: "Guide cards" };
@@ -70,13 +71,13 @@ export default async function handler(req, res) {
   }
 
   // GET: the site and everything it renders.
-  const { data: site } = await admin.from("agent_sites").select("*, agent:profiles(id, full_name, title, license, phone, email, photo_url), org:organizations(*)").eq("id", link.agent_site_id).maybeSingle();
+  const { data: site } = await admin.from("agent_sites").select(`*, agent:profiles(id, full_name, title, license, phone, email, photo_url, ${TEAM_EMBED}), org:organizations(*)`).eq("id", link.agent_site_id).maybeSingle();
   if (!site) return res.status(404).json({ error: "This site no longer exists." });
   const [{ data: testimonials }, { data: areas }, { data: posts }, { data: listings }, { data: sales }] = await Promise.all([
     admin.from("agent_site_testimonials").select("*").eq("agent_site_id", site.id).order("sort_order"),
     admin.from("agent_site_areas").select("*").eq("agent_site_id", site.id).order("sort_order"),
     admin.from("agent_site_posts").select("*").eq("agent_site_id", site.id).or(publishedOrDueFilter()).order("post_date", { ascending: false }),
-    admin.from("listings").select("*, listing_photos(url, is_hero)").eq("agent_id", site.agent_id).neq("status", "draft"),
+    admin.from("listings").select("*, listing_photos(url, is_hero)").in("agent_id", teamAgentIds(site.agent, site.agent_id)).neq("status", "draft"),
     admin.from("agent_site_sales").select("*").eq("agent_site_id", site.id),
   ]);
 

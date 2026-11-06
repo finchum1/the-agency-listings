@@ -17,7 +17,7 @@ export default function Testimonials() {
       className={`px-6 lg:px-10 py-24 ${light ? `bg-[var(--as-bg-alt)] text-[var(--as-text)] border-y border-[var(--as-text)]/10 ${aboveFooter(site)}` : "bg-[var(--as-dark)] text-[var(--as-on-dark)]"}`}
     >
       <div className="mx-auto max-w-6xl">
-        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-10 text-center">
+        <p className={`text-xs font-medium tracked-wide uppercase ${light ? "text-[var(--as-accent)]" : "text-[var(--as-accent-on-dark)]"} mb-10 text-center`}>
           Testimonials
         </p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">

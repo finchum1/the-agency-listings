@@ -32,6 +32,11 @@ export default function Navbar({ backLink, solid = false }) {
     </span>
   ) : null;
 
+  // Red and Velvet always show the white logo (their header is a solid brand color), but the page itself is light, so a bar that turned the page's
+  // own light color on scroll would lose the logo. For those themes the bar takes the theme's dark color instead, text and all.
+  const darkBar = (scrolled || open) && ["red", "velvet"].includes(listing.theme);
+  const barVars = darkBar ? { "--ls-bg": "var(--ls-dark)", "--ls-text": "var(--ls-on-dark)" } : undefined;
+
   if (listing.headerStyle === "floating") {
     // A clear header at the top that becomes a detached, rounded pill once scrolled (same idea as the agent sites'
     // floating header). On the pill, text uses the page's own text color; over the hero it stays light.
@@ -40,7 +45,7 @@ export default function Navbar({ backLink, solid = false }) {
       scrolled ? "text-[var(--ls-text)]/75 hover:text-[var(--ls-text)] hover:bg-[var(--ls-text)]/10" : "text-[var(--ls-on-dark)]/80 hover:text-[var(--ls-on-dark)] hover:bg-[var(--ls-on-dark)]/10"
     }`;
     return (
-      <div className="fixed top-0 inset-x-0 z-50 pt-4 px-4 sm:px-6">
+      <div className="fixed top-0 inset-x-0 z-50 pt-4 px-4 sm:px-6" style={barVars}>
         <header className="mx-auto max-w-7xl">
           <div
             className={`flex items-center gap-4 rounded-full px-4 sm:px-5 py-2 transition-all duration-300 ${
@@ -100,6 +105,7 @@ export default function Navbar({ backLink, solid = false }) {
 
   return (
     <header
+      style={barVars}
       className={`fixed top-0 inset-x-0 z-50 transition-colors duration-300 ${
         scrolled ? "bg-[var(--ls-bg)]/95 backdrop-blur shadow-sm" : "bg-transparent"
       }`}

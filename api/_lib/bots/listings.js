@@ -3,7 +3,7 @@ import { requireScope } from "./context.js";
 
 const BUCKET = "listing-photos";
 const STATUSES = ["draft", "coming_soon", "for_sale", "pending", "closed", "off_market"];
-const THEMES = ["classic", "dark", "sand", "red", "linen"];
+const THEMES = ["classic", "dark", "sand", "red", "linen", "velvet", "velvet-night"];
 const FONTS = ["playfair-jost", "fraunces-inter", "cormorant-worksans", "libre-karla", "bodoni-manrope", "dmserif-dmsans"];
 const MAX_PHOTOS_PER_CALL = 25;
 

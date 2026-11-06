@@ -147,6 +147,11 @@
     border-radius: 9999px;
   }
 
+  /* The accent color to use for text, rules and blocks that sit ON a --as-dark band. It is just the accent, except where the accent is the same
+     color as the band (Velvet), which then sets its own lighter one. */
+  [data-theme] {
+    --as-accent-on-dark: var(--as-accent);
+  }
   [data-theme="classic"] {
     --as-bg: #f7f4ee;      /* page background */
     --as-bg-alt: #ffffff;  /* alternating/bordered section background */
@@ -257,6 +262,47 @@
     --ls-surface: #ece7dd;
     --ls-text: #17140f;
     --ls-accent: #ed2127;
+  }
+  /* Velvet (#470300), The Agency's main color. Two themes built on it, both for agent sites (--as-*) and property sites (--ls-*).
+     "velvet": a cream page with white alternating sections, and Velvet as the structural color the way Red uses red: the header,
+     footer, testimonials and hero shade. The accent (buttons, prices, links) is Velvet too; the logo is forced to the white mark
+     (see logoForTheme in lib/brandChoices.js) because the header and footer are Velvet. */
+  [data-theme="velvet"] {
+    --as-bg: #faf6f0;
+    --as-bg-alt: #ffffff;
+    --as-dark: #470300;
+    --as-on-dark: #f8efe6;
+    --as-surface: #ece2d6;
+    --as-text: #1f0f0d;
+    --as-accent: #470300;
+    --as-accent-on-dark: #e3a692;
+
+    --ls-bg: #faf6f0;
+    --ls-bg-alt: #ffffff;
+    --ls-dark: #470300;
+    --ls-on-dark: #f8efe6;
+    --ls-surface: #ece2d6;
+    --ls-text: #1f0f0d;
+    --ls-accent: #470300;
+  }
+  /* "velvet-night": the page itself is Velvet, with deeper bands and cream text. The accent is the brand red lightened for a dark ground,
+     the same idea as the Dark theme's #f2454b, so buttons with white text still read. White logo, like Velvet. */
+  [data-theme="velvet-night"] {
+    --as-bg: #470300;
+    --as-bg-alt: #3b0200;
+    --as-dark: #260100;
+    --as-on-dark: #f8efe6;
+    --as-surface: #5d1a12;
+    --as-text: #f8efe6;
+    --as-accent: #f2454b;
+
+    --ls-bg: #470300;
+    --ls-bg-alt: #3b0200;
+    --ls-dark: #260100;
+    --ls-on-dark: #f8efe6;
+    --ls-surface: #5d1a12;
+    --ls-text: #f8efe6;
+    --ls-accent: #f2454b;
   }
   /* An agent's uploaded secondary logo (Navbar.jsx/Footer.jsx's
      .agent-secondary-logo) is a fixed flat-white PNG, uploaded once and

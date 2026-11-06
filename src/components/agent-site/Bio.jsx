@@ -1,6 +1,7 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { sanitizeHtml } from "../../lib/sanitizeHtml";
 import { LAYOUT_SECTIONS, FULL_SECTION_ON_OWN_PAGE } from "./layouts";
+import AgentPhotos, { teamAspect } from "./AgentPhotos";
 
 export default function Bio() {
   const { site, isStandalonePage } = useAgentSiteContext();
@@ -15,15 +16,13 @@ export default function Bio() {
   return (
     <section id="bio" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
       <div className="mx-auto max-w-6xl grid lg:grid-cols-[0.85fr_1.15fr] gap-14 items-start">
-        <div className="overflow-hidden bg-[var(--as-surface)] aspect-[4/5]">
-          {site.agent.photo && (
-            <img src={site.agent.photo} alt={site.agent.name} className="h-full w-full object-cover" />
-          )}
+        <div className={`overflow-hidden bg-[var(--as-surface)] ${teamAspect(site) || "aspect-[4/5]"}`}>
+          <AgentPhotos site={site} />
         </div>
 
         <div>
           <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">
-            About {site.agent.name.split(" ")[0]}
+            About {site.agent.first}
           </p>
           <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-6 text-[var(--as-text)]">
             {site.brokerage.name}

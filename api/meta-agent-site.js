@@ -11,6 +11,7 @@ import { buildAgentSitePageMeta, buildAgentAreaMeta, escapeHtml, publishedOrDueF
 import { buildAgentSchema, buildBreadcrumbSchema } from "../src/lib/structuredData.js";
 import { brandFromOrg } from "../src/lib/brand.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
+import { TEAM_EMBED } from "../src/lib/teams.js";
 
 const PAGE_LABELS = { about: "About", listings: "Listings", "past-sales": "Past Sales", areas: "Areas", blog: "Blog", contact: "Contact", sellers: "Sellers", buyers: "Buyers", "home-value": "Home Value", relocation: "Relocation" };
 
@@ -34,7 +35,7 @@ export default async function handler(req, res) {
 
   const { data: site } = await supabase
     .from("agent_sites")
-    .select("*, agent:profiles(*), org:organizations(*)")
+    .select(`*, agent:profiles(*, ${TEAM_EMBED}), org:organizations(*)`)
     .eq("slug", slug)
     .maybeSingle();
   const brokerage = brandFromOrg(site?.org);
@@ -64,7 +65,7 @@ export default async function handler(req, res) {
   }
 
   const meta = buildAgentSitePageMeta(site, site.agent, page);
-  const heading = page ? PAGE_LABELS[page] : site.agent?.full_name || "Agent";
+  const heading = page ? PAGE_LABELS[page] : (site.agent?.team?.name || site.agent?.full_name) || "Agent";
 
   // Only fetch what this specific page actually shows — the home page
   // doesn't need any of this (its own bodyHtml is just the bio/region
@@ -129,7 +130,7 @@ ${extraHtml}
     schemas.push(
       buildAgentSchema({
         url: homeUrl,
-        name: site.agent?.full_name,
+        name: (site.agent?.team?.name || site.agent?.full_name),
         image: site.agent?.photo_url,
         phone: site.agent?.phone,
         email: site.agent?.email,
@@ -145,7 +146,7 @@ ${extraHtml}
   if (page) {
     schemas.push(
       buildBreadcrumbSchema([
-        { name: site.agent?.full_name || "Home", url: homeUrl },
+        { name: (site.agent?.team?.name || site.agent?.full_name) || "Home", url: homeUrl },
         { name: PAGE_LABELS[page], url },
       ]),
     );
@@ -198,7 +199,7 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
 `;
 
   const structuredData = buildBreadcrumbSchema([
-    { name: site.agent?.full_name || "Home", url: homeUrl },
+    { name: (site.agent?.team?.name || site.agent?.full_name) || "Home", url: homeUrl },
     { name: "Areas", url: `${homeUrl}/areas` },
     { name: area.name, url },
   ]);

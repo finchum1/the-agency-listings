@@ -60,33 +60,34 @@ export default function Contact() {
             Whether you&rsquo;re buying, selling, or just curious about the market, reach out anytime.
           </p>
 
-          <div className="flex items-center gap-4 bg-[var(--as-bg-alt)] border border-[var(--as-text)]/10 p-5">
-            {agent.photo && (
-              <img
-                src={agent.photo}
-                alt={agent.name}
-                className="h-16 w-16 rounded-full object-cover bg-[var(--as-surface)]"
-              />
-            )}
-            <div>
-              <p className="font-semibold text-[var(--as-text)]">{agent.name}</p>
-              <p className="text-sm text-[var(--as-text)]/60">{agent.title}</p>
-              <p className="text-sm text-[var(--as-text)]/60">
-                {site.brokerage.name}
-                {agent.license ? ` — ${agent.license}` : ""}
-              </p>
-              <div className="flex flex-col gap-0.5 mt-1 text-sm">
-                {agent.phone && (
-                  <a href={`tel:${agent.phone}`} className="text-[var(--as-accent)] hover:underline">
-                    {agent.phone}
-                  </a>
-                )}
-                {agent.email && (
-                  <a href={`mailto:${agent.email}`} className="text-[var(--as-accent)] hover:underline">
-                    {agent.email}
-                  </a>
-                )}
-              </div>
+          <div className="bg-[var(--as-bg-alt)] border border-[var(--as-text)]/10 p-5">
+            {site.team && <p className="font-display text-xl font-semibold text-[var(--as-text)] mb-5">{site.team.name}</p>}
+            <div className="space-y-5">
+              {agent.members.map((m) => (
+                <div key={m.id || m.email} className="flex items-center gap-4">
+                  {m.photo && <img src={m.photo} alt={m.name} className="h-16 w-16 rounded-full object-cover bg-[var(--as-surface)] shrink-0" />}
+                  <div className="min-w-0">
+                    <p className="font-semibold text-[var(--as-text)]">{m.name}</p>
+                    <p className="text-sm text-[var(--as-text)]/60">{m.title}</p>
+                    <p className="text-sm text-[var(--as-text)]/60">
+                      {site.brokerage.name}
+                      {m.license ? ` — ${m.license}` : ""}
+                    </p>
+                    <div className="flex flex-col gap-0.5 mt-1 text-sm">
+                      {m.phone && (
+                        <a href={`tel:${m.phone}`} className="text-[var(--as-accent)] hover:underline">
+                          {m.phone}
+                        </a>
+                      )}
+                      {m.email && (
+                        <a href={`mailto:${m.email}`} className="text-[var(--as-accent)] hover:underline break-all">
+                          {m.email}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

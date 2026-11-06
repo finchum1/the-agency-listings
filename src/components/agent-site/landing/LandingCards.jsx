@@ -9,7 +9,7 @@ import SiteLink from "../SiteLink";
 // "cards"; the agent moves it up or down in Site Details, and orders, hides and rewords the cards themselves there too).
 export default function LandingCards() {
   const { site } = useAgentSiteContext();
-  const first = (site.agent.name || "").split(" ")[0];
+  const first = site.agent.first;
   const cards = resolveLanding(site.landing, first).cards.filter((c) => c.on);
   if (cards.length === 0) return null;
 

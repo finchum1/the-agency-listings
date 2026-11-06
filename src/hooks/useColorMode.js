@@ -21,7 +21,8 @@ export function useColorMode(site, { disabled = false } = {}) {
   const enabled = Boolean(site?.color_toggle) && !disabled;
   if (!site || !enabled) return { site, colorMode: { enabled: false, isDark: site?.theme === "dark", toggle: () => {} } };
 
-  const ownIsDark = site.theme === "dark";
+  // Velvet and Velvet Night are a light/dark pair of their own; every other theme swaps with the neutral Dark and Classic.
+  const ownIsDark = site.theme === "dark" || site.theme === "velvet-night";
   const mode = read(site.slug) || (ownIsDark ? "dark" : "light");
   const isDark = mode === "dark";
   const toggle = () => {
@@ -34,7 +35,7 @@ export function useColorMode(site, { disabled = false } = {}) {
     refresh();
   };
   let shown = site;
-  if (isDark && !ownIsDark) shown = { ...site, theme: "dark", ...(site.theme === "linen" ? { logo_variant: "white" } : {}) };
-  if (!isDark && ownIsDark) shown = { ...site, theme: "classic" };
+  if (isDark && !ownIsDark) shown = { ...site, theme: site.theme === "velvet" ? "velvet-night" : "dark", ...(site.theme === "linen" ? { logo_variant: "white" } : {}) };
+  if (!isDark && ownIsDark) shown = { ...site, theme: site.theme === "velvet-night" ? "velvet" : "classic" };
   return { site: shown, colorMode: { enabled: true, isDark, toggle } };
 }

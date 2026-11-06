@@ -11,7 +11,7 @@ import { RELOCATION_FAQ, RELOCATION_PRIORITIES, RELOCATION_REASONS, RELOCATION_S
 // in Site Details (agent_sites.landing.relocation.on); see src/lib/landingPages.js.
 export default function RelocationPage() {
   const { site } = useAgentSiteContext();
-  const first = (site.agent.name || "").split(" ")[0] || "your agent";
+  const first = site.agent.first || "your agent";
   const areas = site.areas || [];
 
   return (
@@ -90,7 +90,7 @@ export default function RelocationPage() {
 
 function MoveForm() {
   const { site } = useAgentSiteContext();
-  const first = (site.agent.name || "").split(" ")[0] || "your agent";
+  const first = site.agent.first || "your agent";
   const { status, error, submit, guard } = useLandingSubmit("relocation");
   const areaNames = (site.areas || []).map((a) => a.name);
   const [f, setF] = useState({ name: "", email: "", phone: "", from: "", when: "", reason: "", areas: [], budget: "", has_home: "", priorities: [] });

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { TEAM_EMBED } from "../lib/teams";
+import { TEAM_EMBED, teamAgentIds } from "../lib/teams";
 import { supabase } from "../lib/supabaseClient";
 
 // Fetches one agent's public site — by slug (normal /sites/:slug path) or
@@ -80,7 +80,8 @@ export function useAgentSite({ slug, customDomain, previewToken } = {}) {
       supabase
         .from("listings")
         .select("*, listing_photos(url, is_hero)")
-        .eq("agent_id", siteRow.agent_id)
+        // A team site shows everyone on the team's listings together.
+        .in("agent_id", teamAgentIds(siteRow.agent, siteRow.agent_id))
         .neq("status", "draft"),
       // No rows (and no error shown) until the past-sales table exists in this database.
       supabase.from("agent_site_sales").select("*").eq("agent_site_id", siteRow.id),

@@ -6,6 +6,7 @@ import { agentSiteHref } from "../../../lib/agentSiteLinks";
 import { sanitizeHtml } from "../../../lib/sanitizeHtml";
 import SiteLink from "../SiteLink";
 import FeaturedTag from "../FeaturedTag";
+import AgentPhotos, { teamAspect } from "../AgentPhotos";
 
 // "Bold statement" layout (agent_sites.layout = 'bold'). The same sections and data as the classic layout with the
 // volume turned up: oversized uppercase type, full-bleed photos with text laid over them, solid blocks of the theme's
@@ -75,14 +76,14 @@ export function BoldBio() {
   const { site, isStandalonePage } = useAgentSiteContext();
   if (!site.bioHtml && site.stats.length === 0) return null;
   const Heading = isStandalonePage ? "h1" : "h2";
-  const first = site.agent.name.split(" ")[0];
+  const first = site.agent.first;
   return (
     <section id="bio" className="px-6 lg:px-10 py-24 sm:py-32 bg-[var(--as-dark)] text-[var(--as-on-dark)]">
       <div className="mx-auto max-w-7xl grid lg:grid-cols-[0.9fr_1.1fr] gap-16 lg:gap-24 items-center">
         <div className="relative max-w-md mx-auto lg:mx-0 w-full">
-          <div className="absolute -bottom-5 -right-5 inset-0 bg-[var(--as-accent)]" aria-hidden="true" />
-          <div className="relative overflow-hidden bg-[var(--as-surface)] aspect-[4/5]">
-            {site.agent.photo && <img src={site.agent.photo} alt={site.agent.name} className="h-full w-full object-cover" />}
+          <div className="absolute -bottom-5 -right-5 inset-0 bg-[var(--as-accent-on-dark)]" aria-hidden="true" />
+          <div className={`relative overflow-hidden bg-[var(--as-surface)] ${teamAspect(site) || "aspect-[4/5]"}`}>
+            <AgentPhotos site={site} />
           </div>
         </div>
         <div>
@@ -91,7 +92,7 @@ export function BoldBio() {
             {site.brokerage.name}
             {site.region ? ` — ${site.region}` : ""}
           </Heading>
-          <div className="mt-6 h-2 w-24 bg-[var(--as-accent)]" />
+          <div className="mt-6 h-2 w-24 bg-[var(--as-accent-on-dark)]" />
           <div className="rich-text mt-8 space-y-4 text-lg leading-relaxed text-[var(--as-on-dark)]/80 max-w-xl" dangerouslySetInnerHTML={{ __html: sanitizeHtml(site.bioHtml) }} />
         </div>
       </div>
@@ -99,7 +100,7 @@ export function BoldBio() {
         <div className="mx-auto max-w-7xl mt-20 sm:mt-28 grid grid-cols-2 lg:grid-cols-4 gap-px bg-[var(--as-on-dark)]/15 border-y border-[var(--as-on-dark)]/15">
           {site.stats.map((stat, i) => (
             <div key={i} className="bg-[var(--as-dark)] py-8 px-2 sm:px-6">
-              <p className="font-display font-bold text-5xl sm:text-6xl tracking-tight text-[var(--as-accent)]">{stat.value}</p>
+              <p className="font-display font-bold text-5xl sm:text-6xl tracking-tight text-[var(--as-accent-on-dark)]">{stat.value}</p>
               <p className="mt-2 text-xs font-bold tracked-wide uppercase text-[var(--as-on-dark)]/60">{stat.label}</p>
             </div>
           ))}

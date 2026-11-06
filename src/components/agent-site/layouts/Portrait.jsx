@@ -6,6 +6,7 @@ import { agentSiteHref } from "../../../lib/agentSiteLinks";
 import { sanitizeHtml } from "../../../lib/sanitizeHtml";
 import SiteLink from "../SiteLink";
 import FeaturedTag from "../FeaturedTag";
+import AgentPhotos, { teamAspect } from "../AgentPhotos";
 
 // "Portrait split" layout (agent_sites.layout = 'portrait'). Leads with the agent: a tall portrait next to their name,
 // tagline and a way to connect, then warm, card-based sections underneath. Colors come from the same --as-* theme
@@ -18,13 +19,12 @@ const btn = "as-btn inline-block text-xs font-medium tracked-wide uppercase px-8
 
 export function PortraitHero() {
   const { site } = useAgentSiteContext();
-  const photo = site.agent.photo || site.heroPhoto;
-  const first = site.agent.name.split(" ")[0];
+  const first = site.agent.first;
   return (
     <section className="bg-[var(--as-bg)] pt-24">
       <div className="mx-auto max-w-7xl grid lg:grid-cols-2 lg:min-h-[calc(100vh-96px)]">
         <div className="relative bg-[var(--as-surface)] aspect-[4/5] lg:aspect-auto lg:min-h-[640px] overflow-hidden">
-          {photo && <img src={photo} alt={site.agent.name} className="absolute inset-0 h-full w-full object-cover object-top" />}
+          <div className="absolute inset-0"><AgentPhotos site={site} className="h-full w-full object-cover object-top" fallback={site.heroPhoto} /></div>
         </div>
         <div className="flex flex-col justify-center px-6 sm:px-10 lg:px-16 py-14 lg:py-20">
           {site.region && <p className={eyebrow}>{site.region}</p>}
@@ -63,7 +63,7 @@ export function PortraitBio() {
   const { site, isStandalonePage } = useAgentSiteContext();
   if (!site.bioHtml && site.stats.length === 0) return null;
   const Heading = isStandalonePage ? "h1" : "h2";
-  const first = site.agent.name.split(" ")[0];
+  const first = site.agent.first;
   return (
     <section id="bio" className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
       <div className="mx-auto max-w-6xl">

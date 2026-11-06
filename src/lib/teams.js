@@ -14,6 +14,13 @@ const person = (p) => ({
   photo: p.photo_url || "",
 });
 
+// The ids of everyone whose listings a team site shows: the site owner and the rest of their team (just the owner when they aren't on one).
+export function teamAgentIds(agent, fallbackId) {
+  const ids = (agent?.team?.members || []).map((m) => m.id).filter(Boolean);
+  const own = agent?.id || fallbackId;
+  return [...new Set([own, ...ids].filter(Boolean))];
+}
+
 // The team a profile row (loaded with TEAM_EMBED) belongs to, as { name, members }, the row's own person first and the others by name.
 // Null when they aren't on a team, or `show` is false (a listing set to show only its own agent).
 export function adaptTeam(agent, show = true) {

@@ -99,14 +99,14 @@ export function buildListingMeta(listing, agent, heroPhotoUrl) {
 // site: a raw `agent_sites` row. agent: its `profiles` row (nullable).
 export function buildAgentSiteMeta(site, agent) {
   const brokerage = brandFromOrg(site.org);
-  const title = site.seo_title?.trim() || `${agent?.full_name || "Agent"} | ${brokerage.name}`;
+  const title = site.seo_title?.trim() || `${agentLabel(agent) || "Agent"} | ${brokerage.name}`;
 
   const description =
     site.seo_description?.trim() ||
     site.tagline?.trim() ||
     firstBlockText(site.bio_html) ||
     site.bio?.[0] ||
-    `${agent?.full_name || "An agent"} at ${brokerage.name}${site.region ? ` serving ${site.region}` : ""}.`;
+    `${agentLabel(agent) || "An agent"} at ${brokerage.name}${site.region ? ` serving ${site.region}` : ""}.`;
 
   const image = absoluteUrl(site.og_image_url || site.hero_photo_url || agent?.photo_url || brokerage.logo);
 
@@ -121,31 +121,31 @@ export function buildAgentSiteMeta(site, agent) {
 const AGENT_SITE_PAGE_LABELS = { about: "About", listings: "Listings", "past-sales": "Past Sales", areas: "Areas", blog: "Blog", contact: "Contact", sellers: "Selling Your Home", buyers: "Buying a Home", "home-value": "What's Your Home Worth?", relocation: "Moving to Oklahoma" };
 const AGENT_SITE_PAGE_DESCRIPTIONS = {
   about: (site, agent, brokerage) =>
-    `Learn about ${agent?.full_name || "this agent"}${
+    `Learn about ${agentLabel(agent) || "this agent"}${
       site.region ? `, serving ${site.region}` : ""
     } — background, experience, and client testimonials at ${brokerage.name}.`,
   listings: (site, agent, brokerage) =>
-    `Browse current listings from ${agent?.full_name || "this agent"} at ${brokerage.name}${
+    `Browse current listings from ${agentLabel(agent) || "this agent"} at ${brokerage.name}${
       site.region ? ` in ${site.region}` : ""
     }.`,
   "past-sales": (site, agent, brokerage) =>
-    `Homes ${agent?.full_name || "this agent"} at ${brokerage.name} has helped buyers and sellers close${site.region ? ` in ${site.region}` : ""}: recent sales and track record.`,
+    `Homes ${agentLabel(agent) || "this agent"} at ${brokerage.name} has helped buyers and sellers close${site.region ? ` in ${site.region}` : ""}: recent sales and track record.`,
   areas: (site, agent) =>
-    `Explore the neighborhoods and areas ${agent?.full_name || "this agent"} serves${
+    `Explore the neighborhoods and areas ${agentLabel(agent) || "this agent"} serves${
       site.region ? ` around ${site.region}` : ""
     }.`,
   blog: (site, agent, brokerage) =>
-    `Real estate insights, market updates, and local guides from ${agent?.full_name || "this agent"} at ${brokerage.name}.`,
+    `Real estate insights, market updates, and local guides from ${agentLabel(agent) || "this agent"} at ${brokerage.name}.`,
   contact: (site, agent, brokerage) =>
-    `Get in touch with ${agent?.full_name || "this agent"} at ${brokerage.name} to buy, sell, or ask a question.`,
+    `Get in touch with ${agentLabel(agent) || "this agent"} at ${brokerage.name} to buy, sell, or ask a question.`,
   sellers: (site, agent, brokerage) =>
-    `A step-by-step guide to selling your home with ${agent?.full_name || "this agent"} at ${brokerage.name}: preparing, pricing, showings, offers and closing day.`,
+    `A step-by-step guide to selling your home with ${agentLabel(agent) || "this agent"} at ${brokerage.name}: preparing, pricing, showings, offers and closing day.`,
   buyers: (site, agent, brokerage) =>
-    `A step-by-step guide to buying a home with ${agent?.full_name || "this agent"} at ${brokerage.name}: pre-approval, the search, the offer and closing.`,
+    `A step-by-step guide to buying a home with ${agentLabel(agent) || "this agent"} at ${brokerage.name}: pre-approval, the search, the offer and closing.`,
   relocation: (site, agent, brokerage) =>
-    `Moving to Oklahoma? ${agent?.full_name || "This agent"} at ${brokerage.name} guides relocating buyers from the first question to the keys: choosing an area, touring from a distance, making an offer and closing.`,
+    `Moving to Oklahoma? ${agentLabel(agent) || "This agent"} at ${brokerage.name} guides relocating buyers from the first question to the keys: choosing an area, touring from a distance, making an offer and closing.`,
   "home-value": (site, agent, brokerage) =>
-    `Request a free, personal home valuation from ${agent?.full_name || "this agent"} at ${brokerage.name}. Real comparable sales, a custom valuation within one business day.`,
+    `Request a free, personal home valuation from ${agentLabel(agent) || "this agent"} at ${brokerage.name}. Real comparable sales, a custom valuation within one business day.`,
 };
 
 // site: a raw `agent_sites` row. agent: its `profiles` row (nullable).
@@ -232,7 +232,7 @@ export function buildBrokeragePostMeta(post, site) {
 // post: a raw `agent_site_posts` row. site/agent: the parent site + its agent.
 export function buildAgentPostMeta(post, site, agent) {
   const brokerage = brandFromOrg(site?.org);
-  const title = `${post.title} | ${agent?.full_name || brokerage.name}`;
+  const title = `${post.title} | ${agentLabel(agent) || brokerage.name}`;
   const description =
     post.excerpt?.trim() ||
     firstBlockText(post.body_html) ||
@@ -244,12 +244,12 @@ export function buildAgentPostMeta(post, site, agent) {
 
 export function buildAgentAreaMeta(area, site, agent) {
   const brokerage = brandFromOrg(site?.org);
-  const title = `${area.name} | ${agent?.full_name || brokerage.name}`;
+  const title = `${area.name} | ${agentLabel(agent) || brokerage.name}`;
   const description =
     area.blurb?.trim() ||
     firstBlockText(area.description) ||
     `Explore ${area.name}${site?.region ? ` near ${site.region}` : ""} with ${
-      agent?.full_name || "this agent"
+      agentLabel(agent) || "this agent"
     } at ${brokerage.name}.`;
   const image = absoluteUrl(area.photo_url || site?.hero_photo_url || agent?.photo_url || brokerage.logo);
   return { title, description, image };
@@ -264,4 +264,9 @@ export function buildBrokerageAreaMeta(area, site) {
     `Explore ${area.name} with ${brokerage.name}.`;
   const image = absoluteUrl(area.photo_url || site?.hero_photo_url || brokerage.logo);
   return { title, description, image };
+}
+
+// What search results and share cards call an agent: their team's name when they are on one, else their own.
+function agentLabel(agent) {
+  return agent?.team?.name || agent?.full_name;
 }

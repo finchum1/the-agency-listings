@@ -6,6 +6,7 @@ import { agentSiteHref } from "../../../lib/agentSiteLinks";
 import { sanitizeHtml } from "../../../lib/sanitizeHtml";
 import SiteLink from "../SiteLink";
 import FeaturedTag from "../FeaturedTag";
+import AgentPhotos, { teamAspect } from "../AgentPhotos";
 
 // "Minimal editorial" layout (agent_sites.layout = 'editorial'). The same sections and data as the classic layout,
 // arranged like a magazine: light and airy, big quiet serif type, thin rules, photos captioned underneath instead of
@@ -60,7 +61,7 @@ export function EditorialBio() {
   const { site, isStandalonePage } = useAgentSiteContext();
   if (!site.bioHtml && site.stats.length === 0) return null;
   const Heading = isStandalonePage ? "h1" : "h2";
-  const first = site.agent.name.split(" ")[0];
+  const first = site.agent.first;
   const drop =
     "[&>p:first-child]:first-letter:float-left [&>p:first-child]:first-letter:font-display [&>p:first-child]:first-letter:text-6xl [&>p:first-child]:first-letter:leading-[0.85] [&>p:first-child]:first-letter:pr-3 [&>p:first-child]:first-letter:pt-1 [&>p:first-child]:first-letter:text-[var(--as-accent)]";
 
@@ -68,8 +69,8 @@ export function EditorialBio() {
     <section id="bio" className="px-6 lg:px-10 py-28 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
       <div className="mx-auto max-w-6xl grid lg:grid-cols-[0.8fr_1.2fr] gap-14 lg:gap-24 items-center">
         <figure>
-          <div className="overflow-hidden bg-[var(--as-surface)] aspect-[3/4] max-w-sm mx-auto lg:mx-0">
-            {site.agent.photo && <img src={site.agent.photo} alt={site.agent.name} className="h-full w-full object-cover" />}
+          <div className={`overflow-hidden bg-[var(--as-surface)] ${teamAspect(site) || "aspect-[3/4]"} max-w-sm mx-auto lg:mx-0`}>
+            <AgentPhotos site={site} />
           </div>
           <figcaption className="mt-4 max-w-sm mx-auto lg:mx-0 text-[11px] tracked-wide uppercase text-[var(--as-text)]/45">
             {site.agent.name}

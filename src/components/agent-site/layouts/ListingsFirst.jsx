@@ -137,7 +137,7 @@ export function ListingsListings() {
 export function ListingsBio() {
   const { site } = useAgentSiteContext();
   if (!site.bioHtml && site.stats.length === 0) return null;
-  const first = site.agent.name.split(" ")[0];
+  const first = site.agent.first;
   return (
     <section id="bio" className="px-6 lg:px-10 py-14 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
       <div className="mx-auto max-w-7xl flex flex-col lg:flex-row lg:items-center gap-8 lg:gap-14">

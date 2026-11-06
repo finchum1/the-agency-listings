@@ -40,6 +40,7 @@ import { brandFromOrg, brokerageSiteQuery } from "../src/lib/brand.js";
 import { bareHost, isAppHost } from "../src/lib/appHosts.js";
 import { marketingMetaFor, MARKETING_META } from "../src/lib/marketingMeta.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
+import { TEAM_EMBED } from "../src/lib/teams.js";
 
 const APP_DEFAULT_TITLE = "The Agency Listings";
 const APP_DEFAULT_DESCRIPTION = "The Agency — property listing sites and agent dashboard";
@@ -156,7 +157,7 @@ ${meta.image ? `<img src="${meta.image}" alt="" style="max-width:100%" />` : ""}
 
   const { data: site } = await supabase
     .from("agent_sites")
-    .select("*, agent:profiles(*), org:organizations(*)")
+    .select(`*, agent:profiles(*, ${TEAM_EMBED}), org:organizations(*)`)
     .ilike("custom_domain", host)
     .maybeSingle();
 
@@ -265,7 +266,7 @@ async function handlePost(req, res, supabase, host) {
 
   const { data: site } = await supabase
     .from("agent_sites")
-    .select("*, agent:profiles(*), org:organizations(*)")
+    .select(`*, agent:profiles(*, ${TEAM_EMBED}), org:organizations(*)`)
     .ilike("custom_domain", host)
     .maybeSingle();
   if (site) brokerage = brandFromOrg(site.org);

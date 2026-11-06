@@ -102,7 +102,7 @@ const hoverLink = "block hover:text-[var(--as-on-dark)] transition-colors";
 export default function Footer() {
   const { site } = useAgentSiteContext();
   const { agent, brokerage } = site;
-  const firstName = agent.name.split(" ")[0];
+  const firstName = agent.first;
   const landing = resolveLanding(site.landing);
   const landingLinks = site.homeSections.includes("cards") && landing.menu ? landing.cards.filter((c) => c.on).map((c) => ({ path: c.path, label: () => c.nav })) : [];
   const baseLinks = EXPLORE_LINKS.filter((link) => (!link.sectionKey || site.homeSections.includes(link.sectionKey)) && (!link.needsSales || (site.sales || []).length > 0));

@@ -31,3 +31,7 @@ export function validLogoVariant(brand, current) {
   if (!keys.length || keys.includes(current)) return current;
   return keys.includes("red") ? "red" : keys[0];
 }
+
+// Themes whose header and footer are a solid dark brand color (Red, Velvet), so the white logo is always the one shown, whatever was picked.
+export const WHITE_LOGO_THEMES = ["red", "velvet", "velvet-night"];
+export const logoForTheme = (theme) => WHITE_LOGO_THEMES.includes(theme);

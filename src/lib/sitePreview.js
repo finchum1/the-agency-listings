@@ -18,6 +18,8 @@ export const THEME_OPTIONS = [
   { value: "sand", label: "Sand", swatches: ["#ddd0ba", "#0d0d0d", "#ed2127"] },
   { value: "red", label: "Red", swatches: ["#ffffff", "#ed2127", "#0d0d0d"] },
   { value: "linen", label: "Linen", swatches: ["#ffffff", "#f0ece4", "#ed2127"] },
+  { value: "velvet", label: "Velvet", swatches: ["#faf6f0", "#470300", "#ffffff"] },
+  { value: "velvet-night", label: "Velvet Night", swatches: ["#470300", "#260100", "#f2454b"] },
 ];
 export const HEADER_OPTIONS = [
   { value: "classic", label: "Classic bar" },

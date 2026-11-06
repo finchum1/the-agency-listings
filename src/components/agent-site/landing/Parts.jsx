@@ -117,32 +117,38 @@ export function Pillars({ items }) {
   );
 }
 
-/** The agent, as a name, photo and ways to reach them. */
+/** The agent, as a name, photo and ways to reach them (everyone on the team, for a team site). */
 export function AgentCard({ onDark = true }) {
   const { site } = useAgentSiteContext();
   const { agent } = site;
+  const people = agent.members;
   return (
-    <div className="flex items-center gap-5">
-      {agent.photo && <img src={agent.photo} alt={agent.name} className="h-20 w-20 rounded-full object-cover bg-[var(--as-surface)] shrink-0" />}
-      <div className="min-w-0">
-        <p className="font-display text-2xl font-semibold">{agent.name}</p>
-        <p className={`text-sm ${onDark ? "opacity-70" : "opacity-60"}`}>
-          {[agent.title, site.brokerage.name].filter(Boolean).join(" · ")}
-          {agent.license ? ` · ${agent.license}` : ""}
-        </p>
-        <div className="mt-1 flex flex-col text-sm gap-0.5">
-          {agent.phone && (
-            <a href={`tel:${agent.phone}`} className="hover:underline">
-              {agent.phone}
-            </a>
-          )}
-          {agent.email && (
-            <a href={`mailto:${agent.email}`} className="hover:underline break-all">
-              {agent.email}
-            </a>
-          )}
+    <div className="space-y-5">
+      {site.team && <p className="font-display text-2xl font-semibold">{site.team.name}</p>}
+      {people.map((m) => (
+        <div key={m.id || m.email} className="flex items-center gap-5">
+          {m.photo && <img src={m.photo} alt={m.name} className="h-20 w-20 rounded-full object-cover bg-[var(--as-surface)] shrink-0" />}
+          <div className="min-w-0">
+            <p className={`font-display font-semibold ${site.team ? "text-xl" : "text-2xl"}`}>{m.name}</p>
+            <p className={`text-sm ${onDark ? "opacity-70" : "opacity-60"}`}>
+              {[m.title, site.brokerage.name].filter(Boolean).join(" · ")}
+              {m.license ? ` · ${m.license}` : ""}
+            </p>
+            <div className="mt-1 flex flex-col text-sm gap-0.5">
+              {m.phone && (
+                <a href={`tel:${m.phone}`} className="hover:underline">
+                  {m.phone}
+                </a>
+              )}
+              {m.email && (
+                <a href={`mailto:${m.email}`} className="hover:underline break-all">
+                  {m.email}
+                </a>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 }

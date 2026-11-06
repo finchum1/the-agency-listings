@@ -11,7 +11,7 @@ const NEIGHBORHOODS = ["Carlton Landing", "Bricktown", "Downtown Edmond", "Norma
 // the agent as a lead.
 export default function BuyersPage() {
   const { site } = useAgentSiteContext();
-  const first = (site.agent.name || "").split(" ")[0] || "your agent";
+  const first = site.agent.first || "your agent";
   const isAgency = /the agency/i.test(site.brokerage.name);
   const oklahoma = /oklahoma/i.test(site.brokerage.locationLabel || "");
 
@@ -85,7 +85,7 @@ export default function BuyersPage() {
             <p className="mt-2 font-display text-2xl font-semibold">An opinion letter</p>
             <p className="mt-2 text-[15px] leading-relaxed opacity-75">A lender&rsquo;s educated guess. Helpful, but not the same thing.</p>
           </div>
-          <div className="bg-[var(--as-dark)] text-[var(--as-on-dark)] p-7 border-t-4 border-[var(--as-accent)]">
+          <div className="bg-[var(--as-dark)] text-[var(--as-on-dark)] p-7 border-t-4 border-[var(--as-accent-on-dark)]">
             <p className="text-xs font-semibold tracked-wide uppercase text-[var(--as-on-dark)]/70">Pre-approved</p>
             <p className="mt-2 font-display text-2xl font-semibold">A full loan approval</p>
             <p className="mt-2 text-[15px] leading-relaxed opacity-80">Sets your price range and makes your offer stronger. This is the one you want.</p>
@@ -151,7 +151,7 @@ export default function BuyersPage() {
           {CLOSING_STEPS.map((c, i) => {
             const last = i === CLOSING_STEPS.length - 1;
             return (
-              <div key={c.title} className={`p-6 border-t-4 ${last ? "bg-[var(--as-dark)] text-[var(--as-on-dark)] border-[var(--as-accent)]" : "bg-[var(--as-bg-alt)] border-[var(--as-text)]"}`}>
+              <div key={c.title} className={`p-6 border-t-4 ${last ? "bg-[var(--as-dark)] text-[var(--as-on-dark)] border-[var(--as-accent-on-dark)]" : "bg-[var(--as-bg-alt)] border-[var(--as-text)]"}`}>
                 <p className={`text-xs font-semibold tracked-wide uppercase ${last ? "text-[var(--as-on-dark)]/70" : "opacity-50"}`}>Step {i + 1}</p>
                 <p className="mt-1.5 font-display text-xl font-semibold">{c.title}</p>
                 <p className={`mt-1.5 text-[15px] leading-relaxed ${last ? "opacity-80" : "opacity-70"}`}>{c.body}</p>
@@ -198,7 +198,7 @@ function WishList() {
     const { name, email, phone, ...details } = f;
     submit({ name, email, phone, details });
   };
-  const first = (site.agent.name || "").split(" ")[0] || "your agent";
+  const first = site.agent.first || "your agent";
   const group = "text-xl sm:text-2xl font-display font-semibold";
 
   return (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { TEAM_EMBED } from "../lib/teams";
 
 // Fetches one published post by its parent site's slug (normal
 // /sites/:slug/blog/:postSlug path) or siteCustomDomain (the site's own
@@ -20,7 +21,7 @@ export function useAgentPost({ siteSlug, siteCustomDomain, postSlug }) {
     setNotFound(false);
 
     (async () => {
-      let siteQuery = supabase.from("agent_sites").select("*, agent:profiles(*), org:organizations(*)");
+      let siteQuery = supabase.from("agent_sites").select(`*, agent:profiles(*, ${TEAM_EMBED}), org:organizations(*)`);
       siteQuery = siteSlug ? siteQuery.eq("slug", siteSlug) : siteQuery.ilike("custom_domain", siteCustomDomain);
       const { data: siteRow } = await siteQuery.maybeSingle();
 

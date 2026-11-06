@@ -58,7 +58,7 @@ export default async function handler(req, res) {
 
   const { data: site, error: siteError } = await supabase
     .from("agent_sites")
-    .select("agent_id, agent:profiles(full_name, email)")
+    .select("agent_id, agent:profiles(full_name, email, team:teams(name, members:profiles(email, full_name)))")
     .eq("id", agentSiteId)
     .maybeSingle();
 
@@ -110,6 +110,11 @@ export default async function handler(req, res) {
 
   try {
     const alert = await leadAlertContext(supabaseAdmin, site.agent_id, site.agent.email);
+    // A team site's inquiry goes to everyone on the team, and the thank-you the visitor gets is from the team.
+    const team = site.agent.team?.name ? site.agent.team : null;
+    const mates = (team?.members || []).filter((m) => m.email && m.email.toLowerCase() !== site.agent.email.toLowerCase());
+    for (const m of mates) if (!alert.to.some((x) => String(x).toLowerCase() === m.email.toLowerCase())) alert.to.push(m.email);
+    const greeting = team ? [site.agent.full_name, ...mates.map((m) => m.full_name)].filter(Boolean).map((n) => n.split(" ")[0]).join(" and ") : "";
     // The agent's plans start now (a task to call, a drafted text), and the email gets one-tap reply buttons.
     const reply = await respondToNewLead(supabaseAdmin, { agentId: site.agent_id, agentName: site.agent.full_name, lead: { name, email, phone } });
     if (reply.dashboardUrl) alert.dashboardUrl = reply.dashboardUrl;
@@ -134,6 +139,7 @@ export default async function handler(req, res) {
       html: renderLeadEmailHtml({
         heading: `${existingPerson ? "Repeat" : "New"} ${kind} from ${name}`,
         agentName: site.agent.full_name,
+        greeting,
         notice,
         fields: [["Name", name], ["Email", email], ["Phone", phone || "—"], ...(page && address ? [["Property", address]] : [])],
         message,
@@ -147,7 +153,7 @@ export default async function handler(req, res) {
       await sendConfirmation(apiKey, {
         from: fromEmail,
         visitor: { name, email },
-        agentName: site.agent.full_name,
+        agentName: site.agent.team?.name || site.agent.full_name,
         agentEmail: site.agent.email,
         ...(page === "home_value" ? { about: "your home value", when: "within one business day" } : page === "relocation" ? { about: "your move to Oklahoma", when: "within one business day" } : {}),
       });

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { TEAM_EMBED } from "../lib/teams";
 
 // Fetches one agent's area of expertise — by the parent site's slug or
 // customDomain, plus the area's own slug — along with just enough of the
@@ -17,7 +18,7 @@ export function useAgentArea({ siteSlug, siteCustomDomain, areaSlug }) {
     setLoading(true);
     setNotFound(false);
 
-    let siteQuery = supabase.from("agent_sites").select("*, agent:profiles(*), org:organizations(*)");
+    let siteQuery = supabase.from("agent_sites").select(`*, agent:profiles(*, ${TEAM_EMBED}), org:organizations(*)`);
     siteQuery = siteSlug ? siteQuery.eq("slug", siteSlug) : siteQuery.ilike("custom_domain", siteCustomDomain);
     const { data: siteRow } = await siteQuery.maybeSingle();
 

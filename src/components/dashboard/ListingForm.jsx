@@ -150,6 +150,18 @@ const THEMES = [
     description: "All-white and soft cream throughout, even the header & footer — the brand red as the only pop of color.",
     swatches: ["#ffffff", "#f0ece4", "#ed2127"],
   },
+  {
+    value: "velvet",
+    label: "Velvet",
+    description: "Cream and white sections with The Agency's Velvet for the header, hero shade, testimonials & footer.",
+    swatches: ["#faf6f0", "#470300", "#ffffff"],
+  },
+  {
+    value: "velvet-night",
+    label: "Velvet Night",
+    description: "Velvet all the way through: a deep Velvet page with cream text and a bright red accent.",
+    swatches: ["#470300", "#260100", "#f2454b"],
+  },
 ];
 
 // Same six pairings as SiteForm.jsx's FONT_PAIRINGS, read via --ls-* in

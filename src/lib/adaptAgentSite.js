@@ -1,4 +1,5 @@
 import { adaptTeam } from "./teams";
+import { logoForTheme } from "./brandChoices";
 import { brandFromOrg } from "./brand";
 import { paragraphsToHtml } from "./richTextFallback";
 
@@ -9,6 +10,10 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
   // A closed listing the agent copied into their past sales shows there, not in the current listings too.
   const soldListingIds = new Set((sales || []).map((s) => s.listing_id).filter(Boolean));
   const brokerage = brandFromOrg(site.org);
+  // A site that belongs to someone on a team is the team's site: the team's name stands in for the agent's everywhere the site shows a name,
+  // and everyone on the team shows in the contact areas (see `members`). `ownName` is still the site owner's own name.
+  const team = adaptTeam(agent);
+  const ownName = agent?.full_name || "";
   return {
     brand: {
       name: agent?.full_name || "",
@@ -23,7 +28,7 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     // near-matching background.
     brokerage: {
       ...brokerage,
-      logo: site.theme === "red" ? (brokerage.logos.white || brokerage.logo) : brokerage.logos[site.logo_variant] || brokerage.logo,
+      logo: logoForTheme(site.theme) ? (brokerage.logos.white || brokerage.logo) : brokerage.logos[site.logo_variant] || brokerage.logo,
     },
     logoVariant: site.logo_variant || "red",
     slug: site.slug,
@@ -81,11 +86,19 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
       x: site.x_url || "",
     },
     // The agent's team (lib/teams.js), for the "Meet the team" home section; null when they aren't on one.
-    team: adaptTeam(agent),
+    team,
     agent: {
-      name: agent?.full_name || "",
-      title: agent?.title || "Real Estate Agent",
-      license: agent?.license || "",
+      // What the site calls its agent: the team's name for a team site, the agent's own name otherwise. `first` is the same, but the first
+      // name only for a single agent, for "About Alex" and "Alex will be in touch".
+      name: team ? team.name : ownName,
+      first: team ? team.name : ownName.split(" ")[0],
+      ownName,
+      // Everyone to show in a contact area: the whole team, or just the agent.
+      members: team ? team.members : [{ id: agent?.id || "", name: ownName, title: agent?.title || "Real Estate Agent", license: agent?.license || "", phone: agent?.phone || "", email: agent?.email || "", photo: agent?.photo_url || "" }],
+      // For a team site, one person's title and license under the team's name would be wrong, so the title is the team's and there is no license
+      // line; each person's own are in `members`.
+      title: team ? "Real Estate Team" : agent?.title || "Real Estate Agent",
+      license: team ? "" : agent?.license || "",
       phone: agent?.phone || "",
       email: agent?.email || "",
       photo: agent?.photo_url || "",

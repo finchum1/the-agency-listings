@@ -71,15 +71,23 @@ function useAlternatingBands(ref) {
   }, []);
 }
 
+// A team site always shows its team: if the agent hasn't placed "Meet the team" themselves, it goes right after the bio (or first, with no bio).
+function withTeam(site) {
+  if (!site.team || site.team.members.length < 2 || site.homeSections.includes("team")) return site.homeSections;
+  const at = site.homeSections.indexOf("bio");
+  return at < 0 ? ["team", ...site.homeSections] : [...site.homeSections.slice(0, at + 1), "team", ...site.homeSections.slice(at + 1)];
+}
+
 export default function HomeSections() {
   const { site } = useAgentSiteContext();
   const bands = useRef(null);
   useAlternatingBands(bands);
   // A "listings first" layout puts the listings straight after the hero, whatever order the agent set for the rest.
+  const homeSections = withTeam(site);
   const sectionOrder =
-    LISTINGS_FIRST_LAYOUTS.includes(site.layout) && site.homeSections.includes("listings")
-      ? ["listings", ...site.homeSections.filter((k) => k !== "listings")]
-      : site.homeSections;
+    LISTINGS_FIRST_LAYOUTS.includes(site.layout) && homeSections.includes("listings")
+      ? ["listings", ...homeSections.filter((k) => k !== "listings")]
+      : homeSections;
   // Classic layout: the hero stays pinned and the rest of the page scrolls up over it, so the first scroll covers the
   // photo instead of moving it away. The sections all have solid backgrounds; they sit in a layer above the hero.
   // The wrapper limits how long the hero stays pinned to this block, so the footer is never under it.

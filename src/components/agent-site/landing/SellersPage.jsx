@@ -9,7 +9,7 @@ import { CLOSING_CHECKLIST, OFFER_OPTIONS, PILLARS, SELLER_COSTS, SELLER_PREP, S
 // /sellers: the seller's guide as a page (condensed from The Agency's Seller's Guide), ending in a request for a listing consultation.
 export default function SellersPage() {
   const { site } = useAgentSiteContext();
-  const first = (site.agent.name || "").split(" ")[0] || "your agent";
+  const first = site.agent.first || "your agent";
   const isAgency = /the agency/i.test(site.brokerage.name);
 
   return (
@@ -195,7 +195,7 @@ function SellerCta() {
           {status === "sent" ? (
             <div role="status" className="py-6 text-center">
               <p className="font-display text-2xl font-semibold">Got it. Thank you!</p>
-              <p className="mt-3 text-[15px] opacity-75">{(site.agent.name || "Your agent").split(" ")[0]} will be in touch shortly to talk about your home.</p>
+              <p className="mt-3 text-[15px] opacity-75">{(site.agent.first || "Your agent")} will be in touch shortly to talk about your home.</p>
             </div>
           ) : (
             <form onSubmit={onSubmit} className="relative space-y-4">
