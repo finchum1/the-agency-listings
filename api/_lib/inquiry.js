@@ -195,8 +195,9 @@ export async function leadAlertContext(admin, agentId, primaryEmail) {
 }
 
 // The formatted lead alert. Everything the visitor typed is escaped.
-export function renderLeadEmailHtml({ heading, agentName, notice, about, fields, message, dashboardUrl, actions = [] }) {
-  const first = escapeHtml((agentName || "").split(" ")[0] || "there");
+export function renderLeadEmailHtml({ heading, agentName, greeting, notice, about, fields, message, dashboardUrl, actions = [] }) {
+  // `greeting` names everyone the alert goes to ("Emma and Skyler") when it goes to a team; otherwise it is the agent's first name.
+  const first = escapeHtml(greeting || (agentName || "").split(" ")[0] || "there");
   const rows = fields
     .map(
       ([label, value]) =>

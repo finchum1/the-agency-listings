@@ -72,7 +72,8 @@ export function startingText(listing, agent, type, openHouses) {
     detailDay: oh?.day || "",
     detailTime: oh?.time || "",
     showAgent: true,
-    agent: agent?.full_name ? `Listed by: ${agent.full_name}` : "",
+    // The team's name when the agent is on one (and this listing shows it), else the agent's own.
+    agent: (listing.show_team !== false && agent?.team?.name) || agent?.full_name ? `Listed by: ${(listing.show_team !== false && agent?.team?.name) || agent.full_name}` : "",
   };
 }
 

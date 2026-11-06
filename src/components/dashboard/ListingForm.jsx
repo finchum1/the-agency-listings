@@ -220,6 +220,7 @@ const emptyListing = {
   site_template: "classic",
   header_style: "classic",
   header_label: "",
+  show_team: true,
   custom_domain: "",
   seo_title: "",
   seo_description: "",
@@ -288,6 +289,7 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
         site_template: listing.site_template || "classic",
         header_style: listing.header_style || "classic",
         header_label: listing.header_label || "",
+        show_team: listing.show_team !== false,
         custom_domain: listing.custom_domain || "",
         seo_title: listing.seo_title || "",
         seo_description: listing.seo_description || "",
@@ -517,6 +519,17 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
           />
           <p className="text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-1">Shows beside the logo in the header, like the agent name does on an agent site. Leave empty for none.</p>
         </div>
+        {listing?.agent?.team && (
+          <label className="flex items-start gap-2.5 text-sm cursor-pointer">
+            <input type="checkbox" checked={form.show_team} onChange={(e) => setForm((f) => ({ ...f, show_team: e.target.checked }))} className="mt-0.5" />
+            <span>
+              <span className="font-medium">Show {listing.agent.team.name} on this listing</span>
+              <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+                The property site, flyer, social post and inquiries use the whole team. Turn off to show only the listing agent.
+              </span>
+            </span>
+          </label>
+        )}
         <label className={labelClass}>Header style</label>
         <div className="grid sm:grid-cols-2 gap-3">
           {HEADER_STYLES.map((h) => (

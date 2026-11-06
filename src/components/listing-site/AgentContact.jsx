@@ -8,29 +8,51 @@ import { trackListingEvent } from "../../lib/trackView";
 const fieldClass =
   "w-full rounded-lg border border-[var(--ls-text)]/20 bg-[var(--ls-bg)] text-[var(--ls-text)] placeholder:text-[var(--ls-text)]/50 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ls-accent)]/40";
 
-// The listing agent: photo, name, license and tap-to-call / email links. Also used by the layouts that put the contact form in a
-// side card.
-export function AgentCard({ className = "" }) {
-  const { listing } = useListingContext();
-  const { agent, brokerage } = listing;
+// One person: photo, name, title and license, and tap-to-call / email links.
+function PersonRow({ person, brokerage }) {
   return (
-    <div className={`flex items-center gap-4 bg-[var(--ls-bg-alt)] border border-black/5 rounded-2xl p-5 ${className}`}>
-      <img src={agent.photo} alt={agent.name} className="h-16 w-16 rounded-full object-cover bg-black/5 shrink-0" />
+    <div className="flex items-center gap-4">
+      <img src={person.photo} alt={person.name} className="h-16 w-16 rounded-full object-cover bg-black/5 shrink-0" />
       <div className="min-w-0">
-        <p className="font-semibold text-[var(--ls-text)]">{agent.name}</p>
-        <p className="text-sm text-[var(--ls-text)]/60">{agent.title}</p>
+        <p className="font-semibold text-[var(--ls-text)]">{person.name}</p>
+        <p className="text-sm text-[var(--ls-text)]/60">{person.title}</p>
         <p className="text-sm text-[var(--ls-text)]/60">
-          {brokerage.name} — {agent.license}
+          {brokerage.name}{person.license ? ` — ${person.license}` : ""}
         </p>
         <div className="flex flex-col gap-0.5 mt-1 text-sm">
-          <a href={`tel:${agent.phone}`} onClick={() => trackListingEvent("phone_click")} className="text-[var(--ls-accent)] hover:underline">
-            {agent.phone}
+          <a href={`tel:${person.phone}`} onClick={() => trackListingEvent("phone_click")} className="text-[var(--ls-accent)] hover:underline">
+            {person.phone}
           </a>
-          <a href={`mailto:${agent.email}`} onClick={() => trackListingEvent("email_click")} className="text-[var(--ls-accent)] hover:underline break-all">
-            {agent.email}
+          <a href={`mailto:${person.email}`} onClick={() => trackListingEvent("email_click")} className="text-[var(--ls-accent)] hover:underline break-all">
+            {person.email}
           </a>
         </div>
       </div>
+    </div>
+  );
+}
+
+// The listing agent, or the whole team when the agent is on one: the team's name over a row for each person.
+export function AgentCard({ className = "" }) {
+  const { listing } = useListingContext();
+  const { agent, brokerage, team } = listing;
+  const box = `bg-[var(--ls-bg-alt)] border border-black/5 rounded-2xl p-5 ${className}`;
+  if (team) {
+    return (
+      <div className={box}>
+        <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent)]">Listed by</p>
+        <p className="font-display text-xl font-semibold text-[var(--ls-text)] mt-0.5 mb-5">{team.name}</p>
+        <div className="space-y-5">
+          {team.members.map((m) => (
+            <PersonRow key={m.id || m.email} person={m} brokerage={brokerage} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className={box}>
+      <PersonRow person={agent} brokerage={brokerage} />
     </div>
   );
 }

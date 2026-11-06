@@ -73,6 +73,7 @@ export default async function handler(req, res) {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   let recipientEmail, leadTargetType, leadTargetId, leadAgentId, subject, bodyLines, agentName, about;
+  let teamEmails = [], teamName = "", greeting = "";
 
   if (isValuation) {
     // Which brokerage is this form for? The one that owns the domain it was submitted from, or The Agency on the
@@ -96,7 +97,7 @@ export default async function handler(req, res) {
   } else {
     const { data: listing, error: listingError } = await supabase
       .from("listings")
-      .select("address_line1, agent_id, agent:profiles(email, full_name)")
+      .select("address_line1, agent_id, show_team, agent:profiles(email, full_name, team:teams(name, members:profiles(email, full_name)))")
       .eq("id", listingId)
       .maybeSingle();
     if (listingError || !listing || !listing.agent?.email) {
@@ -108,6 +109,14 @@ export default async function handler(req, res) {
     leadTargetId = listingId;
     leadAgentId = listing.agent_id;
     agentName = listing.agent.full_name;
+    // An agent on a team: the inquiry goes to everyone on the team, and the visitor's thank-you is from the team (unless this listing shows only its agent).
+    const team = listing.show_team !== false ? listing.agent.team : null;
+    if (team?.name) {
+      const mates = (team.members || []).filter((m) => m.email && m.email.toLowerCase() !== recipientEmail.toLowerCase());
+      teamEmails = mates.map((m) => m.email);
+      teamName = team.name;
+      greeting = [listing.agent.full_name, ...mates.map((m) => m.full_name)].filter(Boolean).map((n) => n.split(" ")[0]).join(" and ");
+    }
     about = listing.address_line1;
     subject = `New inquiry: ${listing.address_line1} — ${name}`;
     bodyLines = [`Name: ${name}`, `Email: ${email}`, `Phone: ${phone || "—"}`, "", message || "(no message)"];
@@ -156,6 +165,7 @@ export default async function handler(req, res) {
   try {
     const finalSubject = existingPerson ? `Repeat ${subject.charAt(0).toLowerCase()}${subject.slice(1)}` : subject;
     const alert = await leadAlertContext(isValuation ? null : supabaseAdmin, leadAgentId, recipientEmail);
+    for (const e of teamEmails) if (!alert.to.some((x) => String(x).toLowerCase() === e.toLowerCase())) alert.to.push(e);
     // The agent's plans start now (a task to call, a drafted text), and the email gets one-tap reply buttons.
     const reply = await respondToNewLead(supabaseAdmin, { agentId: leadAgentId, agentName, lead: { name, email, phone } });
     if (reply.dashboardUrl) alert.dashboardUrl = reply.dashboardUrl;
@@ -168,6 +178,7 @@ export default async function handler(req, res) {
       html: renderLeadEmailHtml({
         heading: finalSubject,
         agentName,
+        greeting,
         notice: existingPerson ? `Already in your People: ${describePerson(existingPerson)}` : "",
         fields: [...(isValuation ? [["Property", address]] : []), ["Name", name], ["Email", email], ["Phone", phone || "—"]],
         message,
@@ -181,7 +192,7 @@ export default async function handler(req, res) {
       await sendConfirmation(apiKey, {
         from: fromEmail,
         visitor: { name, email },
-        agentName,
+        agentName: teamName || agentName,
         agentEmail: isValuation ? null : recipientEmail,
         about,
       });

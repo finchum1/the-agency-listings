@@ -1,3 +1,4 @@
+import FlyerTeam from "./FlyerTeam";
 import { formatPrice, STATUS_LABELS } from "../../../lib/format";
 import BrandLogo from "../../BrandLogo";
 import FlyerQr from "../FlyerQr";
@@ -15,7 +16,7 @@ const STAT_ICONS = {
 // formatted by FlyerPage.
 // The sheet is flex column, not fixed-height absolute blocks: the footer sits right after the content instead of being pinned to
 // a positioned ancestor, and if the content runs long the sheet grows onto a second printed page instead of overlapping.
-export default function ClassicSheet({ listing, agent, brokerage, headline, blurb, heroPhoto, printHeroUrl, galleryPhotos, includedFeatures, f, qrUrl, includeQr }) {
+export default function ClassicSheet({ listing, agent, team, brokerage, headline, blurb, heroPhoto, printHeroUrl, galleryPhotos, includedFeatures, f, qrUrl, includeQr }) {
   return (
       <div
         id="flyer-sheet"
@@ -111,6 +112,9 @@ export default function ClassicSheet({ listing, agent, brokerage, headline, blur
         </div>
 
         <div className="shrink-0 px-6 py-4 bg-white border-t border-black/5 flex items-center justify-between">
+          {team ? (
+            <FlyerTeam team={team} />
+          ) : (
           <div className="flex items-center gap-4">
             {agent?.photo_url && (
               <img src={agent.photo_url} alt="" className="h-[0.95in] w-[0.95in] rounded-full object-cover bg-black/5" />
@@ -122,6 +126,7 @@ export default function ClassicSheet({ listing, agent, brokerage, headline, blur
               {agent?.license && <p className="mt-0.5 text-[11px] text-[#1c1a17]/45">{agent.license}</p>}
             </div>
           </div>
+          )}
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-[10px] text-[#1c1a17]/50">

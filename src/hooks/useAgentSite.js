@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { TEAM_EMBED } from "../lib/teams";
 import { supabase } from "../lib/supabaseClient";
 
 // Fetches one agent's public site — by slug (normal /sites/:slug path) or
@@ -45,7 +46,7 @@ export function useAgentSite({ slug, customDomain, previewToken } = {}) {
       return;
     }
 
-    let query = supabase.from("agent_sites").select("*, agent:profiles(*), org:organizations(*)");
+    let query = supabase.from("agent_sites").select(`*, agent:profiles(*, ${TEAM_EMBED}), org:organizations(*)`);
     query = slug ? query.eq("slug", slug) : query.ilike("custom_domain", customDomain);
     const { data: siteRow, error } = await query.maybeSingle();
 

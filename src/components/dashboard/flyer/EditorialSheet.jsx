@@ -1,3 +1,4 @@
+import FlyerTeam from "./FlyerTeam";
 import { formatPrice, STATUS_LABELS } from "../../../lib/format";
 import BrandLogo from "../../BrandLogo";
 import FlyerQr from "../FlyerQr";
@@ -7,7 +8,7 @@ const MAX_SIDE_PHOTOS = 3;
 // Minimal editorial: white space, a large serif address, one unframed hero photo, the facts set in a single quiet line, then
 // the story on the left with a column of photos on the right. The hero is a CSS background (not an <img>) for the same print
 // reason as the Classic layout.
-export default function EditorialSheet({ listing, agent, brokerage, headline, blurb, heroPhoto, printHeroUrl, galleryPhotos, includedFeatures, f, qrUrl, includeQr }) {
+export default function EditorialSheet({ listing, agent, team, brokerage, headline, blurb, heroPhoto, printHeroUrl, galleryPhotos, includedFeatures, f, qrUrl, includeQr }) {
   const facts = [
     { label: "Beds", value: f.beds },
     { label: "Baths", value: f.baths },
@@ -77,6 +78,9 @@ export default function EditorialSheet({ listing, agent, brokerage, headline, bl
 
       <div className="mt-[0.15in] px-[0.6in] pb-[0.3in]">
         <div className="border-t border-[#1c1a17]/15 pt-4 flex items-center justify-between gap-6">
+          {team ? (
+            <FlyerTeam team={team} />
+          ) : (
           <div className="flex items-center gap-4 min-w-0">
             {agent?.photo_url && <img src={agent.photo_url} alt="" className="h-[0.9in] w-[0.9in] rounded-full object-cover bg-black/5 shrink-0" />}
             <div className="min-w-0">
@@ -86,6 +90,7 @@ export default function EditorialSheet({ listing, agent, brokerage, headline, bl
               {agent?.license && <p className="mt-0.5 text-[10px] text-[#1c1a17]/45">{agent.license}</p>}
             </div>
           </div>
+          )}
           {includeQr && qrUrl && (
             <div className="flex items-center gap-3 shrink-0">
               <p className="text-[8px] font-semibold tracking-[0.22em] uppercase text-[#1c1a17]/60 text-right leading-snug">

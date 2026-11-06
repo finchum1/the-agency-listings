@@ -1,3 +1,4 @@
+import { adaptTeam } from "./teams";
 import { brandFromOrg } from "./brand";
 import { paragraphsToHtml } from "./richTextFallback";
 
@@ -79,6 +80,8 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
       youtube: site.youtube_url || "",
       x: site.x_url || "",
     },
+    // The agent's team (lib/teams.js), for the "Meet the team" home section; null when they aren't on one.
+    team: adaptTeam(agent),
     agent: {
       name: agent?.full_name || "",
       title: agent?.title || "Real Estate Agent",

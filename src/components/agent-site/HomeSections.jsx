@@ -8,6 +8,7 @@ import ServiceAreas from "./ServiceAreas";
 import BlogTeaser from "./BlogTeaser";
 import LandingCards from "./landing/LandingCards";
 import Contact from "./Contact";
+import Team from "./Team";
 import { LISTINGS_FIRST_LAYOUTS } from "./layouts";
 
 // Home page composition, driven by agent_sites.home_sections — which of
@@ -24,6 +25,7 @@ const SECTION_COMPONENTS = {
   areas: ServiceAreas,
   blog: BlogTeaser,
   cards: LandingCards,
+  team: Team,
 };
 
 // Sections take their background from the theme's two light tones (--as-bg and --as-bg-alt), and which one a section uses is fixed in the section.

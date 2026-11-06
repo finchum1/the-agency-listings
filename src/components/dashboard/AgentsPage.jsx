@@ -5,6 +5,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useOrg } from "../../context/OrgContext";
 import ImageUploadField from "./ImageUploadField";
 import AgentRow from "./AgentRow";
+import TeamsManager from "./TeamsManager";
 
 const emptyForm = {
   email: "",
@@ -202,6 +203,9 @@ export default function AgentsPage() {
         )}
       </div>
 
+      <div className="space-y-8">
+      <TeamsManager orgId={orgId} agents={agents} onChanged={() => refresh(true)} />
+
       <div>
         <h2 className="text-lg font-display font-semibold mb-4 mt-1">Add an Agent</h2>
         <form onSubmit={handleAdd} className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
@@ -306,6 +310,7 @@ export default function AgentsPage() {
             {saving ? "Saving…" : form.sendInvite ? "Send Invite" : "Add Agent"}
           </button>
         </form>
+      </div>
       </div>
     </div>
   );

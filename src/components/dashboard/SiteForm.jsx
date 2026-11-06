@@ -173,6 +173,7 @@ const HOME_SECTION_LABELS = {
   listings: "Featured Listings",
   areas: "Service Areas",
   blog: "Blog",
+  team: "Meet the team (if you're on a team)",
 };
 // The three layouts that belong to the starter templates: they are picked there, not in the Layout list (see lib/siteTemplates.js).
 const TEMPLATE_LAYOUTS = SITE_TEMPLATES.map((t) => t.settings.layout);

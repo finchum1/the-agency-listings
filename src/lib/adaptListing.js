@@ -1,18 +1,20 @@
 import { brandFromOrg } from "./brand";
 import { parseVideoLink } from "./videoEmbed";
 import { STATUS_LABELS } from "./format";
+import { adaptTeam } from "./teams";
 
 // Shapes a Supabase `listings` row (+ agent profile + photos) into the
 // exact object shape property-site-template/src/data/listing.js used to
 // export statically, so the ported site components need almost no changes.
 export function adaptListing({ listing, agent, photos }) {
   const brokerage = brandFromOrg(listing.org);
+  const team = adaptTeam(agent, listing.show_team !== false);
   const mlsNumber = listing.mls_number ? `MLS# ${listing.mls_number}` : "";
 
   return {
     brand: {
       name: listing.address_line1,
-      tagline: `${agent?.full_name || brokerage.name} — ${brokerage.name}`,
+      tagline: `${team?.name || agent?.full_name || brokerage.name} — ${brokerage.name}`,
     },
     // logo_variant picks among brokerage.logos (red/white/black) — falls
     // back to the default red mark for older listings saved before this
@@ -68,6 +70,8 @@ export function adaptListing({ listing, agent, photos }) {
     // A YouTube or Vimeo link is an embed: it can play silently behind the classic hero, but not drive the Luxury scroll effect
     // (that needs a real file), so on the Luxury template an embed set for the hero is shown above the gallery instead.
     ...videoSpots(listing),
+    // The agent's team, when they're on one (and this listing hasn't opted out): { name, members } with the listing's agent first.
+    team,
     agent: {
       name: agent?.full_name || "",
       title: agent?.title || "Real Estate Agent",

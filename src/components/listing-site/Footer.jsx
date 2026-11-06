@@ -3,7 +3,8 @@ import BrandLogo from "../BrandLogo";
 
 export default function Footer() {
   const { listing } = useListingContext();
-  const { agent, brand, brokerage } = listing;
+  const { agent, brand, brokerage, team } = listing;
+  const people = team ? team.members : [agent];
   const year = new Date().getFullYear();
 
   return (
@@ -20,13 +21,19 @@ export default function Footer() {
           </div>
 
           <div>
-            <p className="text-[var(--ls-on-dark)]/90 font-medium mb-2">Listing Agent</p>
-            <p>{agent.name}</p>
-            <p>
-              {brokerage.name} — {agent.license}
-            </p>
-            <p>{agent.phone}</p>
-            <p>{agent.email}</p>
+            <p className="text-[var(--ls-on-dark)]/90 font-medium mb-2">{team ? team.name : "Listing Agent"}</p>
+            <div className="space-y-3">
+              {people.map((p) => (
+                <div key={p.id || p.email}>
+                  <p>{p.name}</p>
+                  <p>
+                    {brokerage.name}{p.license ? ` — ${p.license}` : ""}
+                  </p>
+                  <p>{p.phone}</p>
+                  <p>{p.email}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="sm:text-right flex sm:flex-col sm:items-end justify-between">
