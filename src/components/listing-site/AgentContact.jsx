@@ -8,9 +8,37 @@ import { trackListingEvent } from "../../lib/trackView";
 const fieldClass =
   "w-full rounded-lg border border-[var(--ls-text)]/20 bg-[var(--ls-bg)] text-[var(--ls-text)] placeholder:text-[var(--ls-text)]/50 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--ls-accent)]/40";
 
-export default function AgentContact() {
+// The listing agent: photo, name, license and tap-to-call / email links. Also used by the layouts that put the contact form in a
+// side card.
+export function AgentCard({ className = "" }) {
+  const { listing } = useListingContext();
+  const { agent, brokerage } = listing;
+  return (
+    <div className={`flex items-center gap-4 bg-[var(--ls-bg-alt)] border border-black/5 rounded-2xl p-5 ${className}`}>
+      <img src={agent.photo} alt={agent.name} className="h-16 w-16 rounded-full object-cover bg-black/5 shrink-0" />
+      <div className="min-w-0">
+        <p className="font-semibold text-[var(--ls-text)]">{agent.name}</p>
+        <p className="text-sm text-[var(--ls-text)]/60">{agent.title}</p>
+        <p className="text-sm text-[var(--ls-text)]/60">
+          {brokerage.name} — {agent.license}
+        </p>
+        <div className="flex flex-col gap-0.5 mt-1 text-sm">
+          <a href={`tel:${agent.phone}`} onClick={() => trackListingEvent("phone_click")} className="text-[var(--ls-accent)] hover:underline">
+            {agent.phone}
+          </a>
+          <a href={`mailto:${agent.email}`} onClick={() => trackListingEvent("email_click")} className="text-[var(--ls-accent)] hover:underline break-all">
+            {agent.email}
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// The inquiry form. `compact` is for a narrow side card: less padding, and name/phone stack instead of sitting side by side.
+export function InquiryForm({ compact = false }) {
   const { listing, listingId } = useListingContext();
-  const { agent, address, brokerage } = listing;
+  const { agent, address } = listing;
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
   const guard = useSpamGuard();
   // "idle" | "sending" | "sent" | "fallback" | "error"
@@ -56,6 +84,88 @@ export default function AgentContact() {
   };
 
   return (
+    <form
+      onSubmit={handleSubmit}
+      onFocus={() => trackListingEvent("form_start")}
+      className={`bg-[var(--ls-bg-alt)] border border-black/5 rounded-2xl space-y-5 ${compact ? "p-6" : "p-8"}`}
+    >
+      <HoneypotField guard={guard} />
+      <div className={compact ? "space-y-5" : "grid sm:grid-cols-2 gap-5"}>
+        <div>
+          <label className="block text-xs font-medium text-[var(--ls-text)]/60 mb-1.5">
+            Name
+          </label>
+          <input
+            required
+            value={form.name}
+            onChange={update("name")}
+            className={fieldClass}
+            placeholder="Jane Doe"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-[var(--ls-text)]/60 mb-1.5">
+            Phone
+          </label>
+          <input
+            value={form.phone}
+            onChange={update("phone")}
+            className={fieldClass}
+            placeholder="(555) 555-5555"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-[var(--ls-text)]/60 mb-1.5">
+          Email
+        </label>
+        <input
+          required
+          type="email"
+          value={form.email}
+          onChange={update("email")}
+          className={fieldClass}
+          placeholder="jane@email.com"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-[var(--ls-text)]/60 mb-1.5">
+          Message
+        </label>
+        <textarea
+          rows={compact ? 3 : 4}
+          value={form.message}
+          onChange={update("message")}
+          className={fieldClass}
+          placeholder={`I'd like to schedule a tour of ${address.line1}...`}
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={status === "sending"}
+        className="w-full rounded-full bg-[var(--ls-text)] text-[var(--ls-bg)] text-sm font-semibold py-3 hover:opacity-90 transition-opacity disabled:opacity-60"
+      >
+        {status === "sending" ? "Sending…" : "Send Inquiry"}
+      </button>
+      {status === "sent" && (
+        <p className="text-xs text-center text-emerald-700">
+          Thanks! Your message has been sent — we'll be in touch shortly.
+        </p>
+      )}
+      {status === "fallback" && (
+        <p className="text-xs text-center text-[var(--ls-text)]/50">
+          Opening your email app to send this message…
+        </p>
+      )}
+    </form>
+  );
+}
+
+export default function AgentContact() {
+  const { listing } = useListingContext();
+  const { address } = listing;
+
+  return (
     <section id="contact" className="px-6 lg:px-10 py-24">
       <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-start">
         <div>
@@ -70,104 +180,10 @@ export default function AgentContact() {
             the property — we're happy to help.
           </p>
 
-          <div className="flex items-center gap-4 bg-[var(--ls-bg-alt)] border border-black/5 rounded-2xl p-5">
-            <img
-              src={agent.photo}
-              alt={agent.name}
-              className="h-16 w-16 rounded-full object-cover bg-black/5"
-            />
-            <div>
-              <p className="font-semibold text-[var(--ls-text)]">{agent.name}</p>
-              <p className="text-sm text-[var(--ls-text)]/60">{agent.title}</p>
-              <p className="text-sm text-[var(--ls-text)]/60">
-                {brokerage.name} — {agent.license}
-              </p>
-              <div className="flex flex-col gap-0.5 mt-1 text-sm">
-                <a href={`tel:${agent.phone}`} onClick={() => trackListingEvent("phone_click")} className="text-[var(--ls-accent)] hover:underline">
-                  {agent.phone}
-                </a>
-                <a href={`mailto:${agent.email}`} onClick={() => trackListingEvent("email_click")} className="text-[var(--ls-accent)] hover:underline">
-                  {agent.email}
-                </a>
-              </div>
-            </div>
-          </div>
+          <AgentCard />
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          onFocus={() => trackListingEvent("form_start")}
-          className="bg-[var(--ls-bg-alt)] border border-black/5 rounded-2xl p-8 space-y-5"
-        >
-          <HoneypotField guard={guard} />
-          <div className="grid sm:grid-cols-2 gap-5">
-            <div>
-              <label className="block text-xs font-medium text-[var(--ls-text)]/60 mb-1.5">
-                Name
-              </label>
-              <input
-                required
-                value={form.name}
-                onChange={update("name")}
-                className={fieldClass}
-                placeholder="Jane Doe"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-[var(--ls-text)]/60 mb-1.5">
-                Phone
-              </label>
-              <input
-                value={form.phone}
-                onChange={update("phone")}
-                className={fieldClass}
-                placeholder="(555) 555-5555"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[var(--ls-text)]/60 mb-1.5">
-              Email
-            </label>
-            <input
-              required
-              type="email"
-              value={form.email}
-              onChange={update("email")}
-              className={fieldClass}
-              placeholder="jane@email.com"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[var(--ls-text)]/60 mb-1.5">
-              Message
-            </label>
-            <textarea
-              rows={4}
-              value={form.message}
-              onChange={update("message")}
-              className={fieldClass}
-              placeholder={`I'd like to schedule a tour of ${address.line1}...`}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={status === "sending"}
-            className="w-full rounded-full bg-[var(--ls-text)] text-[var(--ls-bg)] text-sm font-semibold py-3 hover:opacity-90 transition-opacity disabled:opacity-60"
-          >
-            {status === "sending" ? "Sending…" : "Send Inquiry"}
-          </button>
-          {status === "sent" && (
-            <p className="text-xs text-center text-emerald-700">
-              Thanks! Your message has been sent — we'll be in touch shortly.
-            </p>
-          )}
-          {status === "fallback" && (
-            <p className="text-xs text-center text-[var(--ls-text)]/50">
-              Opening your email app to send this message…
-            </p>
-          )}
-        </form>
+        <InquiryForm />
       </div>
     </section>
   );

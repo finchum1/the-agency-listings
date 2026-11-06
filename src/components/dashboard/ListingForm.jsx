@@ -10,10 +10,11 @@ import { parseVideoLink } from "../../lib/videoEmbed";
 import FormSaveBar from "./FormSaveBar";
 
 // Structural site templates — distinct from THEMES below (which are
-// color/font variants *within* the classic template). Luxury has its
-// own fixed dark/editorial look (see index.css's [data-theme="luxury"])
-// and isn't customizable via Theme/Accent/Font/Logo, so those sections
-// are hidden once it's selected rather than shown but ignored.
+// color/font variants *within* a template). Luxury has its own fixed
+// dark/editorial look (see index.css's [data-theme="luxury"]) and isn't
+// customizable via Theme/Accent/Font/Logo, so those sections are hidden
+// once it's selected rather than shown but ignored. Classic, Split,
+// Mosaic and Showcase all use the Theme/Accent/Font/Logo choices.
 const SITE_TEMPLATES = [
   {
     value: "classic",
@@ -25,7 +26,77 @@ const SITE_TEMPLATES = [
     label: "Luxury",
     description: "A cinematic video hero that scrubs as you scroll. Fixed dark editorial look.",
   },
+  {
+    value: "split",
+    label: "Split screen",
+    description: "The photo stays pinned on the left while the details scroll on the right. Uses your theme, accent and font.",
+  },
+  {
+    value: "mosaic",
+    label: "Photo mosaic",
+    description: "Opens on a grid of photos, then the price and details with a contact card that follows you down. Uses your theme, accent and font.",
+  },
+  {
+    value: "showcase",
+    label: "Showcase",
+    description: "A quiet, centered, magazine-style page: big address and price, one wide photo, a narrow column of text. Uses your theme, accent and font.",
+  },
 ];
+
+// A tiny drawing of each site layout for the picker: the lighter blocks are photos, the darker lines are text.
+function TemplateSketch({ value }) {
+  const photo = "bg-[#1c1a17]/25 dark:bg-white/30";
+  const text = "bg-[#1c1a17]/45 dark:bg-white/55";
+  const line = "h-[3px] rounded-full " + text;
+  let body;
+  if (value === "luxury") {
+    body = (
+      <div className="relative h-full w-full bg-[#0a0a0a] flex flex-col items-center justify-center gap-1.5">
+        <i className="h-[3px] w-10 rounded-full bg-[#f2ede4]/80" />
+        <i className="h-[3px] w-6 rounded-full bg-[#f2ede4]/40" />
+        <span className="flex gap-1 mt-1"><i className="h-2 w-5 border border-[#f2ede4]/60" /><i className="h-2 w-5 border border-[#f2ede4]/60" /></span>
+      </div>
+    );
+  } else if (value === "split") {
+    body = (
+      <div className="flex h-full w-full">
+        <div className={`w-1/2 ${photo}`} />
+        <div className="w-1/2 p-2 flex flex-col gap-1.5">
+          <i className={`${line} w-3/4`} /><i className={`${line} w-1/2 opacity-60`} />
+          <i className={`${line} w-full mt-1 opacity-40`} /><i className={`${line} w-full opacity-40`} /><i className={`${line} w-2/3 opacity-40`} />
+        </div>
+      </div>
+    );
+  } else if (value === "mosaic") {
+    body = (
+      <div className="h-full w-full p-1.5 flex flex-col gap-1.5">
+        <div className="grid grid-cols-4 grid-rows-2 gap-0.5 h-[55%]">
+          <i className={`col-span-2 row-span-2 ${photo}`} /><i className={photo} /><i className={photo} /><i className={photo} /><i className={photo} />
+        </div>
+        <div className="flex gap-2 flex-1">
+          <div className="flex-1 flex flex-col gap-1"><i className={`${line} w-2/3`} /><i className={`${line} w-full opacity-40`} /><i className={`${line} w-5/6 opacity-40`} /></div>
+          <i className="w-1/4 rounded-sm border border-[#1c1a17]/30 dark:border-white/35" />
+        </div>
+      </div>
+    );
+  } else if (value === "showcase") {
+    body = (
+      <div className="h-full w-full px-3 pt-2 flex flex-col items-center gap-1">
+        <i className={`${line} w-1/2`} /><i className={`${line} w-1/4 opacity-50`} />
+        <i className={`mt-1 w-4/5 flex-1 rounded-sm ${photo}`} />
+        <i className={`${line} w-2/5 opacity-40 mb-1.5`} />
+      </div>
+    );
+  } else {
+    body = (
+      <div className="relative h-full w-full">
+        <div className={`absolute inset-0 ${photo}`} />
+        <div className="absolute left-2 bottom-2 flex flex-col gap-1"><i className="h-[3px] w-10 rounded-full bg-white/90" /><i className="h-[3px] w-6 rounded-full bg-white/60" /></div>
+      </div>
+    );
+  }
+  return <div className="mb-2.5 h-[68px] overflow-hidden rounded-lg border border-black/10 dark:border-white/15 bg-white dark:bg-[#242424]" aria-hidden="true">{body}</div>;
+}
 
 // How the fixed nav behaves on the public site (listings.header_style, check constraint kept in sync). Works with either
 // site template. Same two choices as agent sites.
@@ -406,11 +477,11 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
         <div>
           <h2 className="font-display text-lg font-semibold">Site Template</h2>
           <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">
-            The overall structure of the public site — Theme/Accent/Font/Logo below only apply
-            to Classic; Luxury has its own fixed look.
+            The overall layout of the public site. Theme, Accent, Font and Logo below apply to every
+            layout except Luxury, which has its own fixed look.
           </p>
         </div>
-        <div className="grid sm:grid-cols-2 gap-3">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {SITE_TEMPLATES.map((t) => (
             <button
               key={t.value}
@@ -422,6 +493,7 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
                   : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
+              <TemplateSketch value={t.value} />
               <p className="text-sm font-semibold">{t.label}</p>
               <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5 leading-snug">{t.description}</p>
             </button>
@@ -432,7 +504,7 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
       <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
         <div>
           <h2 className="font-display text-lg font-semibold">Header</h2>
-          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">The navigation bar at the top of the public site. Works with either template.</p>
+          <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-1">The navigation bar at the top of the public site. Works with every layout.</p>
         </div>
         <div>
           <label className={labelClass}>Text next to the logo (optional)</label>

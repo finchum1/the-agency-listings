@@ -10,13 +10,15 @@ const links = [
   { href: "#contact", label: "Contact" },
 ];
 
-export default function Navbar({ backLink }) {
+// `solid` keeps the bar in its scrolled look all the time, for site layouts whose top of page is light rather than a dark photo.
+export default function Navbar({ backLink, solid = false }) {
   const { listing } = useListingContext();
-  const [scrolled, setScrolled] = useState(false);
+  const [scrolledY, setScrolledY] = useState(false);
+  const scrolled = solid || scrolledY;
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
+    const onScroll = () => setScrolledY(window.scrollY > 40);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);

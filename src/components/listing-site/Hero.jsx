@@ -7,14 +7,17 @@ import { embedUrl } from "../../lib/videoEmbed";
 // content, so it scrolls up over the pinned media together with everything after it.
 const HERO_HEIGHT = "max(100vh, 640px)";
 
-export function HeroBackdrop() {
+// The photo, silent video or embedded video itself, filling its box. `height` is the box's height as a CSS length: the embed is
+// made at least as wide as the box and as tall as it, so it covers like a photo would. Used by the classic hero below and by the
+// other site layouts (split, mosaic, showcase).
+export function HeroMedia({ height = HERO_HEIGHT, shade = true }) {
   const { listing } = useListingContext();
   const hero = listing.images[0];
   const video = listing.heroVideo;
   const embed = listing.heroEmbed;
 
   return (
-    <div className="sticky top-0 z-0 w-full overflow-hidden" style={{ height: HERO_HEIGHT }}>
+    <>
       {embed ? (
         // A YouTube or Vimeo video, silent and looping, scaled up to fill the hero like a photo would (the player is 16:9, so it
         // is made at least as wide as the hero and as tall as it, and centered). The photo shows until the video starts.
@@ -28,7 +31,7 @@ export function HeroBackdrop() {
             allow="autoplay; encrypted-media"
             referrerPolicy="strict-origin-when-cross-origin"
             className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 border-0"
-            style={{ width: `max(100%, calc(${HERO_HEIGHT} * 16 / 9))`, aspectRatio: "16 / 9" }}
+            style={{ width: `max(100%, calc(${height} * 16 / 9))`, aspectRatio: "16 / 9" }}
           />
         </>
       ) : video ? (
@@ -36,7 +39,15 @@ export function HeroBackdrop() {
       ) : (
         <img src={hero?.url} alt={hero?.alt} className="absolute inset-0 h-full w-full object-cover" />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/40" />
+      {shade && <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/40" />}
+    </>
+  );
+}
+
+export function HeroBackdrop() {
+  return (
+    <div className="sticky top-0 z-0 w-full overflow-hidden" style={{ height: HERO_HEIGHT }}>
+      <HeroMedia />
     </div>
   );
 }

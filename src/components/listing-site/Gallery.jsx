@@ -50,7 +50,13 @@ function GalleryVideo({ file, embed, poster, spaced }) {
   );
 }
 
-export default function Gallery() {
+// Other layouts open the lightbox from their own photo tiles by sending this event with the photo's index.
+export const OPEN_GALLERY_EVENT = "listing:open-gallery";
+export const openGallery = (index = 0) => window.dispatchEvent(new CustomEvent(OPEN_GALLERY_EVENT, { detail: index }));
+
+// `lightboxOnly`: the layout already shows the photos itself (the mosaic), so this renders just the photo viewer and, if there
+// is one, the gallery video.
+export default function Gallery({ lightboxOnly = false }) {
   const { listing } = useListingContext();
   const [activeIndex, setActiveIndex] = useState(null);
   const images = listing.images;
@@ -77,6 +83,12 @@ export default function Gallery() {
   }, [activeIndex, close, prev, next]);
 
   useEffect(() => {
+    const onOpen = (e) => setActiveIndex(Math.max(0, Math.min(images.length - 1, Number(e.detail) || 0)));
+    window.addEventListener(OPEN_GALLERY_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_GALLERY_EVENT, onOpen);
+  }, [images.length]);
+
+  useEffect(() => {
     if (activeIndex === null) return;
     trackListingEvent("gallery_open");
     trackListingEvent("photo_view", activeIndex + 1);
@@ -86,41 +98,7 @@ export default function Gallery() {
   const embed = listing.galleryEmbed;
   if (images.length === 0 && !video && !embed) return null;
 
-  return (
-    <section id="gallery" className="px-6 lg:px-10 py-24 bg-[var(--ls-bg-alt)]">
-      <div className="mx-auto max-w-6xl">
-        <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent)] mb-3">
-          Gallery
-        </p>
-        <h2 className="text-3xl sm:text-4xl font-semibold mb-10 text-[var(--ls-text)]">Take a look inside</h2>
-
-        {(video || embed) && <GalleryVideo file={video} embed={embed} poster={images[0]?.url} spaced={images.length > 0} />}
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 auto-rows-[160px] sm:auto-rows-[200px]">
-          {images.map((img, i) => (
-            <button
-              key={img.url}
-              onClick={() => setActiveIndex(i)}
-              className={`relative overflow-hidden rounded-xl group ${
-                i === 0 ? "col-span-2 row-span-2" : ""
-              }`}
-            >
-              <img
-                src={img.url}
-                alt={img.alt}
-                loading="lazy"
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-              <span className="absolute bottom-2 left-2 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity drop-shadow">
-                {img.caption}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {activeIndex !== null && (
+  const lightbox = activeIndex !== null && (
         <div
           className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center px-4"
           onClick={close}
@@ -172,7 +150,58 @@ export default function Gallery() {
             </svg>
           </button>
         </div>
-      )}
+      );
+
+  if (lightboxOnly) {
+    return (
+      <>
+        {(video || embed) && (
+          <section id="gallery" className="px-6 lg:px-10 pb-16">
+            <div className="mx-auto max-w-6xl">
+              <GalleryVideo file={video} embed={embed} poster={images[0]?.url} />
+            </div>
+          </section>
+        )}
+        {lightbox}
+      </>
+    );
+  }
+
+  return (
+    <section id="gallery" className="px-6 lg:px-10 py-24 bg-[var(--ls-bg-alt)]">
+      <div className="mx-auto max-w-6xl">
+        <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent)] mb-3">
+          Gallery
+        </p>
+        <h2 className="text-3xl sm:text-4xl font-semibold mb-10 text-[var(--ls-text)]">Take a look inside</h2>
+
+        {(video || embed) && <GalleryVideo file={video} embed={embed} poster={images[0]?.url} spaced={images.length > 0} />}
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 auto-rows-[160px] sm:auto-rows-[200px]">
+          {images.map((img, i) => (
+            <button
+              key={img.url}
+              onClick={() => setActiveIndex(i)}
+              className={`relative overflow-hidden rounded-xl group ${
+                i === 0 ? "col-span-2 row-span-2" : ""
+              }`}
+            >
+              <img
+                src={img.url}
+                alt={img.alt}
+                loading="lazy"
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+              <span className="absolute bottom-2 left-2 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity drop-shadow">
+                {img.caption}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {lightbox}
     </section>
   );
 }

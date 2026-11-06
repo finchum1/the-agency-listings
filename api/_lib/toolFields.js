@@ -46,7 +46,7 @@ export const listingFields = {
   features: { type: "array", items: obj({ category: str("e.g. Interior"), items: { type: "array", items: { type: "string" } } }, ["category", "items"]) },
   photos: { type: "array", maxItems: 25, items: { oneOf: [{ type: "string" }, obj({ url: str(""), caption: str(""), alt: str("") }, ["url"])] }, description: "Public picture addresses; they are downloaded and stored. The first becomes the hero. Up to 25 per call." },
   open_houses: { type: "array", items: obj({ starts_at: str("ISO date-time"), ends_at: str("ISO date-time"), notes: str("") }, ["starts_at"]) },
-  site_template: str("", { enum: ["classic", "luxury"] }), theme: str("", { enum: ["classic", "dark", "sand", "red", "linen"] }),
+  site_template: str("The public site's layout", { enum: ["classic", "luxury", "split", "mosaic", "showcase"] }), theme: str("", { enum: ["classic", "dark", "sand", "red", "linen"] }),
   header_style: str("", { enum: ["classic", "floating"] }), header_label: str("Text beside the logo, e.g. Nichols Hills"), custom_domain: str(""),
   hero_video_url: str(""), video_placement: str("Where the video plays: the hero, above the photo gallery, or both.", { enum: ["hero", "gallery", "both"] }), seo_title: str(""), seo_description: str(""), slug: str(""),
 };

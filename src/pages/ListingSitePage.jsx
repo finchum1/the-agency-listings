@@ -19,6 +19,14 @@ import Features from "../components/listing-site/Features";
 import LocationMap from "../components/listing-site/LocationMap";
 import AgentContact from "../components/listing-site/AgentContact";
 import Footer from "../components/listing-site/Footer";
+import SplitLayout from "../components/listing-site/layouts/SplitLayout";
+import MosaicLayout from "../components/listing-site/layouts/MosaicLayout";
+import ShowcaseLayout from "../components/listing-site/layouts/ShowcaseLayout";
+
+// The layouts besides Classic and Luxury, by listings.site_template (kept in sync with the check constraint in
+// supabase/listing-site-layouts.sql and SITE_TEMPLATES in ListingForm.jsx). They follow the listing's theme, accent and font like
+// Classic does, and use an always-solid header because their pages don't open on a dark full-bleed photo.
+const LAYOUTS = { split: SplitLayout, mosaic: MosaicLayout, showcase: ShowcaseLayout };
 
 // Shared rendering for a single listing's public site — used both at
 // /listings/:slug (PublicListingPage.jsx) and when a request arrives on a
@@ -88,6 +96,7 @@ export default function ListingSitePage({ listing, agent, photos, openHouses, lo
   // Gallery, etc.) is unchanged — same components, just re-skinned by
   // the luxury CSS variables, same as any other theme.
   const isLuxury = adapted.siteTemplate === "luxury";
+  const Layout = LAYOUTS[adapted.siteTemplate];
 
   return (
     <ListingProvider value={{ listing: adapted, openHouses, listingId: listing.id }}>
@@ -97,7 +106,7 @@ export default function ListingSitePage({ listing, agent, photos, openHouses, lo
         data-font={isLuxury ? "bodoni-manrope" : adapted.fontPairing}
         style={!isLuxury && adapted.accentColor ? { "--ls-accent": adapted.accentColor } : undefined}
       >
-        <Navbar backLink={backLink} />
+        <Navbar backLink={backLink} solid={!!Layout} />
         {isLuxury ? (
           <>
             <LuxuryHero />
@@ -109,6 +118,8 @@ export default function ListingSitePage({ listing, agent, photos, openHouses, lo
             <LocationMap />
             <AgentContact />
           </>
+        ) : Layout ? (
+          <Layout />
         ) : (
           // Classic: the hero photo/video stays pinned and the page, text included, scrolls up over it. The footer is
           // outside this block so the pinned media is never under it.

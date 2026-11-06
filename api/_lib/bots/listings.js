@@ -61,7 +61,7 @@ function readFields(body, create) {
   set("video_placement", oneOf(body, "video_placement", ["hero", "gallery", "both"]));
   set("seo_title", text(body, "seo_title", { max: 120 }));
   set("seo_description", text(body, "seo_description", { max: 300 }));
-  set("site_template", oneOf(body, "site_template", ["classic", "luxury"]));
+  set("site_template", oneOf(body, "site_template", ["classic", "luxury", "split", "mosaic", "showcase"]));
   set("theme", oneOf(body, "theme", THEMES));
   set("font_pairing", oneOf(body, "font_pairing", FONTS));
   set("header_style", oneOf(body, "header_style", ["classic", "floating"]));

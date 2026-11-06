@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useListingContext } from "../../context/ListingContext";
 import { formatNumber } from "../../lib/format";
 
-const icons = {
+export const icons = {
   beds: (
     <path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 18v2M21 18v2M3 12V9a2 2 0 0 1 2-2h3v5M9 7h6" />
   ),
@@ -17,7 +17,7 @@ const icons = {
   garage: <path d="M4 21V10l8-6 8 6v11M4 21h16M8 21v-6h8v6" />,
 };
 
-const stats = [
+export const stats = [
   { key: "beds", label: "Beds", value: (f) => f.beds ?? "—" },
   { key: "baths", label: "Baths", value: (f) => f.baths ?? "—" },
   { key: "sqft", label: "Sq Ft", value: (f) => formatNumber(f.sqft) },
@@ -35,7 +35,7 @@ const COUNT_MS = 1200;
 // A gentle ease-out (squared, not cubed) so the numbers climb steadily instead of racing up and then crawling.
 const easeOut = (t) => 1 - Math.pow(1 - t, 2);
 
-function CountUp({ text, year }) {
+export function CountUp({ text, year }) {
   const ref = useRef(null);
   const match = /^(\D*)(\d[\d,]*(?:\.\d+)?)(.*)$/s.exec(String(text ?? ""));
   const [shown, setShown] = useState(null); // null = show the final text
