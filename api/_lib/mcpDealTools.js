@@ -8,6 +8,7 @@ import { HttpError, bad } from "./bots/util.js";
 import { listingFields, postFields } from "./toolFields.js";
 import { WRITES, bool, int, obj, str } from "./mcpWriteTools.js";
 import { act, idOf, look, render, strip } from "./mcpAct.js";
+import { RECIPIENT_ROLES, STARTER_TEMPLATES, renderDealEmail, templatesForDeal } from "../../src/lib/dealEmails.js";
 
 const READ = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
 const own = { needAdmin: false };
@@ -114,6 +115,49 @@ async function assignCoordinator(ctx, dealId, tc) {
   return { already: error?.code === "23505" };
 }
 
+// ------------------------------------------------------------------------------------------------ email templates
+// The same templates the deal's Email button uses: the built-in starters, with this person's own copies swapped in, then their own. Nothing is sent.
+async function emailTemplates(ctx) {
+  const { data } = await ctx.client.from("deal_email_templates").select("*").order("position").order("created_at");
+  const saved = data || [];
+  const copies = new Map(saved.filter((s) => s.base_key).map((s) => [s.base_key, s]));
+  const list = STARTER_TEMPLATES.map((st) => {
+    const copy = copies.get(st.key);
+    return copy ? { ...copy, key: st.key, skipCash: st.skipCash } : { ...st, id: null };
+  });
+  for (const s of saved) if (!s.base_key) list.push({ ...s, key: s.id });
+  return list;
+}
+const listEmailTemplates = async (ctx) => {
+  const all = await emailTemplates(ctx);
+  const roles = Object.fromEntries(RECIPIENT_ROLES.map((r) => [r.key, r.label]));
+  return render(`${all.length} email templates (use draft_deal_email to fill one in for a deal):`, all.map((t) => ({ id: t.id || t.key, name: t.name, for: t.side === "both" ? "buyer and seller deals" : `${t.side} deals`, to: t.to_roles.map((k) => roles[k] || k), cc: t.cc_roles.map((k) => roles[k] || k) })));
+};
+// Fills a template in for a deal: who it goes to, the subject and the body, with anything missing flagged. The agent sends it from their own email.
+const draftDealEmail = async (ctx, a) => {
+  const { data: deal } = await ctx.client.from("people").select("*").eq("id", a.deal_id).eq("stage_group", "transaction").maybeSingle();
+  if (!deal) throw new HttpError(404, "No deal with that id that you can see.");
+  const all = await emailTemplates(ctx);
+  const q = String(a.template || "").trim().toLowerCase();
+  const pool = templatesForDeal(all, deal);
+  const hit = pool.find((t) => t.id === a.template || t.key === a.template) || pool.find((t) => t.name.toLowerCase() === q) || pool.filter((t) => t.name.toLowerCase().includes(q))[0];
+  if (!hit) throw new HttpError(404, `No email template matches "${a.template}" for this deal. Templates: ${pool.map((t) => t.name).join("; ")}.`);
+  const [{ data: me }, { data: agent }, { data: per }, { data: wide }] = await Promise.all([
+    ctx.client.from("profiles").select("full_name, email, phone").eq("id", ctx.ownerId).maybeSingle(),
+    ctx.client.from("profiles").select("full_name, email, phone").eq("id", deal.owner_id).maybeSingle(),
+    ctx.client.from("deal_tcs").select("tc_id").eq("person_id", deal.id),
+    ctx.client.from("deal_team").select("tc_id").eq("agent_id", deal.owner_id),
+  ]);
+  const ids = [...new Set([...(per || []), ...(wide || [])].map((r) => r.tc_id))];
+  const { data: tcs } = ids.length ? await ctx.client.from("profiles").select("full_name, email").in("id", ids) : { data: [] };
+  const email = renderDealEmail(hit, deal, {
+    me: { name: me?.full_name, email: me?.email, phone: me?.phone },
+    agent: { name: agent?.full_name, email: agent?.email, phone: agent?.phone },
+    coordinators: (tcs || []).map((t) => ({ name: t.full_name, email: t.email })),
+  });
+  return render(`Draft from "${hit.name}". Nothing was sent: show it to the agent, who opens it in their own email app from the deal's "Email with a template" button, or copies it.${email.missing.length ? ` Still blank: ${email.missing.join(", ")}.` : ""}${email.noEmail.length ? ` No email address yet for: ${email.noEmail.join(", ")}.` : ""}`, { to: email.to, cc: email.cc, subject: email.subject, body: email.body });
+};
+
 // ------------------------------------------------------------------------------------------------ deals
 const listDeals = async (ctx, a) => {
   const { people: rows } = await people.listPeople(ctx, { group: "transaction", archived: a.include_archived ? "all" : "false", q: a.query, limit: a.limit || 50, order: "updated" });
@@ -182,6 +226,8 @@ export const DEAL_TOOLS = [
     "Start a deal (a transaction) for the agent: the client's name, the side (buyer or seller) and the property, with any dates. Name the transaction coordinator with coordinator or coordinator_id (see list_coordinators) to assign them in the same step. Refuses a duplicate email unless the agent confirmed. Afterwards, apply_deal_checklist adds the standard tasks.",
     obj({ ...DEAL_FIELDS, ...COORD, allow_duplicate: bool("Only if the agent confirmed a second person with this email is right"), note: str("A first note") }, ["name", "side"]), addDeal),
   writer("update_deal", "update a deal", "write_deals", "Change a deal's key dates, price, commission, earnest money (and whether it was delivered), cash purchase flag, and who is on it (second client, the other agent and their coordinator, title company and processor, lender and loan processor, each with an email). Send only what changes.", obj({ deal_id: str("Deal id from list_deals"), ...DEAL_FIELDS }, ["deal_id"]), updateDeal),
+  reader("list_email_templates", "List email templates", "read", "The agent's deal email templates (the built-in starters plus their own): what each is for and who it goes to. Fill one in for a deal with draft_deal_email.", obj(), listEmailTemplates),
+  reader("draft_deal_email", "fill in an email template for a deal", "read", "Fill an email template in from a deal: the people it goes to (To and Cc, picked from who is on the deal), the subject and the body with the deal's details. Anything the deal doesn't have yet is reported and left as [blank] in the text. NOTHING is sent: the agent opens it in their own email app from the deal's Email button. Send template as its name or id from list_email_templates.", obj({ deal_id: str("Deal id from list_deals"), template: str("Template name or id, e.g. \"Open the file with title\"") }, ["deal_id", "template"]), draftDealEmail),
   reader("list_deal_agents", "List agents who use Deals", "read", "The agents in the office who use Deals, with ids. A deal can be handed to any of them with change_deal_agent.", obj(), async (ctx) => {
     const all = await dealAgents(ctx);
     return render(`${all.length} agent${all.length === 1 ? "" : "s"}:`, all);

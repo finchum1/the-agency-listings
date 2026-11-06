@@ -6,6 +6,7 @@ import ContactButtons from "./ContactButtons";
 import OutreachDrafts from "./OutreachDrafts";
 import ClientTimelineCard from "./ClientTimelineCard";
 import ChangeAgentForm from "./ChangeAgentForm";
+import DealEmailButton from "./DealEmailButton";
 import { DetailGroup, EditToggle, earnestLine, money } from "./DealDetailList";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import { PEEK_WIDTHS } from "../../../hooks/usePeekWidth";
@@ -917,7 +918,12 @@ export default function PersonPanel({
           onCheckTask={summary.completeTask}
         >
           {{
-            top: <OutreachDrafts person={person} onLogged={loadNotes} onCount={setDraftCount} />,
+            top: (
+              <>
+                <div><DealEmailButton deal={{ ...person, ...form, earnest_money: form.earnest_money === "" ? null : form.earnest_money, price: form.price === "" ? null : form.price }} /></div>
+                <OutreachDrafts person={person} onLogged={loadNotes} onCount={setDraftCount} />
+              </>
+            ),
             bottom: notesSection,
           }}
         </DealOverview>

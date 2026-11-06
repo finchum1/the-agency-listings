@@ -17,6 +17,7 @@ import { usePeekWidth, PEEK_WIDTHS } from "../../../hooks/usePeekWidth";
 import { dayLabel, toKey } from "../../../lib/homeDates";
 import ClientTimelineCard from "./ClientTimelineCard";
 import ChangeAgentForm from "./ChangeAgentForm";
+import DealEmailButton from "./DealEmailButton";
 import { useAuth } from "../../../hooks/useAuth";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
@@ -371,6 +372,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
               top: edit ? (
                 <div className="flex flex-wrap items-center gap-3">
                   <SendAgentUpdate person={fresh} agentName={agentName} />
+                  <DealEmailButton deal={fresh} />
                   <button type="button" onClick={() => setModal("share")} className="rounded-full border border-black/10 dark:border-white/15 px-4 py-2 text-sm font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.05]">
                     Share with {(fresh.name || "the client").split(/[ &]/)[0]}
                   </button>
