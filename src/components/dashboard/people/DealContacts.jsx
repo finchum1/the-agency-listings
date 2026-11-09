@@ -10,12 +10,13 @@ const inputClass =
 export const CONTACT_ROLES = [
   { key: "client", label: "Client", name: "name", email: "email", phone: "phone", nameLabel: "Name" },
   { key: "client2", label: "Second client", name: "client2_name", email: "client2_email", nameLabel: "Name" },
-  { key: "agent", label: "Other agent", name: "other_agent", email: "other_agent_email", nameLabel: "Name" },
-  { key: "agent2", label: "Second agent on the other side", name: "other_agent2", email: "other_agent2_email", nameLabel: "Name" },
+  { key: "other_party", label: (v) => (v.side === "seller" ? "Buyer (the other side)" : "Seller (the other side)"), name: "other_party_name", nameLabel: "Name" },
+  { key: "agent", label: "Other agent", name: "other_agent", email: "other_agent_email", phone: "other_agent_phone", company: "other_agent_company", nameLabel: "Name" },
+  { key: "agent2", label: "Second agent on the other side", name: "other_agent2", email: "other_agent2_email", phone: "other_agent2_phone", company: "other_agent2_company", nameLabel: "Name" },
   { key: "agent_tc", label: "Other agent's TC", name: "other_agent_tc_name", email: "other_agent_tc_email", nameLabel: "Name" },
-  { key: "title", label: "Title company", name: "title_company", email: "title_company_email", nameLabel: "Company" },
+  { key: "title", label: "Title company", name: "title_company", email: "title_company_email", phone: "title_phone", nameLabel: "Company" },
   { key: "processor", label: "Title processor", name: "title_processor_name", email: "title_processor_email", nameLabel: "Name" },
-  { key: "lender", label: "Lender", name: "lender", email: "lender_email", nameLabel: "Name or company", cashHides: true },
+  { key: "lender", label: "Lender", name: "lender", email: "lender_email", phone: "lender_phone", nameLabel: "Name or company", cashHides: true },
   { key: "loan_processor", label: "Loan processor", name: "loan_processor_name", email: "loan_processor_email", nameLabel: "Name", cashHides: true },
 ];
 
@@ -68,7 +69,8 @@ function CopyButton({ text }) {
  */
 export default function DealContacts({ values, editing, onChange, onCommit, cash = false, ccEmail = "" }) {
   const roles = CONTACT_ROLES.filter((r) => !(cash && r.cashHides));
-  const filled = (r) => Boolean(values[r.name] || values[r.email] || (r.phone && values[r.phone]));
+  const filled = (r) => Boolean(values[r.name] || (r.email && values[r.email]) || (r.phone && values[r.phone]) || (r.company && values[r.company]));
+  const roleLabel = (r) => (typeof r.label === "function" ? r.label(values) : r.label);
   const shown = editing ? roles : roles.filter(filled);
   const hidden = roles.length - shown.length;
 
@@ -77,7 +79,7 @@ export default function DealContacts({ values, editing, onChange, onCommit, cash
       <h4 className="text-xs font-semibold uppercase tracking-wide text-[#1c1a17]/50 dark:text-[#faf9f7]/50">People on this deal</h4>
       {!editing && (
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Email a team">
-          {[{ label: "clients", clients: true, emails: ["email", "client2_email"] }, ...TEAMS.filter((t) => !(cash && t.cashHides)), { label: "all", all: true, emails: roles.filter((r) => r.key !== "client" && r.key !== "client2").map((r) => r.email) }].map((t) => {
+          {[{ label: "clients", clients: true, emails: ["email", "client2_email"] }, ...TEAMS.filter((t) => !(cash && t.cashHides)), { label: "all", all: true, emails: roles.filter((r) => r.key !== "client" && r.key !== "client2").map((r) => r.email).filter(Boolean) }].map((t) => {
             const href = mailtoFor(values, t, ccEmail);
             const cls = `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium ${
               t.all ? "border-[#1c1a17] dark:border-[#faf9f7] bg-[#1c1a17] dark:bg-[#faf9f7] text-white dark:text-[#1c1a17]" : t.clients ? "border-[#ed2127] dark:border-[#f2454b] bg-[#ed2127] dark:bg-[#f2454b] text-white" : "border-black/10 dark:border-white/15"
@@ -105,8 +107,9 @@ export default function DealContacts({ values, editing, onChange, onCommit, cash
       <div className="grid gap-3 @md:grid-cols-2">
         {shown.map((r) => {
           const name = values[r.name] || "";
-          const email = values[r.email] || "";
+          const email = r.email ? values[r.email] || "" : "";
           const phone = r.phone ? values[r.phone] || "" : "";
+          const company = r.company ? values[r.company] || "" : "";
           return (
             <div key={r.key} className="min-w-0 rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] p-3.5">
               <div className="flex items-center gap-3">
@@ -117,8 +120,9 @@ export default function DealContacts({ values, editing, onChange, onCommit, cash
                   {initials(name) || "·"}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className={`text-[11px] font-medium uppercase tracking-wide ${muted}`}>{r.label}</p>
+                  <p className={`text-[11px] font-medium uppercase tracking-wide ${muted}`}>{roleLabel(r)}</p>
                   {!editing && <p className="truncate text-sm font-semibold">{name || "No name yet"}</p>}
+                  {!editing && company && <p className={`truncate text-xs ${muted}`}>{company}</p>}
                 </div>
               </div>
               {editing ? (
@@ -127,10 +131,18 @@ export default function DealContacts({ values, editing, onChange, onCommit, cash
                     <label className={labelClass}>{r.nameLabel}</label>
                     <input value={name} onChange={(e) => onChange(r.name, e.target.value)} onBlur={() => onCommit(r.name)} autoComplete="off" className={inputClass} />
                   </div>
-                  <div>
-                    <label className={labelClass}>Email</label>
-                    <input type="email" value={email} onChange={(e) => onChange(r.email, e.target.value)} onBlur={() => onCommit(r.email)} autoComplete="off" className={inputClass} />
-                  </div>
+                  {r.company && (
+                    <div>
+                      <label className={labelClass}>Company</label>
+                      <input value={company} onChange={(e) => onChange(r.company, e.target.value)} onBlur={() => onCommit(r.company)} autoComplete="off" className={inputClass} />
+                    </div>
+                  )}
+                  {r.email && (
+                    <div>
+                      <label className={labelClass}>Email</label>
+                      <input type="email" value={email} onChange={(e) => onChange(r.email, e.target.value)} onBlur={() => onCommit(r.email)} autoComplete="off" className={inputClass} />
+                    </div>
+                  )}
                   {r.phone && (
                     <div>
                       <label className={labelClass}>Phone</label>
@@ -140,7 +152,7 @@ export default function DealContacts({ values, editing, onChange, onCommit, cash
                 </div>
               ) : (
                 <div className="mt-2.5 space-y-1 text-sm">
-                  {email ? (
+                  {!r.email ? null : email ? (
                     <div className="flex items-center justify-between gap-3">
                       <a href={`mailto:${email}`} className="min-w-0 truncate underline decoration-black/25 dark:decoration-white/30 underline-offset-2 hover:decoration-current">
                         {email}

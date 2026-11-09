@@ -24,7 +24,7 @@ export function useEmailTemplates() {
     const copies = new Map(saved.filter((s) => s.base_key).map((s) => [s.base_key, s]));
     const list = STARTER_TEMPLATES.map((st) => {
       const copy = copies.get(st.key);
-      return copy ? { ...copy, key: st.key, starter: true, customized: true, skipCash: st.skipCash } : { ...st, id: null, starter: true, customized: false };
+      return copy ? { ...copy, key: st.key, group: st.group, starter: true, customized: true, skipCash: st.skipCash } : { ...st, id: null, starter: true, customized: false };
     });
     for (const s of saved) if (!s.base_key) list.push({ ...s, key: s.id, starter: false, customized: false });
     return list;

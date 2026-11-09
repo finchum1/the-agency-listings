@@ -8,7 +8,7 @@ import { HttpError, bad } from "./bots/util.js";
 import { listingFields, postFields } from "./toolFields.js";
 import { WRITES, bool, int, obj, str } from "./mcpWriteTools.js";
 import { act, idOf, look, render, strip } from "./mcpAct.js";
-import { RECIPIENT_ROLES, STARTER_TEMPLATES, renderDealEmail, templatesForDeal } from "../../src/lib/dealEmails.js";
+import { RECIPIENT_ROLES, STARTER_TEMPLATES, renderDealEmail, taskEmailKey, templatesForDeal } from "../../src/lib/dealEmails.js";
 
 const READ = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
 const own = { needAdmin: false };
@@ -27,7 +27,9 @@ const WHO = {
   name: str("The client's name"), email: str("The client's email"), phone: str("The client's phone"),
   client2_name: str("Second client"), client2_email: str("Second client's email"),
   other_agent: str("The other agent (the listing agent on a buyer's deal)"), other_agent_email: str(""),
-  other_agent2: str("A second agent on the other side, e.g. a co-listing agent"), other_agent2_email: str(""), other_agent_tc_name: str("The other agent's transaction coordinator"), other_agent_tc_email: str(""),
+  other_agent2: str("A second agent on the other side, e.g. a co-listing agent"), other_agent2_email: str(""),
+  other_agent_company: str("The other agent's brokerage"), other_agent_phone: str(""), other_agent2_company: str(""), other_agent2_phone: str(""),
+  other_party_name: str("The other side's client: the seller on a buyer deal, the buyer on a seller deal"), financing_type: str("The loan type, e.g. Conventional, FHA, VA (leave empty for cash)"), title_phone: str("A phone number for the title contact"), lender_phone: str("A phone number for the lender contact"), other_agent_tc_name: str("The other agent's transaction coordinator"), other_agent_tc_email: str(""),
   title_company: str(""), title_company_email: str(""), title_processor_name: str(""), title_processor_email: str(""),
   lender: str(""), lender_email: str(""), loan_processor_name: str(""), loan_processor_email: str(""),
 };
@@ -123,7 +125,7 @@ async function emailTemplates(ctx) {
   const copies = new Map(saved.filter((s) => s.base_key).map((s) => [s.base_key, s]));
   const list = STARTER_TEMPLATES.map((st) => {
     const copy = copies.get(st.key);
-    return copy ? { ...copy, key: st.key, skipCash: st.skipCash } : { ...st, id: null };
+    return copy ? { ...copy, key: st.key, group: st.group, skipCash: st.skipCash } : { ...st, id: null };
   });
   for (const s of saved) if (!s.base_key) list.push({ ...s, key: s.id });
   return list;
@@ -144,15 +146,16 @@ const draftDealEmail = async (ctx, a) => {
   if (!hit) throw new HttpError(404, `No email template matches "${a.template}" for this deal. Templates: ${pool.map((t) => t.name).join("; ")}.`);
   const [{ data: me }, { data: agent }, { data: per }, { data: wide }] = await Promise.all([
     ctx.client.from("profiles").select("full_name, email, phone").eq("id", ctx.ownerId).maybeSingle(),
-    ctx.client.from("profiles").select("full_name, email, phone").eq("id", deal.owner_id).maybeSingle(),
+    ctx.client.from("profiles").select("full_name, email, phone, org_id").eq("id", deal.owner_id).maybeSingle(),
     ctx.client.from("deal_tcs").select("tc_id").eq("person_id", deal.id),
     ctx.client.from("deal_team").select("tc_id").eq("agent_id", deal.owner_id),
   ]);
   const ids = [...new Set([...(per || []), ...(wide || [])].map((r) => r.tc_id))];
   const { data: tcs } = ids.length ? await ctx.client.from("profiles").select("full_name, email").in("id", ids) : { data: [] };
+  const { data: org } = agent?.org_id ? await ctx.client.from("organizations").select("name").eq("id", agent.org_id).maybeSingle() : { data: null };
   const email = renderDealEmail(hit, deal, {
     me: { name: me?.full_name, email: me?.email, phone: me?.phone },
-    agent: { name: agent?.full_name, email: agent?.email, phone: agent?.phone },
+    agent: { name: agent?.full_name, email: agent?.email, phone: agent?.phone, company: org?.name },
     coordinators: (tcs || []).map((t) => ({ name: t.full_name, email: t.email })),
   });
   return render(`Draft from "${hit.name}". Nothing was sent: show it to the agent, who opens it in their own email app from the deal's "Email with a template" button, or copies it.${email.missing.length ? ` Still blank: ${email.missing.join(", ")}.` : ""}${email.noEmail.length ? ` No email address yet for: ${email.noEmail.join(", ")}.` : ""}`, { to: email.to, cc: email.cc, subject: email.subject, body: email.body });
@@ -174,13 +177,20 @@ const listDeals = async (ctx, a) => {
 const getDeal = async (ctx, a) => {
   const [{ person, notes }, checklist] = await Promise.all([people.getPerson(ctx, a.deal_id), people.getChecklist(ctx, a.deal_id)]);
   if (person.stage_group !== "transaction") throw new HttpError(400, `${person.name} isn't a deal.`);
-  const keep = ["id", "name", "email", "phone", "property_address", "side", "stage", "price", "commission", "contract_date", "inspection_date", "inspection_time", "inspection_period_end", "appraisal_date", "financing_deadline", "closing_date", "closing_time", "earnest_money", "earnest_money_delivered", "is_cash", "compliance_status", "other_agent", "other_agent_email", "other_agent2", "other_agent2_email", "other_agent_tc_name", "other_agent_tc_email", "title_company", "title_company_email", "title_processor_name", "title_processor_email", "lender", "lender_email", "loan_processor_name", "loan_processor_email", "client2_name", "client2_email"];
+  const keep = ["id", "name", "email", "phone", "property_address", "side", "stage", "price", "commission", "contract_date", "inspection_date", "inspection_time", "inspection_period_end", "appraisal_date", "financing_deadline", "closing_date", "closing_time", "earnest_money", "earnest_money_delivered", "is_cash", "compliance_status", "other_agent", "other_agent_email", "other_agent_company", "other_agent_phone", "other_agent2", "other_agent2_email", "other_agent2_company", "other_agent2_phone", "other_party_name", "financing_type", "title_phone", "lender_phone", "other_agent_tc_name", "other_agent_tc_email", "title_company", "title_company_email", "title_processor_name", "title_processor_email", "lender", "lender_email", "loan_processor_name", "loan_processor_email", "client2_name", "client2_email"];
   const deal = Object.fromEntries(keep.filter((k) => person[k] !== null && person[k] !== undefined && person[k] !== "").map((k) => [k, person[k]]));
   const [{ data: picked }, { data: wide }, office] = await Promise.all([ctx.client.from("deal_tcs").select("tc_id").eq("person_id", a.deal_id), ctx.client.from("deal_team").select("tc_id").eq("agent_id", ctx.ownerId), officeCoordinators(ctx)]);
   const nameOf = (id) => office.find((c) => c.id === id)?.name || "Coordinator";
   const coordinators = (picked || []).map((r) => ({ id: r.tc_id, name: nameOf(r.tc_id) }));
   const coordinators_on_all_your_deals = (wide || []).map((r) => nameOf(r.tc_id));
-  return render("Deal:", { deal, coordinators, coordinators_on_all_your_deals, tasks: checklist.tasks.map(({ id, text, section, due, done }) => ({ id, text, section, due, done })), documents: checklist.documents.map(({ id, text, done }) => ({ id, text, done })), recent_notes: notes.slice(0, 5).map((n) => ({ at: n.created_at.slice(0, 10), note: n.body })) });
+  // Tasks that are an email name their template, so draft_deal_email can fill it in.
+  const [emailTemplatesAll, { data: links }] = await Promise.all([emailTemplates(ctx), ctx.client.from("transaction_tasks").select("id, email_template").eq("person_id", a.deal_id)]);
+  const linkOf = new Map((links || []).map((l) => [l.id, l.email_template]));
+  const emailFor = (t) => {
+    const key = taskEmailKey({ text: t.text, email_template: linkOf.get(t.id) }, person.side);
+    return key ? emailTemplatesAll.find((x) => x.key === key || x.id === key)?.name : undefined;
+  };
+  return render("Deal:", { deal, coordinators, coordinators_on_all_your_deals, tasks: checklist.tasks.map((t) => ({ id: t.id, text: t.text, section: t.section, due: t.due, done: t.done, email_template: emailFor(t) })), documents: checklist.documents.map(({ id, text, done }) => ({ id, text, done })), recent_notes: notes.slice(0, 5).map((n) => ({ at: n.created_at.slice(0, 10), note: n.body })) });
 };
 // A coordinator named on a new deal is looked up first, so a name that doesn't match fails before anything is created.
 const addDeal = async (ctx, a) => {

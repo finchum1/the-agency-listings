@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { MERGE_FIELDS, RECIPIENT_ROLES, STARTER_TEMPLATES, renderDealEmail } from "../../../lib/dealEmails";
+import { EMAIL_GROUPS, MERGE_FIELDS, RECIPIENT_ROLES, STARTER_TEMPLATES, renderDealEmail } from "../../../lib/dealEmails";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const inputClass =
@@ -53,6 +53,7 @@ function RoleChecks({ legend, value, onChange }) {
 export default function EmailTemplatesEditor({ tpl }) {
   const { templates, loading, error, save, remove } = tpl;
   const [draft, setDraft] = useState(null);
+  const [tab, setTab] = useState("buyer"); // buyer | seller | mine
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState("");
   const bodyRef = useRef(null);
@@ -105,28 +106,47 @@ export default function EmailTemplatesEditor({ tpl }) {
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <p className={`text-sm ${muted}`}>Pick one to edit, or add your own. Editing a starter makes your own copy; the original stays available.</p>
-          <button type="button" onClick={() => { setSaved(""); setDraft(blank()); }} className={ghost}>New template</button>
+          <button type="button" onClick={() => { setSaved(""); setDraft({ ...blank(), side: tab === "mine" ? "both" : tab }); if (tab !== "mine") setTab("mine"); }} className={ghost}>New template</button>
+        </div>
+        <div role="tablist" aria-label="Templates for" className="inline-flex rounded-full border border-black/10 dark:border-white/15 p-0.5 text-sm font-medium">
+          {[["buyer", "Buyer deals"], ["seller", "Seller deals"], ["mine", "My own"]].map(([key, label]) => (
+            <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={`px-4 py-1.5 rounded-full transition-colors ${tab === key ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60"}`}>
+              {label}
+            </button>
+          ))}
         </div>
         {loading ? (
           <p className={`text-sm ${muted}`}>Loading…</p>
         ) : (
-          <ul className="grid gap-1.5 sm:grid-cols-2">
-            {templates.map((t) => {
-              const active = draft && (draft.id ? draft.id === t.id : draft.key === t.key && !draft.id && draft.starter);
+          <div className="space-y-3">
+            {[...EMAIL_GROUPS, "My own"].map((group) => {
+              const list = templates.filter((t) => (tab === "mine" ? !t.starter : t.starter && t.side === tab && t.group === group && group !== "My own"));
+              if (!list.length || (tab === "mine" && group !== "My own")) return null;
               return (
-                <li key={t.id || t.key}>
-                  <button
-                    type="button"
-                    onClick={() => { setSaved(""); setDraft({ ...t, to_roles: [...t.to_roles], cc_roles: [...t.cc_roles] }); }}
-                    className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left text-sm hover:bg-black/[0.02] dark:hover:bg-white/[0.03] ${active ? "border-[#1c1a17] dark:border-[#faf9f7]" : "border-black/10 dark:border-white/15"}`}
-                  >
-                    <span className="min-w-0 truncate font-medium">{t.name}</span>
-                    <span className={`shrink-0 text-xs ${muted}`}>{t.customized ? "Your copy" : t.starter ? "Starter" : "Yours"}</span>
-                  </button>
-                </li>
+                <div key={group} className="space-y-1.5">
+                  {tab !== "mine" && <p className={`text-[11px] font-semibold uppercase tracking-wide ${muted}`}>{group}</p>}
+                  <ul className="grid gap-1.5 sm:grid-cols-2">
+                    {list.map((t) => {
+                      const active = draft && (draft.id ? draft.id === t.id : draft.key === t.key && draft.starter);
+                      return (
+                        <li key={t.id || t.key}>
+                          <button
+                            type="button"
+                            onClick={() => { setSaved(""); setDraft({ ...t, to_roles: [...t.to_roles], cc_roles: [...t.cc_roles] }); }}
+                            className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left text-sm hover:bg-black/[0.02] dark:hover:bg-white/[0.03] ${active ? "border-[#1c1a17] dark:border-[#faf9f7]" : "border-black/10 dark:border-white/15"}`}
+                          >
+                            <span className="min-w-0 truncate font-medium">{t.name}</span>
+                            <span className={`shrink-0 text-xs ${muted}`}>{t.customized ? "Your copy" : t.starter ? "Starter" : t.side === "both" ? "Both" : ""}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               );
             })}
-          </ul>
+            {tab === "mine" && !templates.some((t) => !t.starter) && <p className={`text-sm ${muted}`}>Nothing here yet. Press New template to write your own.</p>}
+          </div>
         )}
       </div>
 

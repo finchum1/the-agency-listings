@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTransactionTasks } from "../../../hooks/useTransactionTasks";
 import { ANCHORS, SIDE_LABELS, effectiveDue, loadTemplate, ruleLabel } from "../../../lib/checklists";
+import { taskEmailKey } from "../../../lib/dealEmails";
+import { useDealEmail } from "./DealEmailButton";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const smallInput =
@@ -20,6 +22,58 @@ const openPicker = (e) => {
   }
 };
 
+// A task that is an email gets a button that opens that email, filled in from the deal. Which template comes from the task's own choice, or from
+// its wording (see taskEmailKey). "Change" picks another template, or none; "+ Email" attaches one to a task that has none.
+function TaskEmail({ task, side, mail, readOnly, updateTask }) {
+  const [picking, setPicking] = useState(false);
+  const key = taskEmailKey(task, side);
+  const tpl = key ? mail.find(key) : null;
+  if (readOnly && !tpl) return null;
+  const choose = (value) => {
+    setPicking(false);
+    updateTask(task.id, { email_template: value === "__auto" ? null : value });
+  };
+  return (
+    <>
+      {tpl && !picking && (
+        <button type="button" onClick={() => mail.launch(tpl)} title={`Open the email: ${tpl.name}`} className="inline-flex max-w-full items-center gap-1 rounded-full bg-[#1c1a17] dark:bg-[#f2454b] px-2.5 py-1 text-[11px] font-semibold text-white hover:opacity-90">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <path d="M3.5 7l8.5 6 8.5-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="truncate">{tpl.name}</span>
+        </button>
+      )}
+      {!readOnly &&
+        (picking ? (
+          <select
+            autoFocus
+            aria-label="Email template for this task"
+            defaultValue={task.email_template === undefined || task.email_template === null ? "__auto" : task.email_template}
+            onChange={(e) => choose(e.target.value)}
+            onBlur={() => setPicking(false)}
+            className={`${smallInput} max-w-[16rem]`}
+          >
+            <option value="__auto">Automatic (from the task's wording)</option>
+            <option value="">No email for this task</option>
+            {mail.forDeal.map((t) => (
+              <option key={t.id || t.key} value={t.id || t.key}>{t.name}</option>
+            ))}
+          </select>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setPicking(true)}
+            title="Choose the email template for this task"
+            className={tpl ? `text-[11px] hover:underline ${muted}` : `text-[11px] text-[#ed2127] dark:text-[#f2454b] hover:underline md:opacity-0 md:group-hover:opacity-100 focus:opacity-100`}
+          >
+            {tpl ? "Change" : "+ Email"}
+          </button>
+        ))}
+    </>
+  );
+}
+
 // `dates` is the deal's live form values, so due dates update the moment a
 // contract / inspection / closing date is typed in above.
 // viewer: "owner" (the agent), "tc" (their coordinator: can tick and edit, but the agent's templates stay the agent's) or
@@ -35,6 +89,9 @@ export default function TransactionChecklist({ person, side, dates, onSummary, v
   const [newText, setNewText] = useState("");
   const [working, setWorking] = useState(false);
   const today = todayKey();
+  // The deal as it reads right now (dates and side from the form above), for filling the emails in.
+  const dealNow = useMemo(() => ({ ...person, ...dates, side: side || person.side }), [person, dates, side]);
+  const mail = useDealEmail(dealNow);
 
   useEffect(() => {
     if (!loading) onSummary?.({ done: tasks.filter((t) => t.done).length, total: tasks.length });
@@ -132,7 +189,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary, v
     const due = effectiveDue(t, dates);
     const overdue = due && !t.done && due < today;
     return (
-      <li key={t.id} className="flex items-start gap-2 rounded-lg px-1 py-1.5 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]">
+      <li key={t.id} className="group flex items-start gap-2 rounded-lg px-1 py-1.5 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]">
         <input
           type="checkbox"
           checked={t.done}
@@ -182,6 +239,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary, v
                 Set the {ANCHORS.find((a) => a.value === t.anchor)?.label || "date"} in Details above
               </span>
             ) : null}
+            <TaskEmail task={t} side={side} mail={mail} readOnly={readOnly} updateTask={updateTask} />
           </div>
         </div>
         {!readOnly && (
@@ -200,6 +258,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary, v
 
   return (
     <div className="space-y-3">
+      {mail.element}
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {tasks.length === 0 ? (

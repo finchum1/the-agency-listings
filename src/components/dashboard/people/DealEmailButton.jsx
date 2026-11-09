@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuth } from "../../../hooks/useAuth";
 import { useEmailTemplates } from "../../../hooks/useEmailTemplates";
-import { gmailHref, mailtoHref, renderDealEmail, templatesForDeal } from "../../../lib/dealEmails";
+import { EMAIL_GROUPS, gmailHref, mailtoHref, renderDealEmail, templatesForDeal } from "../../../lib/dealEmails";
 import EmailTemplatesEditor from "./EmailTemplatesEditor";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
@@ -89,41 +89,56 @@ function Preview({ template, deal, ctx, onClose }) {
   );
 }
 
-// An "Email" button for a deal: pick a template and it fills out from the deal and addresses the right people.
-//   deal   the deal's current values (a row from people)
-export default function DealEmailButton({ deal }) {
+// Everything a deal needs to email from a template: the person's templates, who is on the deal (its agent and coordinators, looked up the first time
+// one is used), and the preview window. `launch(template)` opens the filled-in email; render `element` once somewhere in the component.
+export function useDealEmail(deal) {
   const { profile } = useAuth();
   const tpl = useEmailTemplates();
-  const [menu, setMenu] = useState(false);
   const [picked, setPicked] = useState(null);
-  const [managing, setManaging] = useState(false);
+  const [wanted, setWanted] = useState(false);
   const [people, setPeople] = useState(null); // { agent, coordinators } for this deal
 
-  // The deal's agent and its coordinators, looked up the first time the menu opens.
   useEffect(() => {
-    if (!menu && !picked) return undefined;
+    if (!wanted) return undefined;
     let live = true;
     (async () => {
       const [{ data: agent }, { data: per }, { data: wide }] = await Promise.all([
-        supabase.from("profiles").select("full_name, email, phone").eq("id", deal.owner_id).maybeSingle(),
+        supabase.from("profiles").select("full_name, email, phone, org_id").eq("id", deal.owner_id).maybeSingle(),
         supabase.from("deal_tcs").select("tc_id").eq("person_id", deal.id),
         supabase.from("deal_team").select("tc_id").eq("agent_id", deal.owner_id),
       ]);
       const ids = [...new Set([...(per || []), ...(wide || [])].map((r) => r.tc_id))];
       const { data: tcs } = ids.length ? await supabase.from("profiles").select("full_name, email").in("id", ids) : { data: [] };
-      if (live) setPeople({ agent: { name: agent?.full_name || "", email: agent?.email || "", phone: agent?.phone || "" }, coordinators: (tcs || []).map((t) => ({ name: t.full_name || "", email: t.email || "" })) });
+      const { data: org } = agent?.org_id ? await supabase.from("organizations").select("name").eq("id", agent.org_id).maybeSingle() : { data: null };
+      if (live) setPeople({ agent: { name: agent?.full_name || "", email: agent?.email || "", phone: agent?.phone || "", company: org?.name || "" }, coordinators: (tcs || []).map((t) => ({ name: t.full_name || "", email: t.email || "" })) });
     })();
     return () => {
       live = false;
     };
-  }, [menu, picked, deal.id, deal.owner_id]);
+  }, [wanted, deal.id, deal.owner_id]);
 
   const ctx = useMemo(() => (people ? { me: { name: profile?.full_name || "", email: profile?.email || "", phone: profile?.phone || "" }, ...people } : null), [people, profile]);
-  const shown = useMemo(() => templatesForDeal(tpl.templates, deal), [tpl.templates, deal]);
+  const find = (key) => tpl.templates.find((t) => t.key === key || t.id === key) || null;
+  const forDeal = useMemo(() => templatesForDeal(tpl.templates, deal), [tpl.templates, deal]);
+  const element = picked && ctx ? <Preview key={picked.key} template={picked} deal={deal} ctx={ctx} onClose={() => setPicked(null)} /> : null;
+  return { tpl, find, forDeal, ready: !!ctx, prepare: () => setWanted(true), launch: (template) => { setWanted(true); setPicked(template); }, element };
+}
+
+// An "Email" button for a deal: pick a template and it fills out from the deal and addresses the right people.
+//   deal   the deal's current values (a row from people)
+export default function DealEmailButton({ deal }) {
+  const mail = useDealEmail(deal);
+  const [menu, setMenu] = useState(false);
+  const [managing, setManaging] = useState(false);
+  const groups = useMemo(() => {
+    const out = EMAIL_GROUPS.map((g) => [g, mail.forDeal.filter((t) => t.starter && t.group === g)]);
+    out.push(["My templates", mail.forDeal.filter((t) => !t.starter)]);
+    return out.filter(([, list]) => list.length);
+  }, [mail.forDeal]);
 
   return (
     <div className="relative">
-      <button type="button" onClick={() => setMenu((v) => !v)} aria-haspopup="menu" aria-expanded={menu} className="inline-flex items-center gap-1.5 rounded-full border border-black/10 dark:border-white/15 px-4 py-2 text-sm font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.05]">
+      <button type="button" onClick={() => { setMenu((v) => !v); mail.prepare(); }} aria-haspopup="menu" aria-expanded={menu} className="inline-flex items-center gap-1.5 rounded-full border border-black/10 dark:border-white/15 px-4 py-2 text-sm font-medium hover:bg-black/[0.03] dark:hover:bg-white/[0.05]">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
           <rect x="3" y="5" width="18" height="14" rx="2" />
           <path d="M3.5 7l8.5 6 8.5-6" strokeLinecap="round" strokeLinejoin="round" />
@@ -133,21 +148,26 @@ export default function DealEmailButton({ deal }) {
       {menu && (
         <>
           <button type="button" aria-label="Close menu" onClick={() => setMenu(false)} className="fixed inset-0 z-[55] cursor-default" />
-          <div role="menu" className="absolute left-0 z-[60] mt-1 w-72 max-h-[60vh] overflow-y-auto rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1f1f1f] text-[#1c1a17] dark:text-[#faf9f7] py-1 shadow-xl">
-            {shown.map((t) => (
-              <button
-                key={t.id || t.key}
-                type="button"
-                role="menuitem"
-                disabled={!ctx}
-                onClick={() => {
-                  setMenu(false);
-                  setPicked(t);
-                }}
-                className="block w-full px-3.5 py-2 text-left text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-50"
-              >
-                {t.name}
-              </button>
+          <div role="menu" className="absolute left-0 z-[60] mt-1 w-80 max-h-[65vh] overflow-y-auto rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1f1f1f] text-[#1c1a17] dark:text-[#faf9f7] py-1 shadow-xl">
+            {groups.map(([group, list]) => (
+              <div key={group}>
+                <p className={`px-3.5 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-wide ${muted}`}>{group}</p>
+                {list.map((t) => (
+                  <button
+                    key={t.id || t.key}
+                    type="button"
+                    role="menuitem"
+                    disabled={!mail.ready}
+                    onClick={() => {
+                      setMenu(false);
+                      mail.launch(t);
+                    }}
+                    className="block w-full px-3.5 py-2 text-left text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-50"
+                  >
+                    {t.name}
+                  </button>
+                ))}
+              </div>
             ))}
             <div className="my-1 border-t border-black/10 dark:border-white/10" />
             <button type="button" role="menuitem" onClick={() => { setMenu(false); setManaging(true); }} className={`block w-full px-3.5 py-2 text-left text-sm hover:bg-black/5 dark:hover:bg-white/10 ${muted}`}>
@@ -156,10 +176,10 @@ export default function DealEmailButton({ deal }) {
           </div>
         </>
       )}
-      {picked && ctx && <Preview key={picked.key} template={picked} deal={deal} ctx={ctx} onClose={() => setPicked(null)} />}
+      {mail.element}
       {managing && (
         <Modal title="Email templates" wide onClose={() => setManaging(false)}>
-          <EmailTemplatesEditor tpl={tpl} />
+          <EmailTemplatesEditor tpl={mail.tpl} />
         </Modal>
       )}
     </div>

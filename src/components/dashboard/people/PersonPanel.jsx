@@ -40,7 +40,7 @@ const DATE_FIELDS = ["next_follow_up", "contract_date", "inspection_date", "insp
 const NUMBER_FIELDS = ["price", "commission", "earnest_money"];
 const TEXT_FIELDS = [
   "name", "email", "phone", "source", "property_address", "other_agent", "other_agent2", "title_company", "lender",
-  "client2_name", "client2_email", "other_agent_email", "other_agent2_email", "other_agent_tc_name", "other_agent_tc_email", "title_company_email", "title_processor_name", "title_processor_email", "lender_email", "loan_processor_name", "loan_processor_email",
+  "client2_name", "client2_email", "other_agent_email", "other_agent2_email", "other_agent_company", "other_agent_phone", "other_agent2_company", "other_agent2_phone", "other_party_name", "title_phone", "lender_phone", "financing_type", "other_agent_tc_name", "other_agent_tc_email", "title_company_email", "title_processor_name", "title_processor_email", "lender_email", "loan_processor_name", "loan_processor_email",
 ];
 // Earnest money is delivered or not; ticking it also stamps when (see flush).
 const FIELDS = [...TEXT_FIELDS, ...DATE_FIELDS, ...NUMBER_FIELDS, "side", "earnest_money_delivered", "is_cash"];
@@ -302,6 +302,12 @@ export default function PersonPanel({
             <input type="checkbox" checked={form.is_cash} onChange={(e) => setField("is_cash", true)({ target: { value: e.target.checked } })} className="h-4 w-4 accent-[#ed2127]" />
             <span>Cash purchase (no appraisal or financing)</span>
           </label>
+          {!form.is_cash && (
+            <div className="@md:col-span-2">
+              <label className={labelClass}>Loan type</label>
+              <input value={form.financing_type} onChange={setField("financing_type")} placeholder="Conventional, FHA, VA…" className={inputClass} />
+            </div>
+          )}
         </div>
     </div>
   );
@@ -971,7 +977,7 @@ export default function PersonPanel({
                   { label: "Price", value: money(form.price) },
                   { label: "Commission", value: money(form.commission) },
                   { label: "Earnest money", value: earnestLine(form, person) },
-                  ...(form.is_cash ? [{ label: "Financing", value: "Cash purchase" }] : []),
+                  { label: "Financing", value: form.is_cash ? "Cash purchase" : form.financing_type },
                 ]}
               />
             </>

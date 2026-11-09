@@ -77,6 +77,8 @@ function readFields(body) {
   set("property_address", text(body, "property_address", { max: 200 }));
   set("other_agent", text(body, "other_agent", { max: 120 }));
   set("other_agent2", text(body, "other_agent2", { max: 120 }));
+  for (const k of ["other_agent_company", "other_agent2_company", "other_party_name", "financing_type"]) set(k, text(body, k, { max: 120 }));
+  for (const k of ["other_agent_phone", "other_agent2_phone", "title_phone", "lender_phone"]) set(k, text(body, k, { max: 40 }));
   set("title_company", text(body, "title_company", { max: 120 }));
   set("lender", text(body, "lender", { max: 120 }));
   // The people on a deal: names, and an email for each (checked, lower case).

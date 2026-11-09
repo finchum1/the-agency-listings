@@ -32,6 +32,14 @@ const TEXT = [
   ["other_agent_email", "Other agent's email"],
   ["other_agent2", "Second agent on the other side"],
   ["other_agent2_email", "Second agent's email"],
+  ["other_agent_company", "Other agent's company"],
+  ["other_agent_phone", "Other agent's phone"],
+  ["other_agent2_company", "Second agent's company"],
+  ["other_agent2_phone", "Second agent's phone"],
+  ["other_party_name", "The other side's client"],
+  ["title_phone", "Title phone"],
+  ["lender_phone", "Lender phone"],
+  ["financing_type", "Loan type"],
   ["other_agent_tc_name", "Other agent's TC"],
   ["other_agent_tc_email", "Other agent's TC email"],
   ["title_company", "Title company"],
@@ -409,7 +417,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                       { label: "Price", value: fresh.price == null ? "" : money.format(fresh.price) },
                       { label: "Commission", value: fresh.commission == null ? "" : money.format(fresh.commission) },
                       { label: "Earnest money", value: earnestLine({ earnest_money: fresh.earnest_money, earnest_money_delivered: fresh.earnest_money_delivered }, fresh) },
-                      ...(fresh.is_cash ? [{ label: "Financing", value: "Cash purchase" }] : []),
+                      { label: "Financing", value: fresh.is_cash ? "Cash purchase" : fresh.financing_type },
                     ]}
                   />
                   {edit && <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Dates are on the Overview tab.</p>}
@@ -510,6 +518,12 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                   />
                   <span>Cash purchase (no appraisal or financing)</span>
                 </label>
+                {!fresh.is_cash && (
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>Loan type</label>
+                    {edit ? <input {...bind("financing_type", "text")} placeholder="Conventional, FHA, VA…" className={inputClass} /> : <p className="text-sm">{fresh.financing_type || "–"}</p>}
+                  </div>
+                )}
                 {TEXT.filter(([key]) => key === "property_address").map(([key, label]) => (
                   <div key={key} className={key === "property_address" ? "sm:col-span-2" : ""}>
                     <label className={labelClass}>{label}</label>
