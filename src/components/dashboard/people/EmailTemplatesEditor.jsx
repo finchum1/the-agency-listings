@@ -20,7 +20,7 @@ const SAMPLE_DEAL = {
   name: "Jordan & Casey Smith", email: "jordan@example.com", client2_email: "casey@example.com", side: "buyer", property_address: "1234 NW 50th St, Oklahoma City, OK 73112",
   price: 285000, earnest_money: 3000, contract_date: "2026-11-02", inspection_date: "2026-11-09", inspection_time: "14:00", inspection_period_end: "2026-11-12",
   appraisal_date: "2026-11-16", financing_deadline: "2026-11-20", closing_date: "2026-11-30", closing_time: "10:30", title_company: "Heartland Title",
-  title_company_email: "orders@heartland.example", title_processor_name: "Pat Lee", title_processor_email: "pat@heartland.example", lender: "First Plains Bank",
+  escrow_officer: "Dana Cruz", escrow_officer_email: "dana@heartland.example", title_processor_name: "Pat Lee", title_processor_email: "pat@heartland.example", lender: "First Plains Bank",
   lender_email: "loans@firstplains.example", loan_processor_name: "Alex Rivera", loan_processor_email: "alex@firstplains.example", other_agent: "Jane Doe",
   other_agent_email: "jane@example.com", other_agent_tc_name: "Sam Cole", other_agent_tc_email: "sam@example.com",
 };

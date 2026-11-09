@@ -14,7 +14,8 @@ export const CONTACT_ROLES = [
   { key: "agent", label: "Other agent", name: "other_agent", email: "other_agent_email", phone: "other_agent_phone", company: "other_agent_company", nameLabel: "Name" },
   { key: "agent2", label: "Second agent on the other side", name: "other_agent2", email: "other_agent2_email", phone: "other_agent2_phone", company: "other_agent2_company", nameLabel: "Name" },
   { key: "agent_tc", label: "Other agent's TC", name: "other_agent_tc_name", email: "other_agent_tc_email", nameLabel: "Name" },
-  { key: "title", label: "Title company", name: "title_company", email: "title_company_email", phone: "title_phone", nameLabel: "Company" },
+  { key: "title", label: "Title company", name: "title_company", nameLabel: "Company" },
+  { key: "escrow", label: "Escrow officer", name: "escrow_officer", email: "escrow_officer_email", phone: "title_phone", nameLabel: "Name" },
   { key: "processor", label: "Title processor", name: "title_processor_name", email: "title_processor_email", nameLabel: "Name" },
   { key: "lender", label: "Lender", name: "lender", email: "lender_email", phone: "lender_phone", nameLabel: "Name or company", cashHides: true },
   { key: "loan_processor", label: "Loan processor", name: "loan_processor_name", email: "loan_processor_email", nameLabel: "Name", cashHides: true },
@@ -22,7 +23,7 @@ export const CONTACT_ROLES = [
 
 // One click opens a new email to a whole group: the people on that side of the deal, addressed together, with the property as the subject.
 const TEAMS = [
-  { label: "Title team", emails: ["title_company_email", "title_processor_email"] },
+  { label: "Title team", emails: ["escrow_officer_email", "title_processor_email"] },
   { label: "Other agent & TC", emails: ["other_agent_email", "other_agent2_email", "other_agent_tc_email"] },
   { label: "Lender & processor", emails: ["lender_email", "loan_processor_email"], cashHides: true },
 ];

@@ -12,7 +12,7 @@ export const RECIPIENT_ROLES = [
   { key: "other_agent", label: "Other agent", name: "other_agent", email: "other_agent_email" },
   { key: "other_agent2", label: "Second agent on the other side", name: "other_agent2", email: "other_agent2_email" },
   { key: "other_agent_tc", label: "Other agent's TC", name: "other_agent_tc_name", email: "other_agent_tc_email" },
-  { key: "title", label: "Title company", name: "title_company", email: "title_company_email" },
+  { key: "escrow", label: "Escrow officer", name: "escrow_officer", email: "escrow_officer_email" },
   { key: "title_processor", label: "Title processor", name: "title_processor_name", email: "title_processor_email" },
   { key: "lender", label: "Lender", name: "lender", email: "lender_email", cashHides: true },
   { key: "loan_processor", label: "Loan processor", name: "loan_processor_name", email: "loan_processor_email", cashHides: true },
@@ -73,6 +73,7 @@ export const MERGE_FIELDS = [
   ["other_party_role", "Seller or Buyer (the other side's client)", "Deal"],
   ["title_company", "title company", "Other people"],
   ["title_processor", "title processor", "Other people"],
+  ["escrow_officer", "escrow officer", "Other people"],
   ["title_greeting", "title contact first name", "Other people"],
   ["lender", "lender", "Other people"],
   ["loan_processor", "loan processor", "Other people"],
@@ -143,7 +144,8 @@ export function fieldValues(deal = {}, ctx = {}) {
     other_party_role: side === "seller" ? "Buyer" : "Seller",
     title_company: text(deal.title_company),
     title_processor: text(deal.title_processor_name),
-    title_greeting: firstName(deal.title_processor_name) || text(deal.title_company),
+    escrow_officer: text(deal.escrow_officer),
+    title_greeting: firstName(deal.escrow_officer) || firstName(deal.title_processor_name) || text(deal.title_company),
     lender: text(deal.lender),
     loan_processor: text(deal.loan_processor_name),
     lender_greeting: firstName(deal.loan_processor_name) || text(deal.lender),
@@ -151,7 +153,9 @@ export function fieldValues(deal = {}, ctx = {}) {
     other_agent_first: firstName(deal.other_agent),
     other_agent_line: line(deal.other_agent, deal.other_agent_company, [text(deal.other_agent_email), text(deal.other_agent_phone)].filter(Boolean).join(", ")),
     other_agent2_line: line(deal.other_agent2, deal.other_agent2_company, [text(deal.other_agent2_email), text(deal.other_agent2_phone)].filter(Boolean).join(", ")),
-    title_line: line(deal.title_processor_name, deal.title_company, [text(deal.title_processor_email || deal.title_company_email), text(deal.title_phone)].filter(Boolean).join(", ")),
+    title_line: deal.escrow_officer || !deal.title_processor_name
+      ? line(deal.escrow_officer, deal.title_company, [text(deal.escrow_officer_email), text(deal.title_phone)].filter(Boolean).join(", "))
+      : line(deal.title_processor_name, deal.title_company, [text(deal.title_processor_email), text(deal.title_phone)].filter(Boolean).join(", ")),
     lender_line: deal.is_cash ? "" : line(deal.loan_processor_name || deal.lender, deal.loan_processor_name ? deal.lender : "", [text(deal.loan_processor_email || deal.lender_email), text(deal.lender_phone)].filter(Boolean).join(", ")),
     other_agent_firsts: joinNames([firstName(deal.other_agent), firstName(deal.other_agent2)]),
     other_side_firsts: joinNames([firstName(deal.other_agent), firstName(deal.other_agent2), firstName(deal.other_agent_tc_name)]),
@@ -200,11 +204,12 @@ export function fillText(template, values) {
 }
 
 // ------------------------------------------------------------------------------------------------ recipients
-const SIBLINGS = [["title", "title_processor"], ["lender", "loan_processor"]];
+const SIBLINGS = [["escrow", "title_processor"], ["lender", "loan_processor"]];
 function peopleFor(roles, deal, ctx) {
   const found = [];
   const noEmail = [];
-  for (const key of roles || []) {
+  for (const raw of roles || []) {
+    const key = raw === "title" ? "escrow" : raw; // the title company has no email of its own now: its mail goes to the escrow officer
     const role = ROLE[key];
     if (!role || (role.cashHides && deal.is_cash)) continue;
     let list;
@@ -277,7 +282,7 @@ export const EMAIL_GROUPS = ["Getting started", "Inspection and appraisal", "Fin
 const SIG = "{my_signature}";
 const CLIENTS = ["client", "client2"];
 const US = ["agent", "tc"];
-const TITLE = ["title", "title_processor"];
+const TITLE = ["escrow", "title_processor"];
 const LENDER = ["lender", "loan_processor"];
 const OTHER_SIDE = ["other_agent", "other_agent2", "other_agent_tc"];
 const EVERYONE = [...TITLE, ...LENDER, ...OTHER_SIDE];
