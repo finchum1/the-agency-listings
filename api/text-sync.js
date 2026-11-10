@@ -6,10 +6,9 @@
 //   POST /api/text-sync?a=register   {name}  the Latchpoint Mac app, signed in as the agent (their normal session token, not a device token), asks for
 //                                    its own device token so nobody has to paste a connection code. A Mac of the same name is replaced.
 // Only contacts that are switched on, and that belong to the device's owner, accept messages. Anything else is ignored.
-import crypto from "node:crypto";
 import { authenticate, serviceClient } from "./_lib/authUser.js";
+import { deviceFor } from "./_lib/macDevice.js";
 
-const TOKEN = /^ts_[0-9a-f]{64}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_ITEMS = 500;
 const COLS = "id, first_name, last_name, company, phone, other_phones, email, other_emails";
@@ -20,17 +19,6 @@ export const phoneKey = (v) => {
   if (d.length < 7) return "";
   return d.length > 10 ? d.slice(-10) : d;
 };
-
-async function device(admin, req) {
-  const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "").trim();
-  if (!TOKEN.test(token)) return null;
-  const hash = crypto.createHash("sha256").update(token).digest("hex");
-  const { data: dev } = await admin.from("text_sync_devices").select("id, owner_id, last_seen_at").eq("token_hash", hash).is("revoked_at", null).maybeSingle();
-  if (!dev) return null;
-  const { data: owner } = await admin.from("profiles").select("people_enabled").eq("id", dev.owner_id).maybeSingle();
-  if (!owner?.people_enabled) return null;
-  return dev;
-}
 
 async function syncedContacts(admin, ownerId) {
   const out = [];
@@ -62,7 +50,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ token });
   }
 
-  const dev = await device(admin, req);
+  const dev = await deviceFor(admin, req);
   if (!dev) return res.status(401).json({ error: "This Mac isn't connected anymore. Make a new connection code in the dashboard." });
   const a = String(req.query?.a || "");
   const now = new Date().toISOString();
