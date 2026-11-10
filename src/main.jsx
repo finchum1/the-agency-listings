@@ -18,6 +18,13 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>,
 )
 
+// Inside the Latchpoint Mac app, tell it who is signed in (see src/lib/nativeBridge.js). Nothing happens in a normal browser.
+if (window.latchpoint) {
+  Promise.all([import('./lib/nativeBridge.js'), import('./lib/supabaseClient.js')]).then(([bridge, client]) =>
+    bridge.connectNativeBridge({ native: window.latchpoint, auth: client.supabase.auth }),
+  )
+}
+
 // Only register the PWA service worker on the dashboard's own host — this
 // same bundle also serves every agent's/listing's own custom domain (see
 // App.jsx's isAppHost() branch), and installing a service worker there
