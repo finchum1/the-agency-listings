@@ -7,6 +7,7 @@ import { EMPTY_FILTERS, RELATIONSHIPS, SORTS, addressLine, applyFilters, bestToK
 import { ManageTags, TagChip, TagPicker } from "./TagParts";
 import ContactPanel from "./ContactPanel";
 import ImportContacts from "./ImportContacts";
+import TextSyncModal from "./TextSyncModal";
 import useUrlParamSync from "../../../../hooks/useUrlParamSync";
 import StartPlanModal from "../StartPlanModal";
 import { usePeopleStages } from "../../../../hooks/usePeopleStages";
@@ -330,6 +331,7 @@ export default function ContactsPage() {
     for (const p of active) for (const id of ctx.tagsByContact.get(p.id) || []) c.set(id, (c.get(id) || 0) + 1);
     return c;
   }, [active, ctx]);
+  const syncCount = useMemo(() => contacts.filter((c) => c.text_sync && !c.archived).length, [contacts]);
   const filtersOn = hasFilters(filters);
   const set = (patch) => {
     setFilters((f) => ({ ...f, ...patch }));
@@ -483,6 +485,7 @@ export default function ContactsPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" onClick={() => setModal("tags")} className={pill}>Tags</button>
           <button type="button" onClick={() => setModal("import")} className={pill}>Import</button>
+          <button type="button" onClick={() => setModal("textsync")} className={pill} title="Show your texts and calls with contacts in their History">Text sync{syncCount ? ` (${syncCount.toLocaleString()})` : ""}</button>
           <button type="button" onClick={() => exportCsv(filtered)} className={pill}>Export</button>
           <button type="button" onClick={() => setModal("dupes")} className={pill} title="People who share an email, a phone number or a name">Find repeats{dupes.length ? ` (${dupes.length})` : ""}</button>
           <button type="button" onClick={() => setModal("add")} className={primary}>+ Add contact</button>
@@ -604,6 +607,8 @@ export default function ContactsPage() {
             ))}
           </select>
           <button type="button" onClick={() => setModal("followup")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Schedule follow-up</button>
+          <button type="button" onClick={() => crm.updateMany(picked.map((c) => c.id), { text_sync: true }).then(() => flash(`Texts and calls will sync for ${picked.length}.`))} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Sync texts</button>
+          {picked.some((c) => c.text_sync) && <button type="button" onClick={() => crm.updateMany(picked.map((c) => c.id), { text_sync: false }).then(() => flash(`Stopped syncing for ${picked.length}.`))} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Stop syncing</button>}
           {!filters.archived && <button type="button" onClick={() => setModal("board")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Add to Leads / Pipeline</button>}
           {!filters.archived && <button type="button" onClick={() => setModal("plan")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Start a plan</button>}
           {picked.length === 2 && <button type="button" onClick={() => setModal("merge")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Merge</button>}
@@ -744,6 +749,11 @@ export default function ContactsPage() {
         />
       )}
       {modal === "add" && <AddContact onClose={(c) => { setModal(null); if (c) setOpenId(c.id); }} onAdd={crm.addContact} />}
+      {modal === "textsync" && (
+        <Modal title="Text sync" width="max-w-xl" onClose={() => setModal(null)}>
+          <TextSyncModal contacts={contacts} onClose={() => setModal(null)} onSetAll={(ids, on) => crm.updateMany(ids, { text_sync: on }).then(() => flash(on ? `Texts and calls will sync for ${ids.length.toLocaleString()}.` : "Stopped syncing."))} />
+        </Modal>
+      )}
       {modal === "import" && <ImportContacts existing={contacts} tags={tags} ensureTag={crm.ensureTag} onClose={() => setModal(null)} onDone={crm.reload} />}
       {modal === "tags" && <ManageTags tags={tags} links={crm.ctx.tagsByContact ? [...crm.ctx.tagsByContact].flatMap(([c, ts]) => ts.map((t) => ({ contact_id: c, tag_id: t }))) : []} onClose={() => setModal(null)} onUpdate={crm.updateTag} onDelete={crm.deleteTag} />}
       {modal === "plan" && <StartPlanModal contactIds={picked.map((c) => c.id)} onClose={() => setModal(null)} onDone={() => setSelected(new Set())} />}

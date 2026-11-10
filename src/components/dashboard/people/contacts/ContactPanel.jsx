@@ -45,6 +45,37 @@ function Field({ title, value, onCommit, type = "text", placeholder, list, class
 
 const fmtWhen = (iso) => new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
 const kindLabel = (k) => NOTE_KINDS.find((n) => n.value === k)?.label || "Note";
+const mins = (s) => (s == null ? "" : s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`);
+// A text or call that came in from the Mac app (Contacts > Text sync).
+const syncedLabel = (n) =>
+  n.kind === "synced_text" ? (n.direction === "in" ? "Text received" : "Text sent") : n.direction === "missed" ? "Missed call" : `${n.direction === "in" ? "Call received" : "Call made"}${n.secs ? ` · ${mins(n.secs)}` : ""}`;
+
+// The per-contact switch for texts and calls coming in from the agent's Mac app, and a way to wipe what's been saved for this person.
+function TextSyncRow({ contact, synced, onSet, onCleared }) {
+  const hasPhone = [contact.phone, ...(contact.other_phones || [])].some((p) => String(p || "").replace(/\D/g, "").length >= 7);
+  if (!hasPhone && !contact.text_sync && !synced) return null;
+  const wipe = async () => {
+    if (!confirm("Delete every synced text and call saved for this contact? Your notes stay. They can sync back in if text sync is on and the app is running.")) return;
+    await supabase.from("contact_messages").delete().eq("contact_id", contact.id);
+    onCleared();
+  };
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-xl border border-black/10 dark:border-white/15 p-3">
+      <div className="text-sm">
+        <p className="font-semibold">Text sync</p>
+        <p className={`text-xs mt-0.5 ${muted}`}>{contact.text_sync ? "Texts and calls with this person come in from your Mac." : hasPhone ? "Off. Turn on to bring texts and calls with this person in from your Mac." : "Add a phone number to sync texts."}</p>
+        {synced && (
+          <button type="button" onClick={wipe} className="mt-1 text-xs text-red-600 dark:text-red-400 hover:underline">
+            Delete synced texts and calls
+          </button>
+        )}
+      </div>
+      <button type="button" role="switch" aria-checked={Boolean(contact.text_sync)} aria-label="Text sync" disabled={!hasPhone && !contact.text_sync} onClick={() => onSet(!contact.text_sync)} className={`relative shrink-0 h-7 w-12 rounded-full transition-colors disabled:opacity-40 ${contact.text_sync ? "bg-[#ed2127] dark:bg-[#f2454b]" : "bg-black/20 dark:bg-white/25"}`}>
+        <span className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${contact.text_sync ? "translate-x-5" : ""}`} />
+      </button>
+    </div>
+  );
+}
 
 export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpdate, onTagAdd, onTagRemove, onCreateTag, onDelete, onChanged }) {
   const { user } = useAuth();
@@ -69,13 +100,15 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
   const myCards = cards.filter((c) => c.contact_id === contact.id);
 
   const loadNotes = useCallback(async () => {
-    const [a, b] = await Promise.all([
+    const [a, b, m] = await Promise.all([
       supabase.from("contact_notes").select("id, kind, body, occurred_at").eq("contact_id", contact.id).order("occurred_at", { ascending: false }).limit(200),
       cards.some((c) => c.contact_id === contact.id)
         ? supabase.from("people_notes").select("id, body, created_at, person_id").in("person_id", cards.filter((c) => c.contact_id === contact.id).map((c) => c.id)).order("created_at", { ascending: false }).limit(100)
         : Promise.resolve({ data: [] }),
+      supabase.from("contact_messages").select("id, kind, direction, body, duration_seconds, occurred_at").eq("contact_id", contact.id).order("occurred_at", { ascending: false }).limit(300),
     ]);
     const merged = [
+      ...(m.data || []).map((x) => ({ id: `m${x.id}`, rawId: x.id, mine: true, table: "contact_messages", kind: x.kind === "call" ? "synced_call" : "synced_text", direction: x.direction, secs: x.duration_seconds, body: x.body, at: x.occurred_at })),
       ...(a.data || []).map((n) => ({ id: `c${n.id}`, rawId: n.id, mine: true, kind: n.kind, body: n.body, at: n.occurred_at })),
       ...(b.data || []).map((n) => ({ id: `p${n.id}`, kind: "card", body: n.body, at: n.created_at })),
     ].sort((x, y) => y.at.localeCompare(x.at));
@@ -109,7 +142,7 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
   };
   const deleteNote = async (n) => {
     if (!confirm("Delete this entry?")) return;
-    await supabase.from("contact_notes").delete().eq("id", n.rawId);
+    await supabase.from(n.table || "contact_notes").delete().eq("id", n.rawId);
     loadNotes();
   };
 
@@ -284,6 +317,7 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
           )}
           {tab === "activity" && (
             <section className="space-y-3">
+              <TextSyncRow contact={contact} synced={notes.some((n) => n.table === "contact_messages")} onSet={(on) => set({ text_sync: on })} onCleared={loadNotes} />
               <form onSubmit={logActivity} className="space-y-2">
                 <div className="flex flex-wrap gap-1.5" role="group" aria-label="Type of activity">
                   {NOTE_KINDS.map((k) => (
@@ -303,7 +337,7 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
                 <ul className="space-y-2">
                   {notes.map((n) => (
                     <li key={n.id} className="rounded-xl bg-black/[0.03] dark:bg-white/[0.05] p-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{n.kind === "card" ? "From a Leads / Pipeline card" : kindLabel(n.kind)}</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{n.kind === "card" ? "From a Leads / Pipeline card" : n.kind.startsWith("synced_") ? syncedLabel(n) : kindLabel(n.kind)}</p>
                       {n.body && <p className="mt-1 text-sm whitespace-pre-wrap">{n.body}</p>}
                       <div className={`mt-1.5 flex items-center justify-between text-[11px] ${muted}`}>
                         <span>{fmtWhen(n.at)}</span>
