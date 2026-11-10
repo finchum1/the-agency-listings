@@ -202,6 +202,16 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
                   {contact.archived ? " · Archived" : ""}
                 </span>
               </div>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {contact.phone ? (
+                  <>
+                    <a href={`tel:${digits(contact.phone)}`} className={pill}>Call</a>
+                    <a href={`sms:${digits(contact.phone)}`} className={pill}>Text</a>
+                  </>
+                ) : null}
+                {contact.email ? <a href={`mailto:${contact.email}`} className={pill}>Email</a> : null}
+                {!contact.phone && !contact.email && <span className={`text-xs ${muted}`}>Add a phone number or email to call, text or email.</span>}
+              </div>
             </div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="p-1 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
@@ -214,16 +224,6 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
           {error && <p className="mb-5 text-sm text-red-600 dark:text-red-400">{error}</p>}
           {tab === "overview" && (
             <div className="space-y-7">
-              <div className="flex flex-wrap gap-2">
-                {contact.phone ? (
-                  <>
-                    <a href={`tel:${digits(contact.phone)}`} className={pill}>Call</a>
-                    <a href={`sms:${digits(contact.phone)}`} className={pill}>Text</a>
-                  </>
-                ) : null}
-                {contact.email ? <a href={`mailto:${contact.email}`} className={pill}>Email</a> : null}
-                {!contact.phone && !contact.email && <span className={`text-xs ${muted}`}>Add a phone number or email to call, text or email from here.</span>}
-              </div>
               {contact.do_not_contact && <p className="rounded-lg bg-red-500/10 text-red-800 dark:text-red-300 px-3 py-2 text-sm font-medium">Marked do not contact.</p>}
 
               <section className="space-y-2.5">
