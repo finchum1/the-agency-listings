@@ -87,7 +87,7 @@ function GroupHeader({ id, title, body }) {
 }
 
 const FAQ = [
-  ["What does it cost?", "$500 to set up, then $100 a month. There are no contracts, so you pay month to month."],
+  ["What does it cost?", "$500 to set up, then $150 a month. There are no contracts, so you pay month to month."],
   ["When can I get in?", "We're inviting people in a few at a time, by hand. Request early access and we'll email you to set up a short call when there's a spot."],
   ["Will it look like The Agency?", "Yes. The Agency's logo and brand colors are built in, so your website, your property sites and your dashboard all stay on brand."],
   ["Do I need to be technical?", "No. Editing a listing, writing a post, or updating a lead is a form. If you can use your email, you can run this."],
@@ -152,7 +152,7 @@ export default function LandingPage() {
               </a>
             </div>
             <p className="mt-5 text-sm text-[#1c1a17]/55 dark:text-[#faf9f7]/55">
-              $500 to set up, then $100 a month. No contracts.{" "}
+              $500 to set up, then $150 a month. No contracts.{" "}
               <a href="#pricing" className="underline underline-offset-4 hover:text-[#ed2127]">What&rsquo;s included</a>
             </p>
           </motion.div>
@@ -529,7 +529,7 @@ export default function LandingPage() {
           <div className="mt-12 grid md:grid-cols-2 gap-6">
             {[
               ["$500", "to set up", ["Your website built and live on your own domain", "Your blog posts and old URLs moved over, so you keep your search rankings", "Your dashboard set up with your logo and colors"]],
-              ["$100", "a month", ["Hosting, upkeep, and updates for your site and dashboard", "New features as they ship", "A studio to call when you want something changed"]],
+              ["$150", "a month", ["Hosting, upkeep, and updates for your site and dashboard", "New features as they ship", "A studio to call when you want something changed"]],
             ].map(([price, unit, items], i) => (
               <Reveal key={price} variant="scaleIn" delay={i * 0.1} className="rounded-2xl bg-[#faf9f7] dark:bg-[#0d0d0d] p-8">
                 <p className="text-5xl font-display font-semibold">
