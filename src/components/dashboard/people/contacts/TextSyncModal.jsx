@@ -7,7 +7,7 @@ const pill = "rounded-full border border-black/10 dark:border-white/15 px-3.5 py
 const primary = "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2 disabled:opacity-50";
 const input = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
 
-export const DOWNLOAD_URL = "/downloads/AgencyTextSync.zip";
+export const DOWNLOAD_URL = "/downloads/LatchpointText.zip";
 
 const ago = (iso) => {
   if (!iso) return "never";
@@ -67,9 +67,9 @@ export default function TextSyncModal({ contacts, onClose, onSetAll }) {
 
       <section>
         <h3 className="font-semibold mb-1">1. Install the app on your Mac</h3>
-        <p className={`${muted} mb-2`}>For a Mac running macOS 13 or newer, signed in to the same Messages account as your iPhone. Open the download and drag the app to Applications. Until the app is notarized by Apple, your Mac will say it "could not verify" it: click Done, open System Settings &gt; Privacy &amp; Security, scroll down to the message about Agency Text Sync and click Open Anyway. The app then opens a small window, and keeps a speech-bubble icon in your menu bar.</p>
+        <p className={`${muted} mb-2`}>For a Mac running macOS 13 or newer, signed in to the same Messages account as your iPhone. Open the download and drag the app to Applications. Until the app is notarized by Apple, your Mac will say it "could not verify" it: click Done, open System Settings &gt; Privacy &amp; Security, scroll down to the message about Latchpoint Text and click Open Anyway. The app then opens a small window, and keeps a speech-bubble icon in your menu bar.</p>
         <a href={DOWNLOAD_URL} className={pill} download>
-          Download Agency Text Sync for Mac
+          Download Latchpoint Text for Mac
         </a>
         <p className={`mt-2 text-xs ${muted}`}>When it asks, allow it under System Settings &gt; Privacy &amp; Security &gt; Full Disk Access. That's how a Mac lets an app read Messages.</p>
       </section>
