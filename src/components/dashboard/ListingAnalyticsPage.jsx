@@ -137,12 +137,36 @@ function SellerReports({ listing }) {
   );
 }
 
-// A Monday-morning email to the listing's agent with last week's visits (api/weekly-reports.js). Off until turned on, per listing.
+const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+// A morning email to the listing's agent with last week's visits (api/weekly-reports.js). Off until turned on, per listing; the day is
+// the agent's own choice (Monday unless changed) and covers all of their listings.
 function WeeklyEmail({ listing, onChanged }) {
   const [on, setOn] = useState(Boolean(listing.weekly_report));
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
+  const [day, setDay] = useState(1);
   const live = ["coming_soon", "for_sale", "pending"].includes(listing.status);
+  useEffect(() => {
+    supabase
+      .from("profiles")
+      .select("weekly_report_day")
+      .eq("id", listing.agent_id)
+      .maybeSingle()
+      .then(({ data }) => setDay(data?.weekly_report_day ?? 1));
+  }, [listing.agent_id]);
+
+  const changeDay = async (e) => {
+    const next = Number(e.target.value);
+    const prev = day;
+    setDay(next);
+    setNote("");
+    const { error } = await supabase.from("profiles").update({ weekly_report_day: next }).eq("id", listing.agent_id);
+    if (error) {
+      setDay(prev);
+      setNote(error.message);
+    }
+  };
 
   const toggle = async () => {
     const next = !on;
@@ -173,7 +197,7 @@ function WeeklyEmail({ listing, onChanged }) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="font-display text-base font-semibold">Weekly email</h3>
-          <p className={`text-xs mt-1 ${muted}`}>Every Monday morning, an email to you with last week's views, visitors, where they came from and what they did.</p>
+          <p className={`text-xs mt-1 ${muted}`}>Every {DAY_NAMES[day]} morning, an email to the listing's agent with the past week's views, visitors, where they came from and what they did. The button in it opens a live report page, with no login, that can be forwarded to the seller.</p>
         </div>
         <button type="button" role="switch" aria-checked={on} aria-label="Weekly email" onClick={toggle} className={`relative shrink-0 h-7 w-12 rounded-full transition-colors ${on ? "bg-[#ed2127] dark:bg-[#f2454b]" : "bg-black/20 dark:bg-white/25"}`}>
           <span className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${on ? "translate-x-5" : ""}`} />
@@ -184,6 +208,17 @@ function WeeklyEmail({ listing, onChanged }) {
         {on && !live ? "Emails only go out while the listing is Coming Soon, For Sale or Pending. " : ""}
         {listing.weekly_report_sent_at ? `Last one sent ${new Date(listing.weekly_report_sent_at).toLocaleDateString()}.` : ""}
       </p>
+      <label className={`mt-3 flex items-center gap-2 text-xs ${muted}`}>
+        Send on
+        <select value={day} onChange={changeDay} className="rounded-lg border border-black/15 dark:border-white/20 bg-transparent px-2 py-1 text-sm text-inherit">
+          {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+            <option key={d} value={d}>
+              {DAY_NAMES[d]}
+            </option>
+          ))}
+        </select>
+        <span>(for all of this agent's listings)</span>
+      </label>
       <div className="mt-3 flex items-center gap-3 flex-wrap">
         <button type="button" onClick={sendNow} disabled={busy} className={`${quietBtn} disabled:opacity-50`}>
           {busy ? "Sending…" : "Email me this week's report now"}

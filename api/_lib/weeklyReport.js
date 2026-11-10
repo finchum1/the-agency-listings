@@ -1,5 +1,6 @@
 // The weekly listing report email: last 7 days against the 7 before, where visitors came from, and what they did. It goes to the
-// listing's agent (who can forward the seller report link from the dashboard); it is never sent to a seller directly.
+// listing's agent. Its button opens the listing's public seller report page (no login), so the agent can forward that same link to the
+// seller; the email itself is never sent to a seller directly.
 import { sourceLabel } from "../../src/lib/listingAnalytics.js";
 
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -14,7 +15,7 @@ export function summarize(week, two) {
   return { views: week.views, visitors: week.visitors, priorViews: prior, change, avg: week.avg_duration, leads: week.leads };
 }
 
-export function buildWeeklyEmail({ listing, agentName, orgName, week, two, dashboardUrl }) {
+export function buildWeeklyEmail({ listing, agentName, orgName, logoUrl, week, two, reportUrl }) {
   const s = summarize(week, two);
   const e = week.engagement || {};
   const tracked = week.tracked_views || 0;
@@ -38,7 +39,7 @@ export function buildWeeklyEmail({ listing, agentName, orgName, week, two, dashb
   if (city) lines.push("", `Top city: ${[city.city, city.region].filter(Boolean).join(", ")}`);
   if (tracked > 0) lines.push("", `${pct(e.gallery_opens || 0, tracked)}% opened the photos, ${e.video_gallery || e.video_plays ? `${pct(e.video_plays || 0, tracked)}% played the video, ` : ""}${e.phone_clicks || 0} tapped your phone number, ${e.form_starts || 0} started the inquiry form.`);
   if (s.views === 0) lines.push("", "No visits yet this week. Share the listing's tagged links from its Analytics page to get it in front of people.");
-  lines.push("", `Open the full report, or send your seller their private link: ${dashboardUrl}`, "", "You get this because weekly reports are on for this listing. Turn them off on the listing's Analytics page.");
+  lines.push("", `View the full report (no login needed, and you can send this same link to your seller): ${reportUrl}`, "", "You get this because weekly reports are on for this listing. To change the day or turn them off, use the listing's Analytics page or ask your office.");
   const text = lines.join("\n");
 
   const tile = (label, value, note) =>
@@ -48,13 +49,13 @@ export function buildWeeklyEmail({ listing, agentName, orgName, week, two, dashb
     .join("");
   const html = `<!doctype html><html><body style="margin:0;background:#f7f4ee"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f4ee"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">
-<tr><td style="padding:0 6px 14px"><div style="font:600 11px Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#d3181d">Weekly report</div><div style="margin-top:6px;font:600 28px Georgia,serif;color:#1c1a17">${esc(listing.address_line1)}</div><div style="margin-top:4px;font:14px Arial,sans-serif;color:#57534b">${esc(listing.city || "")}${arrow ? ` · views ${esc(arrow)}` : ""}</div></td></tr>
+${logoUrl ? `<tr><td style="padding:0 6px 18px"><img src="${esc(logoUrl)}" alt="${esc(orgName || "The Agency")}" width="130" style="display:block;border:0;outline:none;height:auto;max-width:130px"></td></tr>\n` : ""}<tr><td style="padding:0 6px 14px"><div style="font:600 11px Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#d3181d">Weekly report</div><div style="margin-top:6px;font:600 28px Georgia,serif;color:#1c1a17">${esc(listing.address_line1)}</div><div style="margin-top:4px;font:14px Arial,sans-serif;color:#57534b">${esc(listing.city || "")}${arrow ? ` · views ${esc(arrow)}` : ""}</div></td></tr>
 <tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${tile("Views", s.views)}${tile("Visitors", s.visitors)}${tile("Avg. time", fmtTime(s.avg))}${tile("Inquiries", s.leads)}</tr></table></td></tr>
 ${top.length ? `<tr><td style="padding:12px 6px 0"><div style="background:#ffffff;border:1px solid #e4dfd3;border-radius:14px;padding:16px 18px"><div style="font:600 11px Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#7a756b;margin-bottom:6px">Where they came from</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${sourceRows}</table>${city ? `<div style="margin-top:10px;font:13px Arial,sans-serif;color:#57534b">Top city: ${esc([city.city, city.region].filter(Boolean).join(", "))}</div>` : ""}</div></td></tr>` : ""}
 ${tracked > 0 ? `<tr><td style="padding:12px 6px 0"><div style="background:#ffffff;border:1px solid #e4dfd3;border-radius:14px;padding:16px 18px;font:14px/1.6 Arial,sans-serif;color:#1c1a17">${pct(e.gallery_opens || 0, tracked)}% opened the photos · ${e.phone_clicks || 0} tapped your phone number · ${e.form_starts || 0} started the inquiry form</div></td></tr>` : ""}
 ${s.views === 0 ? `<tr><td style="padding:12px 6px 0"><div style="background:#fff7f6;border:1px solid #f1c9c6;border-radius:14px;padding:16px 18px;font:14px/1.6 Arial,sans-serif;color:#1c1a17">No visits yet this week. Share the listing's tagged links from its Analytics page to get it in front of people.</div></td></tr>` : ""}
-<tr><td style="padding:20px 6px"><a href="${esc(dashboardUrl)}" style="display:inline-block;background:#1c1a17;color:#ffffff;text-decoration:none;font:600 14px Arial,sans-serif;padding:13px 22px;border-radius:999px">Open the full report</a><div style="margin-top:10px;font:13px/1.5 Arial,sans-serif;color:#57534b">From there you can create the private link to send ${esc("your seller")}.</div></td></tr>
-<tr><td style="padding:6px 6px 0;font:12px/1.5 Arial,sans-serif;color:#7a756b">You get this because weekly reports are on for this listing. Turn them off any time on the listing's Analytics page. ${esc(orgName || "")}</td></tr>
+<tr><td style="padding:20px 6px"><a href="${esc(reportUrl)}" style="display:inline-block;background:#1c1a17;color:#ffffff;text-decoration:none;font:600 14px Arial,sans-serif;padding:13px 22px;border-radius:999px">View the full report</a><div style="margin-top:10px;font:13px/1.5 Arial,sans-serif;color:#57534b">This is a live page, no login needed. Forward the link to your seller and they can see the same numbers any time. It never shows inquiry names or contact details.</div></td></tr>
+<tr><td style="padding:6px 6px 0;font:12px/1.5 Arial,sans-serif;color:#7a756b">You get this because weekly reports are on for this listing. To change the day or turn them off, use the listing's Analytics page or ask your office. ${esc(orgName || "")}</td></tr>
 </table></td></tr></table></body></html>`;
   return { subject, text, html };
 }
