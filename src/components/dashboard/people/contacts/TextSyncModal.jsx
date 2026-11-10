@@ -67,7 +67,7 @@ export default function TextSyncModal({ contacts, onClose, onSetAll }) {
 
       <section>
         <h3 className="font-semibold mb-1">1. Install the app on your Mac</h3>
-        <p className={`${muted} mb-2`}>For a Mac running macOS 13 or newer, signed in to the same Messages account as your iPhone. Open the download and drag the app to Applications. The first time, right-click it and choose Open (it isn\u2019t from the App Store). Then click the speech-bubble icon that appears in your menu bar.</p>
+        <p className={`${muted} mb-2`}>For a Mac running macOS 13 or newer, signed in to the same Messages account as your iPhone. Open the download and drag the app to Applications. Until the app is notarized by Apple, your Mac will say it "could not verify" it: click Done, open System Settings &gt; Privacy &amp; Security, scroll down to the message about Agency Text Sync and click Open Anyway. Then click the speech-bubble icon that appears in your menu bar.</p>
         <a href={DOWNLOAD_URL} className={pill} download>
           Download Agency Text Sync for Mac
         </a>
