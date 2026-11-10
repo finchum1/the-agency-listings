@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useCopy } from "../../TrackedLinks";
+import { useNativeTextSync } from "../../../../hooks/useNativeTextSync";
 
 const muted = "text-[#1c1a17]/55 dark:text-[#faf9f7]/55";
 const pill = "rounded-full border border-black/10 dark:border-white/15 px-3.5 py-1.5 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 const primary = "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2 disabled:opacity-50";
 const input = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
 
-export const DOWNLOAD_URL = "/downloads/LatchpointText.zip";
+export const DOWNLOAD_URL = "/downloads/Latchpoint.zip";
+const OLD_DOWNLOAD_URL = "/downloads/LatchpointText.zip";
+
+const STATE_TITLE = { signedOut: "Signed out", registering: "Connecting…", noContacts: "Connected", needsAccess: "Needs permission to read Messages", syncing: "Syncing…", upToDate: "Syncing from this Mac", error: "Problem" };
 
 const ago = (iso) => {
   if (!iso) return "never";
@@ -27,6 +31,7 @@ export default function TextSyncModal({ contacts, onClose, onSetAll }) {
   const [fresh, setFresh] = useState("");
   const [error, setError] = useState("");
   const [copied, copy] = useCopy();
+  const app = useNativeTextSync();
 
   const load = useCallback(async () => {
     const { data } = await supabase.from("text_sync_devices").select("id, name, token_hint, created_at, last_seen_at, last_synced_at").is("revoked_at", null).order("created_at", { ascending: false });
@@ -65,41 +70,47 @@ export default function TextSyncModal({ contacts, onClose, onSetAll }) {
         the one-to-one conversations with contacts you've turned on. Nothing else leaves your Mac, and nobody else can see them.
       </p>
 
-      <section>
-        <h3 className="font-semibold mb-1">1. Install the app on your Mac</h3>
-        <p className={`${muted} mb-2`}>For a Mac running macOS 13 or newer, signed in to the same Messages account as your iPhone. Open the download and drag the app to Applications. Until the app is notarized by Apple, your Mac will say it "could not verify" it: click Done, open System Settings &gt; Privacy &amp; Security, scroll down to the message about Latchpoint Text and click Open Anyway. The app then opens a small window, and keeps a speech-bubble icon in your menu bar.</p>
-        <a href={DOWNLOAD_URL} className={pill} download>
-          Download Latchpoint Text for Mac
-        </a>
-        <p className={`mt-2 text-xs ${muted}`}>When it asks, allow it under System Settings &gt; Privacy &amp; Security &gt; Full Disk Access. That's how a Mac lets an app read Messages.</p>
-      </section>
+      {app.inApp ? (
+        <section>
+          <h3 className="font-semibold mb-1">1. This Mac</h3>
+          <div className="rounded-xl border border-black/10 dark:border-white/15 p-3 space-y-2">
+            <p className="font-semibold">{app.status ? STATE_TITLE[app.status.state] || "Text sync" : "Latchpoint is running"}</p>
+            <p className={muted}>{app.status?.message || "Text sync starts as soon as you're signed in."}</p>
+            {app.status?.lastSync && <p className={`text-xs ${muted}`}>Last checked {ago(app.status.lastSync)}{app.status.totalSaved ? ` · ${app.status.totalSaved.toLocaleString()} saved since Latchpoint opened` : ""}</p>}
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => app.post({ type: "sync_now" })} disabled={app.status?.state === "syncing" || app.status?.state === "signedOut"} className={`${pill} disabled:opacity-50`}>
+                Sync now
+              </button>
+              {app.status?.state === "needsAccess" && (
+                <button type="button" onClick={() => app.post({ type: "open_full_disk_access" })} className={pill}>
+                  Allow access to Messages…
+                </button>
+              )}
+            </div>
+            {app.status?.state === "needsAccess" && <p className={`text-xs ${muted}`}>Switch on Latchpoint in Full Disk Access, then choose Relaunch Latchpoint from its menu-bar icon.</p>}
+          </div>
+          <p className={`mt-2 text-xs ${muted}`}>Syncing runs while Latchpoint is open. Closing its window keeps it running in the menu bar.</p>
+        </section>
+      ) : (
+        <section>
+          <h3 className="font-semibold mb-1">1. Get the Latchpoint app for your Mac</h3>
+          <p className={`${muted} mb-2`}>
+            For a Mac running macOS 14 or newer. Open the download and drag the app to Applications. Until the app is notarized by Apple, your Mac will say it "could not verify" it: click Done, open System Settings &gt; Privacy &amp; Security, scroll down to the message about
+            Latchpoint and click Open Anyway. Then sign in with your normal login, and text sync sets itself up. There's no code to copy.
+          </p>
+          <a href={DOWNLOAD_URL} className={pill} download>
+            Download Latchpoint for Mac
+          </a>
+          <p className={`mt-2 text-xs ${muted}`}>When it asks, allow it under System Settings &gt; Privacy &amp; Security &gt; Full Disk Access. That's how a Mac lets an app read Messages.</p>
+        </section>
+      )}
 
       <section>
-        <h3 className="font-semibold mb-1">2. Connect it to your account</h3>
-        {fresh ? (
-          <div className="rounded-xl border border-black/10 dark:border-white/15 p-3 space-y-2">
-            <p className={muted}>Copy this connection code and paste it into the app. It's shown once.</p>
-            <p className="break-all font-mono text-xs select-all rounded-lg bg-black/[0.04] dark:bg-white/[0.06] p-2">{fresh}</p>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => copy("code", fresh)} className={pill}>
-                {copied === "code" ? "Copied ✓" : "Copy code"}
-              </button>
-              <button type="button" onClick={() => setFresh("")} className={pill}>
-                Done
-              </button>
-            </div>
-          </div>
+        <h3 className="font-semibold mb-1">Your connected Macs</h3>
+        {devices.length === 0 ? (
+          <p className={muted}>None yet.</p>
         ) : (
-          <form onSubmit={make} className="flex flex-wrap items-center gap-2">
-            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} aria-label="Name for this Mac" className={`${input} max-w-[14rem]`} />
-            <button type="submit" disabled={busy} className={primary}>
-              {busy ? "Making…" : "Make a connection code"}
-            </button>
-          </form>
-        )}
-        {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
-        {devices.length > 0 && (
-          <ul className="mt-3 divide-y divide-black/5 dark:divide-white/10">
+          <ul className="divide-y divide-black/5 dark:divide-white/10">
             {devices.map((d) => (
               <li key={d.id} className="py-2 flex items-center justify-between gap-3">
                 <span className="min-w-0">
@@ -116,10 +127,40 @@ export default function TextSyncModal({ contacts, onClose, onSetAll }) {
             ))}
           </ul>
         )}
+        {!app.inApp && (
+          <details className="mt-3">
+            <summary className={`cursor-pointer text-xs font-semibold ${muted}`}>Using the older Latchpoint Text app?</summary>
+            <div className="mt-2 space-y-2">
+              <p className={`text-xs ${muted}`}>The older app connects with a code. <a href={OLD_DOWNLOAD_URL} download className="underline">Download it</a> if you still need it; the Latchpoint app above replaces it.</p>
+              {fresh ? (
+                <div className="rounded-xl border border-black/10 dark:border-white/15 p-3 space-y-2">
+                  <p className={muted}>Copy this connection code and paste it into the app. It's shown once.</p>
+                  <p className="break-all font-mono text-xs select-all rounded-lg bg-black/[0.04] dark:bg-white/[0.06] p-2">{fresh}</p>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => copy("code", fresh)} className={pill}>
+                      {copied === "code" ? "Copied ✓" : "Copy code"}
+                    </button>
+                    <button type="button" onClick={() => setFresh("")} className={pill}>
+                      Done
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={make} className="flex flex-wrap items-center gap-2">
+                  <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} aria-label="Name for this Mac" className={`${input} max-w-[14rem]`} />
+                  <button type="submit" disabled={busy} className={primary}>
+                    {busy ? "Making…" : "Make a connection code"}
+                  </button>
+                </form>
+              )}
+              {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+            </div>
+          </details>
+        )}
       </section>
 
       <section>
-        <h3 className="font-semibold mb-1">3. Choose whose texts and calls to sync</h3>
+        <h3 className="font-semibold mb-1">2. Choose whose texts and calls to sync</h3>
         <p className={`${muted} mb-2`}>
           {syncing === 0 ? "No contacts are syncing yet." : `${syncing.toLocaleString()} contact${syncing === 1 ? " is" : "s are"} syncing.`} To pick people, open a contact and switch on Text sync, or select people in the list
           (filter by a tag or a smart list first, then select all) and choose Sync texts.

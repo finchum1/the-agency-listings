@@ -3,9 +3,11 @@
 //   GET  /api/text-sync?a=contacts   the contacts switched on for sync (name, phone numbers, emails) and the newest text/call already saved
 //                                    for each, so the app only sends what is newer
 //   POST /api/text-sync?a=messages   {items:[{contact_id, kind, direction, body, occurred_at, external_id, duration_seconds}]} up to 500 at a time
+//   POST /api/text-sync?a=register   {name}  the Latchpoint Mac app, signed in as the agent (their normal session token, not a device token), asks for
+//                                    its own device token so nobody has to paste a connection code. A Mac of the same name is replaced.
 // Only contacts that are switched on, and that belong to the device's owner, accept messages. Anything else is ignored.
 import crypto from "node:crypto";
-import { serviceClient } from "./_lib/authUser.js";
+import { authenticate, serviceClient } from "./_lib/authUser.js";
 
 const TOKEN = /^ts_[0-9a-f]{64}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -49,6 +51,17 @@ export default async function handler(req, res) {
   } catch {
     return res.status(500).json({ error: "Server not configured." });
   }
+  if (req.method === "POST" && String(req.query?.a || "") === "register") {
+    const auth = await authenticate(req, res);
+    if (!auth) return;
+    const name = String(req.body?.name || "").trim().slice(0, 60) || "My Mac";
+    // A reinstall or a second sign-in on the same Mac replaces its earlier connection instead of piling up toward the limit of five.
+    await admin.from("text_sync_devices").update({ revoked_at: new Date().toISOString() }).eq("owner_id", auth.user.id).eq("name", name).is("revoked_at", null);
+    const { data: token, error } = await auth.supabase.rpc("create_text_sync_device", { p_name: name });
+    if (error) return res.status(400).json({ error: error.message });
+    return res.status(200).json({ token });
+  }
+
   const dev = await device(admin, req);
   if (!dev) return res.status(401).json({ error: "This Mac isn't connected anymore. Make a new connection code in the dashboard." });
   const a = String(req.query?.a || "");
