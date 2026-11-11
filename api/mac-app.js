@@ -290,8 +290,10 @@ export default async function handler(req, res) {
         admin.from("transaction_documents").select("id, section, position, text, done, review_status").eq("person_id", id).order("position").limit(500),
       ]);
       const { _foreign, _agent, _column, ...rest } = deal;
+      // The deal's agent is copied on the team emails (the dashboard does the same).
+      const { data: agentProfile } = await admin.from("profiles").select("email").eq("id", deal.owner_id).maybeSingle();
       return res.status(200).json({
-        deal: { ...rest, column: _foreign ? _column || rest.stage : rest.stage, foreign: _foreign, agent: _agent },
+        deal: { ...rest, column: _foreign ? _column || rest.stage : rest.stage, foreign: _foreign, agent: _agent, agent_email: agentProfile?.email || "" },
         tasks: (tasks.data || []).map((t) => ({ id: t.id, section: t.section, position: t.position, text: t.text, done: t.done, done_at: t.done_at, due_override: t.due_override, due: effectiveDue(t, deal) || null })),
         docs: docs.data || [],
       });
