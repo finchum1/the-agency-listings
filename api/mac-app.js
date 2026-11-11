@@ -5,7 +5,7 @@
 //   POST /api/mac-app?a=responded    {person_id}   the agent called or texted a waiting lead from a notification
 //   GET  /api/mac-app?a=search&q=    contacts matching a name, phone number or email (for quick add)
 //   POST /api/mac-app?a=note         {contact_id, kind, body}
-//   POST /api/mac-app?a=task         {title, due_date?, contact_id?, recurrence?, list?, today?}   returns the new task
+//   POST /api/mac-app?a=task         {title, due_date?, contact_id?, recurrence?, list?, start_time?, duration_min?, checklist?, today?}   returns the new task
 // Follow-ups and deal tasks that are due, dealt with from the Today window:
 //   POST /api/mac-app?a=followup_done   {person_id, today}   "Followed up": the next follow-up is today + the column's cadence (none when the column has none)
 //   POST /api/mac-app?a=followup_set    {person_id, date}    a chosen next follow-up date, or null to clear it
@@ -56,7 +56,7 @@
 //   GET  /api/mac-app?a=tasks              open tasks, and ones finished in the last two weeks, each with its contact's name
 //   POST /api/mac-app?a=task_complete      {task_id, today}   a one-off is marked done; a repeating one moves to its next date
 //   POST /api/mac-app?a=task_reopen        {task_id}
-//   POST /api/mac-app?a=task_update        {task_id, changes: {title?, due_date?, list?, checklist?}}
+//   POST /api/mac-app?a=task_update        {task_id, changes: {title?, due_date?, recurrence?, start_time?, duration_min?, list?, checklist?}, today?}
 //   POST /api/mac-app?a=task_delete        {task_id}
 //   POST /api/mac-app?a=contact      {first_name, last_name, company, phone, email, relationship?, force?}   a duplicate is reported, not created, unless force
 // The native Contacts window:
@@ -116,6 +116,15 @@ const TASK_COLUMNS = "id, title, due_date, recurrence, series_start, done, done_
 const RECURRENCES = ["none", "daily", "weekdays", "weekly", "biweekly", "monthly", "quarterly", "yearly"];
 
 const todayKey = () => new Date().toLocaleDateString("en-CA", { timeZone: TZ });
+/** A time block as the table keeps it: a start (HH:MM or HH:MM:SS) and a length in minutes (an hour when none is given), or none. */
+const cleanTimeBlock = (start, minutes) => {
+  if (start === null || start === undefined || start === "") return { start_time: null, duration_min: null };
+  const m = /^(\d{2}):(\d{2})(?::\d{2})?$/.exec(String(start));
+  if (!m || +m[1] > 23 || +m[2] > 59) return { error: "That time doesn't look right." };
+  let d = minutes === null || minutes === undefined || minutes === "" ? 60 : Number(minutes);
+  if (!Number.isInteger(d) || d < 5 || d > 1440) return { error: "That length doesn't look right." };
+  return { start_time: `${m[1]}:${m[2]}:00`, duration_min: d };
+};
 const fullName = (c) => [c.first_name, c.last_name].filter(Boolean).join(" ") || c.company || "Contact";
 const digits = (v) => String(v || "").replace(/\D/g, "");
 
@@ -534,7 +543,10 @@ export default async function handler(req, res) {
         if (!contact) return bad(res, "That contact isn't yours.");
         contactId = contact.id;
       }
-      const { data, error } = await admin.from("agent_tasks").insert({ owner_id: owner, title, due_date: due, recurrence: rule, series_start: rule !== "none" ? due : null, list: cleanList(body.list), ...(contactId ? { contact_id: contactId } : {}) }).select(TASK_COLUMNS).single();
+      // A time block needs a day; without one it is just a to-do (the dashboard's rule).
+      const block = due ? cleanTimeBlock(body.start_time, body.duration_min) : { start_time: null, duration_min: null };
+      if (block.error) return bad(res, block.error);
+      const { data, error } = await admin.from("agent_tasks").insert({ owner_id: owner, title, due_date: due, recurrence: rule, series_start: rule !== "none" ? due : null, start_time: block.start_time, duration_min: block.duration_min, list: cleanList(body.list), checklist: cleanSteps(body.checklist), ...(contactId ? { contact_id: contactId } : {}) }).select(TASK_COLUMNS).single();
       if (error) return bad(res, "Couldn't save it.", 500);
       return res.status(200).json({ ok: true, task: await taskOut(data) });
     }
@@ -1179,7 +1191,7 @@ export default async function handler(req, res) {
         const steps = Array.isArray(task.checklist) ? task.checklist : [];
         return back({ due_date: due, last_done_at: now, ...(steps.some((x) => x.done) ? { checklist: steps.map((x) => ({ ...x, done: false })) } : {}) });
       }
-      // task_update
+      // task_update (the same rules as the dashboard's useAgentTasks.update)
       const ch = body.changes && typeof body.changes === "object" ? body.changes : {};
       const changes = {};
       if ("title" in ch) {
@@ -1187,17 +1199,33 @@ export default async function handler(req, res) {
         if (!t) return bad(res, "A task needs a title.");
         changes.title = t;
       }
+      let rule = task.recurrence, due = task.due_date;
+      if ("recurrence" in ch) {
+        if (!RECURRENCES.includes(ch.recurrence)) return bad(res, "That repeat isn't one of the choices.");
+        rule = ch.recurrence;
+        changes.recurrence = rule;
+      }
       if ("due_date" in ch) {
         if (ch.due_date !== null && !DATE.test(String(ch.due_date))) return bad(res, "That date doesn't look right.");
-        changes.due_date = ch.due_date;
-        if (task.recurrence !== "none") {
-          // A repeating task always needs a date; moving it restarts the series from the new date.
-          if (!ch.due_date) return bad(res, "A repeating task needs a date.");
-          changes.series_start = ch.due_date;
-        } else if (!ch.due_date) {
-          changes.start_time = null;
-          changes.duration_min = null;
+        due = ch.due_date;
+        changes.due_date = due;
+      }
+      if ("due_date" in ch || "recurrence" in ch) {
+        // A repeating task always needs a date (today when it has none); moving it or changing the repeat restarts the series from the date.
+        if (rule !== "none" && !due) {
+          if ("due_date" in ch) return bad(res, "A repeating task needs a date.");
+          due = DATE.test(String(body.today || "")) ? body.today : todayKey();
+          changes.due_date = due;
         }
+        changes.series_start = rule !== "none" ? due : null;
+      }
+      // Taking the date away takes the time block with it (unless it repeats, which always has a date).
+      if (!due) { changes.start_time = null; changes.duration_min = null; }
+      if (("start_time" in ch || "duration_min" in ch) && due) {
+        const block = cleanTimeBlock("start_time" in ch ? ch.start_time : task.start_time, "duration_min" in ch ? ch.duration_min : task.duration_min);
+        if (block.error) return bad(res, block.error);
+        changes.start_time = block.start_time;
+        changes.duration_min = block.duration_min;
       }
       if ("list" in ch) changes.list = cleanList(ch.list);
       if ("checklist" in ch) {
