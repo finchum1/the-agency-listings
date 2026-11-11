@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
-import { useCopy } from "../../TrackedLinks";
 import { useNativeTextSync } from "../../../../hooks/useNativeTextSync";
 
 const muted = "text-[#1c1a17]/55 dark:text-[#faf9f7]/55";
 const pill = "rounded-full border border-black/10 dark:border-white/15 px-3.5 py-1.5 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
-const primary = "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2 disabled:opacity-50";
-const input = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
 
 export const DOWNLOAD_URL = "/downloads/Latchpoint.zip";
-const OLD_DOWNLOAD_URL = "/downloads/LatchpointText.zip";
 
 const STATE_TITLE = { signedOut: "Signed out", registering: "Connecting…", noContacts: "Connected", needsAccess: "Needs permission to read Messages", syncing: "Syncing…", upToDate: "Syncing from this Mac", error: "Problem" };
 
@@ -26,11 +22,6 @@ const ago = (iso) => {
 // Who syncs is per contact (a switch on the contact, or "Sync texts" on a selection / a tag / a smart list); this is where an agent turns it on for everyone.
 export default function TextSyncModal({ contacts, onClose, onSetAll }) {
   const [devices, setDevices] = useState([]);
-  const [name, setName] = useState("My Mac");
-  const [busy, setBusy] = useState(false);
-  const [fresh, setFresh] = useState("");
-  const [error, setError] = useState("");
-  const [copied, copy] = useCopy();
   const app = useNativeTextSync();
 
   const load = useCallback(async () => {
@@ -43,16 +34,6 @@ export default function TextSyncModal({ contacts, onClose, onSetAll }) {
     return () => clearInterval(t);
   }, [load]);
 
-  const make = async (e) => {
-    e.preventDefault();
-    setBusy(true);
-    setError("");
-    const { data, error: err } = await supabase.rpc("create_text_sync_device", { p_name: name.trim() || "My Mac" });
-    setBusy(false);
-    if (err) return setError(err.message);
-    setFresh(data);
-    load();
-  };
   const disconnect = async (d) => {
     if (!confirm(`Disconnect ${d.name}? Its app stops syncing until you connect it again.`)) return;
     await supabase.rpc("revoke_text_sync_device", { p_id: d.id });
@@ -126,36 +107,6 @@ export default function TextSyncModal({ contacts, onClose, onSetAll }) {
               </li>
             ))}
           </ul>
-        )}
-        {!app.inApp && (
-          <details className="mt-3">
-            <summary className={`cursor-pointer text-xs font-semibold ${muted}`}>Using the older Latchpoint Text app?</summary>
-            <div className="mt-2 space-y-2">
-              <p className={`text-xs ${muted}`}>The older app connects with a code. <a href={OLD_DOWNLOAD_URL} download className="underline">Download it</a> if you still need it; the Latchpoint app above replaces it.</p>
-              {fresh ? (
-                <div className="rounded-xl border border-black/10 dark:border-white/15 p-3 space-y-2">
-                  <p className={muted}>Copy this connection code and paste it into the app. It's shown once.</p>
-                  <p className="break-all font-mono text-xs select-all rounded-lg bg-black/[0.04] dark:bg-white/[0.06] p-2">{fresh}</p>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => copy("code", fresh)} className={pill}>
-                      {copied === "code" ? "Copied ✓" : "Copy code"}
-                    </button>
-                    <button type="button" onClick={() => setFresh("")} className={pill}>
-                      Done
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={make} className="flex flex-wrap items-center gap-2">
-                  <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} aria-label="Name for this Mac" className={`${input} max-w-[14rem]`} />
-                  <button type="submit" disabled={busy} className={primary}>
-                    {busy ? "Making…" : "Make a connection code"}
-                  </button>
-                </form>
-              )}
-              {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
-            </div>
-          </details>
         )}
       </section>
 

@@ -6,6 +6,14 @@
 //   GET  /api/mac-app?a=search&q=    contacts matching a name, phone number or email (for quick add)
 //   POST /api/mac-app?a=note         {contact_id, kind, body}
 //   POST /api/mac-app?a=task         {title, due_date?, contact_id?, recurrence?, list?, today?}   returns the new task
+// Follow-ups and deal tasks that are due, dealt with from the Today window:
+//   POST /api/mac-app?a=followup_done   {person_id, today}   "Followed up": the next follow-up is today + the column's cadence (none when the column has none)
+//   POST /api/mac-app?a=followup_set    {person_id, date}    a chosen next follow-up date, or null to clear it
+//   POST /api/mac-app?a=deal_task_done  {task_id, done}      tick a deal checklist task off (or back on)
+//   POST /api/mac-app?a=deal_task_due   {task_id, date}      move a deal task to a day (its due_override), or null to go back to the deal's own rule
+// The native Deals window (read-only, plus the checklist actions above):
+//   GET  /api/mac-app?a=deals           your deals and, for a coordinator, the deals they coordinate; the board's stages; each deal's checklist and document progress
+//   GET  /api/mac-app?a=deal&deal_id=   one deal: dates, money, the people on it, its checklist (with each task's due day) and its documents
 // The native Today window's to-do list (agent_tasks), done the way the dashboard does it (src/hooks/useAgentTasks.js):
 //   GET  /api/mac-app?a=tasks              open tasks, and ones finished in the last two weeks, each with its contact's name
 //   POST /api/mac-app?a=task_complete      {task_id, today}   a one-off is marked done; a repeating one moves to its next date
@@ -47,6 +55,9 @@ const EDITABLE = {
   do_not_contact: (v) => (typeof v === "boolean" ? v : undefined),
 };
 
+const DEAL_COLUMNS = "id, owner_id, name, email, phone, stage, side, property_address, price, commission, contract_date, inspection_date, inspection_period_end, inspection_time, appraisal_date, financing_deadline, closing_date, closing_time, is_cash, financing_type, compliance_status, earnest_money, earnest_money_delivered, earnest_money_delivered_at, updated_at, contact_id";
+const DEAL_PARTY_COLUMNS = "client2_name, client2_email, other_agent, other_agent_email, other_agent_company, other_agent_phone, other_agent2, other_agent2_email, other_agent2_company, other_agent2_phone, other_agent_tc_name, other_agent_tc_email, title_company, title_company_email, title_phone, title_processor_name, title_processor_email, escrow_officer, escrow_officer_email, lender, lender_email, lender_phone, loan_processor_name, loan_processor_email, other_party_name";
+const DEFAULT_DEAL_STAGES = ["Listings", "Pending", "Closing Soon", "Closed"];
 const TASK_COLUMNS = "id, title, due_date, recurrence, series_start, done, done_at, last_done_at, start_time, duration_min, list, checklist, contact_id, created_at";
 const RECURRENCES = ["none", "daily", "weekdays", "weekly", "biweekly", "monthly", "quarterly", "yearly"];
 
@@ -155,6 +166,38 @@ async function today(admin, owner) {
   };
 }
 
+/** The deals this person can see in Deals: their own, plus (for a coordinator) the deals they coordinate for other agents. */
+async function visibleDeals(admin, owner, columns) {
+  const { data: profile } = await admin.from("profiles").select("deals_role, full_name").eq("id", owner).maybeSingle();
+  const own = await readAll(() => admin.from("people").select(columns).eq("owner_id", owner).eq("stage_group", "transaction").eq("archived", false).order("id"));
+  const deals = own.map((d) => ({ ...d, _foreign: false, _agent: profile?.full_name || "", _column: "" }));
+  if (profile?.deals_role === "tc") {
+    const [{ data: per }, { data: wide }, { data: placed }] = await Promise.all([
+      admin.from("deal_tcs").select("person_id").eq("tc_id", owner),
+      admin.from("deal_team").select("agent_id").eq("tc_id", owner),
+      admin.from("deal_tc_stages").select("person_id, stage").eq("tc_id", owner),
+    ]);
+    const mine = new Set((per || []).map((r) => r.person_id)), agents = new Set((wide || []).map((r) => r.agent_id));
+    const column = new Map((placed || []).map((r) => [r.person_id, r.stage]));
+    const others = (await readAll(() => admin.from("people").select(columns).eq("stage_group", "transaction").eq("archived", false).neq("owner_id", owner).order("id"))).filter((d) => mine.has(d.id) || agents.has(d.owner_id));
+    const owners = [...new Set(others.map((d) => d.owner_id))];
+    const { data: profs } = owners.length ? await admin.from("profiles").select("id, full_name").in("id", owners) : { data: [] };
+    const names = new Map((profs || []).map((p) => [p.id, p.full_name]));
+    for (const d of others) deals.push({ ...d, _foreign: true, _agent: names.get(d.owner_id) || "", _column: column.get(d.id) || "" });
+  }
+  return { deals, profile };
+}
+
+/** Done / total of a checklist table for each of these deals. */
+async function progressOf(admin, table, ids) {
+  const out = new Map(ids.map((id) => [id, { done: 0, total: 0 }]));
+  for (let i = 0; i < ids.length; i += 100) {
+    const rows = await readAll(() => admin.from(table).select("person_id, done").in("person_id", ids.slice(i, i + 100)).order("id"));
+    for (const r of rows) { const p = out.get(r.person_id); if (p) { p.total += 1; if (r.done) p.done += 1; } }
+  }
+  return out;
+}
+
 const bad = (res, message, code = 400) => res.status(code).json({ error: message });
 
 export default async function handler(req, res) {
@@ -220,6 +263,38 @@ export default async function handler(req, res) {
         for (const c of data || []) names.set(c.id, fullName(c));
       }
       return res.status(200).json({ tasks: rows.map((t) => ({ ...t, checklist: Array.isArray(t.checklist) ? t.checklist : [], contact_name: t.contact_id ? names.get(t.contact_id) || "" : "" })) });
+    }
+
+    if (req.method === "GET" && a === "deals") {
+      const { deals } = await visibleDeals(admin, owner, DEAL_COLUMNS);
+      const { data: settings } = await admin.from("people_settings").select("stages").eq("owner_id", owner).maybeSingle();
+      const stages = Array.isArray(settings?.stages?.transaction) && settings.stages.transaction.length ? settings.stages.transaction : DEFAULT_DEAL_STAGES;
+      const named = settings?.stages?.transaction_closed;
+      const closed = named && stages.includes(named) ? named : stages.includes("Closed") ? "Closed" : stages[stages.length - 1];
+      const ids = deals.map((d) => d.id);
+      const [tasks, docs] = await Promise.all([progressOf(admin, "transaction_tasks", ids), progressOf(admin, "transaction_documents", ids)]);
+      return res.status(200).json({
+        stages, closed,
+        deals: deals.map((d) => ({ ...d, column: d._foreign ? d._column || d.stage : d.stage, foreign: d._foreign, agent: d._agent, tasks: tasks.get(d.id), docs: docs.get(d.id), _foreign: undefined, _agent: undefined, _column: undefined })),
+      });
+    }
+
+    if (req.method === "GET" && a === "deal") {
+      const id = String(req.query?.deal_id || "");
+      if (!UUID.test(id)) return bad(res, "Missing deal.");
+      const { deals } = await visibleDeals(admin, owner, `${DEAL_COLUMNS}, ${DEAL_PARTY_COLUMNS}`);
+      const deal = deals.find((d) => d.id === id);
+      if (!deal) return bad(res, "Deal not found.", 404);
+      const [tasks, docs] = await Promise.all([
+        admin.from("transaction_tasks").select("id, section, position, text, anchor, offset_days, due_override, done, done_at").eq("person_id", id).order("position").limit(500),
+        admin.from("transaction_documents").select("id, section, position, text, done, review_status").eq("person_id", id).order("position").limit(500),
+      ]);
+      const { _foreign, _agent, _column, ...rest } = deal;
+      return res.status(200).json({
+        deal: { ...rest, column: _foreign ? _column || rest.stage : rest.stage, foreign: _foreign, agent: _agent },
+        tasks: (tasks.data || []).map((t) => ({ id: t.id, section: t.section, position: t.position, text: t.text, done: t.done, done_at: t.done_at, due_override: t.due_override, due: effectiveDue(t, deal) || null })),
+        docs: docs.data || [],
+      });
     }
 
     if (req.method === "GET" && a === "history") {
@@ -291,6 +366,58 @@ export default async function handler(req, res) {
       const { data, error } = await admin.from("agent_tasks").insert({ owner_id: owner, title, due_date: due, recurrence: rule, series_start: rule !== "none" ? due : null, list: cleanList(body.list), ...(contactId ? { contact_id: contactId } : {}) }).select(TASK_COLUMNS).single();
       if (error) return bad(res, "Couldn't save it.", 500);
       return res.status(200).json({ ok: true, task: await taskOut(data) });
+    }
+
+    if (a === "followup_done" || a === "followup_set") {
+      if (!UUID.test(String(body.person_id || ""))) return bad(res, "Missing person.");
+      const { data: person } = await admin.from("people").select("id, stage_group, stage, next_follow_up, lead_id, first_response_at, archived").eq("id", body.person_id).eq("owner_id", owner).maybeSingle();
+      if (!person || !["lead", "pipeline"].includes(person.stage_group)) return bad(res, "That person isn't yours.", 404);
+      let next;
+      if (a === "followup_set") {
+        if (body.date !== null && body.date !== undefined && !DATE.test(String(body.date))) return bad(res, "That date doesn't look right.");
+        next = body.date || null;
+      } else {
+        // "Followed up": a lead that was still waiting for a first reply counts as answered, and the next follow-up follows the column's cadence.
+        if (person.lead_id && !person.first_response_at) await admin.from("people").update({ first_response_at: new Date().toISOString() }).eq("id", person.id).eq("owner_id", owner).is("first_response_at", null);
+        const today = DATE.test(String(body.today || "")) ? body.today : todayKey();
+        const { data: days } = await admin.rpc("people_cadence_days", { p_owner: owner, p_group: person.stage_group, p_stage: person.stage });
+        const d = typeof days === "number" && days > 0 ? days : null;
+        next = d ? new Date(new Date(`${today}T12:00:00Z`).getTime() + d * DAY).toISOString().slice(0, 10) : null;
+      }
+      const { error } = await admin.from("people").update({ next_follow_up: next }).eq("id", person.id).eq("owner_id", owner);
+      if (error) return bad(res, "Couldn't save it.", 500);
+      return res.status(200).json({ ok: true, next_follow_up: next, previous: person.next_follow_up || null });
+    }
+
+    if (a === "deal_task_done" || a === "deal_task_due") {
+      if (!UUID.test(String(body.task_id || ""))) return bad(res, "Missing task.");
+      const { data: task } = await admin.from("transaction_tasks").select("id, person_id, owner_id, due_override, done").eq("id", body.task_id).maybeSingle();
+      if (!task) return bad(res, "That task isn't yours.", 404);
+      let allowed = task.owner_id === owner;
+      if (!allowed) {
+        // A coordinator works the deals they coordinate (the same rule that puts them in Today).
+        const { data: profile } = await admin.from("profiles").select("deals_role").eq("id", owner).maybeSingle();
+        if (profile?.deals_role === "tc") {
+          const [{ data: per }, { data: deal }] = await Promise.all([
+            admin.from("deal_tcs").select("person_id").eq("tc_id", owner).eq("person_id", task.person_id).limit(1),
+            admin.from("people").select("owner_id").eq("id", task.person_id).maybeSingle(),
+          ]);
+          const { data: team } = deal ? await admin.from("deal_team").select("agent_id").eq("tc_id", owner).eq("agent_id", deal.owner_id).limit(1) : { data: [] };
+          allowed = Boolean(per?.length || team?.length);
+        }
+      }
+      if (!allowed) return bad(res, "That task isn't yours.", 404);
+      let changes;
+      if (a === "deal_task_done") {
+        const done = body.done !== false;
+        changes = { done, done_at: done ? new Date().toISOString() : null };
+      } else {
+        if (body.date !== null && body.date !== undefined && !DATE.test(String(body.date))) return bad(res, "That date doesn't look right.");
+        changes = { due_override: body.date || null };
+      }
+      const { error } = await admin.from("transaction_tasks").update(changes).eq("id", task.id);
+      if (error) return bad(res, "Couldn't save it.", 500);
+      return res.status(200).json({ ok: true, previous: task.due_override || null });
     }
 
     if (a === "task_complete" || a === "task_reopen" || a === "task_update" || a === "task_delete") {

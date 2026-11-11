@@ -1,5 +1,7 @@
 # Latchpoint for Mac: plan
 
+> **Status (2026-11-11):** stages 1 to 4 and most of 5 are built, in `../latchpoint-mac`: the web shell, text sync (Latchpoint Text is retired), notifications / menu bar / quick add, native Contacts, and native Today (with Tasks), Deals (board, list, detail, checklist actions). Still ahead: Developer ID signing and notarization (needs the Apple Developer Program under Latchpoint Studios, LLC), Sparkle auto-update, and Deals actions beyond the checklist (stage moves, documents, signatures, compliance stay in the dashboard for now). The notes below are the original plan.
+
 Written 2026-11-10. A native Mac app for the whole dashboard, built in stages. Nothing here is built yet except the Text sync engine (the Latchpoint Text app, `agency-text-sync/`).
 
 ## 1. What it is, in one paragraph

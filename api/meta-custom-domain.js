@@ -42,8 +42,8 @@ import { marketingMetaFor, MARKETING_META } from "../src/lib/marketingMeta.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
 import { TEAM_EMBED } from "../src/lib/teams.js";
 
-const APP_DEFAULT_TITLE = "The Agency Listings";
-const APP_DEFAULT_DESCRIPTION = "The Agency — property listing sites and agent dashboard";
+const APP_DEFAULT_TITLE = "Latchpoint";
+const APP_DEFAULT_DESCRIPTION = "Latchpoint — real estate websites, CRM and back office for agents";
 
 // Google Search Console site-verification tokens now live on the domain's row in
 // org_domains (google_site_verification), and middleware.js routes a request here with
