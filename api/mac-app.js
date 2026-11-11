@@ -22,6 +22,11 @@
 //   POST /api/mac-app?a=person_move      {person_id, stage}   to the next board: a lead goes to Pipeline, a pipeline person starts a deal
 //   POST /api/mac-app?a=person_archive   {person_id, reason}      POST ?a=person_restore {person_id}
 //   POST /api/mac-app?a=person_note      {person_id, kind, body}   a note or logged touch; a touch moves a due follow-up along by the column's cadence
+//   POST /api/mac-app?a=people_archived     {}   archived leads and pipeline people (newest first), with why they were archived; restore with person_restore
+//   POST /api/mac-app?a=people_bulk         {ids, action, ...}   move {stage} / side {side} / followup {date|null} / archive {reason} / restore
+//   POST /api/mac-app?a=plans_list          {}   your follow-up plans you can start by hand, with what each does
+//   POST /api/mac-app?a=people_plan_start   {plan_id, ids}   starts the plan for them (its first steps run at once, nothing is sent): {started, already, skipped}
+//   (people_board also carries `contacts` (relationship, last contact and tags behind each card) and `tags`)
 // The Deals overview page and the "Email with a template" menu:
 //   GET  /api/mac-app?a=deals_overview&today=   the open tasks of your open deals that fall due by two weeks from today (overdue ones included), each with its due day, and the waiting drafts
 //   GET  /api/mac-app?a=deal_emails&deal_id=    the deal's email templates, grouped as in the dashboard's "Email with a template" menu, each already filled in from the deal and addressed
@@ -74,6 +79,8 @@ import { cleanList, cleanSteps } from "../src/lib/taskLists.js";
 import { EMAIL_GROUPS, STARTER_TEMPLATES, renderDealEmail, taskEmailKey, templatesForDeal } from "../src/lib/dealEmails.js";
 import { fromAs, sendNotification, viaOrg } from "./_lib/inquiry.js";
 import { buildDealStartedEmail } from "./_lib/dealEmail.js";
+import { isOccasion, startText, stepSummary } from "../src/lib/plans.js";
+import { runPlans } from "./_lib/planRunner.js";
 import { SITE_ORIGIN } from "../src/lib/seo.js";
 
 const TZ = "America/Chicago";
@@ -367,7 +374,22 @@ export default async function handler(req, res) {
       const { stages, cadence } = await peopleSettings(admin, owner);
       const people = await readAll(() => admin.from("people").select(PERSON_COLUMNS).eq("owner_id", owner).in("stage_group", ["lead", "pipeline"]).eq("archived", false).order("id"));
       const { count } = await admin.from("people").select("id", { count: "exact", head: true }).eq("owner_id", owner).in("stage_group", ["lead", "pipeline"]).eq("archived", true);
-      return res.status(200).json({ stages: { lead: stages.lead, pipeline: stages.pipeline }, deal_stages: stages.transaction, cadence, people, archived_count: count || 0 });
+      // What the contact behind each card says (relationship, last time in touch, tags), for the board's filters and the list view.
+      const withContact = people.filter((p) => p.contact_id);
+      const contactIds = [...new Set(withContact.map((p) => p.contact_id))];
+      const byContact = new Map(), tagsOf = new Map();
+      for (let i = 0; i < contactIds.length; i += 100) {
+        const part = contactIds.slice(i, i + 100);
+        const [cs, ls] = await Promise.all([
+          admin.from("contacts").select("id, relationship, last_contacted_at, do_not_contact").eq("owner_id", owner).in("id", part),
+          admin.from("contact_tag_links").select("contact_id, tag_id").eq("owner_id", owner).in("contact_id", part),
+        ]);
+        for (const c of cs.data || []) byContact.set(c.id, c);
+        for (const l of ls.data || []) tagsOf.set(l.contact_id, [...(tagsOf.get(l.contact_id) || []), l.tag_id]);
+      }
+      const contacts = withContact.filter((p) => byContact.has(p.contact_id)).map((p) => { const c = byContact.get(p.contact_id); return { person_id: p.id, contact_id: c.id, relationship: c.relationship, last_contacted_at: c.last_contacted_at, do_not_contact: c.do_not_contact, tag_ids: tagsOf.get(c.id) || [] }; });
+      const { data: tags } = await admin.from("contact_tags").select("id, name, color").eq("owner_id", owner).order("name");
+      return res.status(200).json({ stages: { lead: stages.lead, pipeline: stages.pipeline }, deal_stages: stages.transaction, cadence, people, archived_count: count || 0, contacts, tags: tags || [] });
     }
 
     if (req.method === "GET" && a === "person") {
@@ -738,6 +760,101 @@ export default async function handler(req, res) {
       ]);
       return per?.length || team?.length ? p : null;
     };
+
+    // ---- Leads & Pipeline: archived people, bulk changes, and starting a follow-up plan for several people (the dashboard's list view and Start a plan)
+    if (["people_archived", "people_bulk", "plans_list", "people_plan_start"].includes(a)) {
+      if (a === "people_archived") {
+        const rows = await admin.from("people").select(`${PERSON_COLUMNS}, archived_at`).eq("owner_id", owner).in("stage_group", ["lead", "pipeline"]).eq("archived", true).order("archived_at", { ascending: false, nullsFirst: false }).limit(500);
+        return rows.error ? bad(res, "Couldn't load them.", 500) : res.status(200).json({ people: rows.data || [] });
+      }
+      if (a === "plans_list") {
+        const { data } = await admin.from("plans").select("id, name, steps, starts_when, active").eq("owner_id", owner).order("created_at");
+        const plans = (data || []).filter((p) => !isOccasion(p.starts_when)).map((p) => ({ id: p.id, name: p.name, active: p.active, starts: startText(p.starts_when), steps: (p.steps || []).slice(0, 8).map((st) => ({ day: st.day ?? 0, text: stepSummary(st) })), step_count: (p.steps || []).length }));
+        return res.status(200).json({ plans });
+      }
+      const ids = [...new Set((Array.isArray(body.ids) ? body.ids : []).map(String).filter((id) => UUID.test(id)))].slice(0, 1000);
+      if (!ids.length) return bad(res, "Pick some people first.");
+      const mine = [];
+      for (let i = 0; i < ids.length; i += 100) {
+        const { data } = await admin.from("people").select("id, stage_group, stage, archived").eq("owner_id", owner).in("stage_group", ["lead", "pipeline"]).in("id", ids.slice(i, i + 100));
+        mine.push(...(data || []));
+      }
+      if (!mine.length) return bad(res, "Those people aren't yours.", 404);
+      const mineIds = mine.map((p) => p.id);
+      const updateAll = async (list, changes) => {
+        for (let i = 0; i < list.length; i += 100) {
+          const { error } = await admin.from("people").update(changes).eq("owner_id", owner).in("id", list.slice(i, i + 100));
+          if (error) return false;
+        }
+        return true;
+      };
+
+      if (a === "people_plan_start") {
+        if (!UUID.test(String(body.plan_id || ""))) return bad(res, "Choose a plan.");
+        const { data: plan } = await admin.from("plans").select("id, steps, starts_when").eq("id", body.plan_id).eq("owner_id", owner).maybeSingle();
+        if (!plan || isOccasion(plan.starts_when)) return bad(res, "That plan isn't yours.", 404);
+        const live = mine.filter((p) => !p.archived).map((p) => p.id);
+        const today = todayKey();
+        const plus = (key, n) => { const d = new Date(`${key}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+        const fresh = { started_on: today, next_step: 0, next_due: plus(today, plan.steps?.[0]?.day ?? 0), status: "active", stop_reason: "", log: [], expect_stage: null };
+        const existing = [];
+        for (let i = 0; i < live.length; i += 100) {
+          const { data } = await admin.from("plan_enrollments").select("id, person_id, status").eq("plan_id", plan.id).in("person_id", live.slice(i, i + 100));
+          existing.push(...(data || []));
+        }
+        const byPerson = new Map(existing.map((e) => [e.person_id, e]));
+        const toInsert = [], toRestart = [];
+        let already = 0;
+        for (const id of live) {
+          const e = byPerson.get(id);
+          if (!e) toInsert.push({ plan_id: plan.id, owner_id: owner, person_id: id, ...fresh });
+          else if (e.status === "active" || e.status === "paused") already += 1;
+          else toRestart.push(e.id);
+        }
+        for (let i = 0; i < toInsert.length; i += 100) { const { error } = await admin.from("plan_enrollments").insert(toInsert.slice(i, i + 100)); if (error) return bad(res, "Couldn't start the plan.", 500); }
+        for (let i = 0; i < toRestart.length; i += 100) { const { error } = await admin.from("plan_enrollments").update(fresh).in("id", toRestart.slice(i, i + 100)); if (error) return bad(res, "Couldn't start the plan.", 500); }
+        const started = toInsert.length + toRestart.length;
+        // The plan's first steps happen right away, like starting it from one card; nothing is sent.
+        if (started) { try { await runPlans(admin, { ownerId: owner }); } catch (e) { console.error("mac-app plan run:", e); } }
+        return res.status(200).json({ ok: true, started, already, skipped: mine.length - live.length + (ids.length - mine.length) });
+      }
+
+      const action = String(body.action || "");
+      if (action === "move") {
+        const { stages } = await peopleSettings(admin, owner);
+        const want = String(body.stage || "").trim().toLowerCase();
+        if (!want) return bad(res, "Choose a column.");
+        let moved = 0, skipped = 0;
+        for (const group of ["lead", "pipeline"]) {
+          const st = stages[group].find((x) => x.toLowerCase() === want);
+          const these = mine.filter((p) => p.stage_group === group && !p.archived).map((p) => p.id);
+          if (!these.length) continue;
+          if (!st) { skipped += these.length; continue; }
+          if (!(await updateAll(these, { stage: st, board_position: null }))) return bad(res, "Couldn't move them.", 500);
+          moved += these.length;
+        }
+        if (!moved) return bad(res, "That isn't one of the columns.");
+        return res.status(200).json({ ok: true, count: moved, skipped });
+      }
+      if (action === "side") {
+        if (body.side !== null && !["buyer", "seller", "both"].includes(body.side)) return bad(res, "Choose buyer, seller or both.");
+        return (await updateAll(mineIds, { side: body.side || null })) ? res.status(200).json({ ok: true, count: mineIds.length }) : bad(res, "Couldn't save it.", 500);
+      }
+      if (action === "followup") {
+        if (body.date !== null && body.date !== undefined && !DATE.test(String(body.date))) return bad(res, "That date doesn't look right.");
+        return (await updateAll(mineIds, { next_follow_up: body.date || null })) ? res.status(200).json({ ok: true, count: mineIds.length }) : bad(res, "Couldn't save it.", 500);
+      }
+      if (action === "archive") {
+        const reason = ARCHIVE_REASONS.includes(body.reason) ? body.reason : "Other";
+        const these = mine.filter((p) => !p.archived).map((p) => p.id);
+        return (await updateAll(these, { archived: true, archived_reason: reason, archived_at: new Date().toISOString() })) ? res.status(200).json({ ok: true, count: these.length }) : bad(res, "Couldn't archive them.", 500);
+      }
+      if (action === "restore") {
+        const these = mine.filter((p) => p.archived).map((p) => p.id);
+        return (await updateAll(these, { archived: false, archived_reason: "", archived_at: null })) ? res.status(200).json({ ok: true, count: these.length }) : bad(res, "Couldn't restore them.", 500);
+      }
+      return bad(res, "Not found.", 404);
+    }
 
     // ---- contacts: bulk actions, merge, repeats, smart lists and CSV import (the dashboard's Contacts page, the same rules)
     const ownedContacts = async (ids, columns = "id, first_name, last_name, company, email, phone, archived, do_not_contact") => {
