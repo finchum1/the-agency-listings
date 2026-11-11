@@ -5,7 +5,13 @@
 //   POST /api/mac-app?a=responded    {person_id}   the agent called or texted a waiting lead from a notification
 //   GET  /api/mac-app?a=search&q=    contacts matching a name, phone number or email (for quick add)
 //   POST /api/mac-app?a=note         {contact_id, kind, body}
-//   POST /api/mac-app?a=task         {title, due_date?, contact_id?}
+//   POST /api/mac-app?a=task         {title, due_date?, contact_id?, recurrence?, list?, today?}   returns the new task
+// The native Today window's to-do list (agent_tasks), done the way the dashboard does it (src/hooks/useAgentTasks.js):
+//   GET  /api/mac-app?a=tasks              open tasks, and ones finished in the last two weeks, each with its contact's name
+//   POST /api/mac-app?a=task_complete      {task_id, today}   a one-off is marked done; a repeating one moves to its next date
+//   POST /api/mac-app?a=task_reopen        {task_id}
+//   POST /api/mac-app?a=task_update        {task_id, changes: {title?, due_date?, list?, checklist?}}
+//   POST /api/mac-app?a=task_delete        {task_id}
 //   POST /api/mac-app?a=contact      {first_name, last_name, company, phone, email, relationship?, force?}   a duplicate is reported, not created, unless force
 // The native Contacts window:
 //   GET  /api/mac-app?a=contacts&since=   every contact changed since then (all of them without `since`), the ids that exist now (so deletions show), tags, tag links, open follow-ups
@@ -16,6 +22,8 @@ import { serviceClient } from "./_lib/authUser.js";
 import { deviceFor } from "./_lib/macDevice.js";
 import { effectiveDue } from "../src/lib/checklistDefaults.js";
 import { touchDue } from "../src/lib/contacts.js";
+import { nextDue } from "../src/lib/taskRecurrence.js";
+import { cleanList, cleanSteps } from "../src/lib/taskLists.js";
 
 const TZ = "America/Chicago";
 const DAY = 24 * 60 * 60 * 1000;
@@ -38,6 +46,9 @@ const EDITABLE = {
   text_sync: (v) => (typeof v === "boolean" ? v : undefined),
   do_not_contact: (v) => (typeof v === "boolean" ? v : undefined),
 };
+
+const TASK_COLUMNS = "id, title, due_date, recurrence, series_start, done, done_at, last_done_at, start_time, duration_min, list, checklist, contact_id, created_at";
+const RECURRENCES = ["none", "daily", "weekdays", "weekly", "biweekly", "monthly", "quarterly", "yearly"];
 
 const todayKey = () => new Date().toLocaleDateString("en-CA", { timeZone: TZ });
 const fullName = (c) => [c.first_name, c.last_name].filter(Boolean).join(" ") || c.company || "Contact";
@@ -195,6 +206,22 @@ export default async function handler(req, res) {
       return res.status(200).json({ now, contacts: rows, ids: ids.map((r) => r.id), tags: tags.data || [], links, followups: [...next].map(([contact_id, due]) => ({ contact_id, due })) });
     }
 
+    if (req.method === "GET" && a === "tasks") {
+      const since = new Date(Date.now() - 14 * DAY).toISOString();
+      const [open, done] = await Promise.all([
+        readAll(() => admin.from("agent_tasks").select(TASK_COLUMNS).eq("owner_id", owner).eq("done", false).order("due_date", { ascending: true, nullsFirst: false }).order("created_at").order("id")),
+        admin.from("agent_tasks").select(TASK_COLUMNS).eq("owner_id", owner).eq("done", true).gte("done_at", since).order("done_at", { ascending: false }).limit(100),
+      ]);
+      const rows = [...open, ...(done.data || [])];
+      const contactIds = [...new Set(rows.map((t) => t.contact_id).filter(Boolean))];
+      const names = new Map();
+      for (let i = 0; i < contactIds.length; i += 100) {
+        const { data } = await admin.from("contacts").select("id, first_name, last_name, company").eq("owner_id", owner).in("id", contactIds.slice(i, i + 100));
+        for (const c of data || []) names.set(c.id, fullName(c));
+      }
+      return res.status(200).json({ tasks: rows.map((t) => ({ ...t, checklist: Array.isArray(t.checklist) ? t.checklist : [], contact_name: t.contact_id ? names.get(t.contact_id) || "" : "" })) });
+    }
+
     if (req.method === "GET" && a === "history") {
       const id = String(req.query?.contact_id || "");
       if (!UUID.test(id)) return bad(res, "Missing contact.");
@@ -223,6 +250,14 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    const taskOut = async (t) => {
+      let name = "";
+      if (t.contact_id) {
+        const { data } = await admin.from("contacts").select("first_name, last_name, company").eq("id", t.contact_id).eq("owner_id", owner).maybeSingle();
+        name = data ? fullName(data) : "";
+      }
+      return { ...t, checklist: Array.isArray(t.checklist) ? t.checklist : [], contact_name: name };
+    };
     const ownsContact = async (id) => {
       if (!UUID.test(String(id || ""))) return null;
       const { data } = await admin.from("contacts").select("id, first_name, last_name, company").eq("id", id).eq("owner_id", owner).maybeSingle();
@@ -243,16 +278,73 @@ export default async function handler(req, res) {
     if (a === "task") {
       const title = String(body.title || "").trim().slice(0, 300);
       if (!title) return bad(res, "Give the task a title.");
-      const due = DATE.test(String(body.due_date || "")) ? body.due_date : null;
+      let due = DATE.test(String(body.due_date || "")) ? body.due_date : null;
+      const rule = RECURRENCES.includes(body.recurrence) ? body.recurrence : "none";
+      // A repeating task needs a date to repeat from: default to today.
+      if (rule !== "none" && !due) due = DATE.test(String(body.today || "")) ? body.today : todayKey();
       let contactId = null;
       if (body.contact_id) {
         const contact = await ownsContact(body.contact_id);
         if (!contact) return bad(res, "That contact isn't yours.");
         contactId = contact.id;
       }
-      const { error } = await admin.from("agent_tasks").insert({ owner_id: owner, title, due_date: due, recurrence: "none", ...(contactId ? { contact_id: contactId } : {}) });
+      const { data, error } = await admin.from("agent_tasks").insert({ owner_id: owner, title, due_date: due, recurrence: rule, series_start: rule !== "none" ? due : null, list: cleanList(body.list), ...(contactId ? { contact_id: contactId } : {}) }).select(TASK_COLUMNS).single();
       if (error) return bad(res, "Couldn't save it.", 500);
-      return res.status(200).json({ ok: true });
+      return res.status(200).json({ ok: true, task: await taskOut(data) });
+    }
+
+    if (a === "task_complete" || a === "task_reopen" || a === "task_update" || a === "task_delete") {
+      if (!UUID.test(String(body.task_id || ""))) return bad(res, "Missing task.");
+      const { data: task } = await admin.from("agent_tasks").select(TASK_COLUMNS).eq("id", body.task_id).eq("owner_id", owner).maybeSingle();
+      if (!task) return bad(res, "That task isn't yours.", 404);
+      const mine = (q) => q.eq("id", task.id).eq("owner_id", owner);
+      const back = async (changes) => {
+        const { data, error } = await mine(admin.from("agent_tasks").update(changes)).select(TASK_COLUMNS).single();
+        if (error) return bad(res, "Couldn't save it.", 500);
+        return res.status(200).json({ ok: true, task: await taskOut(data) });
+      };
+
+      if (a === "task_delete") {
+        const { error } = await mine(admin.from("agent_tasks").delete());
+        return error ? bad(res, "Couldn't delete it.", 500) : res.status(200).json({ ok: true });
+      }
+      if (a === "task_reopen") return back({ done: false, done_at: null });
+      if (a === "task_complete") {
+        const now = new Date().toISOString();
+        if (task.recurrence === "none") return back({ done: true, done_at: now });
+        const today = DATE.test(String(body.today || "")) ? body.today : todayKey();
+        const due = nextDue(task.recurrence, task.series_start, task.due_date, today);
+        // The next one starts with its steps unticked.
+        const steps = Array.isArray(task.checklist) ? task.checklist : [];
+        return back({ due_date: due, last_done_at: now, ...(steps.some((x) => x.done) ? { checklist: steps.map((x) => ({ ...x, done: false })) } : {}) });
+      }
+      // task_update
+      const ch = body.changes && typeof body.changes === "object" ? body.changes : {};
+      const changes = {};
+      if ("title" in ch) {
+        const t = String(ch.title || "").trim().slice(0, 300);
+        if (!t) return bad(res, "A task needs a title.");
+        changes.title = t;
+      }
+      if ("due_date" in ch) {
+        if (ch.due_date !== null && !DATE.test(String(ch.due_date))) return bad(res, "That date doesn't look right.");
+        changes.due_date = ch.due_date;
+        if (task.recurrence !== "none") {
+          // A repeating task always needs a date; moving it restarts the series from the new date.
+          if (!ch.due_date) return bad(res, "A repeating task needs a date.");
+          changes.series_start = ch.due_date;
+        } else if (!ch.due_date) {
+          changes.start_time = null;
+          changes.duration_min = null;
+        }
+      }
+      if ("list" in ch) changes.list = cleanList(ch.list);
+      if ("checklist" in ch) {
+        if (!Array.isArray(ch.checklist)) return bad(res, "Steps must be a list.");
+        changes.checklist = cleanSteps(ch.checklist);
+      }
+      if (!Object.keys(changes).length) return bad(res, "Nothing to change.");
+      return back(changes);
     }
 
     if (a === "contact") {
