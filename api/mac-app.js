@@ -14,6 +14,11 @@
 // The native Deals window (read-only, plus the checklist actions above):
 //   GET  /api/mac-app?a=deals           your deals and, for a coordinator, the deals they coordinate; the board's stages; each deal's checklist and document progress
 //   GET  /api/mac-app?a=deal&deal_id=   one deal: dates, money, the people on it, its checklist (with each task's due day) and its documents
+// Starting a deal, as the dashboard's "Start a deal" does:
+//   GET  /api/mac-app?a=deal_start_options   who a deal can be started for (you, and for a coordinator the agents in their office) and the columns each has
+//   POST /api/mac-app?a=deal_start           {agent: "me" | agent id, name, side, property_address?, phone?, email?, price?, contract_date?, closing_date?, stage?}   returns {id, note}
+// Editing a deal (its details, the people on it, money, key dates, earnest money, cash, side and stage), as the dashboard's Details and Overview tabs do:
+//   POST /api/mac-app?a=deal_update    {deal_id, changes}   see DEAL_EDIT for the fields; `column` is a coordinator's own board column; returns the deal as ?a=deal does
 // Adding and removing a deal's checklist tasks and documents (the dashboard's Tasks and Documents tabs):
 //   POST /api/mac-app?a=deal_task_add   {deal_id, section, text}   adds a task to a section (it takes that section's due rule); returns the task
 //   POST /api/mac-app?a=deal_task_delete {task_id}
@@ -38,6 +43,9 @@ import { effectiveDue } from "../src/lib/checklistDefaults.js";
 import { touchDue } from "../src/lib/contacts.js";
 import { nextDue } from "../src/lib/taskRecurrence.js";
 import { cleanList, cleanSteps } from "../src/lib/taskLists.js";
+import { fromAs, sendNotification, viaOrg } from "./_lib/inquiry.js";
+import { buildDealStartedEmail } from "./_lib/dealEmail.js";
+import { SITE_ORIGIN } from "../src/lib/seo.js";
 
 const TZ = "America/Chicago";
 const DAY = 24 * 60 * 60 * 1000;
@@ -63,6 +71,13 @@ const EDITABLE = {
 
 const DEAL_COLUMNS = "id, owner_id, name, email, phone, stage, side, property_address, price, commission, contract_date, inspection_date, inspection_period_end, inspection_time, appraisal_date, financing_deadline, closing_date, closing_time, is_cash, financing_type, compliance_status, earnest_money, earnest_money_delivered, earnest_money_delivered_at, updated_at, contact_id";
 const DEAL_PARTY_COLUMNS = "client2_name, client2_email, other_agent, other_agent_email, other_agent_company, other_agent_phone, other_agent2, other_agent2_email, other_agent2_company, other_agent2_phone, other_agent_tc_name, other_agent_tc_email, title_company, title_company_email, title_phone, title_processor_name, title_processor_email, escrow_officer, escrow_officer_email, lender, lender_email, lender_phone, loan_processor_name, loan_processor_email, other_party_name";
+// What may be edited on a deal, and how each value is cleaned (null = clear it). Anything else in `changes` is ignored.
+const DEAL_TEXT = ["email", "phone", "property_address", "financing_type", "client2_name", "client2_email", "other_party_name", "other_agent", "other_agent_email", "other_agent_phone", "other_agent_company",
+  "other_agent2", "other_agent2_email", "other_agent2_phone", "other_agent2_company", "other_agent_tc_name", "other_agent_tc_email", "title_company", "title_company_email", "title_phone",
+  "title_processor_name", "title_processor_email", "escrow_officer", "escrow_officer_email", "lender", "lender_email", "lender_phone", "loan_processor_name", "loan_processor_email"];
+const DEAL_NUMBERS = ["price", "commission", "earnest_money"];
+const DEAL_DATES = ["contract_date", "inspection_date", "inspection_period_end", "appraisal_date", "financing_deadline", "closing_date"];
+const DEAL_TIMES = ["inspection_time", "closing_time"];
 const DEFAULT_DEAL_STAGES = ["Listings", "Pending", "Closing Soon", "Closed"];
 const TASK_COLUMNS = "id, title, due_date, recurrence, series_start, done, done_at, last_done_at, start_time, duration_min, list, checklist, contact_id, created_at";
 const RECURRENCES = ["none", "daily", "weekdays", "weekly", "biweekly", "monthly", "quarterly", "yearly"];
@@ -285,6 +300,17 @@ export default async function handler(req, res) {
       });
     }
 
+    if (req.method === "GET" && a === "deal_start_options") {
+      const { data: me } = await admin.from("profiles").select("id, org_id, deals_role, people_enabled, full_name").eq("id", owner).maybeSingle();
+      const stagesFor = async (who) => { const { data } = await admin.from("people_settings").select("stages").eq("owner_id", who).maybeSingle(); return Array.isArray(data?.stages?.transaction) && data.stages.transaction.length ? data.stages.transaction : DEFAULT_DEAL_STAGES; };
+      let agents = [];
+      if (me?.deals_role === "tc" && me.org_id) {
+        const { data: list } = await admin.from("profiles").select("id, full_name").eq("org_id", me.org_id).eq("people_enabled", true).neq("id", owner).order("full_name");
+        agents = await Promise.all((list || []).map(async (p) => ({ id: p.id, name: p.full_name || "Agent", stages: await stagesFor(p.id) })));
+      }
+      return res.status(200).json({ can_start_own: Boolean(me?.people_enabled), is_tc: me?.deals_role === "tc", my_stages: await stagesFor(owner), agents });
+    }
+
     if (req.method === "GET" && a === "deal") {
       const id = String(req.query?.deal_id || "");
       if (!UUID.test(id)) return bad(res, "Missing deal.");
@@ -397,8 +423,58 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, next_follow_up: next, previous: person.next_follow_up || null });
     }
 
-    // ---- a deal's checklist tasks and documents: add, tick, delete
-    if (["deal_task_add", "deal_task_delete", "deal_doc_add", "deal_doc_done", "deal_doc_delete"].includes(a)) {
+    // ---- start a deal: your own, or (a coordinator) one for an agent in your office
+    if (a === "deal_start") {
+      const { data: me } = await admin.from("profiles").select("id, org_id, deals_role, people_enabled, full_name").eq("id", owner).maybeSingle();
+      const name = String(body.name || "").trim().slice(0, 200);
+      if (!name) return bad(res, "Add the client's name.");
+      if (!["buyer", "seller"].includes(body.side)) return bad(res, "Choose buyer or seller.");
+      const email = String(body.email || "").trim().toLowerCase().slice(0, 254);
+      if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return bad(res, "That email address doesn't look right.");
+      let price = null;
+      if (body.price !== undefined && body.price !== null && body.price !== "") { price = Number(body.price); if (!Number.isFinite(price) || price < 0 || price > 1e12) return bad(res, "That price doesn't look right."); }
+      for (const k of ["contract_date", "closing_date"]) if (body[k] && !DATE.test(String(body[k]))) return bad(res, "That date doesn't look right.");
+      const fields = { name, side: body.side, property_address: String(body.property_address || "").trim().slice(0, 200), phone: String(body.phone || "").trim().slice(0, 40), email, price, contract_date: body.contract_date || null, closing_date: body.closing_date || null, stage_group: "transaction" };
+      const stagesOf = async (who) => { const { data } = await admin.from("people_settings").select("stages").eq("owner_id", who).maybeSingle(); return Array.isArray(data?.stages?.transaction) && data.stages.transaction.length ? data.stages.transaction : DEFAULT_DEAL_STAGES; };
+      const pickStage = (list) => { const want = String(body.stage || "").trim().toLowerCase(); if (!want) return list[0]; return list.find((x) => x.toLowerCase() === want) || null; };
+
+      if (!body.agent || body.agent === "me") {
+        if (!me?.people_enabled) return bad(res, "Deals isn't turned on for your account.", 403);
+        const stage = pickStage(await stagesOf(owner));
+        if (!stage) return bad(res, "That isn't one of your columns.");
+        const { data, error } = await admin.from("people").insert({ ...fields, owner_id: owner, stage, source: "Added manually" }).select("id").single();
+        return error ? bad(res, "Couldn't start it.", 500) : res.status(200).json({ ok: true, id: data.id, note: "" });
+      }
+
+      // For an agent: only a coordinator, only an agent in their own office who uses Deals (the dashboard's deal_start_for_agent does the same checks).
+      if (me?.deals_role !== "tc") return bad(res, "Only a transaction coordinator can start a deal for an agent.", 403);
+      if (!UUID.test(String(body.agent)) || body.agent === owner) return bad(res, "Pick an agent in your office who uses Deals.");
+      const { data: agent } = await admin.from("profiles").select("id, org_id, people_enabled, full_name, email").eq("id", body.agent).maybeSingle();
+      if (!agent || !me.org_id || agent.org_id !== me.org_id || !agent.people_enabled) return bad(res, "Pick an agent in your office who uses Deals.");
+      const stage = pickStage(await stagesOf(agent.id));
+      if (!stage) return bad(res, "That column isn't one of this agent's Deals columns.");
+      const { data: row, error } = await admin.from("people").insert({ ...fields, owner_id: agent.id, stage, source: "" }).select("id, name, property_address, side, contract_date, closing_date").single();
+      if (error) return bad(res, "Couldn't start it.", 500);
+      await admin.from("deal_tcs").insert({ person_id: row.id, tc_id: owner, assigned_by: owner, started_by_tc: true });
+      await admin.from("deal_messages").insert({ person_id: row.id, author_id: owner, kind: "message", body: `${me.full_name || "The coordinator"} started this deal and is coordinating it.` });
+      // Telling the agent is a courtesy: the deal is made either way, and a problem only comes back as a note.
+      let note = "";
+      const key = process.env.RESEND_API_KEY;
+      if (!key) note = `The deal is on ${agent.full_name || "the agent"}'s board, but email isn't set up here, so they weren't told.`;
+      else if (!agent.email) note = `The deal is on ${agent.full_name || "the agent"}'s board, but they have no email on file.`;
+      else {
+        const { data: org } = await admin.from("organizations").select("name").eq("id", agent.org_id).maybeSingle();
+        const { data: tc } = await admin.from("profiles").select("full_name, email").eq("id", owner).maybeSingle();
+        const mail = buildDealStartedEmail({ deal: row, tcName: tc?.full_name || "", agentName: agent.full_name || "", orgName: org?.name, url: `${SITE_ORIGIN}/dashboard/deals?deal=${row.id}` });
+        const sent = await sendNotification(key, { from: fromAs(viaOrg(tc?.full_name, org?.name), "Deals", "deals"), to: [agent.email], replyTo: tc?.email || undefined, subject: mail.subject, text: mail.text, html: mail.html });
+        if (sent) await admin.from("deal_tcs").update({ agent_emailed_at: new Date().toISOString() }).eq("person_id", row.id).eq("tc_id", owner);
+        else note = `The deal is on ${agent.full_name || "the agent"}'s board, but the email to them didn't go out.`;
+      }
+      return res.status(200).json({ ok: true, id: row.id, note });
+    }
+
+    // ---- a deal's checklist tasks and documents: add, tick, delete; and the deal's own fields
+    if (["deal_update", "deal_task_add", "deal_task_delete", "deal_doc_add", "deal_doc_done", "deal_doc_delete"].includes(a)) {
       // Can this person work this deal? Their own, or (a coordinator) one they coordinate: the same rule that puts it on their board.
       const canWork = async (personId) => {
         const { data: p } = await admin.from("people").select("id, owner_id, stage_group, contract_date, inspection_date, closing_date").eq("id", personId).eq("stage_group", "transaction").maybeSingle();
@@ -412,6 +488,70 @@ export default async function handler(req, res) {
         ]);
         return per?.length || team?.length ? p : null;
       };
+      if (a === "deal_update") {
+        if (!UUID.test(String(body.deal_id || ""))) return bad(res, "Missing deal.");
+        const deal = await canWork(body.deal_id);
+        if (!deal) return bad(res, "That deal isn't yours.", 404);
+        const ch = body.changes && typeof body.changes === "object" ? body.changes : {};
+        const changes = {};
+        const fail = (m) => bad(res, m);
+        for (const k of DEAL_TEXT) if (k in ch) changes[k] = String(ch[k] ?? "").trim().slice(0, 200);
+        if ("name" in ch) { const n = String(ch.name ?? "").trim().slice(0, 200); if (!n) return fail("A deal needs a client name."); changes.name = n; }
+        for (const k of ["email", "client2_email", "other_agent_email", "other_agent2_email", "other_agent_tc_email", "title_company_email", "title_processor_email", "escrow_officer_email", "lender_email", "loan_processor_email"]) {
+          if (changes[k]) { changes[k] = changes[k].toLowerCase(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(changes[k])) return fail("That email address doesn't look right."); }
+        }
+        for (const k of DEAL_NUMBERS) if (k in ch) {
+          if (ch[k] === null || ch[k] === "") changes[k] = null;
+          else { const n = Number(ch[k]); if (!Number.isFinite(n) || n < 0 || n > 1e12) return fail(`That ${k.replace(/_/g, " ")} doesn't look right.`); changes[k] = n; }
+        }
+        for (const k of DEAL_DATES) if (k in ch) {
+          if (ch[k] !== null && !DATE.test(String(ch[k]))) return fail("That date doesn't look right.");
+          changes[k] = ch[k] || null;
+        }
+        for (const k of DEAL_TIMES) if (k in ch) {
+          if (ch[k] !== null && !/^\d{2}:\d{2}(:\d{2})?$/.test(String(ch[k]))) return fail("That time doesn't look right.");
+          changes[k] = ch[k] || null;
+        }
+        if ("is_cash" in ch) { if (typeof ch.is_cash !== "boolean") return fail("Cash purchase must be yes or no."); changes.is_cash = ch.is_cash; }
+        if ("earnest_money_delivered" in ch) {
+          if (typeof ch.earnest_money_delivered !== "boolean") return fail("Earnest money delivered must be yes or no.");
+          changes.earnest_money_delivered = ch.earnest_money_delivered;
+          changes.earnest_money_delivered_at = ch.earnest_money_delivered ? new Date().toISOString() : null;
+        }
+        if ("side" in ch) { if (ch.side !== null && !["buyer", "seller"].includes(ch.side)) return fail("Choose buyer or seller."); changes.side = ch.side || null; }
+        let column = null;
+        if ("stage" in ch || "column" in ch) {
+          const stagesOf = async (who) => { const { data } = await admin.from("people_settings").select("stages").eq("owner_id", who).maybeSingle(); return Array.isArray(data?.stages?.transaction) && data.stages.transaction.length ? data.stages.transaction : DEFAULT_DEAL_STAGES; };
+          if ("stage" in ch) {
+            const stage = String(ch.stage || "").trim().slice(0, 60);
+            const { data: cur } = await admin.from("people").select("stage").eq("id", deal.id).maybeSingle();
+            if (!stage || (stage !== cur?.stage && !(await stagesOf(deal.owner_id)).includes(stage))) return fail("That isn't one of the stages.");
+            changes.stage = stage;
+          }
+          if ("column" in ch) {
+            if (deal.owner_id === owner) return fail("Only a deal you coordinate has your own column.");
+            column = String(ch.column || "").trim().slice(0, 60);
+            if (!column || !(await stagesOf(owner)).includes(column)) return fail("That isn't one of your columns.");
+          }
+        }
+        if (!Object.keys(changes).length && !column) return fail("Nothing to change.");
+        if (Object.keys(changes).length) {
+          const { error } = await admin.from("people").update(changes).eq("id", deal.id);
+          if (error) return bad(res, "Couldn't save it.", 500);
+        }
+        if (column) {
+          const { error } = await admin.from("deal_tc_stages").upsert({ person_id: deal.id, tc_id: owner, stage: column, updated_at: new Date().toISOString() }, { onConflict: "person_id,tc_id" });
+          if (error) return bad(res, "Couldn't save it.", 500);
+        }
+        const { data: p } = await admin.from("people").select(`${DEAL_COLUMNS}, ${DEAL_PARTY_COLUMNS}`).eq("id", deal.id).maybeSingle();
+        const foreign = p.owner_id !== owner;
+        const [{ data: agent }, { data: placed }] = await Promise.all([
+          admin.from("profiles").select("full_name, email").eq("id", p.owner_id).maybeSingle(),
+          foreign ? admin.from("deal_tc_stages").select("stage").eq("person_id", deal.id).eq("tc_id", owner).maybeSingle() : Promise.resolve({ data: null }),
+        ]);
+        return res.status(200).json({ ok: true, deal: { ...p, column: foreign ? placed?.stage || p.stage : p.stage, foreign, agent: agent?.full_name || "", agent_email: agent?.email || "" } });
+      }
+
       const taskOutRow = (t, deal) => ({ id: t.id, section: t.section, position: t.position, text: t.text, done: t.done, done_at: t.done_at, due_override: t.due_override, due: effectiveDue(t, deal) || null });
 
       if (a === "deal_task_add" || a === "deal_doc_add") {

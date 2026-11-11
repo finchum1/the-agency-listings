@@ -57,6 +57,9 @@ const DRAG_START_PX = 5;
 const LONG_PRESS_MS = 350;
 const COLLAPSED_KEY = (group) => `peopleCollapsedColumns:${group}`;
 
+// The colored edge on a deal card's left side, by buyer / seller (same hues as the tags in lib/peopleSides.js).
+const SIDE_EDGE = { buyer: "bg-sky-500", seller: "bg-amber-500", both: "bg-violet-500" };
+
 // What's inside a person's card: the same markup is used for the card in its column and for the card floating under
 // the pointer while it is being dragged.
 function PersonCardBody({ p, group, progress, today, extra }) {
@@ -64,8 +67,19 @@ function PersonCardBody({ p, group, progress, today, extra }) {
   const dueToday = p.next_follow_up === today;
   return (
     <>
-      {p._foreign && (
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#1c1a17]/45 dark:text-[#faf9f7]/45 truncate">TC for {p._agent || "another agent"}</p>
+      {group === "transaction" && SIDE_TAGS[p.side] && (
+        // A colored edge on the outside of the card and a tag at the top: buyer (blue) or seller (amber) at a glance.
+        <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1.5 rounded-l-xl ${SIDE_EDGE[p.side]}`} />
+      )}
+      {(p._foreign || (group === "transaction" && SIDE_TAGS[p.side])) && (
+        <div className="flex items-center gap-1.5 min-w-0">
+          {group === "transaction" && SIDE_TAGS[p.side] && (
+            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${SIDE_TAGS[p.side].className}`}>{SIDE_TAGS[p.side].label}</span>
+          )}
+          {p._foreign && (
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#1c1a17]/45 dark:text-[#faf9f7]/45 truncate">TC for {p._agent || "another agent"}</p>
+          )}
+        </div>
       )}
       <div className="flex items-center justify-between gap-2 min-w-0">
         <p className="text-sm font-medium truncate">{p.name}</p>
@@ -91,9 +105,7 @@ function PersonCardBody({ p, group, progress, today, extra }) {
             <p className="text-xs text-[#1c1a17]/70 dark:text-[#faf9f7]/70 truncate">{p.property_address}</p>
           )}
           <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">
-            {[p.side === "buyer" ? "Buyer" : p.side === "seller" ? "Seller" : "", p.price ? `$${Number(p.price).toLocaleString()}` : ""]
-              .filter(Boolean)
-              .join(" · ")}
+            {p.price ? `$${Number(p.price).toLocaleString()}` : ""}
           </p>
         </div>
       )}
