@@ -7,6 +7,11 @@
 //   POST /api/mac-app?a=note         {contact_id, kind, body}
 //   POST /api/mac-app?a=task         {title, due_date?, contact_id?}
 //   POST /api/mac-app?a=contact      {first_name, last_name, company, phone, email, relationship?, force?}   a duplicate is reported, not created, unless force
+// The native Contacts window:
+//   GET  /api/mac-app?a=contacts&since=   every contact changed since then (all of them without `since`), the ids that exist now (so deletions show), tags, tag links, open follow-ups
+//   GET  /api/mac-app?a=history&contact_id=   that contact's notes, synced texts and calls, and card notes, newest first
+//   POST /api/mac-app?a=update       {contact_id, changes}   a few fields of one contact (see EDITABLE)
+//   POST /api/mac-app?a=tag          {contact_id, name, on}   put a tag (made if new) on a contact, or take it off
 import { serviceClient } from "./_lib/authUser.js";
 import { deviceFor } from "./_lib/macDevice.js";
 import { effectiveDue } from "../src/lib/checklistDefaults.js";
@@ -18,6 +23,21 @@ const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NOTE_KINDS = ["note", "call", "text", "email", "meeting", "showing", "other"];
 const RELATIONSHIPS = ["client", "past_client", "lead", "sphere", "referral_partner", "vendor", "agent", "lender", "other"];
+
+const CONTACT_COLUMNS = "id, first_name, last_name, company, email, phone, other_emails, other_phones, address_line1, city, state, zip, birthday, home_anniversary, relationship, source, about, touch_every_days, last_contacted_at, do_not_contact, archived, text_sync, created_at, updated_at";
+// What the Mac app may change on a contact, and how each value is cleaned. Anything else in `changes` is ignored.
+const EDITABLE = {
+  first_name: (v) => String(v ?? "").trim().slice(0, 80),
+  last_name: (v) => String(v ?? "").trim().slice(0, 80),
+  company: (v) => String(v ?? "").trim().slice(0, 120),
+  phone: (v) => String(v ?? "").trim().slice(0, 40),
+  email: (v) => String(v ?? "").trim().toLowerCase().slice(0, 254),
+  about: (v) => String(v ?? "").slice(0, 5000),
+  relationship: (v) => (RELATIONSHIPS.includes(v) ? v : undefined),
+  touch_every_days: (v) => (v === null || v === "" ? null : Number.isInteger(v) && v >= 1 && v <= 1095 ? v : undefined),
+  text_sync: (v) => (typeof v === "boolean" ? v : undefined),
+  do_not_contact: (v) => (typeof v === "boolean" ? v : undefined),
+};
 
 const todayKey = () => new Date().toLocaleDateString("en-CA", { timeZone: TZ });
 const fullName = (c) => [c.first_name, c.last_name].filter(Boolean).join(" ") || c.company || "Contact";
@@ -152,6 +172,49 @@ export default async function handler(req, res) {
       return res.status(200).json({ contacts: (data || []).map((c) => ({ id: c.id, name: fullName(c), phone: c.phone || "", email: c.email || "", relationship: c.relationship })) });
     }
 
+    if (req.method === "GET" && a === "contacts") {
+      const since = String(req.query?.since || "");
+      const now = new Date().toISOString();
+      const changed = () => {
+        let q = admin.from("contacts").select(CONTACT_COLUMNS).eq("owner_id", owner).order("id");
+        if (since && !Number.isNaN(Date.parse(since))) q = q.gte("updated_at", new Date(since).toISOString());
+        return q;
+      };
+      const [rows, ids, tags, links, tasks] = await Promise.all([
+        readAll(changed),
+        readAll(() => admin.from("contacts").select("id").eq("owner_id", owner).order("id")),
+        admin.from("contact_tags").select("id, name, color").eq("owner_id", owner).order("name"),
+        readAll(() => admin.from("contact_tag_links").select("contact_id, tag_id").eq("owner_id", owner).order("contact_id").order("tag_id")),
+        readAll(() => admin.from("agent_tasks").select("contact_id, due_date").eq("owner_id", owner).eq("done", false).not("contact_id", "is", null).order("id")),
+      ]);
+      const next = new Map();
+      for (const t of tasks) {
+        const d = t.due_date || "";
+        if (!next.has(t.contact_id) || (d && (!next.get(t.contact_id) || d < next.get(t.contact_id)))) next.set(t.contact_id, d);
+      }
+      return res.status(200).json({ now, contacts: rows, ids: ids.map((r) => r.id), tags: tags.data || [], links, followups: [...next].map(([contact_id, due]) => ({ contact_id, due })) });
+    }
+
+    if (req.method === "GET" && a === "history") {
+      const id = String(req.query?.contact_id || "");
+      if (!UUID.test(id)) return bad(res, "Missing contact.");
+      const { data: contact } = await admin.from("contacts").select("id").eq("id", id).eq("owner_id", owner).maybeSingle();
+      if (!contact) return bad(res, "Contact not found.", 404);
+      const { data: cards } = await admin.from("people").select("id").eq("owner_id", owner).eq("contact_id", id);
+      const cardIds = (cards || []).map((c) => c.id);
+      const [notes, msgs, cardNotes] = await Promise.all([
+        admin.from("contact_notes").select("id, kind, body, occurred_at").eq("contact_id", id).eq("owner_id", owner).order("occurred_at", { ascending: false }).limit(200),
+        admin.from("contact_messages").select("id, kind, direction, body, duration_seconds, occurred_at").eq("contact_id", id).eq("owner_id", owner).order("occurred_at", { ascending: false }).limit(300),
+        cardIds.length ? admin.from("people_notes").select("id, body, created_at").in("person_id", cardIds).order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
+      ]);
+      const items = [
+        ...(msgs.data || []).map((m) => ({ id: `m${m.id}`, kind: m.kind === "call" ? "synced_call" : "synced_text", direction: m.direction, seconds: m.duration_seconds, body: m.body, at: m.occurred_at })),
+        ...(notes.data || []).map((n) => ({ id: `c${n.id}`, kind: n.kind, direction: null, seconds: null, body: n.body, at: n.occurred_at })),
+        ...(cardNotes.data || []).map((n) => ({ id: `p${n.id}`, kind: "card", direction: null, seconds: null, body: n.body, at: n.created_at })),
+      ].sort((x, y) => y.at.localeCompare(x.at));
+      return res.status(200).json({ items });
+    }
+
     if (req.method !== "POST") return bad(res, "Not found.", 404);
 
     if (a === "responded") {
@@ -206,6 +269,48 @@ export default async function handler(req, res) {
       const { data, error } = await admin.from("contacts").insert({ owner_id: owner, first_name: first, last_name: last, company, phone, email, relationship }).select("id, first_name, last_name, company").single();
       if (error) return bad(res, "Couldn't save it.", 500);
       return res.status(200).json({ ok: true, id: data.id, name: fullName(data) });
+    }
+
+    if (a === "update") {
+      const contact = await ownsContact(body.contact_id);
+      if (!contact) return bad(res, "That contact isn't yours.");
+      const changes = {};
+      for (const [key, clean] of Object.entries(EDITABLE)) {
+        if (!body.changes || !(key in body.changes)) continue;
+        const v = clean(body.changes[key]);
+        if (v === undefined) return bad(res, `That value for ${key.replace(/_/g, " ")} isn't allowed.`);
+        changes[key] = v;
+      }
+      if ("email" in changes && changes.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(changes.email)) return bad(res, "That email address doesn't look right.");
+      if (!Object.keys(changes).length) return bad(res, "Nothing to change.");
+      const { data, error } = await admin.from("contacts").update(changes).eq("id", contact.id).eq("owner_id", owner).select(CONTACT_COLUMNS).single();
+      if (error) {
+        const noName = /contacts_has_a_name/.test(error.message || "");
+        return bad(res, noName ? "A contact needs a name or a company." : "Couldn't save it.", noName ? 400 : 500);
+      }
+      return res.status(200).json({ ok: true, contact: data });
+    }
+
+    if (a === "tag") {
+      const contact = await ownsContact(body.contact_id);
+      if (!contact) return bad(res, "That contact isn't yours.");
+      const name = String(body.name || "").trim().slice(0, 40);
+      if (!name) return bad(res, "Name the tag.");
+      // Tag names are unique per agent ignoring case, so find it by comparing lowercased names here rather than building a pattern.
+      const { data: mine } = await admin.from("contact_tags").select("id, name, color").eq("owner_id", owner);
+      let tag = (mine || []).find((t) => t.name.toLowerCase() === name.toLowerCase());
+      if (body.on === false) {
+        if (tag) await admin.from("contact_tag_links").delete().eq("contact_id", contact.id).eq("tag_id", tag.id).eq("owner_id", owner);
+        return res.status(200).json({ ok: true });
+      }
+      if (!tag) {
+        const made = await admin.from("contact_tags").insert({ owner_id: owner, name, color: "gray" }).select("id, name, color").single();
+        if (made.error) return bad(res, "Couldn't save it.", 500);
+        tag = made.data;
+      }
+      const { error } = await admin.from("contact_tag_links").upsert({ contact_id: contact.id, tag_id: tag.id, owner_id: owner }, { onConflict: "contact_id,tag_id", ignoreDuplicates: true });
+      if (error) return bad(res, "Couldn't save it.", 500);
+      return res.status(200).json({ ok: true, tag });
     }
 
     return bad(res, "Not found.", 404);
