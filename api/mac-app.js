@@ -14,6 +14,14 @@
 // The native Deals window (read-only, plus the checklist actions above):
 //   GET  /api/mac-app?a=deals           your deals and, for a coordinator, the deals they coordinate; the board's stages; each deal's checklist and document progress
 //   GET  /api/mac-app?a=deal&deal_id=   one deal: dates, money, the people on it, its checklist (with each task's due day) and its documents
+// The Leads and Pipeline boards (the dashboard's People boards), for the native Leads & Pipeline window:
+//   GET  /api/mac-app?a=people_board     both boards' columns, each column's follow-up cadence (days), and everyone on them (not archived)
+//   GET  /api/mac-app?a=person&person_id=   one person: their card, what has been logged (notes and activity), and their contact record's relationship and tags
+//   POST /api/mac-app?a=person_start     {group, name, phone?, email?, side?, stage?, follow_up?}   a new lead or pipeline card (source "Added manually")
+//   POST /api/mac-app?a=person_update    {person_id, changes}   name, email, phone, side, source, stage (a column of their board), next follow-up
+//   POST /api/mac-app?a=person_move      {person_id, stage}   to the next board: a lead goes to Pipeline, a pipeline person starts a deal
+//   POST /api/mac-app?a=person_archive   {person_id, reason}      POST ?a=person_restore {person_id}
+//   POST /api/mac-app?a=person_note      {person_id, kind, body}   a note or logged touch; a touch moves a due follow-up along by the column's cadence
 // The Deals overview page and the "Email with a template" menu:
 //   GET  /api/mac-app?a=deals_overview&today=   the open tasks of your open deals that fall due by two weeks from today (overdue ones included), each with its due day, and the waiting drafts
 //   GET  /api/mac-app?a=deal_emails&deal_id=    the deal's email templates, grouped as in the dashboard's "Email with a template" menu, each already filled in from the deal and addressed
@@ -83,6 +91,10 @@ const DEAL_TEXT = ["email", "phone", "property_address", "financing_type", "clie
 const DEAL_NUMBERS = ["price", "commission", "earnest_money"];
 const DEAL_DATES = ["contract_date", "inspection_date", "inspection_period_end", "appraisal_date", "financing_deadline", "closing_date"];
 const DEAL_TIMES = ["inspection_time", "closing_time"];
+const DEFAULT_PEOPLE_STAGES = { lead: ["New", "Contacted", "Nurturing", "Qualified"], pipeline: ["12+ Months", "6+ Months", "3-6 Months", "Coming Soon", "Active"] };
+const DEFAULT_CADENCE = { lead: { New: 1, Contacted: 3, Nurturing: 14, Qualified: 3 }, pipeline: { "12+ Months": 90, "6+ Months": 60, "3-6 Months": 30, "Coming Soon": 7, Active: 3 } };
+const PERSON_COLUMNS = "id, name, email, phone, stage_group, stage, source, next_follow_up, side, lead_id, first_response_at, created_at, updated_at, contact_id, board_position, archived, archived_reason";
+const ARCHIVE_REASONS = ["Deal fell through", "Went with another agent", "Not interested", "Not responding", "Timing / no longer moving", "Other"];
 const DEFAULT_DEAL_STAGES = ["Listings", "Pending", "Closing Soon", "Closed"];
 const TASK_COLUMNS = "id, title, due_date, recurrence, series_start, done, done_at, last_done_at, start_time, duration_min, list, checklist, contact_id, created_at";
 const RECURRENCES = ["none", "daily", "weekdays", "weekly", "biweekly", "monthly", "quarterly", "yearly"];
@@ -224,6 +236,25 @@ async function progressOf(admin, table, ids) {
   return out;
 }
 
+/** The columns of the Leads and Pipeline boards for one agent, and each column's follow-up cadence (days; null = none): their settings over the defaults. */
+async function peopleSettings(admin, who) {
+  const { data } = await admin.from("people_settings").select("stages, cadence").eq("owner_id", who).maybeSingle();
+  const stages = {}, cadence = {};
+  for (const g of ["lead", "pipeline"]) {
+    const list = data?.stages?.[g];
+    stages[g] = Array.isArray(list) && list.length ? list : DEFAULT_PEOPLE_STAGES[g];
+    cadence[g] = {};
+    for (const st of stages[g]) {
+      const custom = data?.cadence?.[g];
+      if (custom && Object.prototype.hasOwnProperty.call(custom, st)) cadence[g][st] = Number(custom[st]) > 0 ? Number(custom[st]) : null;
+      else cadence[g][st] = DEFAULT_CADENCE[g][st] ?? null;
+    }
+  }
+  const tx = data?.stages?.transaction;
+  stages.transaction = Array.isArray(tx) && tx.length ? tx : DEFAULT_DEAL_STAGES;
+  return { stages, cadence };
+}
+
 const bad = (res, message, code = 400) => res.status(code).json({ error: message });
 
 export default async function handler(req, res) {
@@ -303,6 +334,33 @@ export default async function handler(req, res) {
         stages, closed,
         deals: deals.map((d) => ({ ...d, column: d._foreign ? d._column || d.stage : d.stage, foreign: d._foreign, agent: d._agent, tasks: tasks.get(d.id), docs: docs.get(d.id), _foreign: undefined, _agent: undefined, _column: undefined })),
       });
+    }
+
+    if (req.method === "GET" && a === "people_board") {
+      const { stages, cadence } = await peopleSettings(admin, owner);
+      const people = await readAll(() => admin.from("people").select(PERSON_COLUMNS).eq("owner_id", owner).in("stage_group", ["lead", "pipeline"]).eq("archived", false).order("id"));
+      const { count } = await admin.from("people").select("id", { count: "exact", head: true }).eq("owner_id", owner).in("stage_group", ["lead", "pipeline"]).eq("archived", true);
+      return res.status(200).json({ stages: { lead: stages.lead, pipeline: stages.pipeline }, deal_stages: stages.transaction, cadence, people, archived_count: count || 0 });
+    }
+
+    if (req.method === "GET" && a === "person") {
+      const id = String(req.query?.person_id || "");
+      if (!UUID.test(id)) return bad(res, "Missing person.");
+      const { data: person } = await admin.from("people").select(PERSON_COLUMNS).eq("id", id).eq("owner_id", owner).in("stage_group", ["lead", "pipeline"]).maybeSingle();
+      if (!person) return bad(res, "Person not found.", 404);
+      const [notes, cnotes, contact, links] = await Promise.all([
+        admin.from("people_notes").select("id, body, created_at").eq("person_id", id).order("created_at", { ascending: false }).limit(200),
+        person.contact_id ? admin.from("contact_notes").select("id, kind, body, occurred_at").eq("contact_id", person.contact_id).eq("owner_id", owner).order("occurred_at", { ascending: false }).limit(200) : Promise.resolve({ data: [] }),
+        person.contact_id ? admin.from("contacts").select("relationship, last_contacted_at, do_not_contact").eq("id", person.contact_id).eq("owner_id", owner).maybeSingle() : Promise.resolve({ data: null }),
+        person.contact_id ? admin.from("contact_tag_links").select("tag_id").eq("contact_id", person.contact_id).eq("owner_id", owner) : Promise.resolve({ data: [] }),
+      ]);
+      const tagIds = (links.data || []).map((l) => l.tag_id);
+      const { data: tagRows } = tagIds.length ? await admin.from("contact_tags").select("id, name").in("id", tagIds).eq("owner_id", owner) : { data: [] };
+      const items = [
+        ...(notes.data || []).map((n) => ({ id: `p${n.id}`, kind: "note", body: n.body, at: n.created_at })),
+        ...(cnotes.data || []).map((n) => ({ id: `c${n.id}`, kind: n.kind, body: n.body, at: n.occurred_at })),
+      ].sort((x, y) => y.at.localeCompare(x.at));
+      return res.status(200).json({ person, activity: items, contact: contact.data ? { relationship: contact.data.relationship, last_contacted_at: contact.data.last_contacted_at, do_not_contact: contact.data.do_not_contact, tags: (tagRows || []).map((t) => t.name) } : null });
     }
 
     if (req.method === "GET" && a === "deals_overview") {
@@ -482,6 +540,109 @@ export default async function handler(req, res) {
       const { error } = await admin.from("people").update({ next_follow_up: next }).eq("id", person.id).eq("owner_id", owner);
       if (error) return bad(res, "Couldn't save it.", 500);
       return res.status(200).json({ ok: true, next_follow_up: next, previous: person.next_follow_up || null });
+    }
+
+    // ---- Leads and Pipeline: add, edit, move between boards, archive, log activity
+    if (a.startsWith("person_")) {
+      const mineP = async (id) => {
+        if (!UUID.test(String(id || ""))) return null;
+        const { data } = await admin.from("people").select(PERSON_COLUMNS).eq("id", id).eq("owner_id", owner).in("stage_group", ["lead", "pipeline"]).maybeSingle();
+        return data || null;
+      };
+      const out = async (id) => (await admin.from("people").select(PERSON_COLUMNS).eq("id", id).maybeSingle()).data;
+
+      if (a === "person_start") {
+        const group = body.group === "pipeline" ? "pipeline" : body.group === "lead" ? "lead" : null;
+        if (!group) return bad(res, "Choose Leads or Pipeline.");
+        const name = String(body.name || "").trim().slice(0, 200);
+        if (!name) return bad(res, "Add a name.");
+        const email = String(body.email || "").trim().toLowerCase().slice(0, 254);
+        if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return bad(res, "That email address doesn't look right.");
+        if (body.side && !["buyer", "seller", "both"].includes(body.side)) return bad(res, "Choose buyer, seller or both.");
+        if (body.follow_up && !DATE.test(String(body.follow_up))) return bad(res, "That date doesn't look right.");
+        const { stages } = await peopleSettings(admin, owner);
+        const want = String(body.stage || "").trim().toLowerCase();
+        const stage = want ? stages[group].find((x) => x.toLowerCase() === want) : stages[group][0];
+        if (!stage) return bad(res, "That isn't one of the columns.");
+        const row = { owner_id: owner, name, phone: String(body.phone || "").trim().slice(0, 40), email, stage_group: group, stage, source: "Added manually", ...(body.side ? { side: body.side } : {}), ...(body.follow_up ? { next_follow_up: body.follow_up } : {}) };
+        const { data, error } = await admin.from("people").insert(row).select("id").single();
+        if (error) return bad(res, "Couldn't save it.", 500);
+        return res.status(200).json({ ok: true, person: await out(data.id) });
+      }
+
+      const person = await mineP(body.person_id);
+      if (!person) return bad(res, "That person isn't yours.", 404);
+
+      if (a === "person_update") {
+        const ch = body.changes && typeof body.changes === "object" ? body.changes : {};
+        const changes = {};
+        if ("name" in ch) { const n = String(ch.name || "").trim().slice(0, 200); if (!n) return bad(res, "A person needs a name."); changes.name = n; }
+        if ("phone" in ch) changes.phone = String(ch.phone ?? "").trim().slice(0, 40);
+        if ("source" in ch) changes.source = String(ch.source ?? "").trim().slice(0, 60);
+        if ("email" in ch) {
+          const e = String(ch.email ?? "").trim().toLowerCase().slice(0, 254);
+          if (e && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return bad(res, "That email address doesn't look right.");
+          changes.email = e;
+        }
+        if ("side" in ch) { if (ch.side !== null && !["buyer", "seller", "both"].includes(ch.side)) return bad(res, "Choose buyer, seller or both."); changes.side = ch.side || null; }
+        if ("next_follow_up" in ch) { if (ch.next_follow_up !== null && !DATE.test(String(ch.next_follow_up))) return bad(res, "That date doesn't look right."); changes.next_follow_up = ch.next_follow_up || null; }
+        if ("stage" in ch) {
+          const { stages } = await peopleSettings(admin, owner);
+          const st = stages[person.stage_group].find((x) => x.toLowerCase() === String(ch.stage || "").trim().toLowerCase());
+          if (!st) return bad(res, "That isn't one of the columns.");
+          changes.stage = st;
+        }
+        if (!Object.keys(changes).length) return bad(res, "Nothing to change.");
+        const { error } = await admin.from("people").update(changes).eq("id", person.id).eq("owner_id", owner);
+        return error ? bad(res, "Couldn't save it.", 500) : res.status(200).json({ ok: true, person: await out(person.id) });
+      }
+
+      if (a === "person_move") {
+        const { stages } = await peopleSettings(admin, owner);
+        const toGroup = person.stage_group === "lead" ? "pipeline" : "transaction";
+        const list = stages[toGroup];
+        const want = String(body.stage || "").trim().toLowerCase();
+        const stage = want ? list.find((x) => x.toLowerCase() === want) : list[0];
+        if (!stage) return bad(res, "That isn't one of the columns.");
+        // A person who becomes a deal can't be "both" (a deal is a buyer's or a seller's).
+        const changes = { stage_group: toGroup, stage, ...(toGroup === "transaction" && person.side === "both" ? { side: null } : {}) };
+        const { error } = await admin.from("people").update(changes).eq("id", person.id).eq("owner_id", owner);
+        return error ? bad(res, "Couldn't move them.", 500) : res.status(200).json({ ok: true, moved_to: toGroup, id: person.id });
+      }
+
+      if (a === "person_archive") {
+        const reason = ARCHIVE_REASONS.includes(body.reason) ? body.reason : "Other";
+        const { error } = await admin.from("people").update({ archived: true, archived_reason: reason, archived_at: new Date().toISOString() }).eq("id", person.id).eq("owner_id", owner);
+        return error ? bad(res, "Couldn't archive.", 500) : res.status(200).json({ ok: true });
+      }
+      if (a === "person_restore") {
+        const { error } = await admin.from("people").update({ archived: false, archived_reason: "", archived_at: null }).eq("id", person.id).eq("owner_id", owner);
+        return error ? bad(res, "Couldn't restore.", 500) : res.status(200).json({ ok: true });
+      }
+
+      if (a === "person_note") {
+        const kind = NOTE_KINDS.includes(body.kind) ? body.kind : "note";
+        const text = String(body.body || "").trim().slice(0, 5000);
+        if (!text && kind === "note") return bad(res, "Write something first.");
+        // On the contact record when the card has one (so it shows in Contacts and counts as being in touch), else on the card.
+        const { error } = person.contact_id
+          ? await admin.from("contact_notes").insert({ contact_id: person.contact_id, owner_id: owner, kind, body: text })
+          : await admin.from("people_notes").insert({ person_id: person.id, owner_id: owner, body: text || kind.charAt(0).toUpperCase() + kind.slice(1) });
+        if (error) return bad(res, "Couldn't save it.", 500);
+        // Being in touch moves the next follow-up along (only when one is due or none is set), by the column's cadence.
+        let nextFollowUp = person.next_follow_up;
+        if (["call", "text", "email", "meeting", "showing"].includes(kind)) {
+          const today = DATE.test(String(body.today || "")) ? body.today : todayKey();
+          const { cadence } = await peopleSettings(admin, owner);
+          const days = cadence[person.stage_group]?.[person.stage];
+          if (days && (!person.next_follow_up || person.next_follow_up <= today)) {
+            nextFollowUp = new Date(new Date(`${today}T12:00:00Z`).getTime() + days * DAY).toISOString().slice(0, 10);
+            await admin.from("people").update({ next_follow_up: nextFollowUp }).eq("id", person.id).eq("owner_id", owner);
+          }
+        }
+        return res.status(200).json({ ok: true, next_follow_up: nextFollowUp });
+      }
+      return bad(res, "Not found.", 404);
     }
 
     // ---- start a deal: your own, or (a coordinator) one for an agent in your office
