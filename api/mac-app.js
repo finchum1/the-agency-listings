@@ -37,6 +37,14 @@
 //   POST /api/mac-app?a=deal_doc_add    {deal_id, section, text}   returns the document
 //   POST /api/mac-app?a=deal_doc_done   {doc_id, done}
 //   POST /api/mac-app?a=deal_doc_delete {doc_id}
+// A deal's agent and sharing (the dashboard's three-dot menu on a deal, and a coordinator's "Update the agent"):
+//   POST /api/mac-app?a=deal_archive       {deal_id, reason}   takes the deal off the agent's board too; nothing is deleted
+//   POST /api/mac-app?a=deal_delete        {deal_id, confirm: true}   permanently, with its tasks, documents, messages, signatures and links
+//   POST /api/mac-app?a=deal_agents        {deal_id}   the other agents in your office who use Deals (for Change the agent)
+//   POST /api/mac-app?a=deal_change_agent  {deal_id, agent_id}   same as the dashboard's deal_change_agent; nobody is emailed
+//   POST /api/mac-app?a=deal_links         {deal_id}   active client timeline links, and (a coordinator) your active update links, with the agent's site address if they have one
+//   POST /api/mac-app?a=deal_link_create   {deal_id, kind: "timeline" | "update", message?}   returns the one-time token (the app builds the address); update links are a coordinator's only
+//   POST /api/mac-app?a=deal_link_revoke   {link_id, kind}   turns a link off
 // The native Today window's to-do list (agent_tasks), done the way the dashboard does it (src/hooks/useAgentTasks.js):
 //   GET  /api/mac-app?a=tasks              open tasks, and ones finished in the last two weeks, each with its contact's name
 //   POST /api/mac-app?a=task_complete      {task_id, today}   a one-off is marked done; a repeating one moves to its next date
@@ -49,6 +57,7 @@
 //   GET  /api/mac-app?a=history&contact_id=   that contact's notes, synced texts and calls, and card notes, newest first
 //   POST /api/mac-app?a=update       {contact_id, changes}   a few fields of one contact (see EDITABLE)
 //   POST /api/mac-app?a=tag          {contact_id, name, on}   put a tag (made if new) on a contact, or take it off
+import crypto from "node:crypto";
 import { serviceClient } from "./_lib/authUser.js";
 import { deviceFor } from "./_lib/macDevice.js";
 import { effectiveDue } from "../src/lib/checklistDefaults.js";
@@ -695,21 +704,108 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, id: row.id, note });
     }
 
+    // Can this person work this deal? Their own, or (a coordinator) one they coordinate: the same rule that puts it on their board.
+    const canWork = async (personId) => {
+      const { data: p } = await admin.from("people").select("id, owner_id, stage_group, contract_date, inspection_date, closing_date").eq("id", personId).eq("stage_group", "transaction").maybeSingle();
+      if (!p) return null;
+      if (p.owner_id === owner) return p;
+      const { data: profile } = await admin.from("profiles").select("deals_role").eq("id", owner).maybeSingle();
+      if (profile?.deals_role !== "tc") return null;
+      const [{ data: per }, { data: team }] = await Promise.all([
+        admin.from("deal_tcs").select("person_id").eq("tc_id", owner).eq("person_id", p.id).limit(1),
+        admin.from("deal_team").select("agent_id").eq("tc_id", owner).eq("agent_id", p.owner_id).limit(1),
+      ]);
+      return per?.length || team?.length ? p : null;
+    };
+
+    // ---- a deal's agent and sharing: archive, delete, change the agent, the client timeline link, and a coordinator's update link for the agent
+    if (["deal_links", "deal_agents", "deal_archive", "deal_delete", "deal_change_agent", "deal_link_create", "deal_link_revoke"].includes(a)) {
+      const dealId = String(body.deal_id || req.query?.deal_id || "");
+      const linkId = String(body.link_id || "");
+      let deal = null;
+      if (a === "deal_link_revoke") {
+        if (!UUID.test(linkId)) return bad(res, "Missing link.");
+        const table = body.kind === "update" ? "deal_update_links" : "transaction_timeline_links";
+        const { data: link } = await admin.from(table).select("id, person_id, created_by").eq("id", linkId).maybeSingle();
+        if (!link || !(deal = await canWork(link.person_id)) || (table === "deal_update_links" && link.created_by !== owner)) return bad(res, "That isn't yours.", 404);
+        const { error } = await admin.from(table).update({ revoked_at: new Date().toISOString() }).eq("id", link.id).is("revoked_at", null);
+        return error ? bad(res, "Couldn't turn it off.", 500) : res.status(200).json({ ok: true });
+      }
+      if (!UUID.test(dealId)) return bad(res, "Missing deal.");
+      deal = await canWork(dealId);
+      if (!deal) return bad(res, "That deal isn't yours.", 404);
+      const mine = deal.owner_id === owner;   // the agent's own deal; otherwise you coordinate it
+      const { data: me } = await admin.from("profiles").select("id, org_id, full_name, people_enabled").eq("id", owner).maybeSingle();
+      const { data: agent } = await admin.from("profiles").select("id, org_id, full_name, email").eq("id", deal.owner_id).maybeSingle();
+
+      if (a === "deal_links") {
+        const [t, u, site] = await Promise.all([
+          admin.from("transaction_timeline_links").select("id, token_hint, created_at, expires_at, view_count, last_viewed_at").eq("person_id", dealId).is("revoked_at", null).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }),
+          mine ? Promise.resolve({ data: [] }) : admin.from("deal_update_links").select("id, token_hint, created_at, expires_at, view_count, last_viewed_at").eq("person_id", dealId).eq("created_by", owner).is("revoked_at", null).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }),
+          admin.from("agent_sites").select("custom_domain").eq("agent_id", deal.owner_id).not("custom_domain", "is", null).limit(1).maybeSingle(),
+        ]);
+        return res.status(200).json({ timeline: t.data || [], update: u.data || [], can_update: !mine, site_domain: site.data?.custom_domain || "", agent_name: agent?.full_name || "", agent_email: agent?.email || "", origin: SITE_ORIGIN });
+      }
+
+      if (a === "deal_agents") {
+        if (!me?.org_id) return res.status(200).json({ agents: [] });
+        const { data: list } = await admin.from("profiles").select("id, full_name").eq("org_id", me.org_id).eq("people_enabled", true).neq("id", deal.owner_id).order("full_name");
+        return res.status(200).json({ agents: (list || []).map((p) => ({ id: p.id, name: p.full_name || "Agent" })), current: agent?.full_name || "" });
+      }
+
+      if (a === "deal_archive") {
+        const reason = ARCHIVE_REASONS.includes(body.reason) ? body.reason : "Other";
+        const { error } = await admin.from("people").update({ archived: true, archived_reason: reason, archived_at: new Date().toISOString() }).eq("id", dealId).eq("stage_group", "transaction");
+        return error ? bad(res, "Couldn't archive it.", 500) : res.status(200).json({ ok: true });
+      }
+
+      if (a === "deal_delete") {
+        // The app asks first; this is the second lock. Tasks, documents, messages, signatures and links go with the deal (they cascade).
+        if (body.confirm !== true) return bad(res, "Confirm the delete first.");
+        const { error } = await admin.from("people").delete().eq("id", dealId).eq("stage_group", "transaction");
+        return error ? bad(res, "Couldn't delete it.", 500) : res.status(200).json({ ok: true });
+      }
+
+      if (a === "deal_change_agent") {
+        const toId = String(body.agent_id || "");
+        if (!UUID.test(toId)) return bad(res, "Choose an agent.");
+        const { data: target } = await admin.from("profiles").select("id, org_id, full_name, people_enabled").eq("id", toId).maybeSingle();
+        if (!target || !target.org_id || target.org_id !== agent?.org_id || !target.people_enabled) return bad(res, "Pick an agent in your office who uses Deals.");
+        if (target.id === deal.owner_id) return bad(res, `${target.full_name || "That agent"} already has this deal.`);
+        const { data: cur } = await admin.from("people").select("stage").eq("id", dealId).maybeSingle();
+        const { data: st } = await admin.from("people_settings").select("stages").eq("owner_id", toId).maybeSingle();
+        const names = Array.isArray(st?.stages?.transaction) && st.stages.transaction.length ? st.stages.transaction : ["Pending", "Closing Soon", "Closed"];
+        const stage = names.includes(cur?.stage) ? cur.stage : names[0];
+        const { error } = await admin.from("people").update({ owner_id: toId, stage, contact_id: null, board_position: null }).eq("id", dealId);
+        if (error) return bad(res, "Couldn't move it.", 500);
+        for (const t of ["transaction_tasks", "transaction_documents", "people_notes", "people_outreach"]) await admin.from(t).update({ owner_id: toId }).eq("person_id", dealId);
+        await admin.from("plan_enrollments").update({ status: "stopped", stop_reason: "The deal moved to another agent.", updated_at: new Date().toISOString() }).eq("person_id", dealId).in("status", ["active", "paused"]);
+        await admin.from("deal_messages").insert({ person_id: dealId, author_id: owner, kind: "message", body: `${me?.full_name || "Someone"} moved this deal from ${agent?.full_name || "the previous agent"} to ${target.full_name || "a new agent"}.` });
+        return res.status(200).json({ ok: true, to: target.full_name || "", stage, column_changed: stage !== cur?.stage });
+      }
+
+      // deal_link_create: a client timeline (the agent's own deal, or one you coordinate) or an update link for the agent (a coordinator only)
+      const kind = body.kind === "update" ? "update" : "timeline";
+      if (kind === "update" && mine) return bad(res, "An update link can only be made for a deal you coordinate.");
+      if (kind === "timeline" && mine && !me?.people_enabled) return bad(res, "A timeline can only be shared for one of your own transactions or one you coordinate.");
+      if (!me?.org_id) return bad(res, "Sign in to share a link.");
+      const table = kind === "update" ? "deal_update_links" : "transaction_timeline_links";
+      const limit = kind === "update" ? 10 : 5;
+      let count = admin.from(table).select("id", { count: "exact", head: true }).eq("person_id", dealId).is("revoked_at", null).gt("expires_at", new Date().toISOString());
+      if (kind === "update") count = count.eq("created_by", owner);
+      if (((await count).count || 0) >= limit) return bad(res, kind === "update" ? "This deal has 10 active update links. Turn some off first." : "This transaction has 5 active timeline links. Turn some off first.");
+      const token = (kind === "update" ? "du" : "tl") + (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, "");
+      const days = kind === "update" ? 60 : 120;
+      const { data: row, error } = await admin.from(table).insert({
+        org_id: me.org_id, person_id: dealId, created_by: owner, token_hash: crypto.createHash("sha256").update(token).digest("hex"), token_hint: token.slice(-4),
+        message: String(body.message || "").trim().slice(0, 600), expires_at: new Date(Date.now() + days * 86400000).toISOString(),
+      }).select("id, token_hint, created_at, expires_at, view_count, last_viewed_at").single();
+      if (error) return bad(res, "Couldn't make the link.", 500);
+      return res.status(200).json({ ok: true, kind, token, link: row });
+    }
+
     // ---- a deal's checklist tasks and documents: add, tick, delete; and the deal's own fields
     if (["deal_update", "deal_task_add", "deal_task_delete", "deal_doc_add", "deal_doc_done", "deal_doc_delete"].includes(a)) {
-      // Can this person work this deal? Their own, or (a coordinator) one they coordinate: the same rule that puts it on their board.
-      const canWork = async (personId) => {
-        const { data: p } = await admin.from("people").select("id, owner_id, stage_group, contract_date, inspection_date, closing_date").eq("id", personId).eq("stage_group", "transaction").maybeSingle();
-        if (!p) return null;
-        if (p.owner_id === owner) return p;
-        const { data: profile } = await admin.from("profiles").select("deals_role").eq("id", owner).maybeSingle();
-        if (profile?.deals_role !== "tc") return null;
-        const [{ data: per }, { data: team }] = await Promise.all([
-          admin.from("deal_tcs").select("person_id").eq("tc_id", owner).eq("person_id", p.id).limit(1),
-          admin.from("deal_team").select("agent_id").eq("tc_id", owner).eq("agent_id", p.owner_id).limit(1),
-        ]);
-        return per?.length || team?.length ? p : null;
-      };
       if (a === "deal_update") {
         if (!UUID.test(String(body.deal_id || ""))) return bad(res, "Missing deal.");
         const deal = await canWork(body.deal_id);
