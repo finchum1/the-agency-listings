@@ -14,6 +14,10 @@
 // The native Deals window (read-only, plus the checklist actions above):
 //   GET  /api/mac-app?a=deals           your deals and, for a coordinator, the deals they coordinate; the board's stages; each deal's checklist and document progress
 //   GET  /api/mac-app?a=deal&deal_id=   one deal: dates, money, the people on it, its checklist (with each task's due day) and its documents
+// The Deals overview page and the "Email with a template" menu:
+//   GET  /api/mac-app?a=deals_overview&today=   the open tasks of your open deals that fall due by two weeks from today (overdue ones included), each with its due day, and the waiting drafts
+//   GET  /api/mac-app?a=deal_emails&deal_id=    the deal's email templates, grouped as in the dashboard's "Email with a template" menu, each already filled in from the deal and addressed
+//                                               (to / cc), plus which checklist task offers which template. Nothing is sent; the app opens each in the person's own mail app.
 // Starting a deal, as the dashboard's "Start a deal" does:
 //   GET  /api/mac-app?a=deal_start_options   who a deal can be started for (you, and for a coordinator the agents in their office) and the columns each has
 //   POST /api/mac-app?a=deal_start           {agent: "me" | agent id, name, side, property_address?, phone?, email?, price?, contract_date?, closing_date?, stage?}   returns {id, note}
@@ -43,6 +47,7 @@ import { effectiveDue } from "../src/lib/checklistDefaults.js";
 import { touchDue } from "../src/lib/contacts.js";
 import { nextDue } from "../src/lib/taskRecurrence.js";
 import { cleanList, cleanSteps } from "../src/lib/taskLists.js";
+import { EMAIL_GROUPS, STARTER_TEMPLATES, renderDealEmail, taskEmailKey, templatesForDeal } from "../src/lib/dealEmails.js";
 import { fromAs, sendNotification, viaOrg } from "./_lib/inquiry.js";
 import { buildDealStartedEmail } from "./_lib/dealEmail.js";
 import { SITE_ORIGIN } from "../src/lib/seo.js";
@@ -298,6 +303,62 @@ export default async function handler(req, res) {
         stages, closed,
         deals: deals.map((d) => ({ ...d, column: d._foreign ? d._column || d.stage : d.stage, foreign: d._foreign, agent: d._agent, tasks: tasks.get(d.id), docs: docs.get(d.id), _foreign: undefined, _agent: undefined, _column: undefined })),
       });
+    }
+
+    if (req.method === "GET" && a === "deals_overview") {
+      const today = DATE.test(String(req.query?.today || "")) ? String(req.query.today) : todayKey();
+      const horizon = new Date(new Date(`${today}T12:00:00Z`).getTime() + 14 * DAY).toISOString().slice(0, 10);
+      const { deals } = await visibleDeals(admin, owner, "id, owner_id, contract_date, inspection_date, closing_date");
+      const byId = new Map(deals.map((d) => [d.id, d]));
+      const ids = [...byId.keys()];
+      const tasks = [], drafts = [];
+      for (let i = 0; i < ids.length; i += 100) {
+        const part = ids.slice(i, i + 100);
+        const rows = await readAll(() => admin.from("transaction_tasks").select("id, person_id, text, anchor, offset_days, due_override").in("person_id", part).eq("done", false).order("id"));
+        for (const t of rows) { const due = effectiveDue(t, byId.get(t.person_id)); if (due && due <= horizon) tasks.push({ id: t.id, person_id: t.person_id, text: t.text || "Task", due }); }
+        const { data: dr } = await admin.from("people_outreach").select("id, person_id, channel, subject").in("person_id", part).eq("status", "draft").limit(100);
+        drafts.push(...(dr || []));
+      }
+      return res.status(200).json({ tasks: tasks.sort((a, b) => a.due.localeCompare(b.due)), drafts: drafts.slice(0, 100) });
+    }
+
+    if (req.method === "GET" && a === "deal_emails") {
+      const id = String(req.query?.deal_id || "");
+      if (!UUID.test(id)) return bad(res, "Missing deal.");
+      const { deals } = await visibleDeals(admin, owner, "id, owner_id");
+      if (!deals.some((d) => d.id === id)) return bad(res, "Deal not found.", 404);
+      const { data: deal } = await admin.from("people").select("*").eq("id", id).maybeSingle();
+      if (!deal) return bad(res, "Deal not found.", 404);
+      // The same context the dashboard builds: who is sending, the deal's agent (and their office), and the deal's coordinators.
+      const [{ data: me }, { data: agent }, { data: per }, { data: wide }, { data: saved }, { data: taskRows }] = await Promise.all([
+        admin.from("profiles").select("full_name, email, phone").eq("id", owner).maybeSingle(),
+        admin.from("profiles").select("full_name, email, phone, org_id").eq("id", deal.owner_id).maybeSingle(),
+        admin.from("deal_tcs").select("tc_id").eq("person_id", id),
+        admin.from("deal_team").select("tc_id").eq("agent_id", deal.owner_id),
+        admin.from("deal_email_templates").select("*").eq("owner_id", owner).order("position").order("created_at"),
+        admin.from("transaction_tasks").select("id, text, email_template").eq("person_id", id).order("position").limit(500),
+      ]);
+      const tcIds = [...new Set([...(per || []), ...(wide || [])].map((r) => r.tc_id))];
+      const [{ data: tcs }, { data: org }] = await Promise.all([
+        tcIds.length ? admin.from("profiles").select("full_name, email").in("id", tcIds) : Promise.resolve({ data: [] }),
+        agent?.org_id ? admin.from("organizations").select("name").eq("id", agent.org_id).maybeSingle() : Promise.resolve({ data: null }),
+      ]);
+      const ctx = {
+        me: { name: me?.full_name || "", email: me?.email || "", phone: me?.phone || "" },
+        agent: { name: agent?.full_name || "", email: agent?.email || "", phone: agent?.phone || "", company: org?.name || "" },
+        coordinators: (tcs || []).map((t) => ({ name: t.full_name || "", email: t.email || "" })),
+      };
+      // The built-in starters with the person's own copies swapped in, then their own templates (what the dashboard's template list does).
+      const copies = new Map((saved || []).filter((t) => t.base_key).map((t) => [t.base_key, t]));
+      const all = STARTER_TEMPLATES.map((st) => { const c = copies.get(st.key); return c ? { ...c, key: st.key, group: st.group, starter: true, skipCash: st.skipCash } : { ...st, starter: true }; });
+      for (const t of saved || []) if (!t.base_key) all.push({ ...t, key: t.id, starter: false });
+      const forDeal = templatesForDeal(all, deal);
+      const render = (t) => { const r = renderDealEmail(t, deal, ctx); return { key: t.key, name: t.name, to: r.to, cc: r.cc, subject: r.subject, body: r.body, missing: r.missing, no_email: r.noEmail }; };
+      const groups = [...EMAIL_GROUPS.map((g) => ({ name: g, templates: forDeal.filter((t) => t.starter && t.group === g).map(render) })), { name: "My templates", templates: forDeal.filter((t) => !t.starter).map(render) }].filter((g) => g.templates.length);
+      const keys = new Set(forDeal.map((t) => t.key));
+      const taskEmails = {};
+      for (const t of taskRows || []) { const k = taskEmailKey(t, deal.side); if (k && keys.has(k)) taskEmails[t.id] = k; }
+      return res.status(200).json({ groups, task_emails: taskEmails });
     }
 
     if (req.method === "GET" && a === "deal_start_options") {
