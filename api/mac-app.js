@@ -45,6 +45,13 @@
 //   POST /api/mac-app?a=deal_links         {deal_id}   active client timeline links, and (a coordinator) your active update links, with the agent's site address if they have one
 //   POST /api/mac-app?a=deal_link_create   {deal_id, kind: "timeline" | "update", message?}   returns the one-time token (the app builds the address); update links are a coordinator's only
 //   POST /api/mac-app?a=deal_link_revoke   {link_id, kind}   turns a link off
+// Contacts beyond the basics (the dashboard's import, repeats, smart lists and bulk actions):
+//   POST /api/mac-app?a=contacts_bulk        {ids, action, ...}   action: tag / untag {tag_id | name}, archive {archived}, followup {title?, due}, board {group, stage}
+//   POST /api/mac-app?a=contact_merge        {keep_id, remove_id}   everything attached to the removed one moves onto the kept one, blanks on it are filled in
+//   POST /api/mac-app?a=contact_duplicates   {}   groups of contacts that share an email, phone or name (the dashboard's Find repeats)
+//   POST /api/mac-app?a=contacts_import_preview  {csv, mapping?, relationship?}   the file's headers, the guessed column for each field, who would be imported or skipped
+//   POST /api/mac-app?a=contacts_import      {csv, mapping, relationship, extra_tag?, offset}   imports one batch (the app calls it until `done`); people already in your contacts are skipped
+//   POST /api/mac-app?a=contact_list_save | contact_list_update | contact_list_delete   smart lists: {name, filters} / {id, name?, position?} / {id}
 // The native Today window's to-do list (agent_tasks), done the way the dashboard does it (src/hooks/useAgentTasks.js):
 //   GET  /api/mac-app?a=tasks              open tasks, and ones finished in the last two weeks, each with its contact's name
 //   POST /api/mac-app?a=task_complete      {task_id, today}   a one-off is marked done; a repeating one moves to its next date
@@ -61,7 +68,7 @@ import crypto from "node:crypto";
 import { serviceClient } from "./_lib/authUser.js";
 import { deviceFor } from "./_lib/macDevice.js";
 import { effectiveDue } from "../src/lib/checklistDefaults.js";
-import { touchDue } from "../src/lib/contacts.js";
+import { IMPORT_FIELDS, bestToKeep, duplicateGroups, guessMapping, parseCsv, rowToContact, touchDue } from "../src/lib/contacts.js";
 import { nextDue } from "../src/lib/taskRecurrence.js";
 import { cleanList, cleanSteps } from "../src/lib/taskLists.js";
 import { EMAIL_GROUPS, STARTER_TEMPLATES, renderDealEmail, taskEmailKey, templatesForDeal } from "../src/lib/dealEmails.js";
@@ -300,19 +307,21 @@ export default async function handler(req, res) {
         if (since && !Number.isNaN(Date.parse(since))) q = q.gte("updated_at", new Date(since).toISOString());
         return q;
       };
-      const [rows, ids, tags, links, tasks] = await Promise.all([
+      const [rows, ids, tags, links, tasks, cards, lists] = await Promise.all([
         readAll(changed),
         readAll(() => admin.from("contacts").select("id").eq("owner_id", owner).order("id")),
         admin.from("contact_tags").select("id, name, color").eq("owner_id", owner).order("name"),
         readAll(() => admin.from("contact_tag_links").select("contact_id, tag_id").eq("owner_id", owner).order("contact_id").order("tag_id")),
         readAll(() => admin.from("agent_tasks").select("contact_id, due_date").eq("owner_id", owner).eq("done", false).not("contact_id", "is", null).order("id")),
+        readAll(() => admin.from("people").select("contact_id, stage_group").eq("owner_id", owner).eq("archived", false).not("contact_id", "is", null).order("id")),
+        admin.from("contact_smart_lists").select("id, name, filters, position").eq("owner_id", owner).order("position").order("created_at"),
       ]);
       const next = new Map();
       for (const t of tasks) {
         const d = t.due_date || "";
         if (!next.has(t.contact_id) || (d && (!next.get(t.contact_id) || d < next.get(t.contact_id)))) next.set(t.contact_id, d);
       }
-      return res.status(200).json({ now, contacts: rows, ids: ids.map((r) => r.id), tags: tags.data || [], links, followups: [...next].map(([contact_id, due]) => ({ contact_id, due })) });
+      return res.status(200).json({ now, contacts: rows, ids: ids.map((r) => r.id), tags: tags.data || [], links, followups: [...next].map(([contact_id, due]) => ({ contact_id, due })), boards: cards.map((c) => ({ contact_id: c.contact_id, stage_group: c.stage_group })), lists: lists.data || [] });
     }
 
     if (req.method === "GET" && a === "tasks") {
@@ -717,6 +726,213 @@ export default async function handler(req, res) {
       ]);
       return per?.length || team?.length ? p : null;
     };
+
+    // ---- contacts: bulk actions, merge, repeats, smart lists and CSV import (the dashboard's Contacts page, the same rules)
+    const ownedContacts = async (ids, columns = "id, first_name, last_name, company, email, phone, archived, do_not_contact") => {
+      const out = [];
+      for (let i = 0; i < ids.length; i += 100) {
+        const { data } = await admin.from("contacts").select(columns).eq("owner_id", owner).in("id", ids.slice(i, i + 100));
+        out.push(...(data || []));
+      }
+      return out;
+    };
+    const myTags = async () => (await admin.from("contact_tags").select("id, name, color").eq("owner_id", owner)).data || [];
+    const ensureTagByName = async (name, tags) => {
+      const clean = String(name || "").trim().slice(0, 40);
+      if (!clean) return null;
+      const have = tags.find((t) => t.name.toLowerCase() === clean.toLowerCase());
+      if (have) return have;
+      const made = await admin.from("contact_tags").insert({ owner_id: owner, name: clean, color: "gray" }).select("id, name, color").single();
+      if (made.error) return null;
+      tags.push(made.data);
+      return made.data;
+    };
+
+    if (a === "contacts_bulk") {
+      const ids = [...new Set((Array.isArray(body.ids) ? body.ids : []).map(String).filter((id) => UUID.test(id)))].slice(0, 2000);
+      if (!ids.length) return bad(res, "Pick some contacts first.");
+      const mine = await ownedContacts(ids);
+      if (!mine.length) return bad(res, "Those contacts aren't yours.", 404);
+      const mineIds = mine.map((c) => c.id);
+      const action = String(body.action || "");
+      if (action === "tag" || action === "untag") {
+        const tags = await myTags();
+        const tag = body.tag_id ? tags.find((t) => t.id === body.tag_id) : action === "tag" ? await ensureTagByName(body.name, tags) : tags.find((t) => t.name.toLowerCase() === String(body.name || "").trim().toLowerCase());
+        if (!tag) return bad(res, action === "tag" ? "Choose or name a tag." : "That tag doesn't exist.");
+        if (action === "tag") {
+          for (let i = 0; i < mineIds.length; i += 500) {
+            const { error } = await admin.from("contact_tag_links").upsert(mineIds.slice(i, i + 500).map((contact_id) => ({ contact_id, tag_id: tag.id, owner_id: owner })), { onConflict: "contact_id,tag_id", ignoreDuplicates: true });
+            if (error) return bad(res, "Couldn't save it.", 500);
+          }
+        } else {
+          for (let i = 0; i < mineIds.length; i += 100) await admin.from("contact_tag_links").delete().eq("owner_id", owner).eq("tag_id", tag.id).in("contact_id", mineIds.slice(i, i + 100));
+        }
+        return res.status(200).json({ ok: true, count: mineIds.length, tag });
+      }
+      if (action === "archive") {
+        const archived = body.archived !== false;
+        for (let i = 0; i < mineIds.length; i += 100) {
+          const { error } = await admin.from("contacts").update({ archived }).eq("owner_id", owner).in("id", mineIds.slice(i, i + 100));
+          if (error) return bad(res, "Couldn't save it.", 500);
+        }
+        return res.status(200).json({ ok: true, count: mineIds.length });
+      }
+      if (action === "followup") {
+        if (!DATE.test(String(body.due || ""))) return bad(res, "Pick a date for the follow-ups.");
+        const title = String(body.title || "").trim();
+        const rows = mine.slice(0, 500).map((c) => ({ owner_id: owner, title: (title ? title.replace(/\{name\}/gi, fullName(c)) : `Follow up with ${fullName(c)}`).slice(0, 300), due_date: body.due, contact_id: c.id }));
+        const { error } = await admin.from("agent_tasks").insert(rows);
+        if (error) return bad(res, "Couldn't save it.", 500);
+        return res.status(200).json({ ok: true, count: rows.length });
+      }
+      if (action === "board") {
+        const group = String(body.group || "");
+        if (!["lead", "pipeline"].includes(group)) return bad(res, "Choose Leads or Pipeline.");
+        const { stages } = await peopleSettings(admin, owner);
+        const stage = String(body.stage || "").trim();
+        if (!stages[group].includes(stage)) return bad(res, "That isn't one of that board's columns.");
+        const { data: on } = await admin.from("people").select("contact_id").eq("owner_id", owner).eq("stage_group", group).eq("archived", false).in("contact_id", mineIds);
+        const onSet = new Set((on || []).map((r) => r.contact_id));
+        const blocked = mine.filter((c) => c.archived || c.do_not_contact);
+        const already = mine.filter((c) => !c.archived && !c.do_not_contact && onSet.has(c.id));
+        const eligible = mine.filter((c) => !c.archived && !c.do_not_contact && !onSet.has(c.id));
+        for (let i = 0; i < eligible.length; i += 200) {
+          const { error } = await admin.from("people").insert(eligible.slice(i, i + 200).map((c) => ({ owner_id: owner, name: fullName(c), email: c.email || "", phone: c.phone || "", source: "From Contacts", stage_group: group, stage, contact_id: c.id })));
+          if (error) return bad(res, `${error.message}${i ? ` (${i} were added before it stopped.)` : ""}`, 500);
+        }
+        return res.status(200).json({ ok: true, added: eligible.length, already: already.length, blocked: blocked.length });
+      }
+      return bad(res, "Not found.", 404);
+    }
+
+    if (a === "contact_merge") {
+      const keepId = String(body.keep_id || ""), removeId = String(body.remove_id || "");
+      if (!UUID.test(keepId) || !UUID.test(removeId)) return bad(res, "Pick two contacts.");
+      if (keepId === removeId) return bad(res, "Pick two different contacts.");
+      const both = await ownedContacts([keepId, removeId], "*");
+      const k = both.find((c) => c.id === keepId), d = both.find((c) => c.id === removeId);
+      if (!k || !d) return bad(res, "Those contacts aren't yours to merge.", 404);
+      // Everything attached to the removed contact moves to the kept one. (The dashboard's merge leaves synced texts and calls to go with the removed
+      // contact; here they move too, so nothing is lost.)
+      for (const t of ["contact_notes", "contact_messages", "agent_tasks", "people"]) await admin.from(t).update({ contact_id: k.id }).eq("contact_id", d.id).eq("owner_id", owner);
+      const { data: dl } = await admin.from("contact_tag_links").select("tag_id").eq("contact_id", d.id).eq("owner_id", owner);
+      if (dl?.length) await admin.from("contact_tag_links").upsert(dl.map((l) => ({ contact_id: k.id, tag_id: l.tag_id, owner_id: owner })), { onConflict: "contact_id,tag_id", ignoreDuplicates: true });
+      const blank = (v) => v === "" || v == null;
+      const kEmail = blank(k.email) ? d.email : k.email, kPhone = blank(k.phone) ? d.phone : k.phone;
+      const uniq = (list) => [...new Set(list)];
+      const otherEmails = uniq([...(k.other_emails || []), ...(d.other_emails || []), ...(k.email && d.email && k.email.toLowerCase() !== d.email.toLowerCase() ? [d.email] : [])]).filter((x) => x && x.toLowerCase() !== String(kEmail).toLowerCase());
+      const otherPhones = uniq([...(k.other_phones || []), ...(d.other_phones || []), ...(k.phone && d.phone && k.phone !== d.phone ? [d.phone] : [])]).filter((x) => x && x !== kPhone);
+      const noAddr = blank(k.address_line1);
+      const lastContacted = [k.last_contacted_at, d.last_contacted_at].filter(Boolean).sort().pop() || null;
+      const changes = {
+        company: blank(k.company) ? d.company : k.company, email: kEmail, phone: kPhone, other_emails: otherEmails, other_phones: otherPhones,
+        address_line1: noAddr ? d.address_line1 : k.address_line1,
+        city: noAddr && blank(k.city) ? d.city : k.city, state: noAddr && blank(k.state) ? d.state : k.state, zip: noAddr && blank(k.zip) ? d.zip : k.zip,
+        birthday: k.birthday ?? d.birthday, home_anniversary: k.home_anniversary ?? d.home_anniversary,
+        source: blank(k.source) ? d.source : k.source,
+        about: blank(k.about) ? d.about : blank(d.about) ? k.about : `${k.about}\n\n${d.about}`,
+        touch_every_days: k.touch_every_days ?? d.touch_every_days, last_contacted_at: lastContacted, do_not_contact: Boolean(k.do_not_contact || d.do_not_contact),
+      };
+      const { error: upErr } = await admin.from("contacts").update(changes).eq("id", k.id).eq("owner_id", owner);
+      if (upErr) return bad(res, "Couldn't merge them.", 500);
+      const { error: delErr } = await admin.from("contacts").delete().eq("id", d.id).eq("owner_id", owner);
+      if (delErr) return bad(res, "Couldn't merge them.", 500);
+      const { data: merged } = await admin.from("contacts").select(CONTACT_COLUMNS).eq("id", k.id).single();
+      return res.status(200).json({ ok: true, contact: merged });
+    }
+
+    if (a === "contact_duplicates") {
+      const all = await readAll(() => admin.from("contacts").select("id, first_name, last_name, company, email, phone, other_emails, other_phones, city, state, relationship, archived, created_at, address_line1, about, birthday").eq("owner_id", owner).eq("archived", false).order("id"));
+      const groups = duplicateGroups(all).map((g) => ({ id: g.id, reasons: g.reasons, best: bestToKeep(g.members).id, members: g.members.map((m) => m.id) }));
+      return res.status(200).json({ groups });
+    }
+
+    if (a === "contact_list_save") {
+      const name = String(body.name || "").trim().slice(0, 60);
+      if (!name) return bad(res, "Name the list.");
+      const f = body.filters && typeof body.filters === "object" ? body.filters : {};
+      const { data: last } = await admin.from("contact_smart_lists").select("position").eq("owner_id", owner).order("position", { ascending: false }).limit(1).maybeSingle();
+      const { data, error } = await admin.from("contact_smart_lists").insert({ owner_id: owner, name, filters: f, position: (last?.position || 0) + 1 }).select("id, name, filters, position").single();
+      return error ? bad(res, "Couldn't save it.", 500) : res.status(200).json({ ok: true, list: data });
+    }
+    if (a === "contact_list_update" || a === "contact_list_delete") {
+      if (!UUID.test(String(body.id || ""))) return bad(res, "Missing list.");
+      const { data: list } = await admin.from("contact_smart_lists").select("id").eq("id", body.id).eq("owner_id", owner).maybeSingle();
+      if (!list) return bad(res, "That list isn't yours.", 404);
+      if (a === "contact_list_delete") {
+        const { error } = await admin.from("contact_smart_lists").delete().eq("id", list.id).eq("owner_id", owner);
+        return error ? bad(res, "Couldn't delete it.", 500) : res.status(200).json({ ok: true });
+      }
+      const changes = {};
+      if ("name" in body) { const n = String(body.name || "").trim().slice(0, 60); if (!n) return bad(res, "Name the list."); changes.name = n; }
+      if ("position" in body) { const p = Number(body.position); if (!Number.isInteger(p) || p < 0 || p > 10000) return bad(res, "That place doesn't look right."); changes.position = p; }
+      if (!Object.keys(changes).length) return bad(res, "Nothing to change.");
+      const { error } = await admin.from("contact_smart_lists").update(changes).eq("id", list.id).eq("owner_id", owner);
+      return error ? bad(res, "Couldn't save it.", 500) : res.status(200).json({ ok: true });
+    }
+
+    if (a === "contacts_import_preview" || a === "contacts_import") {
+      const rows = parseCsv(String(body.csv || ""));
+      if (rows.length < 2) return bad(res, "That file doesn't have any rows. Export your contacts as a CSV with a header row.");
+      const headers = rows[0];
+      const guessed = guessMapping(headers);
+      const map = {};
+      for (const f of IMPORT_FIELDS) {
+        const v = body.mapping && f.key in body.mapping ? Number(body.mapping[f.key]) : guessed[f.key];
+        map[f.key] = Number.isInteger(v) && v >= -1 && v < headers.length ? v : -1;
+      }
+      const defaults = { relationship: RELATIONSHIPS.includes(body.relationship) ? body.relationship : "other", source: "" };
+      const parsed = rows.slice(1).map((r) => rowToContact(r, map, defaults));
+      const usable = parsed.filter(Boolean);
+      const needsName = map.first_name < 0 && map.last_name < 0 && map.full_name < 0 && map.company < 0;
+      const existing = await readAll(() => admin.from("contacts").select("email, phone").eq("owner_id", owner).order("id"));
+      const known = new Set(existing.filter((c) => c.email).map((c) => c.email.toLowerCase()));
+      const dg = (v) => String(v || "").replace(/\D/g, "");
+      const knownPhones = new Set(existing.filter((c) => dg(c.phone).length >= 7).map((c) => dg(c.phone)));
+      // People already in your contacts (same email, or no email and the same phone) and repeats within the file are skipped, never doubled up.
+      const dedupe = (list) => {
+        const seen = new Set();
+        return list.filter((c) => {
+          if (c.email && (known.has(c.email) || seen.has(c.email))) return false;
+          if (!c.email && dg(c.phone).length >= 7 && knownPhones.has(dg(c.phone))) return false;
+          if (c.email) seen.add(c.email);
+          return true;
+        });
+      };
+      if (a === "contacts_import_preview") {
+        const fresh = dedupe(usable);
+        return res.status(200).json({
+          headers, mapping: map, needs_name: needsName, total: parsed.length,
+          to_import: fresh.length, already: usable.length - fresh.length, unnamed: parsed.length - usable.length,
+          sample: fresh.slice(0, 5).map((c) => ({ name: [c.first_name, c.last_name].filter(Boolean).join(" ") || c.company, details: [c.email, c.phone, c.city].filter(Boolean).join(" · "), relationship: c.relationship, tags: c.tagNames, birthday: c.birthday, home_anniversary: c.home_anniversary })),
+        });
+      }
+      if (needsName) return bad(res, "Pick a name column to continue.");
+      // One batch of the file (by position among the named rows); the app asks again from `next_offset` until `done`.
+      const offset = Math.max(0, Math.floor(Number(body.offset) || 0));
+      const BATCH = 400;
+      const slice = usable.slice(offset, offset + BATCH);
+      const fresh = dedupe(slice);
+      const extra = String(body.extra_tag || "").trim();
+      const tags = await myTags();
+      const names = new Set(fresh.flatMap((c) => c.tagNames));
+      if (extra) names.add(extra);
+      const tagIdByName = new Map(tags.map((t) => [t.name.toLowerCase(), t.id]));
+      for (const n of names) if (!tagIdByName.has(n.toLowerCase())) { const t = await ensureTagByName(n, tags); if (t) tagIdByName.set(t.name.toLowerCase(), t.id); }
+      for (let i = 0; i < fresh.length; i += 200) {
+        const chunk = fresh.slice(i, i + 200);
+        const { data, error } = await admin.from("contacts").insert(chunk.map(({ tagNames: _t, ...c }) => ({ ...c, owner_id: owner }))).select("id");
+        if (error) return bad(res, `The import stopped: ${error.message}. What was already imported is saved; run it again and those people are skipped.`, 500);
+        const links = [];
+        data.forEach((row, idx) => {
+          const mineTags = new Set([...chunk[idx].tagNames, ...(extra ? [extra] : [])].map((n) => tagIdByName.get(n.toLowerCase())).filter(Boolean));
+          mineTags.forEach((tag_id) => links.push({ contact_id: row.id, tag_id, owner_id: owner }));
+        });
+        if (links.length) { const { error: e2 } = await admin.from("contact_tag_links").insert(links); if (e2) return bad(res, `The import stopped: ${e2.message}.`, 500); }
+      }
+      const next = offset + slice.length;
+      return res.status(200).json({ ok: true, added: fresh.length, skipped: slice.length - fresh.length, next_offset: next, total: usable.length, unnamed: parsed.length - usable.length, done: next >= usable.length });
+    }
 
     // ---- a deal's agent and sharing: archive, delete, change the agent, the client timeline link, and a coordinator's update link for the agent
     if (["deal_links", "deal_agents", "deal_archive", "deal_delete", "deal_change_agent", "deal_link_create", "deal_link_revoke"].includes(a)) {
