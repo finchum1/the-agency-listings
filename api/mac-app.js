@@ -4,7 +4,7 @@
 //   GET  /api/mac-app?a=today        leads waiting for a first reply, follow-ups due, deal tasks due
 //   POST /api/mac-app?a=responded    {person_id}   the agent called or texted a waiting lead from a notification
 //   GET  /api/mac-app?a=search&q=    contacts matching a name, phone number or email (for quick add)
-//   POST /api/mac-app?a=note         {contact_id, kind, body}
+//   POST /api/mac-app?a=note         {contact_id, kind, body, id?, occurred_at?}   `id` (a uuid the app made) makes a replay after a dropped connection harmless; `occurred_at` is when it was really written
 //   POST /api/mac-app?a=task         {title, due_date?, contact_id?, recurrence?, list?, start_time?, duration_min?, checklist?, today?}   returns the new task
 // Follow-ups and deal tasks that are due, dealt with from the Today window:
 //   POST /api/mac-app?a=followup_done   {person_id, today}   "Followed up": the next follow-up is today + the column's cadence (none when the column has none)
@@ -131,6 +131,13 @@ const cleanTimeBlock = (start, minutes) => {
   let d = minutes === null || minutes === undefined || minutes === "" ? 60 : Number(minutes);
   if (!Number.isInteger(d) || d < 5 || d > 1440) return { error: "That length doesn't look right." };
   return { start_time: `${m[1]}:${m[2]}:00`, duration_min: d };
+};
+/** An id the app made itself (so a change replayed after a dropped connection can't be done twice), or undefined. */
+const clientId = (v) => (UUID.test(String(v || "")) ? String(v).toLowerCase() : undefined);
+/** When something really happened on the Mac (a note written offline): that time if it is a valid recent past time, else now. */
+const clientTime = (v) => {
+  const t = Date.parse(String(v || ""));
+  return Number.isFinite(t) && t <= Date.now() + 5 * 60000 && t > Date.now() - 365 * DAY ? new Date(t).toISOString() : new Date().toISOString();
 };
 const fullName = (c) => [c.first_name, c.last_name].filter(Boolean).join(" ") || c.company || "Contact";
 const digits = (v) => String(v || "").replace(/\D/g, "");
@@ -547,7 +554,12 @@ export default async function handler(req, res) {
       if (!text && kind === "note") return bad(res, "Write something first.");
       const contact = await ownsContact(body.contact_id);
       if (!contact) return bad(res, "Pick a contact.");
-      const { error } = await admin.from("contact_notes").insert({ contact_id: contact.id, owner_id: owner, kind, body: text });
+      const id = clientId(body.id);
+      if (id) {
+        const { data: have } = await admin.from("contact_notes").select("id").eq("id", id).eq("owner_id", owner).maybeSingle();
+        if (have) return res.status(200).json({ ok: true, contact: fullName(contact), duplicate: true });
+      }
+      const { error } = await admin.from("contact_notes").insert({ ...(id ? { id } : {}), contact_id: contact.id, owner_id: owner, kind, body: text, occurred_at: clientTime(body.occurred_at) });
       if (error) return bad(res, "Couldn't save it.", 500);
       return res.status(200).json({ ok: true, contact: fullName(contact) });
     }
@@ -568,7 +580,13 @@ export default async function handler(req, res) {
       // A time block needs a day; without one it is just a to-do (the dashboard's rule).
       const block = due ? cleanTimeBlock(body.start_time, body.duration_min) : { start_time: null, duration_min: null };
       if (block.error) return bad(res, block.error);
-      const { data, error } = await admin.from("agent_tasks").insert({ owner_id: owner, title, due_date: due, recurrence: rule, series_start: rule !== "none" ? due : null, start_time: block.start_time, duration_min: block.duration_min, list: cleanList(body.list), checklist: cleanSteps(body.checklist), ...(contactId ? { contact_id: contactId } : {}) }).select(TASK_COLUMNS).single();
+      // A task made on the Mac carries its own id, so one made offline and sent again can't be doubled.
+      const taskId = clientId(body.id);
+      if (taskId) {
+        const { data: have } = await admin.from("agent_tasks").select(TASK_COLUMNS).eq("id", taskId).eq("owner_id", owner).maybeSingle();
+        if (have) return res.status(200).json({ ok: true, task: await taskOut(have), duplicate: true });
+      }
+      const { data, error } = await admin.from("agent_tasks").insert({ ...(taskId ? { id: taskId } : {}), owner_id: owner, title, due_date: due, recurrence: rule, series_start: rule !== "none" ? due : null, start_time: block.start_time, duration_min: block.duration_min, list: cleanList(body.list), checklist: cleanSteps(body.checklist), ...(contactId ? { contact_id: contactId } : {}) }).select(TASK_COLUMNS).single();
       if (error) return bad(res, "Couldn't save it.", 500);
       return res.status(200).json({ ok: true, task: await taskOut(data) });
     }
@@ -677,9 +695,14 @@ export default async function handler(req, res) {
         const text = String(body.body || "").trim().slice(0, 5000);
         if (!text && kind === "note") return bad(res, "Write something first.");
         // On the contact record when the card has one (so it shows in Contacts and counts as being in touch), else on the card.
+        const noteId = clientId(body.id), when = clientTime(body.occurred_at);
+        if (noteId) {
+          const { data: have } = await admin.from(person.contact_id ? "contact_notes" : "people_notes").select("id").eq("id", noteId).eq("owner_id", owner).maybeSingle();
+          if (have) return res.status(200).json({ ok: true, next_follow_up: person.next_follow_up, duplicate: true });
+        }
         const { error } = person.contact_id
-          ? await admin.from("contact_notes").insert({ contact_id: person.contact_id, owner_id: owner, kind, body: text })
-          : await admin.from("people_notes").insert({ person_id: person.id, owner_id: owner, body: text || kind.charAt(0).toUpperCase() + kind.slice(1) });
+          ? await admin.from("contact_notes").insert({ ...(noteId ? { id: noteId } : {}), contact_id: person.contact_id, owner_id: owner, kind, body: text, occurred_at: when })
+          : await admin.from("people_notes").insert({ ...(noteId ? { id: noteId } : {}), person_id: person.id, owner_id: owner, body: text || kind.charAt(0).toUpperCase() + kind.slice(1), created_at: when });
         if (error) return bad(res, "Couldn't save it.", 500);
         // Being in touch moves the next follow-up along (only when one is due or none is set), by the column's cadence.
         let nextFollowUp = person.next_follow_up;
