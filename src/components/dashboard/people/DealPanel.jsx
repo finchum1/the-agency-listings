@@ -5,6 +5,7 @@ import { BOARDS, ARCHIVE_REASONS } from "../../../lib/peopleStages";
 import TransactionModules from "./TransactionModules";
 import DealCompliance, { ComplianceChip } from "./DealCompliance";
 import DealSignatures from "./DealSignatures";
+import DealProgressBars from "./DealProgressBars";
 import DealTabs, { dealTabs } from "./DealTabs";
 import DealOverview from "./DealOverview";
 import SendAgentUpdate from "./SendAgentUpdate";
@@ -311,14 +312,8 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
             {closingDiff > 0 ? `Closes ${dayLabel(fresh.closing_date, toKey(new Date()))} · in ${closingDiff} days` : closingDiff === 0 ? "Closes today" : `Closed ${-closingDiff} days ago`}
           </span>
         )}
-        {summary.loaded && (summary.tasksTotal > 0 || summary.docsTotal > 0) && (
-          <span className="text-xs text-[#1c1a17]/55 dark:text-[#faf9f7]/55">
-            {summary.tasksTotal > 0 && `Tasks ${summary.tasksDone}/${summary.tasksTotal}`}
-            {summary.tasksTotal > 0 && summary.docsTotal > 0 && " · "}
-            {summary.docsTotal > 0 && `Docs ${summary.docsDone}/${summary.docsTotal}`}
-          </span>
-        )}
         <ComplianceChip status={fresh.compliance_status} />
+        <DealProgressBars summary={summary} />
       </div>
     </div>
   ) : (

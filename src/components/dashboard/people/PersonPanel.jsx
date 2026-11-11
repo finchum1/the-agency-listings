@@ -17,6 +17,7 @@ import DealContacts from "./DealContacts";
 import DealSignatures from "./DealSignatures";
 import DealTabs, { dealTabs } from "./DealTabs";
 import DealOverview from "./DealOverview";
+import DealProgressBars from "./DealProgressBars";
 import ProspectOverview, { followUpState } from "./ProspectOverview";
 import ProspectActivity, { useProspectActivity } from "./ProspectActivity";
 import { useContactCard } from "../../../hooks/useContactCard";
@@ -617,14 +618,8 @@ export default function PersonPanel({
           {closingDiff > 0 ? `Closes ${dayLabel(form.closing_date, toKey(new Date()))} · in ${closingDiff} days` : closingDiff === 0 ? "Closes today" : `Closed ${-closingDiff} days ago`}
         </span>
       )}
-      {summary.loaded && (summary.tasksTotal > 0 || summary.docsTotal > 0) && (
-        <span className="text-xs text-[#1c1a17]/55 dark:text-[#faf9f7]/55">
-          {summary.tasksTotal > 0 && `Tasks ${summary.tasksDone}/${summary.tasksTotal}`}
-          {summary.tasksTotal > 0 && summary.docsTotal > 0 && " · "}
-          {summary.docsTotal > 0 && `Docs ${summary.docsDone}/${summary.docsTotal}`}
-        </span>
-      )}
       {person.compliance_status && person.compliance_status !== "none" && <ComplianceChip status={person.compliance_status} />}
+      <DealProgressBars summary={summary} />
     </div>
   );
 

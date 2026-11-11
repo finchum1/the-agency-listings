@@ -14,6 +14,12 @@
 // The native Deals window (read-only, plus the checklist actions above):
 //   GET  /api/mac-app?a=deals           your deals and, for a coordinator, the deals they coordinate; the board's stages; each deal's checklist and document progress
 //   GET  /api/mac-app?a=deal&deal_id=   one deal: dates, money, the people on it, its checklist (with each task's due day) and its documents
+// Adding and removing a deal's checklist tasks and documents (the dashboard's Tasks and Documents tabs):
+//   POST /api/mac-app?a=deal_task_add   {deal_id, section, text}   adds a task to a section (it takes that section's due rule); returns the task
+//   POST /api/mac-app?a=deal_task_delete {task_id}
+//   POST /api/mac-app?a=deal_doc_add    {deal_id, section, text}   returns the document
+//   POST /api/mac-app?a=deal_doc_done   {doc_id, done}
+//   POST /api/mac-app?a=deal_doc_delete {doc_id}
 // The native Today window's to-do list (agent_tasks), done the way the dashboard does it (src/hooks/useAgentTasks.js):
 //   GET  /api/mac-app?a=tasks              open tasks, and ones finished in the last two weeks, each with its contact's name
 //   POST /api/mac-app?a=task_complete      {task_id, today}   a one-off is marked done; a repeating one moves to its next date
@@ -389,6 +395,58 @@ export default async function handler(req, res) {
       const { error } = await admin.from("people").update({ next_follow_up: next }).eq("id", person.id).eq("owner_id", owner);
       if (error) return bad(res, "Couldn't save it.", 500);
       return res.status(200).json({ ok: true, next_follow_up: next, previous: person.next_follow_up || null });
+    }
+
+    // ---- a deal's checklist tasks and documents: add, tick, delete
+    if (["deal_task_add", "deal_task_delete", "deal_doc_add", "deal_doc_done", "deal_doc_delete"].includes(a)) {
+      // Can this person work this deal? Their own, or (a coordinator) one they coordinate: the same rule that puts it on their board.
+      const canWork = async (personId) => {
+        const { data: p } = await admin.from("people").select("id, owner_id, stage_group, contract_date, inspection_date, closing_date").eq("id", personId).eq("stage_group", "transaction").maybeSingle();
+        if (!p) return null;
+        if (p.owner_id === owner) return p;
+        const { data: profile } = await admin.from("profiles").select("deals_role").eq("id", owner).maybeSingle();
+        if (profile?.deals_role !== "tc") return null;
+        const [{ data: per }, { data: team }] = await Promise.all([
+          admin.from("deal_tcs").select("person_id").eq("tc_id", owner).eq("person_id", p.id).limit(1),
+          admin.from("deal_team").select("agent_id").eq("tc_id", owner).eq("agent_id", p.owner_id).limit(1),
+        ]);
+        return per?.length || team?.length ? p : null;
+      };
+      const taskOutRow = (t, deal) => ({ id: t.id, section: t.section, position: t.position, text: t.text, done: t.done, done_at: t.done_at, due_override: t.due_override, due: effectiveDue(t, deal) || null });
+
+      if (a === "deal_task_add" || a === "deal_doc_add") {
+        if (!UUID.test(String(body.deal_id || ""))) return bad(res, "Missing deal.");
+        const deal = await canWork(body.deal_id);
+        if (!deal) return bad(res, "That deal isn't yours.", 404);
+        const text = String(body.text || "").trim().slice(0, 300);
+        if (!text) return bad(res, "Write what it is first.");
+        const section = String(body.section || "").trim().slice(0, 60);
+        const table = a === "deal_task_add" ? "transaction_tasks" : "transaction_documents";
+        const { data: existing } = await admin.from(table).select("position, section" + (table === "transaction_tasks" ? ", anchor, offset_days" : "")).eq("person_id", deal.id).order("position").limit(500);
+        if ((existing || []).length >= 500) return bad(res, "That's the most this list can hold.");
+        const position = (existing || []).reduce((m, r) => Math.max(m, r.position), -1) + 1;
+        if (table === "transaction_documents") {
+          const { data, error } = await admin.from(table).insert({ person_id: deal.id, owner_id: owner, section, position, text }).select("id, section, position, text, done, review_status").single();
+          return error ? bad(res, "Couldn't save it.", 500) : res.status(200).json({ ok: true, doc: data });
+        }
+        // A new task takes its section's due rule (the dashboard does the same); a brand new section starts on the contract date.
+        const rule = (existing || []).find((r) => r.section === section);
+        const { data, error } = await admin.from(table).insert({ person_id: deal.id, owner_id: owner, section, position, text, anchor: rule?.anchor || "contract_date", offset_days: rule?.offset_days ?? 0 }).select("id, section, position, text, done, done_at, due_override, anchor, offset_days").single();
+        return error ? bad(res, "Couldn't save it.", 500) : res.status(200).json({ ok: true, task: taskOutRow(data, deal) });
+      }
+
+      const table = a.startsWith("deal_task") ? "transaction_tasks" : "transaction_documents";
+      const idKey = table === "transaction_tasks" ? "task_id" : "doc_id";
+      if (!UUID.test(String(body[idKey] || ""))) return bad(res, "Missing item.");
+      const { data: row } = await admin.from(table).select("id, person_id").eq("id", body[idKey]).maybeSingle();
+      if (!row || !(await canWork(row.person_id))) return bad(res, "That isn't yours.", 404);
+      if (a === "deal_doc_done") {
+        const done = body.done !== false;
+        const { error } = await admin.from(table).update({ done, done_at: done ? new Date().toISOString() : null }).eq("id", row.id);
+        return error ? bad(res, "Couldn't save it.", 500) : res.status(200).json({ ok: true });
+      }
+      const { error } = await admin.from(table).delete().eq("id", row.id);
+      return error ? bad(res, "Couldn't delete it.", 500) : res.status(200).json({ ok: true });
     }
 
     if (a === "deal_task_done" || a === "deal_task_due") {
