@@ -31,20 +31,27 @@
 .jn-steps { display: flex; position: relative; margin: 1rem 0 0.25rem; }
 .jn-steps::before { content: ""; position: absolute; left: 6px; right: 6px; top: 5px; height: 2px; background: color-mix(in oklab, var(--as-text) 14%, transparent); }
 .jn-steps i { position: absolute; left: 6px; top: 5px; height: 2px; width: 0; background: var(--as-accent); transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
-.jn-item:hover .jn-steps i, .jn-item:focus-within .jn-steps i { width: calc(100% - 12px); }
+.jn-item:focus-within .jn-steps i { width: calc(100% - 12px); }
 .jn-steps span { position: relative; flex: 1; padding-top: 18px; font-size: 9.5px; letter-spacing: 0.04em; white-space: nowrap; text-transform: uppercase; opacity: 0.55; }
 .jn-steps span::before { content: ""; position: absolute; left: 0; top: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--as-bg-alt); border: 2px solid color-mix(in oklab, var(--as-text) 18%, transparent); transition: border-color 0.3s, background 0.3s; }
-.jn-item:hover .jn-steps span::before, .jn-item:focus-within .jn-steps span::before { border-color: var(--as-accent); background: var(--as-accent); }
-.jn-item:hover .jn-steps span:nth-of-type(2)::before { transition-delay: 0.18s; }
-.jn-item:hover .jn-steps span:nth-of-type(3)::before { transition-delay: 0.36s; }
-.jn-item:hover .jn-steps span:nth-of-type(4)::before { transition-delay: 0.54s; }
-.jn-item:hover .jn-steps span:nth-of-type(5)::before { transition-delay: 0.72s; }
+.jn-item:focus-within .jn-steps span::before { border-color: var(--as-accent); background: var(--as-accent); }
+.jn-item .jn-steps span:nth-of-type(2)::before { transition-delay: 0.18s; }
+.jn-item .jn-steps span:nth-of-type(3)::before { transition-delay: 0.36s; }
+.jn-item .jn-steps span:nth-of-type(4)::before { transition-delay: 0.54s; }
+.jn-item .jn-steps span:nth-of-type(5)::before { transition-delay: 0.72s; }
 
 /* the home value card: comparables appear around the property when the address box is used */
 .jn-comp { position: absolute; z-index: 1; width: 10px; height: 10px; border-radius: 50%; background: #fff; opacity: 0; transform: scale(0.2); transition: opacity 0.4s, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); pointer-events: none; }
-.jn-subject { position: absolute; z-index: 1; left: 50%; top: 34%; width: 16px; height: 16px; margin: -8px; border-radius: 50%; background: var(--as-accent); border: 3px solid #fff; opacity: 0; transition: opacity 0.4s; pointer-events: none; }
-.jn-item:focus-within .jn-comp, .jn-item:hover .jn-comp { opacity: 1; transform: scale(1); animation: jn-ping 2.4s ease-out infinite; animation-delay: calc(var(--i) * 0.25s); transition-delay: calc(var(--i) * 0.09s); }
-.jn-item:focus-within .jn-subject, .jn-item:hover .jn-subject { opacity: 1; }
+.jn-subject { position: absolute; z-index: 1; left: 48%; top: 49%; width: 16px; height: 16px; margin: -8px; border-radius: 50%; background: var(--as-accent); border: 3px solid #fff; opacity: 0; transition: opacity 0.4s; pointer-events: none; }
+.jn-item:focus-within .jn-comp { opacity: 1; transform: scale(1); animation: jn-ping 2.4s ease-out infinite; animation-delay: calc(var(--i) * 0.25s); transition-delay: calc(var(--i) * 0.09s); }
+.jn-item:focus-within .jn-subject { opacity: 1; }
+/* A touch screen has no real hover: a tap leaves :hover stuck on, so the card, its steps and its comparables only react to a mouse that can hover. */
+@media (hover: hover) and (pointer: fine) {
+  .jn-item:hover .jn-steps i { width: calc(100% - 12px); }
+  .jn-item:hover .jn-steps span::before { border-color: var(--as-accent); background: var(--as-accent); }
+  .jn-item:hover .jn-comp { opacity: 1; transform: scale(1); animation: jn-ping 2.4s ease-out infinite; animation-delay: calc(var(--i) * 0.25s); transition-delay: calc(var(--i) * 0.09s); }
+  .jn-item:hover .jn-subject { opacity: 1; }
+}
 @keyframes jn-ping { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.65); } 70%, 100% { box-shadow: 0 0 0 14px rgba(255, 255, 255, 0); } }
 
 /* ------------------------------ the area map ------------------------------ */

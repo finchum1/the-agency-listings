@@ -117,8 +117,9 @@ function ValueCard({ card, radar }) {
 
 /* ------------------------------ the animated version ------------------------------ */
 
-// Where the "comparables" appear around the property on the Home Value card (percent of the photo).
-const COMPS = [[22, 20], [76, 16], [86, 46], [12, 50], [62, 58], [34, 62]];
+// Where the "comparables" appear around the property on the Home Value card (percent of the photo), when someone clicks into the address box.
+// Kept clear of the tag (top left) and the address box (bottom) so they never sit on top of text.
+const COMPS = [[84, 12], [92, 30], [80, 44], [12, 48], [28, 53], [66, 52]];
 
 // The steps each card's hover shows (decorative: the guide pages carry the real detail).
 const STEPS = {
