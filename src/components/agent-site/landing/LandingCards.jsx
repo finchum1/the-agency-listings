@@ -75,7 +75,7 @@ function ValueCard({ card, radar }) {
   };
   return (
     <div className="flex flex-col bg-[var(--as-dark)] text-[var(--as-on-dark)] border border-[var(--as-dark)] overflow-hidden">
-      <div className="relative h-56 p-6 flex flex-col justify-between">
+      <div className="relative h-56 p-6 flex flex-col justify-end">
         <img src={card.photo} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-25" />
         <div className="absolute inset-0 bg-gradient-to-br from-[var(--as-dark)]/40 to-[var(--as-accent)]/40" aria-hidden="true" />
         {radar && (
@@ -86,7 +86,7 @@ function ValueCard({ card, radar }) {
             ))}
           </span>
         )}
-        <span className="as-btn relative self-start bg-[var(--as-accent)] text-white text-[10px] font-medium tracked-wide uppercase px-3 py-1.5">{card.eyebrow}</span>
+        <span className="as-btn absolute top-4 left-4 bg-[var(--as-accent)] text-white text-[10px] font-medium tracked-wide uppercase px-3 py-1.5">{card.eyebrow}</span>
         <form onSubmit={go} className="relative">
           <label htmlFor="card-address" className="block text-[11px] tracked-wide uppercase opacity-70 mb-2">
             Property address

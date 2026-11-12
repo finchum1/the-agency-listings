@@ -45,12 +45,10 @@
 .jn-subject { position: absolute; z-index: 1; left: 48%; top: 49%; width: 16px; height: 16px; margin: -8px; border-radius: 50%; background: var(--as-accent); border: 3px solid #fff; opacity: 0; transition: opacity 0.4s; pointer-events: none; }
 .jn-item:focus-within .jn-comp { opacity: 1; transform: scale(1); animation: jn-ping 2.4s ease-out infinite; animation-delay: calc(var(--i) * 0.25s); transition-delay: calc(var(--i) * 0.09s); }
 .jn-item:focus-within .jn-subject { opacity: 1; }
-/* A touch screen has no real hover: a tap leaves :hover stuck on, so the card, its steps and its comparables only react to a mouse that can hover. */
+/* A touch screen has no real hover: a tap leaves :hover stuck on, so the card's steps only react to a mouse that can hover. The comparables never do: they only show while someone is typing an address. */
 @media (hover: hover) and (pointer: fine) {
   .jn-item:hover .jn-steps i { width: calc(100% - 12px); }
   .jn-item:hover .jn-steps span::before { border-color: var(--as-accent); background: var(--as-accent); }
-  .jn-item:hover .jn-comp { opacity: 1; transform: scale(1); animation: jn-ping 2.4s ease-out infinite; animation-delay: calc(var(--i) * 0.25s); transition-delay: calc(var(--i) * 0.09s); }
-  .jn-item:hover .jn-subject { opacity: 1; }
 }
 @keyframes jn-ping { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.65); } 70%, 100% { box-shadow: 0 0 0 14px rgba(255, 255, 255, 0); } }
 
