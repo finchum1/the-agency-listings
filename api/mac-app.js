@@ -27,6 +27,13 @@
 //   POST /api/mac-app?a=plans_list          {}   your follow-up plans you can start by hand, with what each does
 //   POST /api/mac-app?a=people_plan_start   {plan_id, ids}   starts the plan for them (its first steps run at once, nothing is sent): {started, already, skipped}
 //   (people_board also carries `contacts` (relationship, last contact and tags behind each card) and `tags`)
+// The Schedule (the dashboard's calendar: linked iCal and Google calendars):
+//   POST /api/mac-app?a=schedule_calendars          {}   your linked calendars (color, on/off, Google or iCal, whether you can edit it, the default for new events) and connected Google accounts
+//   POST /api/mac-app?a=schedule_events             {start, end, tz}   events from the calendars that are on, for up to 70 days
+//   POST /api/mac-app?a=schedule_calendar_update    {id, enabled? | name? | color? | is_default?}      POST ?a=schedule_calendar_delete {id}
+//   POST /api/mac-app?a=schedule_calendar_check     {url}   reads a private iCal address before it is added      POST ?a=schedule_calendar_add {url, name?, color?}
+//   POST /api/mac-app?a=schedule_google_calendars   {connection_id}   a connected Google account's calendars      POST ?a=schedule_google_link {connection_id, calendar_ids}
+//   POST /api/mac-app?a=schedule_event_save         {calendar_row_id, event_id?, event}   makes (no event_id) or changes a Google event      POST ?a=schedule_event_delete {calendar_row_id, event_id}
 // The Deals overview page and the "Email with a template" menu:
 //   GET  /api/mac-app?a=deals_overview&today=   the open tasks of your open deals that fall due by two weeks from today (overdue ones included), each with its due day, and the waiting drafts
 //   GET  /api/mac-app?a=deal_emails&deal_id=    the deal's email templates, grouped as in the dashboard's "Email with a template" menu, each already filled in from the deal and addressed
@@ -81,6 +88,8 @@ import { fromAs, sendNotification, viaOrg } from "./_lib/inquiry.js";
 import { buildDealStartedEmail } from "./_lib/dealEmail.js";
 import { isOccasion, startText, stepSummary } from "../src/lib/plans.js";
 import { runPlans } from "./_lib/planRunner.js";
+import { expandEvents, feedName, loadFeedText, normalizeIcsUrl } from "./_lib/calendarFeed.js";
+import { accessTokenFor, createEvent, deleteEvent, googleConfigured, listCalendars, listEvents, updateEvent } from "./_lib/googleCalendar.js";
 import { SITE_ORIGIN } from "../src/lib/seo.js";
 
 const TZ = "America/Chicago";
@@ -783,6 +792,133 @@ export default async function handler(req, res) {
       ]);
       return per?.length || team?.length ? p : null;
     };
+
+    // ---- Schedule: the dashboard's calendar (linked iCal and Google calendars, their events, and writing Google events)
+    if (a.startsWith("schedule_")) {
+      const MAX_RANGE_DAYS = 70;
+      const validZone = (tz) => { try { new Intl.DateTimeFormat("en-US", { timeZone: tz }); return tz; } catch { return "UTC"; } };
+      const myCalendar = async (id) => {
+        if (!UUID.test(String(id || ""))) return null;
+        const { data } = await admin.from("agent_calendars").select("id, name, color, enabled, source, connection_id, google_calendar_id, can_write, is_default").eq("id", id).eq("owner_id", owner).maybeSingle();
+        return data || null;
+      };
+      const myConnection = async (id) => {
+        if (!UUID.test(String(id || ""))) return null;
+        const { data } = await admin.from("google_connections").select("id, email, status").eq("id", id).eq("owner_id", owner).maybeSingle();
+        return data || null;
+      };
+      const calendarColumns = "id, name, color, enabled, source, connection_id, can_write, is_default";
+
+      if (a === "schedule_calendars") {
+        const [cals, conns] = await Promise.all([
+          admin.from("agent_calendars").select(calendarColumns).eq("owner_id", owner).order("created_at"),
+          admin.from("google_connections").select("id, email, status").eq("owner_id", owner).order("created_at"),
+        ]);
+        return res.status(200).json({ calendars: cals.data || [], connections: conns.data || [], google_configured: googleConfigured() });
+      }
+
+      if (a === "schedule_events") {
+        const start = new Date(body.start), end = new Date(body.end);
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) return bad(res, "A valid start and end are required.");
+        if (end - start > MAX_RANGE_DAYS * 864e5) return bad(res, `Ask for ${MAX_RANGE_DAYS} days or fewer at a time.`);
+        const tz = validZone(body.tz);
+        const { data: calendars, error } = await admin.from("agent_calendars").select("id, name, color, ics_url, source, connection_id, google_calendar_id, can_write").eq("owner_id", owner).eq("enabled", true).order("created_at");
+        if (error) return bad(res, "Couldn't load your calendars.", 500);
+        const results = await Promise.allSettled((calendars || []).map(async (c) => {
+          if (c.source === "google") {
+            if (!googleConfigured()) throw new Error("Google sign-in isn't set up on this server yet.");
+            if (!(await myConnection(c.connection_id))) throw new Error("That Google account isn't connected.");
+            return listEvents(await accessTokenFor(admin, c.connection_id), c.google_calendar_id, start, end, { rowId: c.id, canWrite: c.can_write });
+          }
+          const text = await loadFeedText(c.ics_url);
+          return expandEvents(text, start, end, tz).map((e) => ({ ...e, calendarId: c.id, source: "ics", canWrite: false }));
+        }));
+        const events = [], errors = [];
+        results.forEach((r, i) => {
+          if (r.status === "fulfilled") events.push(...r.value);
+          else errors.push({ calendar_id: calendars[i].id, name: calendars[i].name, message: r.reason?.message || "Couldn't read this calendar." });
+        });
+        return res.status(200).json({ events, errors });
+      }
+
+      if (a === "schedule_calendar_update") {
+        const cal = await myCalendar(body.id);
+        if (!cal) return bad(res, "That calendar isn't yours.", 404);
+        const changes = {};
+        if ("enabled" in body) changes.enabled = Boolean(body.enabled);
+        if ("name" in body) { const n = String(body.name || "").trim().slice(0, 80); if (!n) return bad(res, "Name the calendar."); changes.name = n; }
+        if ("color" in body) { if (!/^#[0-9a-f]{6}$/i.test(String(body.color))) return bad(res, "That color doesn't look right."); changes.color = body.color; }
+        if (body.is_default === true) {
+          if (cal.source !== "google" || !cal.can_write) return bad(res, "New events can only start on a Google calendar you can edit.");
+          // One default at a time: the old one is cleared first.
+          await admin.from("agent_calendars").update({ is_default: false }).eq("owner_id", owner).eq("is_default", true);
+          changes.is_default = true;
+        } else if (body.is_default === false) changes.is_default = false;
+        if (!Object.keys(changes).length) return bad(res, "Nothing to change.");
+        const { error } = await admin.from("agent_calendars").update(changes).eq("id", cal.id).eq("owner_id", owner);
+        return error ? bad(res, "Couldn't save it.", 500) : res.status(200).json({ ok: true });
+      }
+
+      if (a === "schedule_calendar_delete") {
+        const cal = await myCalendar(body.id);
+        if (!cal) return bad(res, "That calendar isn't yours.", 404);
+        const { error } = await admin.from("agent_calendars").delete().eq("id", cal.id).eq("owner_id", owner);
+        return error ? bad(res, "Couldn't remove it.", 500) : res.status(200).json({ ok: true });
+      }
+
+      if (a === "schedule_calendar_check" || a === "schedule_calendar_add") {
+        let address, text;
+        try { address = normalizeIcsUrl(body.url || body.address); text = await loadFeedText(address); } catch (err) { return bad(res, err.message || "Couldn't read that calendar."); }
+        if (a === "schedule_calendar_check") {
+          const now = new Date();
+          return res.status(200).json({ ok: true, name: feedName(text), upcoming: expandEvents(text, now, new Date(now.getTime() + 60 * 864e5), "UTC").length });
+        }
+        const name = String(body.name || feedName(text) || "Calendar").trim().slice(0, 80);
+        if (!name) return bad(res, "Name the calendar.");
+        const color = /^#[0-9a-f]{6}$/i.test(String(body.color || "")) ? body.color : "#1a5fb4";
+        const { data, error } = await admin.from("agent_calendars").insert({ owner_id: owner, name, ics_url: address, color }).select(calendarColumns).single();
+        if (error) return bad(res, /10 calendars/.test(error.message) ? "You can link up to 10 calendars." : "Couldn't add that calendar.", 400);
+        return res.status(200).json({ ok: true, calendar: data });
+      }
+
+      if (a === "schedule_google_calendars" || a === "schedule_google_link") {
+        if (!googleConfigured()) return bad(res, "Google sign-in isn't set up on this server yet.", 503);
+        const conn = await myConnection(body.connection_id);
+        if (!conn) return bad(res, "That Google account isn't connected.", 404);
+        let list;
+        try { list = await listCalendars(await accessTokenFor(admin, conn.id)); } catch (err) { return bad(res, err.message || "Couldn't reach Google.", 502); }
+        const { data: linkedRows } = await admin.from("agent_calendars").select("google_calendar_id").eq("owner_id", owner).eq("connection_id", conn.id);
+        const linked = new Set((linkedRows || []).map((r) => r.google_calendar_id));
+        if (a === "schedule_google_calendars") return res.status(200).json({ calendars: list.map((c) => ({ id: c.id, name: c.name, color: c.color, can_write: c.canWrite, linked: linked.has(c.id) })) });
+        // Link only calendars Google says this account has, with the role Google reports.
+        const wanted = new Set(Array.isArray(body.calendar_ids) ? body.calendar_ids.map(String) : []);
+        const rows = list.filter((c) => wanted.has(c.id) && !linked.has(c.id)).map((c) => ({ owner_id: owner, name: c.name.slice(0, 80), color: c.color, source: "google", connection_id: conn.id, google_calendar_id: c.id, can_write: c.canWrite }));
+        if (!rows.length) return res.status(200).json({ ok: true, linked: 0 });
+        const { error } = await admin.from("agent_calendars").insert(rows);
+        return error ? bad(res, /10 calendars/.test(error.message) ? "You can link up to 10 calendars." : "Couldn't link those calendars.", 400) : res.status(200).json({ ok: true, linked: rows.length });
+      }
+
+      if (a === "schedule_event_save" || a === "schedule_event_delete") {
+        const cal = await myCalendar(body.calendar_row_id);
+        if (!cal || cal.source !== "google") return bad(res, "That calendar isn't a connected Google calendar.", 404);
+        if (!cal.can_write) return bad(res, "This calendar is read-only for your Google account.", 403);
+        if (!(await myConnection(cal.connection_id))) return bad(res, "That Google account isn't connected.", 404);
+        try {
+          const token = await accessTokenFor(admin, cal.connection_id);
+          if (a === "schedule_event_delete") {
+            if (!body.event_id || typeof body.event_id !== "string") return bad(res, "Missing event.");
+            await deleteEvent(token, cal.google_calendar_id, body.event_id);
+            return res.status(200).json({ ok: true });
+          }
+          const meta = { rowId: cal.id };
+          const event = body.event_id ? await updateEvent(token, cal.google_calendar_id, String(body.event_id), body.event, meta) : await createEvent(token, cal.google_calendar_id, body.event, meta);
+          return res.status(200).json({ ok: true, event });
+        } catch (err) {
+          return bad(res, err.message || "Something went wrong.", err.status === 403 || err.status === 404 ? err.status : err.status ? 502 : 400);
+        }
+      }
+      return bad(res, "Not found.", 404);
+    }
 
     // ---- Leads & Pipeline: archived people, bulk changes, and starting a follow-up plan for several people (the dashboard's list view and Start a plan)
     if (["people_archived", "people_bulk", "plans_list", "people_plan_start"].includes(a)) {
