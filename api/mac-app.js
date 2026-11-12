@@ -26,6 +26,7 @@
 //   POST /api/mac-app?a=people_bulk         {ids, action, ...}   move {stage} / side {side} / followup {date|null} / archive {reason} / restore
 //   POST /api/mac-app?a=plans_list          {}   your follow-up plans you can start by hand, with what each does
 //   POST /api/mac-app?a=people_plan_start   {plan_id, ids}   starts the plan for them (its first steps run at once, nothing is sent): {started, already, skipped}
+//   POST /api/mac-app?a=people_columns     {group, action, name, ...}   board setup: add / rename {new_name} / move {to_index} / delete / cadence {days} a Leads or Pipeline column; returns the board's {stages, cadence}
 //   (people_board also carries `contacts` (relationship, last contact and tags behind each card) and `tags`)
 // The Schedule (the dashboard's calendar: linked iCal and Google calendars):
 //   POST /api/mac-app?a=schedule_calendars          {}   your linked calendars (color, on/off, Google or iCal, whether you can edit it, the default for new events) and connected Google accounts
@@ -921,10 +922,77 @@ export default async function handler(req, res) {
     }
 
     // ---- Leads & Pipeline: archived people, bulk changes, and starting a follow-up plan for several people (the dashboard's list view and Start a plan)
-    if (["people_archived", "people_bulk", "plans_list", "people_plan_start"].includes(a)) {
+    if (["people_archived", "people_bulk", "plans_list", "people_plan_start", "people_columns"].includes(a)) {
       if (a === "people_archived") {
         const rows = await admin.from("people").select(`${PERSON_COLUMNS}, archived_at`).eq("owner_id", owner).in("stage_group", ["lead", "pipeline"]).eq("archived", true).order("archived_at", { ascending: false, nullsFirst: false }).limit(500);
         return rows.error ? bad(res, "Couldn't load them.", 500) : res.status(200).json({ people: rows.data || [] });
+      }
+      if (a === "people_columns") {
+        // Board setup, the dashboard's column menu: add / rename / move / delete a column, set its follow-up days. Same rules as usePeopleStages.
+        const group = body.group === "lead" || body.group === "pipeline" ? body.group : null;
+        if (!group) return bad(res, "Pick Leads or Pipeline.");
+        const action = String(body.action || "");
+        const { data: raw } = await admin.from("people_settings").select("stages, cadence").eq("owner_id", owner).maybeSingle();
+        const { stages, cadence } = await peopleSettings(admin, owner);
+        const list = stages[group];
+        const name = String(body.name || "").trim().slice(0, 60);
+        const at = list.findIndex((s) => s === name);
+        const rawCadence = raw?.cadence && typeof raw.cadence === "object" ? raw.cadence : {};
+        // The other boards' columns and the closed-deals column stay exactly as stored; only this board's list is written.
+        const saveStages = async (next) => { const { error } = await admin.from("people_settings").upsert({ owner_id: owner, stages: { ...(raw?.stages || {}), [group]: next }, updated_at: new Date().toISOString() }); return error; };
+        const saveCadence = async (next) => { const { error } = await admin.from("people_settings").upsert({ owner_id: owner, cadence: next, updated_at: new Date().toISOString() }); return error; };
+        const reply = async () => { const s = await peopleSettings(admin, owner); return res.status(200).json({ ok: true, stages: { lead: s.stages.lead, pipeline: s.stages.pipeline }, cadence: s.cadence }); };
+        const taken = (n, except) => list.some((s) => s.toLowerCase() === n.toLowerCase() && s !== except);
+
+        if (action === "add") {
+          if (!name) return bad(res, "Give the column a name.");
+          if (taken(name)) return bad(res, `There's already a column called "${name}".`);
+          if (list.length >= 20) return bad(res, "That's plenty of columns.");
+          if (await saveStages([...list, name])) return bad(res, "Couldn't save it.", 500);
+          return reply();
+        }
+        if (at < 0) return bad(res, "That isn't one of the columns.");
+        if (action === "move") {
+          const to = Math.round(Number(body.to_index));
+          if (!Number.isFinite(to) || to < 0 || to >= list.length) return bad(res, "Can't move it there.");
+          const next = [...list]; next.splice(at, 1); next.splice(to, 0, name);
+          if (to !== at && await saveStages(next)) return bad(res, "Couldn't save it.", 500);
+          return reply();
+        }
+        if (action === "cadence") {
+          const days = Math.max(0, Math.min(1095, Math.round(Number(body.days) || 0)));
+          if (await saveCadence({ ...rawCadence, [group]: { ...(rawCadence[group] || {}), [name]: days } })) return bad(res, "Couldn't save it.", 500);
+          return reply();
+        }
+        if (action === "rename") {
+          const to = String(body.new_name || "").trim().slice(0, 60);
+          if (!to || to === name) return reply();
+          if (taken(to, name)) return bad(res, `There's already a column called "${to}".`);
+          // Renaming isn't a move: nobody's follow-up date changes. Setting the stage re-applies the column's cadence (a database trigger on stage), so put the
+          // saved dates straight back afterwards; changing only the date doesn't fire it.
+          const who = await readAll(() => admin.from("people").select("id, next_follow_up").eq("owner_id", owner).eq("stage_group", group).eq("stage", name).eq("archived", false).order("id"));
+          const { error: e1 } = await admin.from("people").update({ stage: to }).eq("owner_id", owner).eq("stage_group", group).eq("stage", name);
+          if (e1) return bad(res, "Couldn't rename it.", 500);
+          const byDate = new Map();
+          for (const p of who) byDate.set(p.next_follow_up ?? "", [...(byDate.get(p.next_follow_up ?? "") || []), p.id]);
+          for (const [date, ids] of byDate) for (let i = 0; i < ids.length; i += 100) await admin.from("people").update({ next_follow_up: date || null }).in("id", ids.slice(i, i + 100)).eq("owner_id", owner);
+          if (await saveStages(list.map((s) => (s === name ? to : s)))) return bad(res, "Couldn't save it.", 500);
+          // Its follow-up days go with it (a default column keeps its default).
+          const mine = rawCadence[group] || {};
+          const days = Object.prototype.hasOwnProperty.call(mine, name) ? mine[name] : DEFAULT_CADENCE[group][name];
+          const { [name]: _gone, ...rest } = mine;
+          if (days !== undefined) await saveCadence({ ...rawCadence, [group]: { ...rest, [to]: days } });
+          return reply();
+        }
+        if (action === "delete") {
+          if (list.length <= 1) return bad(res, "A board needs at least one column.");
+          // Everyone counts, archived included.
+          const { count } = await admin.from("people").select("id", { count: "exact", head: true }).eq("owner_id", owner).eq("stage_group", group).eq("stage", name);
+          if (count > 0) return bad(res, `Move the ${count} ${count === 1 ? "person" : "people"} out of "${name}" first (archived people count too).`);
+          if (await saveStages(list.filter((s) => s !== name))) return bad(res, "Couldn't save it.", 500);
+          return reply();
+        }
+        return bad(res, "Unknown column change.");
       }
       if (a === "plans_list") {
         const { data } = await admin.from("plans").select("id, name, steps, starts_when, active").eq("owner_id", owner).order("created_at");
