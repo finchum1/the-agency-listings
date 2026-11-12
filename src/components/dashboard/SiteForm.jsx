@@ -653,6 +653,18 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
                 </button>
               ))}
             </div>
+            <label className="mt-4 flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.landing?.powered_by === true}
+                onChange={(e) => set("landing", { ...(form.landing && typeof form.landing === "object" ? form.landing : {}), powered_by: e.target.checked })}
+                className="mt-0.5 accent-[#ed2127] dark:accent-[#f2454b]"
+              />
+              <span>
+                <span className="block text-sm font-medium">Show "Powered by Latchpoint Studios" in the footer</span>
+                <span className="block text-xs mt-0.5 text-[#1c1a17]/50 dark:text-[#faf9f7]/50">A small line with the animated Latchpoint mark, under your office's legal wording.</span>
+              </span>
+            </label>
             {form.footer_style === "cta" && (
               <div className="mt-4 space-y-3 rounded-xl border border-black/10 dark:border-white/15 p-4">
                 <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">The band above your footer. Leave a box empty to use the standard wording.</p>

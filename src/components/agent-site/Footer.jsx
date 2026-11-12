@@ -1,6 +1,7 @@
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import SiteLink from "./SiteLink";
 import BrandLogo from "../BrandLogo";
+import LatchpointCredit from "./LatchpointCredit";
 import { resolveLanding } from "../../lib/landingPages";
 import { orderByNav } from "../../lib/siteNav";
 
@@ -163,10 +164,15 @@ export default function Footer() {
         {link.label(firstName)}
       </SiteLink>
     ));
+  // "Powered by Latchpoint Studios" (landing.powered_by, Site Details): a small line under the office's legal wording, which stays exactly as it was.
+  const credit = (center) => (site.landing?.powered_by === true ? <div className={`mt-4 flex ${center ? "justify-center" : "justify-start sm:justify-end"}`}><LatchpointCredit /></div> : null);
   const disclaimer = (center) => (
-    <p className={`mt-12 pt-6 border-t border-[var(--as-on-dark)]/10 text-xs text-[var(--as-on-dark)]/35 ${center ? "text-center" : ""}`}>
-      {brokerage.name} — {brokerage.disclaimer}
-    </p>
+    <div className="mt-12 pt-6 border-t border-[var(--as-on-dark)]/10">
+      <p className={`text-xs text-[var(--as-on-dark)]/35 ${center ? "text-center" : ""}`}>
+        {brokerage.name} — {brokerage.disclaimer}
+      </p>
+      {credit(center)}
+    </div>
   );
 
   const shell = "mt-auto bg-[var(--as-dark)] text-[var(--as-on-dark)]/65 px-6 lg:px-10";
@@ -346,9 +352,12 @@ export default function Footer() {
               {socials()}
             </div>
           </div>
-          <p className="mt-6 pt-5 border-t border-[var(--as-on-dark)]/10 text-xs text-[var(--as-on-dark)]/35">
-            {brokerage.name} — {brokerage.disclaimer}
-          </p>
+          <div className="mt-6 pt-5 border-t border-[var(--as-on-dark)]/10">
+            <p className="text-xs text-[var(--as-on-dark)]/35">
+              {brokerage.name} — {brokerage.disclaimer}
+            </p>
+            {credit(false)}
+          </div>
         </div>
       </footer>
     );
