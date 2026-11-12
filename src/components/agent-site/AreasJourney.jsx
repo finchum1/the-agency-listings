@@ -20,12 +20,123 @@ export default function AreasJourney({ pins, Heading }) {
   const [inView, setInView] = useState(false);
   const touched = useRef(false);
   const mapRef = useRef(null);
+  const secRef = useRef(null);
   const reduce = useMemo(prefersLessMotion, []);
 
   // Roads need their length to draw themselves in.
   useEffect(() => {
     mapRef.current?.querySelectorAll(".jn-draw").forEach((p) => p.style.setProperty("--len", p.getTotalLength()));
   }, []);
+
+  // The connector: when this section sits directly under the animated cards, the route carries on from the last card's pin, down the margin and into
+  // the map, drawn as the visitor scrolls (and only once the cards' own route has finished). Where it lands, the map comes alive.
+  const anchorKey = pins.find((p) => p.area.slug === "oklahoma-city") ? "oklahoma-city" : pins[0].area.slug;
+  useEffect(() => {
+    const sec = secRef.current;
+    const mapEl = mapRef.current;
+    const row = sec?.previousElementSibling?.querySelector(".jn-row");
+    if (!sec || !mapEl || !row) return undefined;
+    const a = pins.find((p) => p.area.slug === anchorKey);
+    const ghosts = sec.querySelector(".jn-link .jn-ghosts");
+    const lives = sec.querySelector(".jn-link .jn-lives");
+    const head = sec.querySelector(".jn-link .jn-head");
+    const svg = sec.querySelector(".jn-link");
+    const NS = "http://www.w3.org/2000/svg";
+    let segs = [];
+    let cum = [0];
+    let total = 0;
+    let topY = 0;
+    let botY = 0;
+    const build = () => {
+      const sr = sec.getBoundingClientRect();
+      const rr = row.getBoundingClientRect();
+      const mr = mapEl.getBoundingClientRect();
+      const items = row.querySelectorAll(".jn-item");
+      const last = items[items.length - 1];
+      const wide = row.classList.contains("jn-wide");
+      const P = wide
+        ? { x: rr.left - sr.left + last.offsetLeft + last.offsetWidth / 2, y: rr.top - sr.top + last.offsetTop - 43 }
+        : { x: rr.left - sr.left + last.offsetLeft - 25, y: rr.top - sr.top + last.offsetTop + 41 };
+      const A = { x: mr.left - sr.left + (a.x / MAP_WIDTH) * mr.width, y: mr.top - sr.top + (a.y / MAP_HEIGHT) * mr.height - 24 };
+      const mapTop = mr.top - sr.top;
+      const d = [];
+      let from = P;
+      if (wide) {
+        const rx = Math.min(sr.width - 22, rr.right - sr.left + 46);
+        const E1 = { x: rx, y: P.y + 50 };
+        d.push(`M${P.x} ${P.y} C${P.x + (E1.x - P.x) * 0.55} ${P.y} ${E1.x} ${P.y + 10} ${E1.x} ${E1.y}`);
+        from = { x: rx, y: mapTop - 30 };
+        d.push(`M${E1.x} ${E1.y} L${from.x} ${from.y}`);
+      } else {
+        // On a phone the cards' route runs down the left margin, where this section's content starts: cross over in the gap between the two and
+        // carry on down the right margin instead, so it never runs along the edge of the photo or the map.
+        const rx = sr.width - 12;
+        const E0 = { x: P.x, y: 36 };
+        const E1 = { x: rx, y: 120 };
+        d.push(`M${P.x} ${P.y} L${E0.x} ${E0.y}`);
+        d.push(`M${E0.x} ${E0.y} C${E0.x} ${E0.y + 45} ${E1.x} ${E1.y - 45} ${E1.x} ${E1.y}`);
+        from = { x: rx, y: mapTop - 20 };
+        d.push(`M${E1.x} ${E1.y} L${from.x} ${from.y}`);
+      }
+      const dy = A.y - from.y;
+      d.push(`M${from.x} ${from.y} C${from.x} ${from.y + dy * 0.5} ${A.x} ${A.y - dy * 0.5} ${A.x} ${A.y}`);
+      svg.setAttribute("viewBox", `0 0 ${sr.width} ${sr.height}`);
+      ghosts.innerHTML = "";
+      lives.innerHTML = "";
+      segs = [];
+      cum = [0];
+      total = 0;
+      for (const path of d) {
+        const g = document.createElementNS(NS, "path");
+        g.setAttribute("d", path);
+        g.setAttribute("class", "jn-ghost");
+        ghosts.appendChild(g);
+        const l = document.createElementNS(NS, "path");
+        l.setAttribute("d", path);
+        l.setAttribute("class", "jn-live");
+        lives.appendChild(l);
+        const len = l.getTotalLength();
+        l.style.strokeDasharray = len;
+        l.style.strokeDashoffset = len;
+        segs.push({ el: l, len });
+        total += len;
+        cum.push(total);
+      }
+      const base = window.scrollY + sr.top;
+      topY = base + P.y;
+      botY = base + A.y;
+      update();
+    };
+    const update = () => {
+      let p = 1;
+      if (!reduce) {
+        p = (window.scrollY + window.innerHeight * 0.72 - topY) / Math.max(1, botY - topY);
+        p = row.classList.contains("jn-done") ? Math.max(0, Math.min(1, p)) : 0;
+      }
+      const drawn = p * total;
+      segs.forEach((s, k) => {
+        s.el.style.strokeDashoffset = s.len - Math.max(0, Math.min(s.len, drawn - cum[k]));
+      });
+      let k = segs.findIndex((_, i) => drawn <= cum[i + 1]);
+      if (k < 0) k = segs.length - 1;
+      const pt = segs[k].el.getPointAtLength(Math.max(0, Math.min(segs[k].len, drawn - cum[k])));
+      head.setAttribute("cx", pt.x);
+      head.setAttribute("cy", pt.y);
+      head.style.opacity = p > 0 && p < 1 ? 1 : 0;
+      if (p >= 0.985) setOn(true);
+    };
+    build();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("jn-route", update);
+    const ro = new ResizeObserver(build);
+    ro.observe(sec);
+    ro.observe(row);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("jn-route", update);
+      ro.disconnect();
+    };
+  }, [reduce, anchorKey, pins]);
 
   // The map comes alive the first time it is mostly on screen; the tour only runs while it is on screen.
   useEffect(() => {
@@ -67,7 +178,12 @@ export default function AreasJourney({ pins, Heading }) {
   const anchor = pins.find((p) => p.area.slug === "oklahoma-city") || pins[0];
 
   return (
-    <section id="areas" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
+    <section ref={secRef} id="areas" className="relative px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
+      <svg className="jn-route jn-link" aria-hidden="true">
+        <g className="jn-ghosts" />
+        <g className="jn-lives" />
+        <circle className="jn-head" r="6" cx="-20" cy="-20" style={{ opacity: 0 }} />
+      </svg>
       <div className="mx-auto max-w-7xl">
         <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3 text-center">Areas of Expertise</p>
         <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-10 text-center text-[var(--as-text)]">Find Your Area</Heading>

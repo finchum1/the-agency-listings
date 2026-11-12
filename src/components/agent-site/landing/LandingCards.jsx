@@ -217,6 +217,12 @@ function JourneyCards({ cards }) {
     };
     const apply = (p) => {
       progress = p;
+      // Told to whatever continues the route below the cards (the area map's connector line).
+      const done = p >= 0.999;
+      if (done !== row.classList.contains("jn-done")) {
+        row.classList.toggle("jn-done", done);
+        window.dispatchEvent(new Event("jn-route"));
+      }
       const drawn = p * total;
       segs.forEach((s, k) => {
         s.el.style.strokeDashoffset = s.len - Math.max(0, Math.min(s.len, drawn - cum[k]));
@@ -260,7 +266,20 @@ function JourneyCards({ cards }) {
     if (wide) {
       if (typeof IntersectionObserver === "undefined") apply(1);
       else {
-        io = new IntersectionObserver(([e]) => e.isIntersecting && (play(), io.disconnect()), { threshold: 0.4 });
+        io = new IntersectionObserver(
+          ([e]) => {
+            if (e.isIntersecting) {
+              play();
+              io.disconnect();
+            } else if (e.boundingClientRect.bottom < 0) {
+              // Arrived below it (a reload part way down the page, or a link to the map): nothing to wait for.
+              played = true;
+              apply(1);
+              io.disconnect();
+            }
+          },
+          { threshold: 0.4 },
+        );
         io.observe(row);
         if (played) apply(1);
       }
