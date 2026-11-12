@@ -99,7 +99,7 @@ export default function SiteEditor({ agentId, agentName, heading, section, hideH
 
       {show("analytics") && part("analytics", <SiteAnalytics site={site} />)}
 
-      {show("details") && <SiteForm site={site} onSaved={refresh} focus={g ? formParts : focus} salesCount={sales.length} />}
+      {show("details") && <SiteForm site={site} onSaved={refresh} focus={g ? formParts : focus} salesCount={sales.length} areas={areas} />}
       {(g ? show("compare") : section === "compare") && part("compare", <CompareTemplatesPanel site={site} onChanged={refresh} />)}
       {show("listings") && part("listings", <SiteListingsManager agentId={agentId} agentName={agentName} />)}
       {show("testimonials") && part("testimonials", <TestimonialsManager agentSiteId={site.id} testimonials={testimonials} onChanged={refresh} />)}

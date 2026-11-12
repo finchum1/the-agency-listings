@@ -1,5 +1,6 @@
 import { LANDING_DEFAULTS, resolveLanding } from "../../lib/landingPages";
 import ImageUploadField from "./ImageUploadField";
+import AreaMapEditor from "./AreaMapEditor";
 
 const inputClass =
   "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
@@ -10,7 +11,7 @@ const arrow =
 // The three cards that lead from the home page to the Sellers, Home Value and Buyers pages: their order, whether each shows, their wording and
 // photo, and the two switches around them. `value` is agent_sites.landing; `onChange` gets the whole new object (SiteForm saves it with the
 // rest of the form). Where the whole group sits on the home page is the "Buyer & seller cards" row in Home Page Sections above.
-export default function LandingCardsEditor({ siteId, siteSlug, value, onChange }) {
+export default function LandingCardsEditor({ siteId, siteSlug, value, onChange, areas = [] }) {
   const landing = resolveLanding(value, "your agent");
   const saved = value && typeof value === "object" ? value : {};
   const patch = (changes) => onChange({ ...saved, ...changes });
@@ -95,10 +96,12 @@ export default function LandingCardsEditor({ siteId, siteSlug, value, onChange }
           <span className="block text-sm font-medium">Animated cards and area map</span>
           <span className={`block text-xs mt-0.5 ${muted}`}>
             A route line links the cards above as it draws itself, and Areas of Expertise becomes a map you can point at. The map appears once at least three
-            of your areas are ones it knows (Oklahoma City metro for now). Visitors who ask their device for less motion see it without the animation.
+            of your areas have a place on the map (you place them below). Visitors who ask their device for less motion see it without the animation. For the
+            route line to carry on from the cards into the map, put Areas right under these cards in Home Page Sections.
           </span>
         </span>
       </label>
+      {landing.animated && (areas.length > 0 ? <AreaMapEditor areas={areas} value={saved.map} onChange={(m) => patch({ map: m })} /> : <p className={`text-xs ${muted}`}>Add your areas of expertise first, then place them on the map here.</p>)}
       <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
         <input type="checkbox" checked={landing.compsTask} onChange={(e) => patch({ comps_task: e.target.checked })} className="mt-0.5 accent-[#ed2127] dark:accent-[#f2454b]" />
         <span>

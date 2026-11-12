@@ -7,6 +7,8 @@ import { sanitizeHtml } from "../../../lib/sanitizeHtml";
 import SiteLink from "../SiteLink";
 import FeaturedTag from "../FeaturedTag";
 import AgentPhotos, { teamAspect } from "../AgentPhotos";
+import { journeyPins, resolveMap } from "../../../lib/areaMaps";
+import AreasJourney from "../AreasJourney";
 
 // "Minimal editorial" layout (agent_sites.layout = 'editorial'). The same sections and data as the classic layout,
 // arranged like a magazine: light and airy, big quiet serif type, thin rules, photos captioned underneath instead of
@@ -169,23 +171,29 @@ export function EditorialAreas() {
   const { site, isStandalonePage } = useAgentSiteContext();
   const more = useShowMore(site.areas);
   if (site.areas.length === 0) return null;
+  const header = (
+    <SectionHead label="Areas of expertise" Heading={isStandalonePage ? "h1" : "h2"}>
+      Find your area
+    </SectionHead>
+  );
+  const card = (area, i, sync = {}) => (
+    <SiteLink key={area.id} slug={site.slug} path={`/areas/${area.slug}`} className={`${sync.className || ""} group block`} onMouseEnter={sync.onMouseEnter} onFocus={sync.onFocus}>
+      <div className="overflow-hidden bg-[var(--as-surface)] aspect-[4/5]">
+        {area.photo_url && <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />}
+      </div>
+      <p className="mt-5 font-display text-2xl text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{area.name}</p>
+      {area.blurb && <p className="mt-2 text-sm leading-relaxed text-[var(--as-text)]/60 max-w-xs">{area.blurb}</p>}
+    </SiteLink>
+  );
+  const pins = journeyPins(site);
+  if (pins) {
+    return <AreasJourney pins={pins} base={resolveMap(site.landing.map).base} sectionClass="px-6 lg:px-10 py-28 bg-[var(--as-bg)]" innerClass="mx-auto max-w-6xl" gridClass="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-14" header={header} renderCard={card} />;
+  }
   return (
     <section id="areas" className="px-6 lg:px-10 py-28 bg-[var(--as-bg)]">
       <div className="mx-auto max-w-6xl">
-        <SectionHead label="Areas of expertise" Heading={isStandalonePage ? "h1" : "h2"}>
-          Find your area
-        </SectionHead>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-14">
-          {more.shown.map((area) => (
-            <SiteLink key={area.id} slug={site.slug} path={`/areas/${area.slug}`} className="group block">
-              <div className="overflow-hidden bg-[var(--as-surface)] aspect-[4/5]">
-                {area.photo_url && <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />}
-              </div>
-              <p className="mt-5 font-display text-2xl text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{area.name}</p>
-              {area.blurb && <p className="mt-2 text-sm leading-relaxed text-[var(--as-text)]/60 max-w-xs">{area.blurb}</p>}
-            </SiteLink>
-          ))}
-        </div>
+        {header}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-14">{more.shown.map((area, i) => card(area, i))}</div>
         <ShowMoreButton more={more} />
       </div>
     </section>

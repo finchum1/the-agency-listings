@@ -7,6 +7,8 @@ import { agentSiteHref } from "../../../lib/agentSiteLinks";
 import { sanitizeHtml } from "../../../lib/sanitizeHtml";
 import SiteLink from "../SiteLink";
 import FeaturedTag from "../FeaturedTag";
+import { journeyPins, resolveMap } from "../../../lib/areaMaps";
+import AreasJourney from "../AreasJourney";
 
 // "Listings first" layout (agent_sites.layout = 'listings'). For agents who sell a lot of homes: a short banner hero,
 // then the listings straight away (HomeSections moves them to the top of the page), with the first one as a big
@@ -198,22 +200,31 @@ export function ListingsAreas() {
   const more = useShowMore(site.areas);
   if (site.areas.length === 0) return null;
   const Heading = isStandalonePage ? "h1" : "h2";
+  const sectionClass = `px-6 lg:px-10 pb-16 ${isStandalonePage ? "pt-24" : "pt-16"} bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10`;
+  const header = (
+    <>
+      <p className={eyebrow}>Areas of expertise</p>
+      <Heading className={`${h2Class} mt-2 mb-8`}>Find your area</Heading>
+    </>
+  );
+  const card = (area, i, sync = {}) => (
+    <SiteLink key={area.id} slug={site.slug} path={`/areas/${area.slug}`} className={`${sync.className || ""} group flex items-center gap-4 bg-[var(--as-bg)] border border-[var(--as-text)]/10 p-3 pr-5 transition-colors hover:border-[var(--as-accent)]`} onMouseEnter={sync.onMouseEnter} onFocus={sync.onFocus}>
+      <div className="h-16 w-16 shrink-0 rounded-full overflow-hidden bg-[var(--as-surface)]">{area.photo_url && <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover" />}</div>
+      <div className="min-w-0">
+        <p className="font-display text-lg font-semibold text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{area.name}</p>
+        {area.blurb && <p className="text-sm text-[var(--as-text)]/55 truncate">{area.blurb}</p>}
+      </div>
+    </SiteLink>
+  );
+  const pins = journeyPins(site);
+  if (pins) {
+    return <AreasJourney pins={pins} base={resolveMap(site.landing.map).base} sectionClass={sectionClass} gridClass="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4" header={header} renderCard={card} />;
+  }
   return (
-    <section id="areas" className={`px-6 lg:px-10 pb-16 ${isStandalonePage ? "pt-24" : "pt-16"} bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10`}>
+    <section id="areas" className={sectionClass}>
       <div className="mx-auto max-w-7xl">
-        <p className={eyebrow}>Areas of expertise</p>
-        <Heading className={`${h2Class} mt-2 mb-8`}>Find your area</Heading>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {more.shown.map((area) => (
-            <SiteLink key={area.id} slug={site.slug} path={`/areas/${area.slug}`} className="group flex items-center gap-4 bg-[var(--as-bg)] border border-[var(--as-text)]/10 p-3 pr-5 transition-colors hover:border-[var(--as-accent)]">
-              <div className="h-16 w-16 shrink-0 rounded-full overflow-hidden bg-[var(--as-surface)]">{area.photo_url && <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover" />}</div>
-              <div className="min-w-0">
-                <p className="font-display text-lg font-semibold text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{area.name}</p>
-                {area.blurb && <p className="text-sm text-[var(--as-text)]/55 truncate">{area.blurb}</p>}
-              </div>
-            </SiteLink>
-          ))}
-        </div>
+        {header}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{more.shown.map((area, i) => card(area, i))}</div>
         <ShowMoreButton more={more} />
       </div>
     </section>

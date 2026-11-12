@@ -251,7 +251,7 @@ function LayoutSketch({ kind }) {
   );
 }
 
-export default function SiteForm({ site, onSaved, focus, salesCount = 0 }) {
+export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas = [] }) {
   const { brand } = useOrg();
   const accentOptions = accentChoices(brand);
   const logoOptions = logoChoices(brand);
@@ -841,7 +841,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0 }) {
         </CollapsibleSection>
 
         <CollapsibleSection id="cards" title="Buyer & seller cards" description="The Sellers, Home Value and Buyers pages, and the cards that lead to them.">
-          <LandingCardsEditor siteId={site.id} siteSlug={site.slug} value={form.landing} onChange={(v) => set("landing", v)} />
+          <LandingCardsEditor siteId={site.id} siteSlug={site.slug} value={form.landing} onChange={(v) => set("landing", v)} areas={areas} />
         </CollapsibleSection>
 
         <CollapsibleSection id="idx" title="Home Search (IDX)" description="Full MLS search on your area pages.">

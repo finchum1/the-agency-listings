@@ -28,8 +28,42 @@ export const OKC_AREAS = {
 export const MAP_WIDTH = 1000;
 export const MAP_HEIGHT = 720;
 
+// The agent's own map settings (agent_sites.landing.map): { base: "okc" | "plain", pins: { [areaSlug]: { x, y } | false } }.
+//   base "okc"   the Oklahoma City metro drawing, with the default positions above (the agent can move any pin, or take one off with `false`)
+//   base "plain" a neutral map for any other city: only the pins the agent has placed
+export function resolveMap(config) {
+  const c = config && typeof config === "object" ? config : {};
+  const pins = c.pins && typeof c.pins === "object" ? c.pins : {};
+  return { base: c.base === "plain" ? "plain" : "okc", pins };
+}
+
+const inRange = (n, max) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= max;
+
+/** Where one area sits on the map, or null when it has no pin. */
+export function areaPosition(area, config) {
+  const { base, pins } = resolveMap(config);
+  const own = pins[area.slug];
+  if (own === false) return null;
+  if (own && inRange(own.x, MAP_WIDTH) && inRange(own.y, MAP_HEIGHT)) return { x: own.x, y: own.y };
+  return base === "okc" ? OKC_AREAS[area.slug] || null : null;
+}
+
 /** The areas that have a place on the map: [{ area, x, y }], or null when fewer than three do (a map of one or two dots isn't worth drawing). */
-export function mapPins(areas) {
-  const pins = (areas || []).map((area) => ({ area, ...(OKC_AREAS[area.slug] || {}) })).filter((p) => typeof p.x === "number");
+export function mapPins(areas, config) {
+  const pins = (areas || []).map((area) => ({ area, pos: areaPosition(area, config) })).filter((p) => p.pos).map((p) => ({ area: p.area, x: p.pos.x, y: p.pos.y }));
   return pins.length >= 3 ? pins : null;
+}
+
+/** The pins for a site's animated areas map, or null when the animation is off or there aren't enough pins. */
+export function journeyPins(site) {
+  return site?.landing?.animated === true ? mapPins(site.areas, site.landing.map) : null;
+}
+
+/** The pin that anchors the route into the map: Oklahoma City on the OKC map, otherwise the pin nearest the middle of all of them. */
+export function anchorPin(pins) {
+  const okc = pins.find((p) => p.area.slug === "oklahoma-city");
+  if (okc) return okc;
+  const cx = pins.reduce((n, p) => n + p.x, 0) / pins.length;
+  const cy = pins.reduce((n, p) => n + p.y, 0) / pins.length;
+  return pins.reduce((best, p) => (Math.hypot(p.x - cx, p.y - cy) < Math.hypot(best.x - cx, best.y - cy) ? p : best), pins[0]);
 }

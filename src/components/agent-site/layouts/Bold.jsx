@@ -7,6 +7,8 @@ import { sanitizeHtml } from "../../../lib/sanitizeHtml";
 import SiteLink from "../SiteLink";
 import FeaturedTag from "../FeaturedTag";
 import AgentPhotos, { teamAspect } from "../AgentPhotos";
+import { journeyPins, resolveMap } from "../../../lib/areaMaps";
+import AreasJourney from "../AreasJourney";
 
 // "Bold statement" layout (agent_sites.layout = 'bold'). The same sections and data as the classic layout with the
 // volume turned up: oversized uppercase type, full-bleed photos with text laid over them, solid blocks of the theme's
@@ -171,28 +173,34 @@ export function BoldAreas() {
   const { site, isStandalonePage } = useAgentSiteContext();
   const more = useShowMore(site.areas);
   if (site.areas.length === 0) return null;
+  const header = (
+    <Head eyebrow="Areas of expertise" Heading={isStandalonePage ? "h1" : "h2"}>
+      Find your
+      <br />
+      area
+    </Head>
+  );
+  const card = (area, i, sync = {}) => (
+    <SiteLink key={area.id} slug={site.slug} path={`/areas/${area.slug}`} className={`${sync.className || ""} group relative block overflow-hidden bg-[var(--as-surface)] aspect-[3/4]`} onMouseEnter={sync.onMouseEnter} onFocus={sync.onFocus}>
+      {area.photo_url && <img src={area.photo_url} alt={area.name} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" />}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/10" />
+      <span className="absolute top-5 left-5 font-display text-4xl font-bold text-white/80">{String(i + 1).padStart(2, "0")}</span>
+      <div className="absolute inset-x-0 bottom-0 p-7">
+        <p className="font-display text-3xl sm:text-4xl font-bold uppercase leading-none text-white">{area.name}</p>
+        {area.blurb && <p className="mt-3 text-sm text-white/80 max-w-xs">{area.blurb}</p>}
+        <div className="mt-5 h-1.5 w-12 bg-[var(--as-accent)] transition-all duration-300 group-hover:w-24" />
+      </div>
+    </SiteLink>
+  );
+  const pins = journeyPins(site);
+  if (pins) {
+    return <AreasJourney pins={pins} base={resolveMap(site.landing.map).base} sectionClass="px-6 lg:px-10 py-24 sm:py-32 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10" gridClass="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5" header={header} renderCard={card} />;
+  }
   return (
     <section id="areas" className="px-6 lg:px-10 py-24 sm:py-32 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
       <div className="mx-auto max-w-7xl">
-        <Head eyebrow="Areas of expertise" Heading={isStandalonePage ? "h1" : "h2"}>
-          Find your
-          <br />
-          area
-        </Head>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {more.shown.map((area, i) => (
-            <SiteLink key={area.id} slug={site.slug} path={`/areas/${area.slug}`} className="group relative block overflow-hidden bg-[var(--as-surface)] aspect-[3/4]">
-              {area.photo_url && <img src={area.photo_url} alt={area.name} className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" />}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/10" />
-              <span className="absolute top-5 left-5 font-display text-4xl font-bold text-white/80">{String(i + 1).padStart(2, "0")}</span>
-              <div className="absolute inset-x-0 bottom-0 p-7">
-                <p className="font-display text-3xl sm:text-4xl font-bold uppercase leading-none text-white">{area.name}</p>
-                {area.blurb && <p className="mt-3 text-sm text-white/80 max-w-xs">{area.blurb}</p>}
-                <div className="mt-5 h-1.5 w-12 bg-[var(--as-accent)] transition-all duration-300 group-hover:w-24" />
-              </div>
-            </SiteLink>
-          ))}
-        </div>
+        {header}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">{more.shown.map((area, i) => card(area, i))}</div>
         <ShowMoreButton more={more} />
       </div>
     </section>

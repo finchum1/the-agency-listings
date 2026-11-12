@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import "./journey.css";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import useShowMore from "../../hooks/useShowMore";
-import { MAP_HEIGHT, MAP_WIDTH } from "../../lib/areaMaps";
+import { MAP_HEIGHT, MAP_WIDTH, anchorPin } from "../../lib/areaMaps";
+import Basemap, { PinIcon } from "./AreaBasemaps";
 import ShowMoreButton from "./ShowMoreButton";
 import SiteLink from "./SiteLink";
 
@@ -12,7 +13,10 @@ import SiteLink from "./SiteLink";
 // links the plain section has, so every area stays one click (and one crawl) away.
 const prefersLessMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-export default function AreasJourney({ pins, Heading }) {
+// `pins`: [{ area, x, y }] (lib/areaMaps.js). The section's own look comes from the template that renders it: `header` (its eyebrow and heading),
+// `sectionClass` / `innerClass` / `gridClass` (its spacing, background and card grid) and `renderCard(area, index, sync)` (its area card, which spreads `sync`
+// onto the link so hovering a card shows that area on the map). `base` picks the drawing under the pins.
+export default function AreasJourney({ pins, base = "okc", header, sectionClass, innerClass = "mx-auto max-w-7xl", gridClass = "mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-6", renderCard }) {
   const { site } = useAgentSiteContext();
   const more = useShowMore(site.areas);
   const [active, setActive] = useState(pins[0].area.id);
@@ -30,13 +34,13 @@ export default function AreasJourney({ pins, Heading }) {
 
   // The connector: when this section sits directly under the animated cards, the route carries on from the last card's pin, down the margin and into
   // the map, drawn as the visitor scrolls (and only once the cards' own route has finished). Where it lands, the map comes alive.
-  const anchorKey = pins.find((p) => p.area.slug === "oklahoma-city") ? "oklahoma-city" : pins[0].area.slug;
+  const anchorSlug = anchorPin(pins).area.slug;
   useEffect(() => {
     const sec = secRef.current;
     const mapEl = mapRef.current;
     const row = sec?.previousElementSibling?.querySelector(".jn-row");
     if (!sec || !mapEl || !row) return undefined;
-    const a = pins.find((p) => p.area.slug === anchorKey);
+    const a = pins.find((p) => p.area.slug === anchorSlug);
     const ghosts = sec.querySelector(".jn-link .jn-ghosts");
     const lives = sec.querySelector(".jn-link .jn-lives");
     const head = sec.querySelector(".jn-link .jn-head");
@@ -136,7 +140,7 @@ export default function AreasJourney({ pins, Heading }) {
       window.removeEventListener("jn-route", update);
       ro.disconnect();
     };
-  }, [reduce, anchorKey, pins]);
+  }, [reduce, anchorSlug, pins]);
 
   // The map comes alive the first time it is mostly on screen; the tour only runs while it is on screen.
   useEffect(() => {
@@ -175,18 +179,22 @@ export default function AreasJourney({ pins, Heading }) {
   };
   const hasPin = (id) => pins.some((p) => p.area.id === id);
   const current = pins.find((p) => p.area.id === active) || pins[0];
-  const anchor = pins.find((p) => p.area.slug === "oklahoma-city") || pins[0];
+  const anchor = anchorPin(pins);
+  const sync = (area) => ({
+    className: `jn-acard ${area.id === current.area.id ? "jn-active" : ""}`,
+    onMouseEnter: () => hasPin(area.id) && pick(area.id),
+    onFocus: () => hasPin(area.id) && pick(area.id),
+  });
 
   return (
-    <section ref={secRef} id="areas" className="relative px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
+    <section ref={secRef} id="areas" className={`relative ${sectionClass}`}>
       <svg className="jn-route jn-link" aria-hidden="true">
         <g className="jn-ghosts" />
         <g className="jn-lives" />
         <circle className="jn-head" r="6" cx="-20" cy="-20" style={{ opacity: 0 }} />
       </svg>
-      <div className="mx-auto max-w-7xl">
-        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3 text-center">Areas of Expertise</p>
-        <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-10 text-center text-[var(--as-text)]">Find Your Area</Heading>
+      <div className={innerClass}>
+        {header}
 
         <div className="jn-areas-grid">
           <div className="jn-feature text-[var(--as-text)]" aria-live="polite">
@@ -211,7 +219,7 @@ export default function AreasJourney({ pins, Heading }) {
           </div>
 
           <div ref={mapRef} className={`jn-map ${on ? "jn-on" : ""}`}>
-            <OkcBasemap />
+            <Basemap base={base} />
             {pins.map((p) => {
               const d = Math.hypot(p.x - anchor.x, p.y - anchor.y);
               return (
@@ -226,10 +234,7 @@ export default function AreasJourney({ pins, Heading }) {
                   aria-label={p.area.name}
                   aria-pressed={p.area.id === current.area.id}
                 >
-                  <svg viewBox="0 0 24 30" aria-hidden="true">
-                    <path d="M12 29C12 29 2 18.6 2 11.5a10 10 0 1 1 20 0C22 18.6 12 29 12 29z" style={{ fill: "var(--as-accent)" }} stroke="#fff" strokeWidth="2" />
-                    <circle cx="12" cy="11.5" r="3.6" fill="#fff" />
-                  </svg>
+                  <PinIcon />
                   <span>{p.area.name}</span>
                 </button>
               );
@@ -237,63 +242,9 @@ export default function AreasJourney({ pins, Heading }) {
           </div>
         </div>
 
-        <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {more.shown.map((area) => (
-            <SiteLink
-              key={area.id}
-              slug={site.slug}
-              path={`/areas/${area.slug}`}
-              className={`jn-acard group relative block overflow-hidden bg-[var(--as-surface)] aspect-[4/3] ${area.id === current.area.id ? "jn-active" : ""}`}
-              onMouseEnter={() => hasPin(area.id) && pick(area.id)}
-              onFocus={() => hasPin(area.id) && pick(area.id)}
-            >
-              {area.photo_url && <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 to-transparent flex flex-col items-center justify-end p-6 text-center">
-                <p className="text-white font-display text-xl font-semibold">{area.name}</p>
-                {area.blurb && <p className="text-white/75 text-sm mt-1 max-w-xs">{area.blurb}</p>}
-              </div>
-            </SiteLink>
-          ))}
-        </div>
+        <div className={gridClass}>{more.shown.map((area, i) => renderCard(area, i, sync(area)))}</div>
         <ShowMoreButton more={more} />
       </div>
     </section>
-  );
-}
-
-/** The Oklahoma City metro, drawn: the three interstates, Route 66 through Edmond, two lakes and the Canadian River. Illustrative, not to scale. */
-function OkcBasemap() {
-  return (
-    <svg className="jn-base" viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <defs>
-        <pattern id="jn-grid" width="50" height="50" patternUnits="userSpaceOnUse">
-          <path className="jn-grid-line" d="M50 0H0V50" />
-        </pattern>
-      </defs>
-      <rect width={MAP_WIDTH} height={MAP_HEIGHT} fill="url(#jn-grid)" />
-      <ellipse className="jn-water" cx="392" cy="392" rx="40" ry="20" transform="rotate(-18 392 392)" />
-      <ellipse className="jn-water" cx="318" cy="470" rx="24" ry="12" transform="rotate(10 318 470)" />
-      <path className="jn-water" d="M0 628 C120 600 220 650 340 626 S560 600 700 632 S900 640 1000 610 L1000 660 C900 690 780 676 680 676 S470 650 340 676 S110 690 0 670Z" />
-      {[
-        "M548 720 L538 500 L525 452 L548 300 L572 150 L586 0",
-        "M0 506 L520 470 L1000 440",
-        "M170 660 L360 540 L525 452 L720 330 L1000 190",
-      ].map((d) => (
-        <g key={d}>
-          <path className="jn-rd jn-case jn-draw" d={d} />
-          <path className="jn-rd jn-core jn-draw" d={d} />
-        </g>
-      ))}
-      <path className="jn-rd jn-r66 jn-draw" d="M330 268 L470 252 L560 214 L660 190 L760 200 L1000 230" />
-      <text className="jn-lbl" x="598" y="64">I-35</text>
-      <text className="jn-lbl" x="880" y="428">I-40</text>
-      <text className="jn-lbl" x="820" y="236" transform="rotate(-24 820 236)">I-44</text>
-      <text className="jn-lbl" x="790" y="188" style={{ fill: "var(--as-accent)", opacity: 0.7 }}>Route 66</text>
-      <text className="jn-lbl" x="400" y="642" style={{ fill: "#8fb0b5" }}>Canadian River</text>
-      <g transform="translate(940 60)">
-        <circle r="20" style={{ fill: "var(--as-bg-alt)" }} stroke="rgba(0,0,0,.1)" />
-        <path d="M0 -13 L5 4 L0 1 L-5 4Z" style={{ fill: "var(--as-text)" }} />
-      </g>
-    </svg>
   );
 }

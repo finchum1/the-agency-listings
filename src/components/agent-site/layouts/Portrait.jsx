@@ -7,6 +7,8 @@ import { sanitizeHtml } from "../../../lib/sanitizeHtml";
 import SiteLink from "../SiteLink";
 import FeaturedTag from "../FeaturedTag";
 import AgentPhotos, { teamAspect } from "../AgentPhotos";
+import { journeyPins, resolveMap } from "../../../lib/areaMaps";
+import AreasJourney from "../AreasJourney";
 
 // "Portrait split" layout (agent_sites.layout = 'portrait'). Leads with the agent: a tall portrait next to their name,
 // tagline and a way to connect, then warm, card-based sections underneath. Colors come from the same --as-* theme
@@ -162,24 +164,32 @@ export function PortraitAreas() {
   const more = useShowMore(site.areas);
   if (site.areas.length === 0) return null;
   const Heading = isStandalonePage ? "h1" : "h2";
+  const header = (
+    <>
+      <p className={eyebrow}>Areas of expertise</p>
+      <Heading className={`${h2Class} mt-3 mb-10`}>Find your area</Heading>
+    </>
+  );
+  const areaCard = (area, i, sync = {}) => (
+    <SiteLink key={area.id} slug={site.slug} path={`/areas/${area.slug}`} className={`${sync.className || ""} group flex ${card} overflow-hidden transition-shadow hover:shadow-[0_18px_40px_-22px_rgba(0,0,0,0.45)]`} onMouseEnter={sync.onMouseEnter} onFocus={sync.onFocus}>
+      <div className="w-32 sm:w-44 shrink-0 bg-[var(--as-surface)] overflow-hidden">
+        {area.photo_url && <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}
+      </div>
+      <div className="p-5 sm:p-6 flex flex-col justify-center min-w-0">
+        <p className="font-display text-xl font-semibold text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{area.name}</p>
+        {area.blurb && <p className="mt-1.5 text-sm leading-relaxed text-[var(--as-text)]/60">{area.blurb}</p>}
+      </div>
+    </SiteLink>
+  );
+  const pins = journeyPins(site);
+  if (pins) {
+    return <AreasJourney pins={pins} base={resolveMap(site.landing.map).base} sectionClass="px-6 lg:px-10 py-24 bg-[var(--as-bg)]" innerClass="mx-auto max-w-6xl" gridClass="mt-10 grid md:grid-cols-2 gap-5" header={header} renderCard={areaCard} />;
+  }
   return (
     <section id="areas" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
       <div className="mx-auto max-w-6xl">
-        <p className={eyebrow}>Areas of expertise</p>
-        <Heading className={`${h2Class} mt-3 mb-10`}>Find your area</Heading>
-        <div className="grid md:grid-cols-2 gap-5">
-          {more.shown.map((area) => (
-            <SiteLink key={area.id} slug={site.slug} path={`/areas/${area.slug}`} className={`group flex ${card} overflow-hidden transition-shadow hover:shadow-[0_18px_40px_-22px_rgba(0,0,0,0.45)]`}>
-              <div className="w-32 sm:w-44 shrink-0 bg-[var(--as-surface)] overflow-hidden">
-                {area.photo_url && <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}
-              </div>
-              <div className="p-5 sm:p-6 flex flex-col justify-center min-w-0">
-                <p className="font-display text-xl font-semibold text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{area.name}</p>
-                {area.blurb && <p className="mt-1.5 text-sm leading-relaxed text-[var(--as-text)]/60">{area.blurb}</p>}
-              </div>
-            </SiteLink>
-          ))}
-        </div>
+        {header}
+        <div className="grid md:grid-cols-2 gap-5">{more.shown.map((area, i) => areaCard(area, i))}</div>
         <ShowMoreButton more={more} />
       </div>
     </section>
