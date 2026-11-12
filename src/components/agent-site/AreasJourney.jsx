@@ -9,8 +9,9 @@ import SiteLink from "./SiteLink";
 
 // The animated "Find Your Area" (landing.animated on, and at least three of the agent's areas have a place on the map: see lib/areaMaps.js).
 // A picture of the metro with a pin for each area: the roads draw in and the pins drop when it scrolls into view, and pointing at a pin (or at an
-// area's photo below) shows that area beside the map. It tours the areas by itself until the visitor touches it. The cards underneath are the same
-// links the plain section has, so every area stays one click (and one crawl) away.
+// area's photo below) shows that area beside the map. It tours the areas by itself until the visitor touches it, and the visitor can move through them with
+// the arrows (wide screens) or by swiping a row of area cards under the map (phones, where the photo panel and the map wouldn't fit on screen together). The
+// cards underneath are the same links the plain section has, so every area stays one click (and one crawl) away.
 const prefersLessMotion = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // `pins`: [{ area, x, y }] (lib/areaMaps.js). The section's own look comes from the template that renders it: `header` (its eyebrow and heading),
@@ -25,6 +26,10 @@ export default function AreasJourney({ pins, base = "okc", header, sectionClass,
   const touched = useRef(false);
   const mapRef = useRef(null);
   const secRef = useRef(null);
+  const railRef = useRef(null);
+  const railTimer = useRef(0);
+  const fromRail = useRef(false);
+  const programmatic = useRef(false);
   const reduce = useMemo(prefersLessMotion, []);
 
   // Roads need their length to draw themselves in.
@@ -177,11 +182,51 @@ export default function AreasJourney({ pins, base = "okc", header, sectionClass,
     touched.current = true;
     setActive(id);
   };
+  const index = Math.max(0, pins.findIndex((p) => p.area.id === active));
+  const step = (d) => pick(pins[(index + d + pins.length) % pins.length].area.id);
   const hasPin = (id) => pins.some((p) => p.area.id === id);
+
+  // Phones: the swipeable row under the map follows the highlighted area (a pin tap, the tour), and swiping it changes the highlighted pin.
+  useEffect(() => {
+    if (fromRail.current) {
+      fromRail.current = false;
+      return;
+    }
+    const rail = railRef.current;
+    const card = rail?.children[index];
+    if (!rail || !card || rail.offsetParent === null) return;
+    programmatic.current = true;
+    rail.scrollTo({ left: card.offsetLeft - rail.firstElementChild.offsetLeft, behavior: reduce ? "auto" : "smooth" });
+    clearTimeout(railTimer.current);
+    railTimer.current = setTimeout(() => (programmatic.current = false), 700);
+  }, [index, reduce]);
+  useEffect(() => () => clearTimeout(railTimer.current), []);
+  const onRailScroll = () => {
+    const rail = railRef.current;
+    if (!rail) return;
+    if (programmatic.current) {
+      clearTimeout(railTimer.current);
+      railTimer.current = setTimeout(() => (programmatic.current = false), 150);
+      return;
+    }
+    touched.current = true;
+    const first = rail.firstElementChild;
+    const gap = parseFloat(getComputedStyle(rail).columnGap) || 12;
+    const i = Math.max(0, Math.min(pins.length - 1, Math.round(rail.scrollLeft / (first.offsetWidth + gap))));
+    if (pins[i].area.id !== active) {
+      fromRail.current = true;
+      setActive(pins[i].area.id);
+    }
+  };
+  const onRailTouch = () => {
+    touched.current = true;
+    programmatic.current = false;
+  };
   const current = pins.find((p) => p.area.id === active) || pins[0];
   const anchor = anchorPin(pins);
+  const allPinned = site.areas.every((a) => hasPin(a.id));
   const sync = (area) => ({
-    className: `jn-acard ${area.id === current.area.id ? "jn-active" : ""}`,
+    className: `jn-acard ${hasPin(area.id) ? "jn-pinned" : ""} ${area.id === current.area.id ? "jn-active" : ""}`,
     onMouseEnter: () => hasPin(area.id) && pick(area.id),
     onFocus: () => hasPin(area.id) && pick(area.id),
   });
@@ -196,20 +241,37 @@ export default function AreasJourney({ pins, base = "okc", header, sectionClass,
       <div className={innerClass}>
         {header}
 
-        <div className="jn-areas-grid">
+        <div
+          className="jn-areas-grid"
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+              if (e.target.closest?.(".jn-rail")) return;
+              e.preventDefault();
+              step(e.key === "ArrowRight" ? 1 : -1);
+            }
+          }}
+        >
           <div className="jn-feature text-[var(--as-text)]" aria-live="polite">
             <div className="jn-feature-ph">
               {pins.map((p) =>
                 p.area.photo_url ? <img key={p.area.id} src={p.area.photo_url} alt="" loading="lazy" className={p.area.id === current.area.id ? "jn-show" : ""} /> : null,
               )}
+              <div className="jn-arrows">
+                <button type="button" onClick={() => step(-1)} aria-label="Previous area">
+                  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M10 3L5 8l5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
+                <button type="button" onClick={() => step(1)} aria-label="Next area">
+                  <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
+              </div>
             </div>
             <div className="flex flex-1 flex-col p-6 pb-7">
               <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-2">Area</p>
               <p className="font-display text-[28px] font-semibold leading-tight">{current.area.name}</p>
               {current.area.blurb && <p className="mt-2.5 text-[15.5px] leading-relaxed opacity-70 min-h-[4.8em]">{current.area.blurb}</p>}
-              <div className="jn-dots" aria-hidden="true">
+              <div className="jn-dots">
                 {pins.map((p) => (
-                  <i key={p.area.id} className={p.area.id === current.area.id ? "jn-on" : ""} />
+                  <button key={p.area.id} type="button" onClick={() => pick(p.area.id)} aria-label={`Show ${p.area.name}`} className={p.area.id === current.area.id ? "jn-on" : ""} />
                 ))}
               </div>
               <SiteLink slug={site.slug} path={`/areas/${current.area.slug}`} className="mt-auto pt-5 text-xs font-medium tracked-wide uppercase text-[var(--as-accent)]">
@@ -240,10 +302,35 @@ export default function AreasJourney({ pins, base = "okc", header, sectionClass,
               );
             })}
           </div>
+
+          <div className="jn-rail-wrap">
+            <div ref={railRef} className="jn-rail" onScroll={onRailScroll} onTouchStart={onRailTouch} onPointerDown={onRailTouch}>
+              {pins.map((p) => (
+                <SiteLink
+                  key={p.area.id}
+                  slug={site.slug}
+                  path={`/areas/${p.area.slug}`}
+                  className={`jn-rail-card text-[var(--as-text)] ${p.area.id === current.area.id ? "jn-active" : ""}`}
+                >
+                  <span className="jn-rail-ph">{p.area.photo_url && <img src={p.area.photo_url} alt="" loading="lazy" />}</span>
+                  <span className="jn-rail-tx">
+                    <span className="jn-rail-name font-display">{p.area.name}</span>
+                    {p.area.blurb && <span className="jn-rail-blurb">{p.area.blurb}</span>}
+                    <span className="jn-rail-go">Explore →</span>
+                  </span>
+                </SiteLink>
+              ))}
+            </div>
+            <p className="jn-rail-hint" aria-live="polite">
+              Swipe to browse · {index + 1} of {pins.length}
+            </p>
+          </div>
         </div>
 
-        <div className={gridClass}>{more.shown.map((area, i) => renderCard(area, i, sync(area)))}</div>
-        <ShowMoreButton more={more} />
+        <div className={`${gridClass} ${allPinned ? "jn-narrow-hide" : ""}`}>{more.shown.map((area, i) => renderCard(area, i, sync(area)))}</div>
+        <div className={allPinned ? "jn-narrow-hide" : ""}>
+          <ShowMoreButton more={more} />
+        </div>
       </div>
     </section>
   );

@@ -55,7 +55,7 @@
 @keyframes jn-ping { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.65); } 70%, 100% { box-shadow: 0 0 0 14px rgba(255, 255, 255, 0); } }
 
 /* ------------------------------ the area map ------------------------------ */
-.jn-areas-grid { display: grid; gap: 28px; margin-top: 3.5rem; align-items: start; }
+.jn-areas-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; margin-top: 3.5rem; align-items: start; }
 @media (min-width: 900px) { .jn-areas-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr); } }
 .jn-map { position: relative; width: 100%; overflow: hidden; aspect-ratio: 1000 / 720; background: color-mix(in oklab, var(--as-bg-alt) 88%, var(--as-text) 6%); border: 1px solid color-mix(in oklab, var(--as-text) 12%, transparent); }
 @media (min-width: 900px) { .jn-map { order: 2; } .jn-feature { order: 1; } }
@@ -87,11 +87,37 @@
 .jn-feature-ph img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.06); transition: opacity 0.7s, transform 5s ease-out; }
 .jn-feature-ph img.jn-show { opacity: 1; transform: scale(1); }
 .jn-dots { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
-.jn-dots i { width: 7px; height: 7px; border-radius: 50%; background: color-mix(in oklab, var(--as-text) 16%, transparent); transition: background 0.3s, transform 0.3s; }
-.jn-dots i.jn-on { background: var(--as-accent); transform: scale(1.4); }
+.jn-dots button { width: 9px; height: 9px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; background: color-mix(in oklab, var(--as-text) 16%, transparent); transition: background 0.3s, transform 0.3s; }
+.jn-dots button:hover { background: color-mix(in oklab, var(--as-text) 40%, transparent); }
+.jn-dots button.jn-on { background: var(--as-accent); transform: scale(1.4); }
+.jn-arrows { position: absolute; right: 12px; bottom: 12px; z-index: 2; display: flex; gap: 8px; }
+.jn-arrows button { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; border: 0; cursor: pointer; color: #fff; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(6px); transition: background 0.2s; }
+.jn-arrows button:hover { background: rgba(0, 0, 0, 0.78); }
+.jn-rail-wrap { display: none; }
 .jn-acard { outline: 2px solid transparent; outline-offset: -2px; transition: outline-color 0.3s, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
 .jn-acard.jn-active { outline-color: var(--as-accent); transform: translateY(-4px); }
 .jn-acard.jn-active img { transform: scale(1.07); }
+
+/* ------------------------------ phones: the map and the areas together ------------------------------ */
+/* The big photo panel and the map are too tall to see together on a phone, so the map leads and a swipeable row of area cards sits right under it
+   (swiping highlights that area's pin; tapping a pin scrolls to its card). */
+@media (max-width: 899px) {
+  .jn-feature { display: none; }
+  .jn-rail-wrap { display: block; margin: 14px -24px 0; }
+  .jn-rail { position: relative; display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-left: 24px; padding: 4px 24px 14px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .jn-rail::-webkit-scrollbar { display: none; }
+  .jn-rail-card { flex: 0 0 78%; scroll-snap-align: start; display: flex; flex-direction: column; background: var(--as-bg); border: 1px solid color-mix(in oklab, var(--as-text) 12%, transparent); outline: 2px solid transparent; outline-offset: -2px; transition: outline-color 0.3s; }
+  .jn-rail-card.jn-active { outline-color: var(--as-accent); }
+  .jn-rail-ph { display: block; aspect-ratio: 16 / 9; overflow: hidden; background: var(--as-surface); }
+  .jn-rail-ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .jn-rail-tx { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px 14px; }
+  .jn-rail-name { font-size: 20px; font-weight: 600; line-height: 1.15; }
+  .jn-rail-blurb { font-size: 13.5px; line-height: 1.45; opacity: 0.7; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .jn-rail-go { margin-top: 4px; font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--as-accent); }
+  .jn-rail-hint { margin: 0 24px; font-size: 12px; opacity: 0.55; text-align: center; color: var(--as-text); }
+  .jn-acard.jn-pinned { display: none !important; }
+  .jn-narrow-hide { display: none; }
+}
 
 /* ------------------------------ less motion ------------------------------ */
 @media (prefers-reduced-motion: reduce) {
