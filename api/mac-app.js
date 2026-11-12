@@ -17,7 +17,7 @@
 // The Leads and Pipeline boards (the dashboard's People boards), for the native Leads & Pipeline window:
 //   GET  /api/mac-app?a=people_board     both boards' columns, each column's follow-up cadence (days), and everyone on them (not archived)
 //   GET  /api/mac-app?a=person&person_id=   one person: their card, what has been logged (notes and activity), and their contact record's relationship and tags
-//   POST /api/mac-app?a=person_start     {group, name, phone?, email?, side?, stage?, follow_up?}   a new lead or pipeline card (source "Added manually")
+//   POST /api/mac-app?a=person_start     {id?, group, name, phone?, email?, side?, stage?, follow_up?}   a new lead or pipeline card (source "Added manually")
 //   POST /api/mac-app?a=person_update    {person_id, changes}   name, email, phone, side, source, stage (a column of their board), next follow-up
 //   POST /api/mac-app?a=person_move      {person_id, stage}   to the next board: a lead goes to Pipeline, a pipeline person starts a deal
 //   POST /api/mac-app?a=person_archive   {person_id, reason}      POST ?a=person_restore {person_id}
@@ -41,7 +41,7 @@
 //                                               (to / cc), plus which checklist task offers which template. Nothing is sent; the app opens each in the person's own mail app.
 // Starting a deal, as the dashboard's "Start a deal" does:
 //   GET  /api/mac-app?a=deal_start_options   who a deal can be started for (you, and for a coordinator the agents in their office) and the columns each has
-//   POST /api/mac-app?a=deal_start           {agent: "me" | agent id, name, side, property_address?, phone?, email?, price?, contract_date?, closing_date?, stage?}   returns {id, note}
+//   POST /api/mac-app?a=deal_start           {id? (your own deal only; sending the same id again returns it), agent: "me" | agent id, name, side, property_address?, phone?, email?, price?, contract_date?, closing_date?, stage?}   returns {id, note}
 // Editing a deal (its details, the people on it, money, key dates, earnest money, cash, side and stage), as the dashboard's Details and Overview tabs do:
 //   POST /api/mac-app?a=deal_update    {deal_id, changes}   see DEAL_EDIT for the fields; `column` is a coordinator's own board column; returns the deal as ?a=deal does
 // Adding and removing a deal's checklist tasks and documents (the dashboard's Tasks and Documents tabs):
@@ -71,7 +71,7 @@
 //   POST /api/mac-app?a=task_reopen        {task_id}
 //   POST /api/mac-app?a=task_update        {task_id, changes: {title?, due_date?, recurrence?, start_time?, duration_min?, list?, checklist?}, today?}
 //   POST /api/mac-app?a=task_delete        {task_id}
-//   POST /api/mac-app?a=contact      {first_name, last_name, company, phone, email, relationship?, force?}   a duplicate is reported, not created, unless force
+//   POST /api/mac-app?a=contact      {id?, first_name, last_name, company, phone, email, relationship?, force?}   a duplicate is reported, not created, unless force
 // The native Contacts window:
 //   GET  /api/mac-app?a=contacts&since=   every contact changed since then (all of them without `since`), the ids that exist now (so deletions show), tags, tag links, open follow-ups
 //   GET  /api/mac-app?a=history&contact_id=   that contact's notes, synced texts and calls, and card notes, newest first
@@ -645,7 +645,10 @@ export default async function handler(req, res) {
         const stage = want ? stages[group].find((x) => x.toLowerCase() === want) : stages[group][0];
         if (!stage) return bad(res, "That isn't one of the columns.");
         const row = { owner_id: owner, name, phone: String(body.phone || "").trim().slice(0, 40), email, stage_group: group, stage, source: "Added manually", ...(body.side ? { side: body.side } : {}), ...(body.follow_up ? { next_follow_up: body.follow_up } : {}) };
-        const { data, error } = await admin.from("people").insert(row).select("id").single();
+        // Made on the Mac with a client id (possibly while offline): sending it again finds the person it already made.
+        const cid = clientId(body.id);
+        if (cid) { const { data: had } = await admin.from("people").select("id").eq("id", cid).eq("owner_id", owner).maybeSingle(); if (had) return res.status(200).json({ ok: true, person: await out(had.id) }); }
+        const { data, error } = await admin.from("people").insert({ ...(cid ? { id: cid } : {}), ...row }).select("id").single();
         if (error) return bad(res, "Couldn't save it.", 500);
         return res.status(200).json({ ok: true, person: await out(data.id) });
       }
@@ -749,7 +752,10 @@ export default async function handler(req, res) {
         if (!me?.people_enabled) return bad(res, "Deals isn't turned on for your account.", 403);
         const stage = pickStage(await stagesOf(owner));
         if (!stage) return bad(res, "That isn't one of your columns.");
-        const { data, error } = await admin.from("people").insert({ ...fields, owner_id: owner, stage, source: "Added manually" }).select("id").single();
+        // Made on the Mac with a client id (possibly while offline): sending it again finds the deal it already made.
+        const cid = clientId(body.id);
+        if (cid) { const { data: had } = await admin.from("people").select("id").eq("id", cid).eq("owner_id", owner).eq("stage_group", "transaction").maybeSingle(); if (had) return res.status(200).json({ ok: true, id: had.id, note: "" }); }
+        const { data, error } = await admin.from("people").insert({ ...(cid ? { id: cid } : {}), ...fields, owner_id: owner, stage, source: "Added manually" }).select("id").single();
         return error ? bad(res, "Couldn't start it.", 500) : res.status(200).json({ ok: true, id: data.id, note: "" });
       }
 
@@ -1585,13 +1591,16 @@ export default async function handler(req, res) {
       const phone = String(body.phone || "").trim().slice(0, 40), email = String(body.email || "").trim().toLowerCase().slice(0, 254);
       if (!first && !last && !company) return bad(res, "Add a name.");
       if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return bad(res, "That email address doesn't look right.");
+      // Made on the Mac with a client id (possibly while offline): sending it again after a dropped connection finds the contact it already made.
+      const cid = clientId(body.id);
+      if (cid) { const { data: had } = await admin.from("contacts").select("id, first_name, last_name, company").eq("id", cid).eq("owner_id", owner).maybeSingle(); if (had) return res.status(200).json({ ok: true, id: had.id, name: fullName(had) }); }
       if (!body.force && (email || digits(phone).length >= 7)) {
         const clauses = [...(email ? [`email.eq.${email}`] : []), ...(digits(phone).length >= 7 ? [`search_text.ilike.%${digits(phone).slice(-10)}%`] : [])].join(",");
         const { data: dup } = await admin.from("contacts").select("id, first_name, last_name, company").eq("owner_id", owner).eq("archived", false).or(clauses).limit(1);
         if (dup?.length) return res.status(200).json({ duplicate: { id: dup[0].id, name: fullName(dup[0]) } });
       }
       const relationship = RELATIONSHIPS.includes(body.relationship) ? body.relationship : "sphere";
-      const { data, error } = await admin.from("contacts").insert({ owner_id: owner, first_name: first, last_name: last, company, phone, email, relationship }).select("id, first_name, last_name, company").single();
+      const { data, error } = await admin.from("contacts").insert({ ...(cid ? { id: cid } : {}), owner_id: owner, first_name: first, last_name: last, company, phone, email, relationship }).select("id, first_name, last_name, company").single();
       if (error) return bad(res, "Couldn't save it.", 500);
       return res.status(200).json({ ok: true, id: data.id, name: fullName(data) });
     }
