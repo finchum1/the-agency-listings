@@ -1,0 +1,97 @@
+/* The animated "Where are you headed next?" cards and the "Find Your Area" map (LandingCards.jsx, AreasJourney.jsx). Everything takes its colors from the
+   site theme (--as-*), so it follows whichever template the agent chose. Off unless landing.animated is on. A visitor who asks their device for less
+   motion gets the finished picture straight away (the components skip the animation, and the rules at the bottom switch every transition off). */
+
+/* ------------------------------ the route and its pins ------------------------------ */
+.jn-row { position: relative; }
+.jn-route { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; overflow: visible; }
+.jn-route .jn-ghost { fill: none; stroke: color-mix(in oklab, var(--as-text) 22%, transparent); stroke-width: 2; stroke-dasharray: 1 9; stroke-linecap: round; }
+.jn-route .jn-live { fill: none; stroke: var(--as-accent); stroke-width: 3; stroke-linecap: round; }
+.jn-head { fill: var(--as-accent); filter: drop-shadow(0 0 6px color-mix(in oklab, var(--as-accent) 60%, transparent)); transition: opacity 0.3s; }
+
+.jn-grid { display: grid; gap: 34px; margin-top: 3rem; }
+.jn-row.jn-armed .jn-item { opacity: 0; transform: translateY(30px); transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); }
+.jn-row.jn-armed .jn-item.jn-in { opacity: 1; transform: none; }
+.jn-item { position: relative; display: flex; flex-direction: column; }
+.jn-item > * { flex: 1; }
+.jn-pin { position: absolute; z-index: 4; width: 30px; height: 30px; opacity: 0; transform: translateY(-26px) scale(0.4); transition: opacity 0.35s, transform 0.7s cubic-bezier(0.34, 1.7, 0.64, 1); pointer-events: none; }
+.jn-pin svg { display: block; width: 30px; height: 30px; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25)); }
+.jn-pin::after { content: ""; position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px; border-radius: 50%; border: 2px solid var(--as-accent); opacity: 0; }
+.jn-pin.jn-on { opacity: 1; transform: none; }
+.jn-pin.jn-on::after { animation: jn-ring 1.4s 0.25s ease-out 1; }
+@keyframes jn-ring { 0% { opacity: 0.8; transform: scale(0.4); } 100% { opacity: 0; transform: scale(2.6); } }
+/* wide: pins sit above the row, centered on each card */
+.jn-wide .jn-grid { grid-template-columns: repeat(var(--jn-cols, 3), minmax(0, 1fr)); margin-top: 5.5rem; }
+.jn-wide .jn-pin { left: 50%; top: -58px; margin-left: -15px; }
+/* narrow: one column, the route runs down the left margin with a pin beside each card */
+.jn-narrow .jn-grid { grid-template-columns: minmax(0, 1fr); max-width: 34rem; margin-left: auto; margin-right: auto; padding-left: 28px; margin-top: 2.5rem; }
+.jn-narrow .jn-pin { left: -40px; top: 26px; }
+
+/* what each card shows on hover: the steps of the journey, filling in */
+.jn-steps { display: flex; position: relative; margin: 1rem 0 0.25rem; }
+.jn-steps::before { content: ""; position: absolute; left: 6px; right: 6px; top: 5px; height: 2px; background: color-mix(in oklab, var(--as-text) 14%, transparent); }
+.jn-steps i { position: absolute; left: 6px; top: 5px; height: 2px; width: 0; background: var(--as-accent); transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+.jn-item:hover .jn-steps i, .jn-item:focus-within .jn-steps i { width: calc(100% - 12px); }
+.jn-steps span { position: relative; flex: 1; padding-top: 18px; font-size: 9.5px; letter-spacing: 0.04em; white-space: nowrap; text-transform: uppercase; opacity: 0.55; }
+.jn-steps span::before { content: ""; position: absolute; left: 0; top: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--as-bg-alt); border: 2px solid color-mix(in oklab, var(--as-text) 18%, transparent); transition: border-color 0.3s, background 0.3s; }
+.jn-item:hover .jn-steps span::before, .jn-item:focus-within .jn-steps span::before { border-color: var(--as-accent); background: var(--as-accent); }
+.jn-item:hover .jn-steps span:nth-of-type(2)::before { transition-delay: 0.18s; }
+.jn-item:hover .jn-steps span:nth-of-type(3)::before { transition-delay: 0.36s; }
+.jn-item:hover .jn-steps span:nth-of-type(4)::before { transition-delay: 0.54s; }
+.jn-item:hover .jn-steps span:nth-of-type(5)::before { transition-delay: 0.72s; }
+
+/* the home value card: comparables appear around the property when the address box is used */
+.jn-comp { position: absolute; z-index: 1; width: 10px; height: 10px; border-radius: 50%; background: #fff; opacity: 0; transform: scale(0.2); transition: opacity 0.4s, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); pointer-events: none; }
+.jn-subject { position: absolute; z-index: 1; left: 50%; top: 34%; width: 16px; height: 16px; margin: -8px; border-radius: 50%; background: var(--as-accent); border: 3px solid #fff; opacity: 0; transition: opacity 0.4s; pointer-events: none; }
+.jn-item:focus-within .jn-comp, .jn-item:hover .jn-comp { opacity: 1; transform: scale(1); animation: jn-ping 2.4s ease-out infinite; animation-delay: calc(var(--i) * 0.25s); transition-delay: calc(var(--i) * 0.09s); }
+.jn-item:focus-within .jn-subject, .jn-item:hover .jn-subject { opacity: 1; }
+@keyframes jn-ping { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.65); } 70%, 100% { box-shadow: 0 0 0 14px rgba(255, 255, 255, 0); } }
+
+/* ------------------------------ the area map ------------------------------ */
+.jn-areas-grid { display: grid; gap: 28px; margin-top: 3.5rem; align-items: start; }
+@media (min-width: 900px) { .jn-areas-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr); } }
+.jn-map { position: relative; width: 100%; overflow: hidden; aspect-ratio: 1000 / 720; background: color-mix(in oklab, var(--as-bg-alt) 88%, var(--as-text) 6%); border: 1px solid color-mix(in oklab, var(--as-text) 12%, transparent); }
+@media (min-width: 900px) { .jn-map { order: 2; } .jn-feature { order: 1; } }
+.jn-map svg.jn-base { position: absolute; inset: 0; width: 100%; height: 100%; }
+.jn-grid-line { fill: none; stroke: color-mix(in oklab, var(--as-text) 7%, transparent); stroke-width: 1; }
+.jn-water { fill: #cfe0e3; opacity: 0.85; }
+.jn-rd { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.jn-rd.jn-case { stroke: var(--as-bg-alt); stroke-width: 11; }
+.jn-rd.jn-core { stroke: color-mix(in oklab, var(--as-text) 16%, var(--as-bg-alt)); stroke-width: 7; }
+.jn-rd.jn-r66 { stroke: var(--as-accent); stroke-width: 2.4; stroke-dasharray: 3 7; opacity: 0.8; }
+.jn-draw { stroke-dasharray: var(--len, 2000); stroke-dashoffset: var(--len, 2000); transition: stroke-dashoffset 1.6s cubic-bezier(0.65, 0, 0.35, 1); }
+.jn-map.jn-on .jn-draw { stroke-dashoffset: 0; }
+.jn-r66.jn-draw { stroke-dasharray: 3 7; stroke-dashoffset: 0; opacity: 0; transition: opacity 1.2s 0.8s; }
+.jn-map.jn-on .jn-r66.jn-draw { opacity: 0.8; }
+.jn-lbl { font: 700 10px var(--font-body, sans-serif); letter-spacing: 0.16em; text-transform: uppercase; fill: color-mix(in oklab, var(--as-text) 38%, var(--as-bg-alt)); }
+.jn-mp { position: absolute; z-index: 5; transform: translate(-50%, -100%); cursor: pointer; background: none; border: 0; padding: 0; opacity: 0; translate: 0 -30px; transition: opacity 0.35s, translate 0.7s cubic-bezier(0.34, 1.7, 0.64, 1); transition-delay: var(--d, 0s); }
+.jn-map.jn-on .jn-mp { opacity: 1; translate: 0 0; }
+.jn-mp svg { display: block; width: 24px; height: 30px; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.28)); transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); transform-origin: 50% 100%; }
+.jn-mp span { position: absolute; left: 50%; top: 100%; transform: translate(-50%, 2px); white-space: nowrap; font-size: 11.5px; font-weight: 700; color: var(--as-text); background: color-mix(in oklab, var(--as-bg-alt) 88%, transparent); padding: 2px 7px; border-radius: 99px; transition: background 0.25s, color 0.25s; }
+.jn-mp.jn-active svg { transform: scale(1.35); }
+.jn-mp.jn-active span { background: var(--as-text); color: var(--as-bg-alt); }
+.jn-mp.jn-active { z-index: 6; }
+.jn-mp.jn-active::before { content: ""; position: absolute; left: 50%; bottom: -6px; width: 26px; height: 26px; margin-left: -13px; border-radius: 50%; background: color-mix(in oklab, var(--as-accent) 35%, transparent); animation: jn-pulse 1.6s ease-out infinite; z-index: -1; }
+@keyframes jn-pulse { 0% { transform: scale(0.4); opacity: 0.9; } 100% { transform: scale(2.6); opacity: 0; } }
+@media (max-width: 899px) { .jn-mp span { display: none; } .jn-mp.jn-active span { display: block; } }
+
+.jn-feature { display: flex; flex-direction: column; align-self: stretch; background: var(--as-bg); border: 1px solid color-mix(in oklab, var(--as-text) 12%, transparent); }
+.jn-feature-ph { position: relative; aspect-ratio: 4 / 3; overflow: hidden; background: var(--as-surface); }
+.jn-feature-ph img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.06); transition: opacity 0.7s, transform 5s ease-out; }
+.jn-feature-ph img.jn-show { opacity: 1; transform: scale(1); }
+.jn-dots { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+.jn-dots i { width: 7px; height: 7px; border-radius: 50%; background: color-mix(in oklab, var(--as-text) 16%, transparent); transition: background 0.3s, transform 0.3s; }
+.jn-dots i.jn-on { background: var(--as-accent); transform: scale(1.4); }
+.jn-acard { outline: 2px solid transparent; outline-offset: -2px; transition: outline-color 0.3s, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+.jn-acard.jn-active { outline-color: var(--as-accent); transform: translateY(-4px); }
+.jn-acard.jn-active img { transform: scale(1.07); }
+
+/* ------------------------------ less motion ------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .jn-row *, .jn-row *::before, .jn-row *::after, .jn-map, .jn-map *, .jn-feature *, .jn-acard { transition: none !important; animation: none !important; }
+  .jn-row.jn-armed .jn-item { opacity: 1; transform: none; }
+  .jn-pin { opacity: 1; transform: none; }
+  .jn-mp { opacity: 1; translate: 0 0; }
+  .jn-draw { stroke-dashoffset: 0; }
+  .jn-r66.jn-draw { opacity: 0.8; }
+}

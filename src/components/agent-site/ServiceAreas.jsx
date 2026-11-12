@@ -3,6 +3,8 @@ import ShowMoreButton from "./ShowMoreButton";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import SiteLink from "./SiteLink";
 import { LAYOUT_SECTIONS } from "./layouts";
+import { mapPins } from "../../lib/areaMaps";
+import AreasJourney from "./AreasJourney";
 
 export default function ServiceAreas() {
   const { site, isStandalonePage } = useAgentSiteContext();
@@ -13,6 +15,9 @@ export default function ServiceAreas() {
   // See Bio.jsx's comment — Home already has an H1 from Hero.jsx, but
   // this section IS the page at standalone /areas.
   const Heading = isStandalonePage ? "h1" : "h2";
+  // The animated map (landing.animated, set in Site Details): only when enough of the agent's areas have a place on it.
+  const pins = site.landing?.animated === true ? mapPins(site.areas) : null;
+  if (pins) return <AreasJourney pins={pins} Heading={Heading} />;
 
   return (
     <section id="areas" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">

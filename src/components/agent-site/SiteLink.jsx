@@ -5,17 +5,17 @@ import { agentSiteHref, isAgentSiteAppHost } from "../../lib/agentSiteLinks";
 // host, or a plain (possibly cross-host) anchor otherwise. See
 // lib/agentSiteLinks.js for why the custom-domain case differs. Shared by
 // Navbar, Hero, and Footer so all three agree on how agent-site links work.
-export default function SiteLink({ slug, path, className, onClick, children }) {
+export default function SiteLink({ slug, path, className, onClick, children, ...rest }) {
   const href = agentSiteHref(slug, path);
   if (isAgentSiteAppHost()) {
     return (
-      <Link to={href} className={className} onClick={onClick}>
+      <Link to={href} className={className} onClick={onClick} {...rest}>
         {children}
       </Link>
     );
   }
   return (
-    <a href={href} className={className} onClick={onClick}>
+    <a href={href} className={className} onClick={onClick} {...rest}>
       {children}
     </a>
   );

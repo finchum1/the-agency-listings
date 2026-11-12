@@ -90,6 +90,16 @@ export default function LandingCardsEditor({ siteId, siteSlug, value, onChange }
         </span>
       </label>
       <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
+        <input type="checkbox" checked={landing.animated} onChange={(e) => patch({ animated: e.target.checked })} className="mt-0.5 accent-[#ed2127] dark:accent-[#f2454b]" />
+        <span>
+          <span className="block text-sm font-medium">Animated cards and area map</span>
+          <span className={`block text-xs mt-0.5 ${muted}`}>
+            A route line links the cards above as it draws itself, and Areas of Expertise becomes a map you can point at. The map appears once at least three
+            of your areas are ones it knows (Oklahoma City metro for now). Visitors who ask their device for less motion see it without the animation.
+          </span>
+        </span>
+      </label>
+      <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
         <input type="checkbox" checked={landing.compsTask} onChange={(e) => patch({ comps_task: e.target.checked })} className="mt-0.5 accent-[#ed2127] dark:accent-[#f2454b]" />
         <span>
           <span className="block text-sm font-medium">Add a "Pull comps" task for each home value request</span>
