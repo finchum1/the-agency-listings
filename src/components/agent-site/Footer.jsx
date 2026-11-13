@@ -2,6 +2,7 @@ import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import SiteLink from "./SiteLink";
 import BrandLogo from "../BrandLogo";
 import LatchpointCredit from "./LatchpointCredit";
+import AgencyWordmark from "./AgencyWordmark";
 import { resolveLanding } from "../../lib/landingPages";
 import { orderByNav } from "../../lib/siteNav";
 
@@ -176,6 +177,10 @@ export default function Footer() {
   );
 
   const shell = "mt-auto bg-[var(--as-dark)] text-[var(--as-on-dark)]/65 px-6 lg:px-10";
+  // The huge brokerage name on the bottom edge (landing.footer_wordmark: "red" | "soft"): only for The Agency's offices, since the letters are that logo's.
+  const tone = site.landing?.footer_wordmark;
+  const wordmark = (tone === "red" || tone === "soft") && /the agency/i.test(brokerage.name || "") ? <AgencyWordmark tone={tone} /> : null;
+  const padding = (top) => (wordmark ? (top === 8 ? "pt-8 pb-0" : "pt-16 pb-0") : top === 8 ? "py-8" : "py-16");
 
   // The Sellers / Home Value / Buyers / Relocation pages sit in a "Buy And Sell" column of their own, beside Explore (the classic and call to action footers).
   const buySellLinks = landing.cards.filter((c) => c.on && site.homeSections.includes("cards"));
@@ -223,7 +228,7 @@ export default function Footer() {
 
   if (style === "centered") {
     return (
-      <footer className={`${shell} py-16`}>
+      <footer className={`${shell} ${padding(16)}`}>
         <div className="mx-auto max-w-4xl text-sm text-center flex flex-col items-center">
           {logo}
           {agentLine("mt-6 justify-center")}
@@ -250,6 +255,7 @@ export default function Footer() {
           </div>
           <div className="w-full">{disclaimer(true)}</div>
         </div>
+        {wordmark}
       </footer>
     );
   }
@@ -268,11 +274,12 @@ export default function Footer() {
             </SiteLink>
           </div>
         </div>
-        <div className={`${shell} py-16`}>
+        <div className={`${shell} ${padding(16)}`}>
           <div className="mx-auto max-w-6xl">
             {columns}
             {disclaimer(false)}
           </div>
+          {wordmark}
         </div>
       </footer>
     );
@@ -283,7 +290,7 @@ export default function Footer() {
     const areas = (site.areas || []).slice(0, 6);
     const cols = 2 + (buySell.length ? 1 : 0) + (areas.length ? 1 : 0);
     return (
-      <footer className={`${shell} py-16`}>
+      <footer className={`${shell} ${padding(16)}`}>
         <div className="mx-auto max-w-6xl">
           <div className={`grid gap-12 text-sm items-start sm:grid-cols-2 ${cols >= 4 ? "lg:grid-cols-[1.4fr_1fr_1fr_1fr]" : "lg:grid-cols-[1.4fr_1fr_1fr]"}`}>
             <div>
@@ -329,13 +336,14 @@ export default function Footer() {
           </div>
           {disclaimer(false)}
         </div>
+        {wordmark}
       </footer>
     );
   }
 
   if (style === "slim") {
     return (
-      <footer className={`${shell} py-8`}>
+      <footer className={`${shell} ${padding(8)}`}>
         <div className="mx-auto max-w-6xl text-sm">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex items-center gap-4 min-w-0">
@@ -359,16 +367,18 @@ export default function Footer() {
             {credit(false)}
           </div>
         </div>
+        {wordmark}
       </footer>
     );
   }
 
   return (
-    <footer className={`${shell} py-16`}>
+    <footer className={`${shell} ${padding(16)}`}>
       <div className="mx-auto max-w-6xl">
         {columns}
         {disclaimer(false)}
       </div>
+      {wordmark}
     </footer>
   );
 }

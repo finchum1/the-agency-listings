@@ -653,6 +653,25 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
                 </button>
               ))}
             </div>
+            <div className="mt-4 rounded-lg border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] px-3.5 py-3">
+              <label className="block text-sm font-medium" htmlFor="footer-wordmark">Big name along the bottom of the page</label>
+              <p className="text-xs mt-0.5 mb-2 text-[#1c1a17]/50 dark:text-[#faf9f7]/50">THE AGENCY in the logo's own lettering, edge to edge on the very bottom of the footer. It rises up and fades in as the visitor scrolls to it. For The Agency's offices.</p>
+              <select
+                id="footer-wordmark"
+                value={form.landing?.footer_wordmark === "red" || form.landing?.footer_wordmark === "soft" ? form.landing.footer_wordmark : ""}
+                onChange={(e) => {
+                  const base = form.landing && typeof form.landing === "object" ? { ...form.landing } : {};
+                  if (e.target.value) base.footer_wordmark = e.target.value;
+                  else delete base.footer_wordmark;
+                  set("landing", base);
+                }}
+                className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+              >
+                <option value="">Off</option>
+                <option value="red">The Agency red</option>
+                <option value="soft">Soft, ghosted gray</option>
+              </select>
+            </div>
             <label className="mt-4 flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
               <input
                 type="checkbox"
