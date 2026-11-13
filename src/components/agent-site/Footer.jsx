@@ -166,9 +166,10 @@ export default function Footer() {
       </SiteLink>
     ));
   // "Powered by Latchpoint Studios" (landing.powered_by, Site Details): a small line under the office's legal wording, which stays exactly as it was.
-  const credit = (center) => (site.landing?.powered_by === true ? <div className={`mt-4 flex ${center ? "justify-center" : "justify-start sm:justify-end"}`}><LatchpointCredit /></div> : null);
+  // Centered on a phone; on larger screens it shares the disclaimer's line, at the right (the centered footer keeps it stacked and centered).
+  const credit = (center) => (site.landing?.powered_by === true ? <div className={`mt-4 flex justify-center ${center ? "" : "sm:mt-0 sm:justify-end sm:shrink-0"}`}><LatchpointCredit /></div> : null);
   const disclaimer = (center) => (
-    <div className="mt-12 pt-6 border-t border-[var(--as-on-dark)]/10">
+    <div className={`mt-10 sm:mt-12 pt-6 border-t border-[var(--as-on-dark)]/10 ${center ? "" : "sm:flex sm:items-center sm:justify-between sm:gap-8"}`}>
       <p className={`text-xs text-[var(--as-on-dark)]/35 ${center ? "text-center" : ""}`}>
         {brokerage.name} — {brokerage.disclaimer}
       </p>
@@ -188,18 +189,18 @@ export default function Footer() {
     const buySell = split ? buySellLinks : [];
     const explore = buySell.length ? visibleLinks.filter((l) => !buySell.some((c) => c.path === l.path)) : visibleLinks;
     return (
-    <div className={`grid gap-12 text-sm items-start ${buySell.length ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
-      <div>
+    <div className={`grid grid-cols-2 gap-x-6 gap-y-10 sm:gap-12 text-sm items-start ${buySell.length ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
+      <div className="col-span-2 sm:col-span-1">
         <div className="mb-6">{logo}</div>
         {agentLine("mb-2")}
         {agent.license && <p className="text-[var(--as-on-dark)]/50">{agent.license}</p>}
       </div>
-      <div>
+      <div className="col-span-2 sm:col-span-1">
         <p className={heading}>Get In Touch</p>
         {contact}
         {socials("mt-5")}
       </div>
-      <div>
+      <div className={buySell.length ? "" : "col-span-2 sm:col-span-1"}>
         <p className={heading}>Explore</p>
         <div className="space-y-1.5">
           {explore.map((link) => (
@@ -292,8 +293,8 @@ export default function Footer() {
     return (
       <footer className={`${shell} ${padding(16)}`}>
         <div className="mx-auto max-w-6xl">
-          <div className={`grid gap-12 text-sm items-start sm:grid-cols-2 ${cols >= 4 ? "lg:grid-cols-[1.4fr_1fr_1fr_1fr]" : "lg:grid-cols-[1.4fr_1fr_1fr]"}`}>
-            <div>
+          <div className={`grid grid-cols-2 gap-x-6 gap-y-10 sm:gap-12 text-sm items-start sm:grid-cols-2 ${cols >= 4 ? "lg:grid-cols-[1.4fr_1fr_1fr_1fr]" : "lg:grid-cols-[1.4fr_1fr_1fr]"}`}>
+            <div className="col-span-2 sm:col-span-1">
               <div className="mb-6">{logo}</div>
               {agentLine("mb-2")}
               {agent.license && <p className="text-[var(--as-on-dark)]/50 mb-5">{agent.license}</p>}
@@ -301,7 +302,7 @@ export default function Footer() {
               {contact}
               {socials("mt-5")}
             </div>
-            <div>
+            <div className={buySell.length ? "" : "col-span-2 sm:col-span-1"}>
               <p className={heading}>Explore</p>
               <div className="space-y-1.5">{visibleLinks.filter((l) => !buySell.some((c) => c.path === l.path)).map((link) => (
                 <SiteLink key={link.path} slug={site.slug} path={link.path} className={hoverLink}>
@@ -360,7 +361,7 @@ export default function Footer() {
               {socials()}
             </div>
           </div>
-          <div className="mt-6 pt-5 border-t border-[var(--as-on-dark)]/10">
+          <div className="mt-6 pt-5 border-t border-[var(--as-on-dark)]/10 sm:flex sm:items-center sm:justify-between sm:gap-8">
             <p className="text-xs text-[var(--as-on-dark)]/35">
               {brokerage.name} — {brokerage.disclaimer}
             </p>
