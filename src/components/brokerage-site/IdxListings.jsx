@@ -1,11 +1,13 @@
-import { useContext, useState } from "react";
-import { Link } from "react-router-dom";
+import { useContext, useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useRepliersListings } from "../../hooks/useRepliersListings";
 import { useFeaturedRepliersListings } from "../../hooks/useFeaturedRepliersListings";
 import { useFavorites } from "../../hooks/useFavorites";
 import { BrokerageSiteContext } from "../../context/BrokerageSiteContext";
 import IdxListingCard from "./IdxListingCard";
 import IdxMap from "./IdxMap";
+import VisitorBar from "../idx/VisitorUI";
+import { useVisitor } from "../../lib/visitorStore";
 
 const PRICE_OPTIONS = [
   { label: "Any Price", min: "", max: "" },
@@ -64,24 +66,55 @@ export default function IdxListings({
   titleOverride,
   sectionId = "listings",
   brand: brandProp,
+  // Whose visitors sign in here: {kind: "agent", id} (an agent site's area page) or {kind: "brokerage"}. The brokerage pages default to the brokerage.
+  visitorSite: visitorSiteProp,
 }) {
   const brokerageSite = useContext(BrokerageSiteContext);
   // Whose IDX account and map: the brokerage site's organization, or the one the caller passes (area pages)
   const brand = brandProp || brokerageSite?.site?.brokerage;
   const orgSlug = brand?.slug;
-  const { favorites, toggleFavorite } = useFavorites();
-  const [priceIdx, setPriceIdx] = useState(0);
-  const [beds, setBeds] = useState("");
-  const [baths, setBaths] = useState("");
-  const [city, setCity] = useState(initialCity);
-  const [sortBy, setSortBy] = useState("");
+  const local = useFavorites();
+  const location = useLocation();
+  // Links in saved-search emails carry the filters in the address.
+  const fromLink = (() => { try { return new URLSearchParams(location.search); } catch { return new URLSearchParams(); } })();
+  const priceFromLink = PRICE_OPTIONS.findIndex((o) => o.min === (fromLink.get("minPrice") || "") && o.max === (fromLink.get("maxPrice") || ""));
+  // A preview strip (Home, an area page's "Our Listings") only joins in when the page tells it to: the sign-in itself lives with the full search.
+  const visitorSite = visitorSiteProp || (!preview && brokerageSite ? { kind: "brokerage" } : null);
+  const [visitorState, visitorStore] = useVisitor(visitorSite || { kind: "none" });
+  useEffect(() => { if (visitorSite) visitorStore.init(); }, [visitorSite?.kind, visitorSite?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Signed in: hearts are saved to the account. Otherwise they stay as before (this browser only), and a visitor site asks to sign in first.
+  const favorites = visitorSite ? { has: (mls) => visitorStore.isFavorite(mls) } : local.favorites;
+  const [priceIdx, setPriceIdx] = useState(priceFromLink > 0 ? priceFromLink : 0);
+  const [beds, setBeds] = useState(/^[345]$/.test(fromLink.get("minBeds") || "") ? fromLink.get("minBeds") : "");
+  const [baths, setBaths] = useState(/^[234]$/.test(fromLink.get("minBaths") || "") ? fromLink.get("minBaths") : "");
+  const [city, setCity] = useState(fromLink.get("city") ? fromLink.get("city").slice(0, 80) : initialCity);
+  const [sortBy, setSortBy] = useState(["createdOnDesc", "listPriceDesc", "listPriceAsc", "sqftDesc"].includes(fromLink.get("sortBy")) ? fromLink.get("sortBy") : "");
   const [view, setView] = useState("map"); // default per request — applies to both /brokerage/listings and /brokerage/search, which share this component
   const [boundary, setBoundary] = useState(null); // drawn polygon, from IdxMap.jsx's Draw control
+
+  void visitorState; // re-renders when the visitor signs in or saves a home
+  const toggleFavorite = (mls) => {
+    if (!visitorSite) return local.toggleFavorite(mls);
+    const listing = (search.listings || []).find((l) => l.mlsNumber === mls) || { mlsNumber: mls };
+    return visitorStore.toggleFavorite(listing);
+  };
 
   const pinnedMlsNumbers = preview ? (brokerageSite?.site.featuredListingMlsNumbers || []).slice(0, 3) : [];
   const usePinned = pinnedMlsNumbers.length > 0;
 
   const price = PRICE_OPTIONS[priceIdx];
+  // The filters as they are now (for "Save search"), and a saved search put back on the page.
+  const currentParams = () => ({ city, minPrice: price.min, maxPrice: price.max, minBeds: beds, minBaths: baths, sortBy, map: boundary ? JSON.stringify(boundary) : "", office: officeOnly });
+  const runSaved = (saved) => {
+    const p = saved.params || {};
+    const at = PRICE_OPTIONS.findIndex((o) => o.min === (p.minPrice || "") && o.max === (p.maxPrice || ""));
+    setCity(p.city || "");
+    setPriceIdx(at > 0 ? at : 0);
+    setBeds(p.minBeds || "");
+    setBaths(p.minBaths || "");
+    setSortBy(p.sortBy || "");
+    try { setBoundary(p.map ? JSON.parse(p.map) : null); } catch { setBoundary(null); }
+  };
   const search = useRepliersListings(
     // null skips the fetch entirely once pinned listings already cover
     // this preview — see useRepliersListings.js.
@@ -168,7 +201,8 @@ export default function IdxListings({
               <p className="text-sm text-[var(--as-text)]/60">
                 {loading ? "Searching…" : `${meta.count} result${meta.count === 1 ? "" : "s"}`}
               </p>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {visitorSite && <VisitorBar site={visitorSite} getParams={currentParams} path={`${location.pathname}${location.search ? "" : ""}`} onRun={runSaved} />}
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}

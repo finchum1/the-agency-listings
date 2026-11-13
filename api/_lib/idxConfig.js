@@ -42,6 +42,16 @@ export async function resolveIdxConfig(req) {
 
   const orgQuery = supabase.from("organizations").select("id, slug, status");
   const { data: org } = await (orgId ? orgQuery.eq("id", orgId) : orgQuery.eq("slug", slug)).maybeSingle();
+  return configForOrg(supabase, org);
+}
+
+/** The same account lookup for a known organization row ({ id, slug, status }): used by jobs with no web request (the saved-search alerts). */
+export async function idxConfigForOrgId(supabase, orgId) {
+  const { data: org } = await supabase.from("organizations").select("id, slug, status").eq("id", orgId).maybeSingle();
+  return configForOrg(supabase, org);
+}
+
+async function configForOrg(supabase, org) {
   if (!org || org.status !== "active") return null;
 
   const { data: settings } = await supabase.from("org_settings").select("features, idx_config").eq("org_id", org.id).maybeSingle();

@@ -120,6 +120,7 @@ export default function AgentAreaPage({ site, agent, area, loading, notFound }) 
           initialCity={area.name}
           previewCount={6}
           viewAllHref={null}
+          visitorSite={adapted.idxEnabled ? { kind: "agent", id: site.id } : undefined}
           eyebrowOverride={`${adapted.brokerage.name}'s Listings`}
           titleOverride={`Our Listings in ${area.name}`}
         />
@@ -129,6 +130,7 @@ export default function AgentAreaPage({ site, agent, area, loading, notFound }) 
             isStandalonePage
             officeOnly={false}
             brand={adapted.brokerage}
+            visitorSite={{ kind: "agent", id: site.id }}
             initialCity={area.name}
             sectionId="area-search"
             eyebrowOverride="Home Search"

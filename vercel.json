@@ -215,6 +215,10 @@
     {
       "path": "/api/plans",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/visitor?a=cron_alerts",
+      "schedule": "0 15 * * *"
     }
   ],
   "functions": {
