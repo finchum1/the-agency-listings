@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { refreshAuth } from "../../hooks/useAuth";
 
 // Teams (supabase/agent-teams.sql) on the Agents page: create a team, name it, and pick who is on it. Everyone on a team shows together on the
 // property sites, flyers, social posts and inquiry emails of each other's listings. Only an admin can change this (the database enforces it).
@@ -23,7 +24,10 @@ function TeamCard({ team, agents, onChanged, onError }) {
     const { error } = await fn();
     setBusy(false);
     if (error) onError(error.message);
-    else onChanged();
+    else {
+      refreshAuth();
+      onChanged();
+    }
   };
 
   const rename = () => {

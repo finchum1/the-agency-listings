@@ -87,13 +87,22 @@ export default defineConfig({
         // reload — closing the loop with zero manual DevTools steps.
         skipWaiting: true,
         clientsClaim: true,
-        // The whole app is one bundle (the dashboard, every public site template and the marketing pages) and it has grown
-        // past workbox's default 2 MiB precache limit, which fails the production build. Raised so it keeps building.
-        // Splitting the dashboard from the public sites would shrink what visitors download; see the roadmap.
+        // Pages load on demand (src/lib/lazyPage.js), so the app is ~160 small files. They are NOT precached: installing the
+        // service worker would otherwise download all of them in the background, competing with the page the person is on
+        // (painful on a slow connection). Page files are cached as they are first opened instead (runtimeCaching below);
+        // their hashed names make cache-first correct. Only styles and images are precached.
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,svg,png,ico}'],
+        globPatterns: ['**/*.{css,svg,png,ico}'],
         navigateFallback: '/index.html',
         runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/assets/') && url.pathname.endsWith('.js'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'app-pages',
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
           {
             urlPattern: ({ request }) => request.mode === 'navigate',
             handler: 'NetworkFirst',

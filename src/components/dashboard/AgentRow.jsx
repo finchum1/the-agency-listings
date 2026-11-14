@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { refreshAuth } from "../../hooks/useAuth";
 import ImageUploadField from "./ImageUploadField";
 import { adminApi } from "../../lib/adminApi";
 
@@ -105,6 +106,7 @@ export default function AgentRow({
     }
     onError("");
     setStatus("Saved");
+    refreshAuth();
     onSaved();
     return true;
   };

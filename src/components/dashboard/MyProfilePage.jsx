@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth, refreshAuth } from "../../hooks/useAuth";
 import ClaudeConnectionCard from "./ClaudeConnectionCard";
 import { useTheme } from "../../hooks/useTheme";
 import ImageUploadField from "./ImageUploadField";
@@ -133,6 +133,7 @@ export default function MyProfilePage() {
       return;
     }
     setSaved(true);
+    refreshAuth();
   };
 
   const inputClass =

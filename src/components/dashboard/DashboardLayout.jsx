@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import PageFallback from "../PageFallback";
 import { dealAccess } from "../../lib/deals";
 import { useDealAttention } from "../../hooks/useDealAttention";
 import { usePeopleAttention } from "../../hooks/usePeopleAttention";
@@ -849,7 +850,9 @@ export default function DashboardLayout() {
         <TabBar tabs={tabs.tabs} active={tabs.active} onSelect={tabs.select} onAdd={tabs.add} onClose={tabs.close} max={tabs.max} />
         {/* Every page uses the whole width beside the menu: a centered, capped column left a wide dark gap on a big screen. */}
         <div className={`px-4 sm:px-6 pt-6 sm:pt-10 ${/^\/dashboard\/(people\/(leads|pipeline)|deals\/board)\/?$/.test(location.pathname) ? "pb-4" : "pb-6 sm:pb-10"} print:p-0 print:max-w-none print:mx-0`}>
-          <Outlet />
+          <Suspense fallback={<PageFallback inline />}>
+            <Outlet />
+          </Suspense>
         </div>
       </main>
     </div>

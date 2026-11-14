@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import { OrgProvider } from "./context/OrgContext";
@@ -6,86 +7,91 @@ import { useHostBranding } from "./hooks/useHostBranding";
 import { isAppHost, isDashboardOnlyHost, isMarketingHost } from "./lib/appHosts";
 import useSwUpdateOnNavigate from "./hooks/useSwUpdateOnNavigate";
 import { isStandalone } from "./lib/pwa";
+import { lazyPage } from "./lib/lazyPage";
+import PageFallback from "./components/PageFallback";
 
-import LoginPage from "./components/auth/LoginPage";
-import OAuthAuthorizePage from "./pages/OAuthAuthorizePage";
-import SetPasswordPage from "./components/auth/SetPasswordPage";
+const LoginPage = lazyPage(() => import("./components/auth/LoginPage"));
+const OAuthAuthorizePage = lazyPage(() => import("./pages/OAuthAuthorizePage"));
+const SetPasswordPage = lazyPage(() => import("./components/auth/SetPasswordPage"));
 import ProtectedRoute from "./components/ProtectedRoute";
-import DashboardLayout from "./components/dashboard/DashboardLayout";
-import ListingsTable from "./components/dashboard/ListingsTable";
-import NewListingPage from "./components/dashboard/NewListingPage";
-import EditListingPage from "./components/dashboard/EditListingPage";
-import SocialPostPage from "./components/dashboard/SocialPostPage";
-import MarketingHome from "./components/dashboard/MarketingHome";
-import HolidayPostPage from "./components/dashboard/HolidayPostPage";
-import FlyerPage from "./components/dashboard/FlyerPage";
-import AgentsPage from "./components/dashboard/AgentsPage";
-import UpcomingModule from "./components/dashboard/UpcomingModule";
-import VendorsPage from "./components/dashboard/VendorsPage";
-import ListingAnalyticsPage from "./components/dashboard/ListingAnalyticsPage";
-import OfficeAnalyticsPage from "./components/dashboard/OfficeAnalyticsPage";
-import ContactsPage from "./components/dashboard/people/contacts/ContactsPage";
-import DealsGate from "./components/dashboard/people/DealsGate";
-import DealsPage from "./components/dashboard/people/DealsPage";
-import ListingReportPage from "./pages/ListingReportPage";
-import TransactionTimelinePage from "./pages/TransactionTimelinePage";
-import AgentUpdatePage from "./pages/AgentUpdatePage";
-import SellersPage from "./components/agent-site/landing/SellersPage";
-import SoldHomes from "./components/agent-site/SoldHomes";
-import BuyersPage from "./components/agent-site/landing/BuyersPage";
-import HomeValuePage from "./components/agent-site/landing/HomeValuePage";
-import RelocationPage from "./components/agent-site/landing/RelocationPage";
-import VendorSharePage from "./pages/VendorSharePage";
-import MyProfilePage from "./components/dashboard/MyProfilePage";
-import MySitePage from "./components/dashboard/MySitePage";
-import DashboardHome from "./components/dashboard/DashboardHome";
-import SitesPage from "./components/dashboard/SitesPage";
-import EditAgentSitePage from "./components/dashboard/EditAgentSitePage";
-import PublicListingPage from "./pages/PublicListingPage";
-import CustomDomainSitePage from "./pages/CustomDomainSitePage";
-import PublicAgentSitePage from "./pages/PublicAgentSitePage";
-import PublicAgentPostPage from "./pages/PublicAgentPostPage";
-import PublicAgentAreaPage from "./pages/PublicAgentAreaPage";
-import SitePreviewPage, { PreviewSite } from "./pages/SitePreviewPage";
-import NotFoundPage from "./pages/NotFoundPage";
-import { AboutPage, PrivacyPage, TermsPage } from "./pages/LegalPages";
-import LandingPage from "./pages/LandingPage";
-import AgentWebsitesPage from "./pages/AgentWebsitesPage";
-import PropertyWebsitesPage from "./pages/PropertyWebsitesPage";
-import UpcomingPage from "./pages/UpcomingPage";
-import PeoplePage from "./pages/PeoplePage";
-import BrokerageWebsitePage from "./pages/BrokerageWebsitePage";
-import BrokerageSitePage from "./pages/BrokerageSitePage";
-import BrokeragePostPage from "./pages/BrokeragePostPage";
-import BrokerageAreaPage from "./pages/BrokerageAreaPage";
-import BrokerageSiteEditor from "./components/dashboard/BrokerageSiteEditor";
-import PeopleGate from "./components/dashboard/people/PeopleGate";
-import ProspectsPage from "./components/dashboard/people/ProspectsPage";
-import PeopleLayout from "./components/dashboard/people/PeopleLayout";
-import PlansPage from "./components/dashboard/people/PlansPage";
-import PeopleOverview from "./components/dashboard/people/PeopleOverview";
-import SettingsPage from "./components/dashboard/people/SettingsPage";
-import BrandSettingsPage from "./components/dashboard/BrandSettingsPage";
-import OrganizationsPage from "./components/dashboard/OrganizationsPage";
-import AreaTemplatesPage from "./components/dashboard/AreaTemplatesPage";
+const DashboardLayout = lazyPage(() => import("./components/dashboard/DashboardLayout"));
+const ListingsTable = lazyPage(() => import("./components/dashboard/ListingsTable"));
+const NewListingPage = lazyPage(() => import("./components/dashboard/NewListingPage"));
+const EditListingPage = lazyPage(() => import("./components/dashboard/EditListingPage"));
+const SocialPostPage = lazyPage(() => import("./components/dashboard/SocialPostPage"));
+const MarketingHome = lazyPage(() => import("./components/dashboard/MarketingHome"));
+const HolidayPostPage = lazyPage(() => import("./components/dashboard/HolidayPostPage"));
+const FlyerPage = lazyPage(() => import("./components/dashboard/FlyerPage"));
+const AgentsPage = lazyPage(() => import("./components/dashboard/AgentsPage"));
+const UpcomingModule = lazyPage(() => import("./components/dashboard/UpcomingModule"));
+const VendorsPage = lazyPage(() => import("./components/dashboard/VendorsPage"));
+const ListingAnalyticsPage = lazyPage(() => import("./components/dashboard/ListingAnalyticsPage"));
+const OfficeAnalyticsPage = lazyPage(() => import("./components/dashboard/OfficeAnalyticsPage"));
+const ContactsPage = lazyPage(() => import("./components/dashboard/people/contacts/ContactsPage"));
+const DealsGate = lazyPage(() => import("./components/dashboard/people/DealsGate"));
+const DealsPage = lazyPage(() => import("./components/dashboard/people/DealsPage"));
+const ListingReportPage = lazyPage(() => import("./pages/ListingReportPage"));
+const TransactionTimelinePage = lazyPage(() => import("./pages/TransactionTimelinePage"));
+const AgentUpdatePage = lazyPage(() => import("./pages/AgentUpdatePage"));
+const SellersPage = lazyPage(() => import("./components/agent-site/landing/SellersPage"));
+const SoldHomes = lazyPage(() => import("./components/agent-site/SoldHomes"));
+const BuyersPage = lazyPage(() => import("./components/agent-site/landing/BuyersPage"));
+const HomeValuePage = lazyPage(() => import("./components/agent-site/landing/HomeValuePage"));
+const RelocationPage = lazyPage(() => import("./components/agent-site/landing/RelocationPage"));
+const VendorSharePage = lazyPage(() => import("./pages/VendorSharePage"));
+const MyProfilePage = lazyPage(() => import("./components/dashboard/MyProfilePage"));
+const MySitePage = lazyPage(() => import("./components/dashboard/MySitePage"));
+const DashboardHome = lazyPage(() => import("./components/dashboard/DashboardHome"));
+const SitesPage = lazyPage(() => import("./components/dashboard/SitesPage"));
+const EditAgentSitePage = lazyPage(() => import("./components/dashboard/EditAgentSitePage"));
+const PublicListingPage = lazyPage(() => import("./pages/PublicListingPage"));
+const CustomDomainSitePage = lazyPage(() => import("./pages/CustomDomainSitePage"));
+const PublicAgentSitePage = lazyPage(() => import("./pages/PublicAgentSitePage"));
+const PublicAgentPostPage = lazyPage(() => import("./pages/PublicAgentPostPage"));
+const PublicAgentAreaPage = lazyPage(() => import("./pages/PublicAgentAreaPage"));
+const SitePreviewPage = lazyPage(() => import("./pages/SitePreviewPage"));
+const PreviewSite = lazyPage(() => import("./pages/SitePreviewPage").then((m) => ({ default: m.PreviewSite })));
+const NotFoundPage = lazyPage(() => import("./pages/NotFoundPage"));
+const AboutPage = lazyPage(() => import("./pages/LegalPages").then((m) => ({ default: m.AboutPage })));
+const PrivacyPage = lazyPage(() => import("./pages/LegalPages").then((m) => ({ default: m.PrivacyPage })));
+const TermsPage = lazyPage(() => import("./pages/LegalPages").then((m) => ({ default: m.TermsPage })));
+const LandingPage = lazyPage(() => import("./pages/LandingPage"));
+const AgentWebsitesPage = lazyPage(() => import("./pages/AgentWebsitesPage"));
+const PropertyWebsitesPage = lazyPage(() => import("./pages/PropertyWebsitesPage"));
+const UpcomingPage = lazyPage(() => import("./pages/UpcomingPage"));
+const PeoplePage = lazyPage(() => import("./pages/PeoplePage"));
+const BrokerageWebsitePage = lazyPage(() => import("./pages/BrokerageWebsitePage"));
+const BrokerageSitePage = lazyPage(() => import("./pages/BrokerageSitePage"));
+const BrokeragePostPage = lazyPage(() => import("./pages/BrokeragePostPage"));
+const BrokerageAreaPage = lazyPage(() => import("./pages/BrokerageAreaPage"));
+const BrokerageSiteEditor = lazyPage(() => import("./components/dashboard/BrokerageSiteEditor"));
+const PeopleGate = lazyPage(() => import("./components/dashboard/people/PeopleGate"));
+const ProspectsPage = lazyPage(() => import("./components/dashboard/people/ProspectsPage"));
+const PeopleLayout = lazyPage(() => import("./components/dashboard/people/PeopleLayout"));
+const PlansPage = lazyPage(() => import("./components/dashboard/people/PlansPage"));
+const PeopleOverview = lazyPage(() => import("./components/dashboard/people/PeopleOverview"));
+const SettingsPage = lazyPage(() => import("./components/dashboard/people/SettingsPage"));
+const BrandSettingsPage = lazyPage(() => import("./components/dashboard/BrandSettingsPage"));
+const OrganizationsPage = lazyPage(() => import("./components/dashboard/OrganizationsPage"));
+const AreaTemplatesPage = lazyPage(() => import("./components/dashboard/AreaTemplatesPage"));
 
-import HomeSections from "./components/agent-site/HomeSections";
-import Bio from "./components/agent-site/Bio";
-import Testimonials from "./components/agent-site/Testimonials";
-import FeaturedListings from "./components/agent-site/FeaturedListings";
-import ServiceAreas from "./components/agent-site/ServiceAreas";
-import BlogTeaser from "./components/agent-site/BlogTeaser";
-import Contact from "./components/agent-site/Contact";
+const HomeSections = lazyPage(() => import("./components/agent-site/HomeSections"));
+const Bio = lazyPage(() => import("./components/agent-site/Bio"));
+const Testimonials = lazyPage(() => import("./components/agent-site/Testimonials"));
+const FeaturedListings = lazyPage(() => import("./components/agent-site/FeaturedListings"));
+const ServiceAreas = lazyPage(() => import("./components/agent-site/ServiceAreas"));
+const BlogTeaser = lazyPage(() => import("./components/agent-site/BlogTeaser"));
+const Contact = lazyPage(() => import("./components/agent-site/Contact"));
 
-import BrokerageHomeSections from "./components/brokerage-site/HomeSections";
-import BrokerageAbout from "./components/brokerage-site/About";
-import BrokerageAgentRoster from "./components/brokerage-site/AgentRoster";
-import BrokerageAreasOfExpertise from "./components/brokerage-site/AreasOfExpertise";
-import BrokerageBlogList from "./components/brokerage-site/BlogList";
-import BrokerageContactCard from "./components/brokerage-site/ContactCard";
-import IdxListings from "./components/brokerage-site/IdxListings";
-import IdxListingDetail from "./components/brokerage-site/IdxListingDetail";
-import HomeValuation from "./components/brokerage-site/HomeValuation";
+const BrokerageHomeSections = lazyPage(() => import("./components/brokerage-site/HomeSections"));
+const BrokerageAbout = lazyPage(() => import("./components/brokerage-site/About"));
+const BrokerageAgentRoster = lazyPage(() => import("./components/brokerage-site/AgentRoster"));
+const BrokerageAreasOfExpertise = lazyPage(() => import("./components/brokerage-site/AreasOfExpertise"));
+const BrokerageBlogList = lazyPage(() => import("./components/brokerage-site/BlogList"));
+const BrokerageContactCard = lazyPage(() => import("./components/brokerage-site/ContactCard"));
+const IdxListings = lazyPage(() => import("./components/brokerage-site/IdxListings"));
+const IdxListingDetail = lazyPage(() => import("./components/brokerage-site/IdxListingDetail"));
+const HomeValuation = lazyPage(() => import("./components/brokerage-site/HomeValuation"));
 
 function Root({ dashboardOnly = false, productHome = false }) {
   const { session, loading } = useAuth();
@@ -101,7 +107,7 @@ function Root({ dashboardOnly = false, productHome = false }) {
   return <LandingPage />;
 }
 
-export default function App() {
+function AppRoutes() {
   // Called unconditionally (before the early return below) per the
   // Rules of Hooks — harmless on a custom domain too, since main.jsx
   // never registers a service worker there in the first place, so the
@@ -516,5 +522,14 @@ export default function App() {
       <Route path="/404" element={<NotFoundPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
+  );
+}
+
+// Every page loads on demand (lazyPage), so the first visit downloads only the page it lands on instead of the whole app.
+export default function App() {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <AppRoutes />
+    </Suspense>
   );
 }
