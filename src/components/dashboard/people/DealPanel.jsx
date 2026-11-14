@@ -5,6 +5,7 @@ import { BOARDS, ARCHIVE_REASONS } from "../../../lib/peopleStages";
 import TransactionModules from "./TransactionModules";
 import DealCompliance, { ComplianceChip } from "./DealCompliance";
 import DealSignatures from "./DealSignatures";
+import { DEAL_COMPLIANCE, DEAL_SIGNING } from "../../../lib/dealFeatures";
 import DealProgressBars from "./DealProgressBars";
 import DealTabs, { dealTabs } from "./DealTabs";
 import DealOverview from "./DealOverview";
@@ -371,7 +372,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
         <DealTabs tabs={dealTabs(summary, fresh)} active={tab} onChange={setTab} />
         <div className="@container min-h-0 flex-1 space-y-8 overflow-y-auto overscroll-contain px-6 pt-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           {error && tab !== "details" && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-          {tab === "overview" && <DealOverview person={fresh} summary={summary} dates={dealDates} earnest={{ amount: fresh.earnest_money, delivered: fresh.earnest_money_delivered, at: fresh.earnest_money_delivered_at }} onEarnest={edit ? (v) => { const at = v ? new Date().toISOString() : null; setFresh((f) => ({ ...f, earnest_money_delivered: v, earnest_money_delivered_at: at })); save({ earnest_money_delivered: v, earnest_money_delivered_at: at }); } : undefined} cash={!!fresh.is_cash} onCash={edit ? (v) => { setFresh((f) => ({ ...f, is_cash: v })); save({ is_cash: v }); } : undefined} onTab={setTab} onDate={edit ? changeDate : undefined} onCheckTask={edit ? summary.completeTask : undefined}>
+          {tab === "overview" && <DealOverview person={fresh} summary={summary} dates={dealDates} earnest={{ amount: fresh.earnest_money, delivered: fresh.earnest_money_delivered, at: fresh.earnest_money_delivered_at }} onEarnest={edit ? (v) => { const at = v ? new Date().toISOString() : null; setFresh((f) => ({ ...f, earnest_money_delivered: v, earnest_money_delivered_at: at })); save({ earnest_money_delivered: v, earnest_money_delivered_at: at }); } : undefined} cash={!!fresh.is_cash} onCash={edit ? (v) => { setFresh((f) => ({ ...f, is_cash: v })); save({ is_cash: v }); } : undefined} onTab={setTab} onDate={edit ? changeDate : undefined} onCheckTask={edit ? summary.completeTask : undefined} onAddTask={edit ? summary.addTask : undefined}>
             {{
               top: edit ? (
                 <div className="flex flex-wrap items-center gap-3">
@@ -387,11 +388,11 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
           {tab === "tasks" && <TransactionModules person={fresh} side={side} viewer={viewer} dates={dealDates} show="tasks" />}
           {tab === "documents" && (
             <div className="space-y-6">
-              <DealSignatures person={fresh} viewer={viewer} agent={{ name: agentName || "", email: agentEmail }} />
+              {DEAL_SIGNING && <DealSignatures person={fresh} viewer={viewer} agent={{ name: agentName || "", email: agentEmail }} />}
               <TransactionModules person={fresh} side={side} viewer={viewer} dates={dealDates} show="documents" />
             </div>
           )}
-          {tab === "messages" && <DealCompliance person={fresh} viewer={viewer} onChanged={() => { refresh(); summary.reload(); }} />}
+          {DEAL_COMPLIANCE && tab === "messages" && <DealCompliance person={fresh} viewer={viewer} onChanged={() => { refresh(); summary.reload(); }} />}
           {tab === "details" && (
             <div className="space-y-8">
             <section className="min-w-0 space-y-4">

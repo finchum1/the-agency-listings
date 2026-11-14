@@ -6,6 +6,7 @@ import { effectiveDue } from "../../../lib/checklists";
 import { addDays, dayLabel, toKey } from "../../../lib/homeDates";
 import { clockLabel } from "../../../lib/timeline";
 import { ComplianceChip } from "./DealCompliance";
+import { DEAL_COMPLIANCE } from "../../../lib/dealFeatures";
 
 const money = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const compact = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 });
@@ -127,7 +128,7 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
   const where = (p) => (p._foreign ? ` · ${p._agent || "another agent"}` : "");
   const closingSoon = openDeals.filter((p) => p.closing_date && p.closing_date >= today && p.closing_date <= soon).sort((a, b) => a.closing_date.localeCompare(b.closing_date));
 
-  const sentBack = openDeals.filter((p) => p.compliance_status === "needs_changes");
+  const sentBack = DEAL_COMPLIANCE ? openDeals.filter((p) => p.compliance_status === "needs_changes") : [];
   const overdue = tasks
     .map((t) => {
       const p = openDeals.find((d) => d.id === t.person_id);

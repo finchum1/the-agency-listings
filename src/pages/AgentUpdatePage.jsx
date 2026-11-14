@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { DEAL_COMPLIANCE, DEAL_SIGNING } from "../lib/dealFeatures";
 import { useParams } from "react-router-dom";
 import { useForceLight } from "../hooks/useForceLight";
 import { brandFromOrg } from "../lib/brand";
@@ -98,9 +99,10 @@ export default function AgentUpdatePage() {
   const overdue = openTasks.filter((t) => t.due && t.due < today);
   const missing = docs.filter((d) => !d.done);
   const collected = docs.filter((d) => d.done);
-  const flagged = docs.filter((d) => d.review_status === "issue");
-  const out = signatures.filter((g) => g.status === "pending" || g.status === "sending");
-  const attention = overdue.length + flagged.length + out.length + (deal.compliance_status === "needs_changes" ? 1 : 0);
+  const flagged = DEAL_COMPLIANCE ? docs.filter((d) => d.review_status === "issue") : [];
+  const out = DEAL_SIGNING ? signatures.filter((g) => g.status === "pending" || g.status === "sending") : [];
+  const sentBack = DEAL_COMPLIANCE && deal.compliance_status === "needs_changes";
+  const attention = overdue.length + flagged.length + out.length + (sentBack ? 1 : 0);
   const team = [deal.lender && ["Lender", deal.lender], deal.title_company && ["Title company", deal.title_company], deal.other_agent && [deal.side === "seller" ? "Buyer's agent" : "Seller's agent", [deal.other_agent, deal.other_agent2].filter(Boolean).join(" & ")]].filter(Boolean);
 
   return (
@@ -137,10 +139,10 @@ export default function AgentUpdatePage() {
         <section aria-label="Needs you">
           <h2 className="font-display text-2xl font-semibold mb-3">Needs you</h2>
           {attention === 0 ? (
-            <p className="rounded-2xl bg-[#2f7d4f]/10 text-[#2f7d4f] px-5 py-4 font-medium">Nothing needs you right now. {COMPLIANCE[deal.compliance_status] ? `${COMPLIANCE[deal.compliance_status]}.` : ""}</p>
+            <p className="rounded-2xl bg-[#2f7d4f]/10 text-[#2f7d4f] px-5 py-4 font-medium">Nothing needs you right now. {DEAL_COMPLIANCE && COMPLIANCE[deal.compliance_status] ? `${COMPLIANCE[deal.compliance_status]}.` : ""}</p>
           ) : (
             <ul className="space-y-2">
-              {deal.compliance_status === "needs_changes" && (
+              {sentBack && (
                 <li className={`${card} border-[#b3261e]/30 p-4 flex items-center justify-between gap-3`}>
                   <span className="font-medium">Compliance sent this deal back</span>
                   <Pill tone="red">Needs changes</Pill>
@@ -265,7 +267,7 @@ export default function AgentUpdatePage() {
           </section>
         )}
 
-        {signatures.length > 0 && (
+        {DEAL_SIGNING && signatures.length > 0 && (
           <section aria-label="Signatures">
             <h2 className="font-display text-2xl font-semibold mb-3">Signatures</h2>
             <ul className="space-y-2">
@@ -293,7 +295,7 @@ export default function AgentUpdatePage() {
           </section>
         )}
 
-        {COMPLIANCE[deal.compliance_status] && <p className="text-xs text-[#1c1a17]/50">{COMPLIANCE[deal.compliance_status]}. This page shows the deal as of today and refreshes each time you open it.</p>}
+        {DEAL_COMPLIANCE && COMPLIANCE[deal.compliance_status] && <p className="text-xs text-[#1c1a17]/50">{COMPLIANCE[deal.compliance_status]}. This page shows the deal as of today and refreshes each time you open it.</p>}
       </main>
 
       <AgentFooter agent={sender} brand={brand} note="Your transaction coordinator" />

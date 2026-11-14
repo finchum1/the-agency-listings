@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { dayLabel, toKey } from "../../../lib/homeDates";
 import { ComplianceChip } from "./DealCompliance";
+import { DEAL_COMPLIANCE } from "../../../lib/dealFeatures";
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
@@ -65,7 +66,7 @@ export default function DealsList({ own, foreign, progress, closedStage, stages,
                   <th className="px-3 py-3 font-medium">Closing</th>
                   <th className="px-3 py-3 font-medium">Price</th>
                   <th className="px-3 py-3 font-medium whitespace-nowrap">Tasks · Docs</th>
-                  <th className="px-5 py-3 font-medium">Compliance</th>
+                  {DEAL_COMPLIANCE && <th className="px-5 py-3 font-medium">Compliance</th>}
                 </tr>
               </thead>
               <tbody>
@@ -88,7 +89,7 @@ export default function DealsList({ own, foreign, progress, closedStage, stages,
                     <td className="px-3 py-3.5 text-xs whitespace-nowrap">{closing(p)}</td>
                     <td className={`px-3 py-3.5 text-xs whitespace-nowrap ${muted}`}>{p.price ? money.format(p.price) : "–"}</td>
                     <td className={`px-3 py-3.5 text-xs whitespace-nowrap ${muted}`}>{prog(p)}</td>
-                    <td className="px-5 py-3.5">{p.compliance_status && p.compliance_status !== "none" ? <ComplianceChip status={p.compliance_status} /> : <span className={`text-xs ${muted}`}>–</span>}</td>
+                    {DEAL_COMPLIANCE && <td className="px-5 py-3.5">{p.compliance_status && p.compliance_status !== "none" ? <ComplianceChip status={p.compliance_status} /> : <span className={`text-xs ${muted}`}>–</span>}</td>}
                   </tr>
                 ))}
               </tbody>

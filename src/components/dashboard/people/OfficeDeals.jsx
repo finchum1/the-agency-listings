@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { DEAL_COMPLIANCE } from "../../../lib/dealFeatures";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuth } from "../../../hooks/useAuth";
 import { useTransactionProgress } from "../../../hooks/useTransactionProgress";
@@ -31,7 +32,7 @@ export default function OfficeDeals({ viewer, excludeOwn = false }) {
   const [agents, setAgents] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [filter, setFilter] = useState(viewer === "compliance" ? "submitted" : "all");
+  const [filter, setFilter] = useState(viewer === "compliance" && DEAL_COMPLIANCE ? "submitted" : "all");
   const [agent, setAgent] = useState("");
   const [showClosed, setShowClosed] = useState(false);
   const [q, setQ] = useState("");
@@ -57,6 +58,7 @@ export default function OfficeDeals({ viewer, excludeOwn = false }) {
     setLoading(false);
   };
   const loadUnread = async () => {
+    if (!DEAL_COMPLIANCE) return;
     const [{ data: msgs }, { data: reads }] = await Promise.all([
       supabase.from("deal_messages").select("person_id, author_id, created_at").order("created_at", { ascending: false }).limit(2000),
       supabase.from("deal_reads").select("person_id, read_at"),
@@ -95,7 +97,7 @@ export default function OfficeDeals({ viewer, excludeOwn = false }) {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2" role="group" aria-label="Review status">
-        {FILTERS.map(([key, label]) => (
+        {DEAL_COMPLIANCE && FILTERS.map(([key, label]) => (
           <button key={key} type="button" onClick={() => setFilter(key)} className={`rounded-full px-3.5 py-1.5 text-xs font-semibold ${filter === key ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15"}`}>
             {label} <span className="opacity-60">{counts[key] || 0}</span>
           </button>

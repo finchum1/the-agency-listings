@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DEAL_COMPLIANCE } from "../../../lib/dealFeatures";
 import { supabase } from "../../../lib/supabaseClient";
 import { COMPLIANCE_TONES, complianceInfo } from "../../../lib/deals";
 import { refreshDealAttention } from "../../../hooks/useDealAttention";
@@ -14,6 +15,7 @@ const KIND_LABEL = { submitted: "Submitted for review", approved: "Approved", ch
 const stamp = (iso) => new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
 export function ComplianceChip({ status, className = "" }) {
+  if (!DEAL_COMPLIANCE) return null;
   const info = complianceInfo(status);
   return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${COMPLIANCE_TONES[info.tone]} ${className}`}>{info.label}</span>;
 }

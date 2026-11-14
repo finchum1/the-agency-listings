@@ -15,6 +15,7 @@ import DealCompliance from "./DealCompliance";
 import DealTeam from "./DealTeam";
 import DealContacts from "./DealContacts";
 import DealSignatures from "./DealSignatures";
+import { DEAL_COMPLIANCE, DEAL_SIGNING } from "../../../lib/dealFeatures";
 import DealTabs, { dealTabs } from "./DealTabs";
 import DealOverview from "./DealOverview";
 import DealProgressBars from "./DealProgressBars";
@@ -917,6 +918,7 @@ export default function PersonPanel({
           onTab={setTab}
           onDate={changeDate}
           onCheckTask={summary.completeTask}
+          onAddTask={summary.addTask}
         >
           {{
             top: (
@@ -932,11 +934,11 @@ export default function PersonPanel({
       {tab === "tasks" && <TransactionModules person={person} side={dealSide} dates={dealDates} show="tasks" />}
       {tab === "documents" && (
         <div className="space-y-6">
-          <DealSignatures person={person} viewer="owner" agent={{ name: signedInName, email: signedInEmail }} />
+          {DEAL_SIGNING && <DealSignatures person={person} viewer="owner" agent={{ name: signedInName, email: signedInEmail }} />}
           <TransactionModules person={person} side={dealSide} dates={dealDates} show="documents" />
         </div>
       )}
-      {tab === "messages" && <DealCompliance person={person} viewer="owner" onChanged={() => { onChanged(); summary.reload(); }} />}
+      {DEAL_COMPLIANCE && tab === "messages" && <DealCompliance person={person} viewer="owner" onChanged={() => { onChanged(); summary.reload(); }} />}
       {tab === "details" && (
         <div className="space-y-8">
           <div className="flex items-center justify-between gap-3">

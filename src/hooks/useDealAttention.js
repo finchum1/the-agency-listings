@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { DEAL_COMPLIANCE } from "../lib/dealFeatures";
 
 export const DEAL_ATTENTION_EVENT = "deals-attention-changed";
 export const refreshDealAttention = () => window.dispatchEvent(new Event(DEAL_ATTENTION_EVENT));
@@ -9,6 +10,9 @@ export const refreshDealAttention = () => window.dispatchEvent(new Event(DEAL_AT
 // screen calls refreshDealAttention() (after reading a thread or submitting a deal).
 export function useDealAttention(enabled) {
   const [counts, setCounts] = useState({ needs_changes: 0, to_review: 0, unread: 0 });
+
+  // The three things counted here are all review / messages, which are switched off for now (lib/dealFeatures.js).
+  enabled = enabled && DEAL_COMPLIANCE;
 
   const load = useCallback(async () => {
     if (!enabled) return;

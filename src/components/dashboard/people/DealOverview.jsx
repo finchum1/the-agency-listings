@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { dayLabel, daysBetween, toKey } from "../../../lib/homeDates";
 import { chicagoDay, clockLabel, markerPosition } from "../../../lib/timeline";
 import { money } from "./DealDetailList";
+import { DEAL_COMPLIANCE, DEAL_SIGNING } from "../../../lib/dealFeatures";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const DATES = [
@@ -30,6 +32,40 @@ function Row({ onClick, title, note, tone, onCheck, indent = false }) {
   );
 }
 
+// One line to add a task without leaving the Overview: what it is, the day it is due (today unless changed), Enter or Add.
+function QuickAddTask({ onAdd, today }) {
+  const [text, setText] = useState("");
+  const [due, setDue] = useState(today);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!text.trim() || busy) return;
+    setBusy(true);
+    setError("");
+    const err = await onAdd(text.trim(), due || today);
+    setBusy(false);
+    if (err) setError(err);
+    else {
+      setText("");
+      setDue(today);
+    }
+  };
+  const field = "rounded-xl border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  return (
+    <form onSubmit={submit} className="space-y-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Add a task…" aria-label="New task" maxLength={300} className={`${field} min-w-0 flex-1 basis-48`} />
+        <input type="date" value={due} onChange={(e) => setDue(e.target.value)} aria-label="Due date" className={field} />
+        <button type="submit" disabled={!text.trim() || busy} className="shrink-0 rounded-xl bg-[#1c1a17] dark:bg-[#faf9f7] px-4 py-2 text-sm font-semibold text-white dark:text-[#1c1a17] disabled:opacity-40">
+          {busy ? "Adding…" : "Add"}
+        </button>
+      </div>
+      {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+    </form>
+  );
+}
+
 // The deal's Overview tab: what needs you, what's coming up, and the key dates as a line you can click to change. Notes and drafts are added
 // by the panel around it (`children`).
 //   summary   from useDealSummary          onTab(tab) jumps to another tab
@@ -37,17 +73,18 @@ function Row({ onClick, title, note, tone, onCheck, indent = false }) {
 //   cash       a cash purchase: the appraisal and financing tiles go away      onCash(bool) flips it (omit for read-only)
 //   earnest    { amount, delivered, at }: the earnest money, checked off here when it reaches the title company     onEarnest(bool) ticks it (omit for read-only)
 //   onCheckTask(task)  ticks a task off right here, from the overdue and coming-up lists (omit for read-only)
-export default function DealOverview({ person, summary, dates, cash = false, onCash, earnest, onEarnest, onTab, onDate, onCheckTask, children }) {
+//   onAddTask(text, due)  adds a task from the line under "Needs you"; resolves to an error message or null (omit for read-only)
+export default function DealOverview({ person, summary, dates, cash = false, onCash, earnest, onEarnest, onTab, onDate, onCheckTask, onAddTask, children }) {
   const today = toKey(new Date());
   const needs = [];
-  if (person.compliance_status === "needs_changes") needs.push({ key: "sb", title: "Compliance sent this deal back", note: "Read the note", tone: "alert", tab: "messages" });
+  if (DEAL_COMPLIANCE && person.compliance_status === "needs_changes") needs.push({ key: "sb", title: "Compliance sent this deal back", note: "Read the note", tone: "alert", tab: "messages" });
   for (const t of summary.dueNow.slice(0, 3)) needs.push({ key: `t${t.id}`, title: t.text, note: `due ${dayLabel(t.due, today)}`, tone: t.due < today ? "alert" : undefined, tab: "tasks", task: t });
   if (summary.dueNow.length > 3) needs.push({ key: "more", title: `${summary.dueNow.length - 3} more tasks overdue or due today`, note: "See all", tone: "alert", tab: "tasks" });
-  for (const s of summary.signaturesOut) {
+  for (const s of DEAL_SIGNING ? summary.signaturesOut : []) {
     const waiting = (s.recipients || []).filter((r) => r.signing_status === "NOT_SIGNED" && r.role !== "CC").map((r) => r.name || r.email);
     needs.push({ key: `s${s.id}`, title: s.title, note: waiting.length ? `waiting on ${waiting.slice(0, 2).join(", ")}${waiting.length > 2 ? "…" : ""}` : "out for signature", tab: "documents" });
   }
-  if (summary.unread > 0) needs.push({ key: "msg", title: `${summary.unread} new message${summary.unread === 1 ? "" : "s"}`, note: "Read", tab: "messages" });
+  if (DEAL_COMPLIANCE && summary.unread > 0) needs.push({ key: "msg", title: `${summary.unread} new message${summary.unread === 1 ? "" : "s"}`, note: "Read", tab: "messages" });
 
   // Where "today" falls along the five dates, in proportion to the real days between the dates on either side of it (null when none are set).
   const tiles = cash ? DATES.filter(([key]) => !CASH_SKIPS.includes(key)) : DATES;
@@ -58,6 +95,7 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
       {children?.top}
       <section aria-label="Needs you" className="space-y-2">
         <h3 className="font-display text-base font-semibold">Needs you</h3>
+        {onAddTask && <QuickAddTask onAdd={onAddTask} today={today} />}
         {needs.length === 0 ? (
           <p className={`rounded-xl bg-emerald-50 dark:bg-emerald-400/10 px-3.5 py-2.5 text-sm text-emerald-800 dark:text-emerald-300`}>{summary.loaded ? "Nothing needs you right now." : "Checking…"}</p>
         ) : (
