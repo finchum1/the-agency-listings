@@ -2,6 +2,7 @@
 // People bot API: a deal is a person on the Deals board. Changes are limited to what an agent does day to day: dates, who is on the deal, earnest
 // money, notes and the checklist. Nothing here submits to compliance, sends to e-sign, emails anyone or deletes anything.
 import * as people from "./bots/people.js";
+import { trrDeadline } from "../../src/lib/trr.js";
 import * as posts from "./bots/posts.js";
 import * as listings from "./bots/listings.js";
 import { HttpError, bad } from "./bots/util.js";
@@ -15,12 +16,12 @@ const own = { needAdmin: false };
 
 const DATES = {
   contract_date: str("YYYY-MM-DD"), inspection_date: str("YYYY-MM-DD, the home inspection day"), inspection_time: str("HH:MM, the time of the home inspection"),
-  inspection_period_end: str("YYYY-MM-DD, when the inspection period ends"), appraisal_date: str("YYYY-MM-DD (not for cash deals)"),
+  inspection_period_end: str("YYYY-MM-DD, when the inspection period ends"), trr_received_date: str("YYYY-MM-DD, the day the TRR report was received (from either side)"), appraisal_date: str("YYYY-MM-DD (not for cash deals)"),
   financing_deadline: str("YYYY-MM-DD (not for cash deals)"), closing_date: str("YYYY-MM-DD"), closing_time: str("HH:MM, the time of the closing"),
 };
 const MONEY = {
   price: { type: "number", description: "Contract price in dollars" }, commission: { type: "number", description: "Commission in dollars" },
-  earnest_money: { type: "number", description: "Earnest money in dollars" }, earnest_money_delivered: bool("true once it is at the title company (shows on the client and agent timelines)"),
+  earnest_money: { type: "number", description: "Earnest money in dollars" }, trr_days: { type: "number", description: "Days to negotiate the TRR after it is received (7 unless the contract says otherwise)" }, earnest_money_delivered: bool("true once it is at the title company (shows on the client and agent timelines)"),
   is_cash: bool("A cash purchase: no appraisal or financing dates, no lender"),
 };
 const WHO = {
@@ -177,8 +178,9 @@ const listDeals = async (ctx, a) => {
 const getDeal = async (ctx, a) => {
   const [{ person, notes }, checklist] = await Promise.all([people.getPerson(ctx, a.deal_id), people.getChecklist(ctx, a.deal_id)]);
   if (person.stage_group !== "transaction") throw new HttpError(400, `${person.name} isn't a deal.`);
-  const keep = ["id", "name", "email", "phone", "property_address", "side", "stage", "price", "commission", "contract_date", "inspection_date", "inspection_time", "inspection_period_end", "appraisal_date", "financing_deadline", "closing_date", "closing_time", "earnest_money", "earnest_money_delivered", "is_cash", "compliance_status", "other_agent", "other_agent_email", "other_agent_company", "other_agent_phone", "other_agent2", "other_agent2_email", "other_agent2_company", "other_agent2_phone", "other_party_name", "financing_type", "title_phone", "lender_phone", "other_agent_tc_name", "other_agent_tc_email", "title_company", "escrow_officer", "escrow_officer_email", "title_processor_name", "title_processor_email", "lender", "lender_email", "loan_processor_name", "loan_processor_email", "client2_name", "client2_email"];
+  const keep = ["id", "name", "email", "phone", "property_address", "side", "stage", "price", "commission", "contract_date", "inspection_date", "inspection_time", "inspection_period_end", "trr_received_date", "trr_days", "appraisal_date", "financing_deadline", "closing_date", "closing_time", "earnest_money", "earnest_money_delivered", "is_cash", "compliance_status", "other_agent", "other_agent_email", "other_agent_company", "other_agent_phone", "other_agent2", "other_agent2_email", "other_agent2_company", "other_agent2_phone", "other_party_name", "financing_type", "title_phone", "lender_phone", "other_agent_tc_name", "other_agent_tc_email", "title_company", "escrow_officer", "escrow_officer_email", "title_processor_name", "title_processor_email", "lender", "lender_email", "loan_processor_name", "loan_processor_email", "client2_name", "client2_email"];
   const deal = Object.fromEntries(keep.filter((k) => person[k] !== null && person[k] !== undefined && person[k] !== "").map((k) => [k, person[k]]));
+  if (person.trr_received_date) deal.trr_deadline = trrDeadline(person.trr_received_date, person.trr_days);
   const [{ data: picked }, { data: wide }, office] = await Promise.all([ctx.client.from("deal_tcs").select("tc_id").eq("person_id", a.deal_id), ctx.client.from("deal_team").select("tc_id").eq("agent_id", ctx.ownerId), officeCoordinators(ctx)]);
   const nameOf = (id) => office.find((c) => c.id === id)?.name || "Coordinator";
   const coordinators = (picked || []).map((r) => ({ id: r.tc_id, name: nameOf(r.tc_id) }));

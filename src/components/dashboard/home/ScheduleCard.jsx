@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { withTrr } from "../../../lib/trr";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { usePeopleStages } from "../../../hooks/usePeopleStages";
@@ -17,6 +18,7 @@ const DEAL_DATES = [
   ["contract_date", "Contract"],
   ["inspection_date", "Inspection"],
   ["inspection_period_end", "Inspection period ends"],
+  ["trr_deadline", "TRR negotiation ends"],
   ["appraisal_date", "Appraisal"],
   ["financing_deadline", "Financing deadline"],
   ["closing_date", "Closing"],
@@ -31,11 +33,11 @@ function useDealDates(enabled, userId) {
     let active = true;
     supabase
       .from("people")
-      .select("id, name, property_address, stage, contract_date, inspection_date, inspection_time, inspection_period_end, appraisal_date, financing_deadline, closing_date, closing_time, is_cash")
+      .select("id, name, property_address, stage, contract_date, inspection_date, inspection_time, inspection_period_end, trr_received_date, trr_days, appraisal_date, financing_deadline, closing_date, closing_time, is_cash")
       .eq("owner_id", userId)
       .eq("stage_group", "transaction")
       .eq("archived", false)
-      .then(({ data }) => active && setDeals((data || []).filter((p) => p.stage !== closedStage)));
+      .then(({ data }) => active && setDeals((data || []).filter((p) => p.stage !== closedStage).map(withTrr)));
     return () => {
       active = false;
     };

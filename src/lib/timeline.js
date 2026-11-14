@@ -1,3 +1,4 @@
+import { withTrr } from "./trr.js";
 // The client-facing deal timeline: which milestones a deal has, which are behind us, what's next, and the plain-English line a
 // buyer or seller reads under each. Dates are "YYYY-MM-DD"; `today` comes from the server so every viewer sees the same day.
 const parse = (key) => {
@@ -38,6 +39,13 @@ const COPY = {
     buyer: "The last day of your inspection period. Inspections and any repair requests are wrapped up by now.",
     seller: "The last day of the buyer's inspection period. Any repair requests come through us by now.",
   },
+  trr_deadline: {
+    done: { buyer: "TRR negotiation wrapped up.", seller: "TRR negotiation wrapped up." },
+    label: "TRR negotiation ends",
+    icon: "scale",
+    buyer: "The last day to negotiate the TRR. Repairs and credits are agreed by then.",
+    seller: "The last day to negotiate the TRR. Any requests are answered by then.",
+  },
   earnest_money_delivered: {
     done: { buyer: "Your earnest money is at the title company.", seller: "The buyer's earnest money is at the title company." },
     label: "Earnest money delivered",
@@ -76,7 +84,7 @@ export function buildTimeline(deal, today) {
   const side = deal.side === "seller" ? "seller" : "buyer";
   // Earnest money has no due date of its own: once it is checked off as delivered it is a milestone on the day that happened.
   const delivered = deal.earnest_money_delivered && deal.earnest_money_delivered_at ? chicagoDay(deal.earnest_money_delivered_at) : "";
-  const source = { ...deal, earnest_money_delivered: delivered };
+  const source = { ...withTrr(deal), earnest_money_delivered: delivered };
   const items = Object.keys(COPY)
     .filter((k) => source[k] && !(deal.is_cash && (k === "appraisal_date" || k === "financing_deadline")))
     .map((k) => ({ key: k, label: COPY[k].label, icon: COPY[k].icon, text: COPY[k][side], doneText: COPY[k].done[side], date: source[k], time: k === "inspection_date" ? deal.inspection_time || "" : k === "closing_date" ? deal.closing_time || "" : "", days: daysBetween(today, source[k]) }))

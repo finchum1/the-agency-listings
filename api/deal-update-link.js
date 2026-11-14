@@ -65,6 +65,7 @@ export default async function handler(req, res) {
       inspection_date: deal.inspection_date,
       inspection_time: deal.inspection_time,
       inspection_period_end: deal.inspection_period_end,
+      trr_deadline: deal.trr_deadline,
       appraisal_date: deal.appraisal_date,
       financing_deadline: deal.financing_deadline,
       is_cash: deal.is_cash,

@@ -3,6 +3,8 @@
 // and returns plain text for Claude to read. Text that came from the public (website inquiry messages) is fenced and
 // labelled as untrusted so it can't pass for an instruction.
 
+import { withTrr } from "../../src/lib/trr.js";
+
 const TZ = "America/Chicago";
 const pad = (n) => String(n).padStart(2, "0");
 const todayKey = (tz = TZ) => new Date().toLocaleDateString("en-CA", { timeZone: tz });
@@ -28,6 +30,7 @@ const DEAL_DATES = [
   ["contract_date", "Contract"],
   ["inspection_date", "Inspection"],
   ["inspection_period_end", "Inspection period ends"],
+  ["trr_deadline", "TRR negotiation ends"],
   ["appraisal_date", "Appraisal"],
   ["financing_deadline", "Financing deadline"],
   ["closing_date", "Closing"],
@@ -77,7 +80,7 @@ async function today(sb, userId, args) {
   const followUps = live.filter((p) => p.next_follow_up && p.next_follow_up <= day).sort((a, b) => a.next_follow_up.localeCompare(b.next_follow_up));
   lines.push(`## Follow-ups due or overdue (${followUps.length})`, ...(followUps.length ? followUps.slice(0, 30).map(personLine) : ["- none"]), "");
 
-  const openDeals = live.filter((p) => p.stage_group === "transaction" && p.stage !== closed);
+  const openDeals = live.filter((p) => p.stage_group === "transaction" && p.stage !== closed).map(withTrr);
   const upcoming = [];
   for (const p of openDeals) for (const [field, label] of DEAL_DATES) if (p[field] && !(p.is_cash && (field === "appraisal_date" || field === "financing_deadline")) && p[field] >= day && p[field] <= soon) upcoming.push({ date: p[field], text: `${label}: ${p.name}${p.property_address ? `, ${p.property_address}` : ""}` });
   upcoming.sort((a, b) => a.date.localeCompare(b.date));

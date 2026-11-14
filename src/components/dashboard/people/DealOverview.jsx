@@ -2,6 +2,7 @@ import { useState } from "react";
 import { dayLabel, daysBetween, toKey } from "../../../lib/homeDates";
 import { chicagoDay, clockLabel, markerPosition } from "../../../lib/timeline";
 import { money } from "./DealDetailList";
+import { DEFAULT_TRR_DAYS, trrDays, trrDeadline } from "../../../lib/trr";
 import { DEAL_COMPLIANCE, DEAL_SIGNING } from "../../../lib/dealFeatures";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
@@ -85,6 +86,11 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
     needs.push({ key: `s${s.id}`, title: s.title, note: waiting.length ? `waiting on ${waiting.slice(0, 2).join(", ")}${waiting.length > 2 ? "…" : ""}` : "out for signature", tab: "documents" });
   }
   if (DEAL_COMPLIANCE && summary.unread > 0) needs.push({ key: "msg", title: `${summary.unread} new message${summary.unread === 1 ? "" : "s"}`, note: "Read", tab: "messages" });
+
+  // The TRR window: received + the deal's days to negotiate. Close to its end it asks for attention here.
+  const trrEnd = trrDeadline(dates.trr_received_date, dates.trr_days);
+  const trrLeft = trrEnd ? daysBetween(today, trrEnd) : null;
+  if (trrLeft != null && trrLeft >= 0 && trrLeft <= 2) needs.push({ key: "trr", title: "TRR negotiation ends", note: trrLeft === 0 ? "today" : trrLeft === 1 ? "tomorrow" : `in ${trrLeft} days`, tone: trrLeft === 0 ? "alert" : undefined, tab: "overview" });
 
   // Where "today" falls along the five dates, in proportion to the real days between the dates on either side of it (null when none are set).
   const tiles = cash ? DATES.filter(([key]) => !CASH_SKIPS.includes(key)) : DATES;
@@ -197,6 +203,49 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
           </div>
         )}
       </section>
+      {(onDate || dates.trr_received_date) && (
+        <section aria-label="TRR" className="space-y-2">
+          <h3 className="font-display text-base font-semibold">TRR</h3>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-black/10 dark:border-white/15 px-3.5 py-3 text-sm">
+            <label className="flex items-center gap-2">
+              <span className={`text-xs ${muted}`}>Report received</span>
+              <input
+                type="date"
+                value={dates.trr_received_date || ""}
+                disabled={!onDate}
+                onChange={(e) => onDate?.("trr_received_date", e.target.value)}
+                aria-label="TRR report received"
+                className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+              />
+            </label>
+            <label className="flex items-center gap-2">
+              <span className={`text-xs ${muted}`}>Days to negotiate</span>
+              <input
+                type="number"
+                min="1"
+                max="120"
+                value={dates.trr_days === "" || dates.trr_days == null ? DEFAULT_TRR_DAYS : dates.trr_days}
+                disabled={!onDate}
+                onChange={(e) => onDate?.("trr_days", e.target.value)}
+                aria-label="Days to negotiate the TRR"
+                className="w-16 rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+              />
+            </label>
+            {trrEnd ? (
+              <span className={trrLeft != null && trrLeft <= 0 ? "font-semibold text-red-600 dark:text-red-400" : "font-semibold"}>
+                Negotiate by {shortDate(trrEnd)} <span className={`font-normal ${muted}`}>{trrLeft === 0 ? "· today" : trrLeft > 0 ? `· in ${trrLeft} day${trrLeft === 1 ? "" : "s"}` : `· ended ${-trrLeft} day${trrLeft === -1 ? "" : "s"} ago`}</span>
+              </span>
+            ) : (
+              <span className={`text-xs ${muted}`}>Enter the day the report arrives to see the deadline. The standard is {DEFAULT_TRR_DAYS} days; change it if the contract says otherwise.</span>
+            )}
+            {onDate && dates.trr_received_date && (
+              <button type="button" onClick={() => { onDate("trr_received_date", ""); }} className={`text-xs underline underline-offset-2 ${muted} hover:opacity-80`}>
+                Clear
+              </button>
+            )}
+          </div>
+        </section>
+      )}
       {earnest && (
         <section aria-label="Earnest money" className="space-y-2">
           <h3 className="font-display text-base font-semibold">Earnest money</h3>

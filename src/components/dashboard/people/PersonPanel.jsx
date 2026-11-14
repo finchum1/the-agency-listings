@@ -38,8 +38,8 @@ const primaryBtn =
 const navBtn =
   "h-8 w-8 flex items-center justify-center rounded-full border border-black/10 dark:border-white/15 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed";
 
-const DATE_FIELDS = ["next_follow_up", "contract_date", "inspection_date", "inspection_period_end", "inspection_time", "appraisal_date", "financing_deadline", "closing_date", "closing_time"];
-const NUMBER_FIELDS = ["price", "commission", "earnest_money"];
+const DATE_FIELDS = ["next_follow_up", "contract_date", "inspection_date", "inspection_period_end", "inspection_time", "appraisal_date", "financing_deadline", "closing_date", "closing_time", "trr_received_date"];
+const NUMBER_FIELDS = ["price", "commission", "earnest_money", "trr_days"];
 const TEXT_FIELDS = [
   "name", "email", "phone", "source", "property_address", "other_agent", "other_agent2", "title_company", "lender",
   "client2_name", "client2_email", "other_agent_email", "other_agent2_email", "other_agent_company", "other_agent_phone", "other_agent2_company", "other_agent2_phone", "other_party_name", "title_phone", "lender_phone", "financing_type", "other_agent_tc_name", "other_agent_tc_email", "escrow_officer", "escrow_officer_email", "title_processor_name", "title_processor_email", "lender_email", "loan_processor_name", "loan_processor_email",
@@ -116,7 +116,7 @@ export default function PersonPanel({
   const [menuOpen, setMenuOpen] = useState(false);
   const [dealModal, setDealModal] = useState(null); // share | back | archive
   const [editingDetails, setEditingDetails] = useState(false); // the Details tab reads like a summary until Edit is pressed
-  const dealDates = { contract_date: form.contract_date, inspection_date: form.inspection_date, inspection_period_end: form.inspection_period_end, inspection_time: form.inspection_time, appraisal_date: form.appraisal_date, financing_deadline: form.financing_deadline, closing_date: form.closing_date, closing_time: form.closing_time };
+  const dealDates = { contract_date: form.contract_date, inspection_date: form.inspection_date, inspection_period_end: form.inspection_period_end, trr_received_date: form.trr_received_date, trr_days: form.trr_days, inspection_time: form.inspection_time, appraisal_date: form.appraisal_date, financing_deadline: form.financing_deadline, closing_date: form.closing_date, closing_time: form.closing_time };
   const summary = useDealSummary(isDeal ? person.id : null, dealDates);
   useEffect(() => {
     if (isDeal) summary.reload();

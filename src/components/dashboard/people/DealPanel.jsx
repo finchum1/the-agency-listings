@@ -86,7 +86,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
   const [error, setError] = useState("");
   const [fresh, setFresh] = useState(deal);
   // All five key dates: the overview's date tiles read them (the checklist's due dates only follow the first three).
-  const dealDates = { contract_date: fresh.contract_date || "", inspection_date: fresh.inspection_date || "", inspection_period_end: fresh.inspection_period_end || "", inspection_time: fresh.inspection_time || "", appraisal_date: fresh.appraisal_date || "", financing_deadline: fresh.financing_deadline || "", closing_date: fresh.closing_date || "", closing_time: fresh.closing_time || "" };
+  const dealDates = { contract_date: fresh.contract_date || "", inspection_date: fresh.inspection_date || "", inspection_period_end: fresh.inspection_period_end || "", trr_received_date: fresh.trr_received_date || "", trr_days: fresh.trr_days == null ? "" : String(fresh.trr_days), inspection_time: fresh.inspection_time || "", appraisal_date: fresh.appraisal_date || "", financing_deadline: fresh.financing_deadline || "", closing_date: fresh.closing_date || "", closing_time: fresh.closing_time || "" };
   const summary = useDealSummary(deal.id, dealDates);
   useEffect(() => {
     summary.reload();
@@ -246,7 +246,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
   };
   const changeDate = (key, v) => {
     setForm((f) => ({ ...f, [key]: v }));
-    const val = v || null;
+    const val = key === "trr_days" ? (v === "" || v == null ? null : Number(v)) : v || null;
     setFresh((f) => ({ ...f, [key]: val }));
     save({ [key]: val });
   };

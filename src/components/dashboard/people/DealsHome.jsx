@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { withTrr } from "../../../lib/trr";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { announceDealWork, onDealWork } from "../../../lib/dealEvents";
@@ -16,6 +17,7 @@ const KEY_DATES = [
   ["contract_date", "Contract"],
   ["inspection_date", "Inspection"],
   ["inspection_period_end", "Inspection period ends"],
+  ["trr_deadline", "TRR negotiation ends"],
   ["appraisal_date", "Appraisal"],
   ["financing_deadline", "Financing deadline"],
   ["closing_date", "Closing"],
@@ -119,7 +121,7 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
 
   // Where a deal sits on this board: a deal you coordinate sits where you put it.
   const colOf = (p) => (p._foreign ? p._column || p.stage : p.stage);
-  const openDeals = deals.filter((p) => colOf(p) !== closedStage);
+  const openDeals = deals.filter((p) => colOf(p) !== closedStage).map(withTrr);
   // Commission is the agent's money: only deals that are yours count toward it, even when the numbers above include deals you coordinate.
   const ownOpen = openDeals.filter((p) => !p._foreign);
   const hasForeign = deals.some((p) => p._foreign);

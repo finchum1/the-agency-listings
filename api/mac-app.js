@@ -115,14 +115,14 @@ const EDITABLE = {
   do_not_contact: (v) => (typeof v === "boolean" ? v : undefined),
 };
 
-const DEAL_COLUMNS = "id, owner_id, name, email, phone, stage, side, property_address, price, commission, contract_date, inspection_date, inspection_period_end, inspection_time, appraisal_date, financing_deadline, closing_date, closing_time, is_cash, financing_type, compliance_status, earnest_money, earnest_money_delivered, earnest_money_delivered_at, updated_at, contact_id";
+const DEAL_COLUMNS = "id, owner_id, name, email, phone, stage, side, property_address, price, commission, contract_date, inspection_date, inspection_period_end, trr_received_date, trr_days, inspection_time, appraisal_date, financing_deadline, closing_date, closing_time, is_cash, financing_type, compliance_status, earnest_money, earnest_money_delivered, earnest_money_delivered_at, updated_at, contact_id";
 const DEAL_PARTY_COLUMNS = "client2_name, client2_email, other_agent, other_agent_email, other_agent_company, other_agent_phone, other_agent2, other_agent2_email, other_agent2_company, other_agent2_phone, other_agent_tc_name, other_agent_tc_email, title_company, title_company_email, title_phone, title_processor_name, title_processor_email, escrow_officer, escrow_officer_email, lender, lender_email, lender_phone, loan_processor_name, loan_processor_email, other_party_name";
 // What may be edited on a deal, and how each value is cleaned (null = clear it). Anything else in `changes` is ignored.
 const DEAL_TEXT = ["email", "phone", "property_address", "financing_type", "client2_name", "client2_email", "other_party_name", "other_agent", "other_agent_email", "other_agent_phone", "other_agent_company",
   "other_agent2", "other_agent2_email", "other_agent2_phone", "other_agent2_company", "other_agent_tc_name", "other_agent_tc_email", "title_company", "title_company_email", "title_phone",
   "title_processor_name", "title_processor_email", "escrow_officer", "escrow_officer_email", "lender", "lender_email", "lender_phone", "loan_processor_name", "loan_processor_email"];
 const DEAL_NUMBERS = ["price", "commission", "earnest_money"];
-const DEAL_DATES = ["contract_date", "inspection_date", "inspection_period_end", "appraisal_date", "financing_deadline", "closing_date"];
+const DEAL_DATES = ["contract_date", "inspection_date", "inspection_period_end", "trr_received_date", "appraisal_date", "financing_deadline", "closing_date"];
 const DEAL_TIMES = ["inspection_time", "closing_time"];
 const DEFAULT_PEOPLE_STAGES = { lead: ["New", "Contacted", "Nurturing", "Qualified"], pipeline: ["12+ Months", "6+ Months", "3-6 Months", "Coming Soon", "Active"] };
 const DEFAULT_CADENCE = { lead: { New: 1, Contacted: 3, Nurturing: 14, Qualified: 3 }, pipeline: { "12+ Months": 90, "6+ Months": 60, "3-6 Months": 30, "Coming Soon": 7, Active: 3 } };

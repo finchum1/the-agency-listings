@@ -2,6 +2,7 @@
 // missing, and what changed since the last update. The same text goes out whether the coordinator presses the button (api/deal-notify.js)
 // or a milestone triggers it (api/deal-updates.js).
 import { effectiveDue } from "../../src/lib/checklistDefaults.js";
+import { withTrr } from "../../src/lib/trr.js";
 import { SITE_ORIGIN } from "../../src/lib/seo.js";
 
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -15,12 +16,13 @@ const rel = (key, today) => {
   return d === 0 ? "today" : d === 1 ? "tomorrow" : d === -1 ? "yesterday" : d > 0 ? `in ${d} days` : `${-d} days ago`;
 };
 
-export const DATE_LABELS = { contract_date: "Contract", inspection_date: "Inspection", inspection_period_end: "Inspection period ends", appraisal_date: "Appraisal", financing_deadline: "Financing deadline", closing_date: "Closing" };
+export const DATE_LABELS = { contract_date: "Contract", inspection_date: "Inspection", inspection_period_end: "Inspection period ends", trr_deadline: "TRR negotiation ends", appraisal_date: "Appraisal", financing_deadline: "Financing deadline", closing_date: "Closing" };
 
 /** Everything an update needs about one deal, read with the service role. */
 export async function gatherDeal(admin, personId) {
-  const { data: deal } = await admin.from("people").select("*").eq("id", personId).eq("stage_group", "transaction").maybeSingle();
-  if (!deal) return null;
+  const { data: row } = await admin.from("people").select("*").eq("id", personId).eq("stage_group", "transaction").maybeSingle();
+  if (!row) return null;
+  const deal = withTrr(row);
   const [{ data: owner }, { data: tasks }, { data: docs }, { data: sigs }, { data: per }, { data: wide }, { data: last }] = await Promise.all([
     admin.from("profiles").select("id, full_name, email, org:organizations(name)").eq("id", deal.owner_id).maybeSingle(),
     admin.from("transaction_tasks").select("*").eq("person_id", personId).order("position"),
