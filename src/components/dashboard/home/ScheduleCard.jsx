@@ -20,10 +20,9 @@ const DEAL_DATES = [
   ["inspection_period_end", "Inspection period ends"],
   ["trr_deadline", "TRR negotiation ends"],
   ["appraisal_date", "Appraisal"],
-  ["financing_deadline", "Financing deadline"],
   ["closing_date", "Closing"],
 ];
-// Open deals' key dates (contract, inspection, appraisal, financing deadline, closing) for the schedule. Only runs when
+// Open deals' key dates (contract, inspection, TRR, appraisal, closing) for the schedule. Only runs when
 // the agent has People on.
 function useDealDates(enabled, userId) {
   const { closedStage } = usePeopleStages();
@@ -33,7 +32,7 @@ function useDealDates(enabled, userId) {
     let active = true;
     supabase
       .from("people")
-      .select("id, name, property_address, stage, contract_date, inspection_date, inspection_time, inspection_period_end, trr_received_date, trr_days, appraisal_date, financing_deadline, closing_date, closing_time, is_cash")
+      .select("id, name, property_address, stage, contract_date, inspection_date, inspection_time, inspection_period_end, trr_received_date, trr_days, appraisal_date, closing_date, closing_time, is_cash")
       .eq("owner_id", userId)
       .eq("stage_group", "transaction")
       .eq("archived", false)
@@ -176,7 +175,7 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
     if (show.deals) {
       for (const p of deals) {
         for (const [field, label] of DEAL_DATES) {
-          if (!p[field] || (p.is_cash && (field === "appraisal_date" || field === "financing_deadline"))) continue;
+          if (!p[field] || (p.is_cash && field === "appraisal_date")) continue;
           const base = { id: `deal-${p.id}-${field}`, kind: "deal", title: label, sub: [p.name, p.property_address].filter(Boolean).join(" · "), color: DEAL_COLOR };
           // The home inspection has a time of day once one is set: it shows in the hour grid (an hour and a half) rather than all day.
           if (field === "inspection_date" && p.inspection_time) {

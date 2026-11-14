@@ -444,7 +444,7 @@ export default function LandingPage() {
               body="Deals have their own place in the dashboard. Each one gets its key dates, the numbers, the title and lender, and buyer or seller checklists for tasks and documents, with deadlines counted from the contract date. Progress rings show how far along every deal is."
               bullets={[
                 "An overview of what needs you now and what's coming in the next two weeks",
-                "Contract, inspection, appraisal, financing, and closing dates, plus earnest money",
+                "Contract, inspection, TRR, appraisal, and closing dates, plus earnest money",
                 "A task checklist and a document list, with seller and buyer versions you can edit",
                 "Open deals, expected commission, and closed volume on your Overview",
               ]}

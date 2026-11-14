@@ -12,7 +12,6 @@ const DATES = [
   ["inspection_period_end", "Inspection period ends"],
   ["trr_deadline", "TRR negotiation ends"],
   ["appraisal_date", "Appraisal"],
-  ["financing_deadline", "Financing deadline"],
   ["closing_date", "Closing"],
 ];
 const COMPLIANCE = { submitted: "In compliance review", approved: "Compliance approved", needs_changes: "Sent back by compliance" };
@@ -88,7 +87,7 @@ export default function AgentUpdatePage() {
   const brand = brandFromOrg(org);
   const agentFirst = (agent?.full_name || "").split(" ")[0];
   const senderFirst = (sender?.full_name || "").split(" ")[0];
-  const dated = DATES.filter(([k]) => deal[k] && !(deal.is_cash && (k === "appraisal_date" || k === "financing_deadline"))).map(([k, label]) => ({ key: k, label, date: deal[k], days: daysBetween(today, deal[k]) }));
+  const dated = DATES.filter(([k]) => deal[k] && !(deal.is_cash && k === "appraisal_date")).map(([k, label]) => ({ key: k, label, date: deal[k], days: daysBetween(today, deal[k]) }));
   // Earnest money joins the key dates once it is checked off, on the day it was delivered, and always counts as done.
   if (deal.earnest_money_delivered && deal.earnest_money_delivered_at) {
     const day = chicagoDay(deal.earnest_money_delivered_at);

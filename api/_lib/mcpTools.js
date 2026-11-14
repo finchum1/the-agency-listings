@@ -32,7 +32,6 @@ const DEAL_DATES = [
   ["inspection_period_end", "Inspection period ends"],
   ["trr_deadline", "TRR negotiation ends"],
   ["appraisal_date", "Appraisal"],
-  ["financing_deadline", "Financing deadline"],
   ["closing_date", "Closing"],
 ];
 
@@ -82,7 +81,7 @@ async function today(sb, userId, args) {
 
   const openDeals = live.filter((p) => p.stage_group === "transaction" && p.stage !== closed).map(withTrr);
   const upcoming = [];
-  for (const p of openDeals) for (const [field, label] of DEAL_DATES) if (p[field] && !(p.is_cash && (field === "appraisal_date" || field === "financing_deadline")) && p[field] >= day && p[field] <= soon) upcoming.push({ date: p[field], text: `${label}: ${p.name}${p.property_address ? `, ${p.property_address}` : ""}` });
+  for (const p of openDeals) for (const [field, label] of DEAL_DATES) if (p[field] && !(p.is_cash && field === "appraisal_date") && p[field] >= day && p[field] <= soon) upcoming.push({ date: p[field], text: `${label}: ${p.name}${p.property_address ? `, ${p.property_address}` : ""}` });
   upcoming.sort((a, b) => a.date.localeCompare(b.date));
   lines.push(`## Deal dates in the next 3 days (${upcoming.length})`, ...(upcoming.length ? upcoming.map((u) => `- ${dayName(u.date)}: ${u.text}`) : ["- none"]), "");
 
@@ -148,7 +147,7 @@ async function getPerson(sb, userId, args) {
     p.other_agent2 && `Second agent on the other side: ${p.other_agent2}`,
     p.title_company && `Title company: ${p.title_company}`,
     p.lender && `Lender: ${p.lender}`,
-    ...DEAL_DATES.filter(([f]) => p[f] && !(p.is_cash && (f === "appraisal_date" || f === "financing_deadline"))).map(([f, l]) => `${l}: ${p[f]}`),
+    ...DEAL_DATES.filter(([f]) => p[f] && !(p.is_cash && f === "appraisal_date")).map(([f, l]) => `${l}: ${p[f]}`),
   ].filter(Boolean);
   if ((tasks || []).length) lines.push("", "## Open checklist items", ...tasks.map((t) => `- ${t.text}${taskDue(t, p) ? ` (due ${taskDue(t, p)})` : ""}${t.section ? ` [${t.section}]` : ""}`));
   if ((notes || []).length) lines.push("", "## Notes (newest first)", ...notes.map((n) => `- ${n.created_at.slice(0, 10)}: ${clip(n.body, 500)}`));

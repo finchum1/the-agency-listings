@@ -16,7 +16,7 @@ const rel = (key, today) => {
   return d === 0 ? "today" : d === 1 ? "tomorrow" : d === -1 ? "yesterday" : d > 0 ? `in ${d} days` : `${-d} days ago`;
 };
 
-export const DATE_LABELS = { contract_date: "Contract", inspection_date: "Inspection", inspection_period_end: "Inspection period ends", trr_deadline: "TRR negotiation ends", appraisal_date: "Appraisal", financing_deadline: "Financing deadline", closing_date: "Closing" };
+export const DATE_LABELS = { contract_date: "Contract", inspection_date: "Inspection", inspection_period_end: "Inspection period ends", trr_deadline: "TRR negotiation ends", appraisal_date: "Appraisal", closing_date: "Closing" };
 
 /** Everything an update needs about one deal, read with the service role. */
 export async function gatherDeal(admin, personId) {
@@ -43,7 +43,7 @@ export function summarize(data, today = todayKey()) {
   const { deal, tasks, docs, sigs, lastUpdateAt } = data;
   const dates = { contract_date: deal.contract_date, inspection_date: deal.inspection_date, closing_date: deal.closing_date };
   const open = tasks.filter((t) => !t.done).map((t) => ({ ...t, due: effectiveDue(t, dates) }));
-  const upcomingDates = Object.keys(DATE_LABELS).filter((k) => deal[k] && !(deal.is_cash && (k === "appraisal_date" || k === "financing_deadline")) && deal[k] >= today).map((k) => ({ key: k, label: DATE_LABELS[k], date: deal[k], days: daysBetween(today, deal[k]) })).sort((a, b) => a.date.localeCompare(b.date));
+  const upcomingDates = Object.keys(DATE_LABELS).filter((k) => deal[k] && !(deal.is_cash && k === "appraisal_date") && deal[k] >= today).map((k) => ({ key: k, label: DATE_LABELS[k], date: deal[k], days: daysBetween(today, deal[k]) })).sort((a, b) => a.date.localeCompare(b.date));
   return {
     today,
     overdue: open.filter((t) => t.due && t.due < today).sort((a, b) => a.due.localeCompare(b.due)),
@@ -133,7 +133,6 @@ export function milestonesFor(data, { today = todayKey(), seen = new Set(), firs
   within("inspection_date", 2, "inspection-2", soon("Inspection"));
   if (!deal.is_cash) {
     within("appraisal_date", 2, "appraisal-2", soon("Appraisal"));
-    within("financing_deadline", 2, "financing-2", soon("Financing deadline"));
   }
   const state = [];
   if (s.docsTotal > 0 && s.docsDone === s.docsTotal) state.push({ key: "docs-complete", lead: "All documents are collected" });

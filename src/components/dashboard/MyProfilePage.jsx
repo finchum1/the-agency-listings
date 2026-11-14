@@ -276,7 +276,7 @@ export default function MyProfilePage() {
             <span>
               <span className="font-medium">Email my agents automatically at deal milestones</span>
               <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
-                When closing, an inspection, the appraisal or the financing deadline is a couple of days out, when every document is collected, or when compliance approves, the agent gets a short status email with you as the reply-to. On Mondays they get one summary of deals with something overdue or coming up. You can always send an update yourself from a deal's Overview.
+                When closing, an inspection or the appraisal is a couple of days out, when every document is collected, or when compliance approves, the agent gets a short status email with you as the reply-to. On Mondays they get one summary of deals with something overdue or coming up. You can always send an update yourself from a deal's Overview.
               </span>
             </span>
           </label>

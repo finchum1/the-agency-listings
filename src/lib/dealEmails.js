@@ -64,7 +64,6 @@ export const MERGE_FIELDS = [
   ["inspection_when", "inspection date and time", "Dates"],
   ["inspection_period_end", "end of the inspection period", "Dates"],
   ["appraisal_date", "appraisal date", "Dates"],
-  ["financing_deadline", "financing deadline", "Dates"],
   ["closing_date", "closing date", "Dates"],
   ["closing_time", "closing time", "Dates"],
   ["closing_when", "closing date and time", "Dates"],
@@ -135,7 +134,6 @@ export function fieldValues(deal = {}, ctx = {}) {
     inspection_when: when(deal.inspection_date, deal.inspection_time),
     inspection_period_end: longDate(deal.inspection_period_end),
     appraisal_date: longDate(deal.appraisal_date),
-    financing_deadline: longDate(deal.financing_deadline),
     closing_date: longDate(deal.closing_date),
     closing_time: clock(deal.closing_time),
     closing_when: when(deal.closing_date, deal.closing_time),
@@ -432,7 +430,6 @@ ${SIG}`),
 An update on the appraisal for {property_address}.
 
 ? - Appraisal: {appraisal_date}
-? - Financing deadline: {financing_deadline}
 
 [add where it stands: ordered, scheduled, or completed and the value]
 
@@ -445,7 +442,6 @@ ${SIG}`, { skipCash: true }),
 Can you confirm the appraisal has been ordered on {property_address} and let me know when the report is due?
 
 ? - Appraisal date on the contract: {appraisal_date}
-? - Financing deadline: {financing_deadline}
 ? - Closing: {closing_when}
 
 Thank you,
@@ -456,7 +452,6 @@ ${SIG}`, { skipCash: true }),
 Can you give me a quick update on {client_name}'s loan for {property_address}?
 
 ? - Closing: {closing_when}
-? - Financing deadline: {financing_deadline}
 
 Please let me know where it stands and anything you still need from {client_first_name}. I'll get it to you quickly.
 
@@ -561,7 +556,6 @@ Done this week:
 Coming up:
 ? - Inspection period ends: {inspection_period_end}
 ? - Appraisal: {appraisal_date}
-? - Financing deadline: {financing_deadline}
 ? - Closing: {closing_when}
 
 Have a great weekend. Call or text me with any questions.
@@ -592,7 +586,6 @@ Key dates:
 ? - Inspection: {inspection_when}
 ? - Inspection period ends: {inspection_period_end}
 ? - Appraisal: {appraisal_date}
-? - Financing deadline: {financing_deadline}
 ? - Closing: {closing_when}
 
 Call or text me any time at {my_phone}.
@@ -716,7 +709,6 @@ ${SIG}`, { skipCash: true }),
 Can you confirm the appraisal has been ordered on {property_address} and let me know when the report is due?
 
 ? - Appraisal date on the contract: {appraisal_date}
-? - Financing deadline: {financing_deadline}
 ? - Closing: {closing_when}
 
 Thank you,
@@ -727,7 +719,6 @@ ${SIG}`, { skipCash: true }),
 Can you give me a quick update on the buyer's loan for {property_address}?
 
 ? - Closing: {closing_when}
-? - Financing deadline: {financing_deadline}
 
 Please let me know where it stands and anything you still need from the seller's side.
 
@@ -834,7 +825,6 @@ Done this week:
 Coming up:
 ? - Inspection period ends: {inspection_period_end}
 ? - Appraisal: {appraisal_date}
-? - Financing deadline: {financing_deadline}
 ? - Closing: {closing_when}
 
 Have a great weekend. Call or text me with any questions.

@@ -15,7 +15,7 @@ const GROUPS = ["lead", "pipeline", "transaction"];
 const SIDES = ["buyer", "seller", "both"];
 const ANCHOR_KEYS = ANCHORS.map((a) => a.value);
 const RECURRENCES = ["none", "daily", "weekdays", "weekly", "biweekly", "monthly", "quarterly", "yearly"];
-const DEAL_DATES = ["contract_date", "inspection_date", "inspection_period_end", "trr_received_date", "appraisal_date", "financing_deadline", "closing_date"];
+const DEAL_DATES = ["contract_date", "inspection_date", "inspection_period_end", "trr_received_date", "appraisal_date", "closing_date"];
 
 const fail = (error) => {
   throw new HttpError(error.code === "23514" || error.code === "22P02" ? 400 : 500, error.message);

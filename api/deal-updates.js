@@ -1,5 +1,5 @@
 // GET /api/deal-updates: run by the Vercel cron every morning (vercel.json). For every deal a transaction coordinator works on, emails the agent
-// when a milestone comes up (closing in 7 and 2 days, inspection / appraisal / financing deadline in 2 days, every document collected, compliance
+// when a milestone comes up (closing in 7 and 2 days, inspection / appraisal in 2 days, every document collected, compliance
 // approved), and on Mondays one weekly summary per agent of their coordinated deals that have something overdue or coming up. Each milestone goes
 // out once per deal (deal_update_log). A coordinator can turn this off in My Profile; if CRON_SECRET is set, the call must carry it.
 import { serviceClient } from "./_lib/authUser.js";

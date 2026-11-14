@@ -60,13 +60,6 @@ const COPY = {
     buyer: "The lender's appraiser confirms the home is worth what you are paying.",
     seller: "The lender's appraiser confirms the home's value for the buyer's loan.",
   },
-  financing_deadline: {
-    done: { buyer: "Loan approved.", seller: "The buyer's loan was approved." },
-    label: "Loan approval",
-    icon: "bank",
-    buyer: "Your lender finishes the loan. Respond quickly to anything they ask for.",
-    seller: "The buyer's lender finishes their loan. We stay in touch with them and keep you posted.",
-  },
   closing_date: {
     done: { buyer: "You closed and got the keys.", seller: "You closed and your home is sold." },
     label: "Closing day",
@@ -86,7 +79,7 @@ export function buildTimeline(deal, today) {
   const delivered = deal.earnest_money_delivered && deal.earnest_money_delivered_at ? chicagoDay(deal.earnest_money_delivered_at) : "";
   const source = { ...withTrr(deal), earnest_money_delivered: delivered };
   const items = Object.keys(COPY)
-    .filter((k) => source[k] && !(deal.is_cash && (k === "appraisal_date" || k === "financing_deadline")))
+    .filter((k) => source[k] && !(deal.is_cash && k === "appraisal_date"))
     .map((k) => ({ key: k, label: COPY[k].label, icon: COPY[k].icon, text: COPY[k][side], doneText: COPY[k].done[side], date: source[k], time: k === "inspection_date" ? deal.inspection_time || "" : k === "closing_date" ? deal.closing_time || "" : "", days: daysBetween(today, source[k]) }))
     .sort((a, b) => a.date.localeCompare(b.date));
   // Earnest money is only on the timeline once it is checked off, so it is always done, even on the day it was ticked.

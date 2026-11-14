@@ -124,7 +124,7 @@ export default function PeoplePage() {
             </h2>
             <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed">
               Every deal tracks the property, price and commission, the other agent, title company
-              and lender, and the dates that matter — contract, inspection, appraisal, financing and
+              and lender, and the dates that matter — contract, inspection, TRR, appraisal and
               closing. Pick buyer or seller and your checklist is added automatically, with due dates
               worked out from the deal's own dates.
             </p>

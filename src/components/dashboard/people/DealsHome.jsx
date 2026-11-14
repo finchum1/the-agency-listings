@@ -19,7 +19,6 @@ const KEY_DATES = [
   ["inspection_period_end", "Inspection period ends"],
   ["trr_deadline", "TRR negotiation ends"],
   ["appraisal_date", "Appraisal"],
-  ["financing_deadline", "Financing deadline"],
   ["closing_date", "Closing"],
 ];
 const UPCOMING_DAYS = 14;
@@ -143,7 +142,7 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
   const attention = sentBack.length + overdue.length + waitingDrafts.length;
 
   const upcoming = [];
-  for (const p of openDeals) for (const [key, label] of KEY_DATES) if (p[key] && !(p.is_cash && (key === "appraisal_date" || key === "financing_deadline")) && p[key] >= today && p[key] <= horizon) upcoming.push({ person: p, date: p[key], label });
+  for (const p of openDeals) for (const [key, label] of KEY_DATES) if (p[key] && !(p.is_cash && key === "appraisal_date") && p[key] >= today && p[key] <= horizon) upcoming.push({ person: p, date: p[key], label });
   upcoming.sort((a, b) => a.date.localeCompare(b.date) || a.label.localeCompare(b.label));
 
   const needs = [
@@ -309,7 +308,7 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
           </div>
           <div className={`${card} p-4 space-y-2.5`}>
             <h3 className="font-display text-base font-semibold">Key dates · next {UPCOMING_DAYS} days</h3>
-            {dateDays.length === 0 ? <p className={`text-sm ${muted}`}>No contract, inspection, appraisal, financing or closing dates coming up.</p> : dayList(dateDays, dateAgenda)}
+            {dateDays.length === 0 ? <p className={`text-sm ${muted}`}>No contract, inspection, TRR, appraisal or closing dates coming up.</p> : dayList(dateDays, dateAgenda)}
           </div>
         </div>
         <div className={`${card} p-4 space-y-2.5`}>
