@@ -10,13 +10,13 @@ const DATES = [
   ["contract_date", "Contract"],
   ["inspection_date", "Inspection"],
   ["inspection_period_end", "Inspection period ends"],
+  ["trr_deadline", "TRR ends"],
   ["appraisal_date", "Appraisal"],
-  ["financing_deadline", "Financing"],
   ["closing_date", "Closing"],
 ];
 
-// A cash purchase has no loan: no appraisal, no financing deadline.
-const CASH_SKIPS = ["appraisal_date", "financing_deadline"];
+// A cash purchase has no loan: no appraisal.
+const CASH_SKIPS = ["appraisal_date"];
 const shortDate = (key) => new Date(`${key}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 // `indent` keeps a row without a checkbox in line with the rows that have one (the box's width and gap), so a list's rows share both edges.
@@ -71,7 +71,7 @@ function QuickAddTask({ onAdd, today }) {
 // by the panel around it (`children`).
 //   summary   from useDealSummary          onTab(tab) jumps to another tab
 //   dates     the deal's live key dates    onDate(key, value) changes one (omit for read-only)
-//   cash       a cash purchase: the appraisal and financing tiles go away      onCash(bool) flips it (omit for read-only)
+//   cash       a cash purchase: the appraisal tile goes away      onCash(bool) flips it (omit for read-only)
 //   earnest    { amount, delivered, at }: the earnest money, checked off here when it reaches the title company     onEarnest(bool) ticks it (omit for read-only)
 //   onCheckTask(task)  ticks a task off right here, from the overdue and coming-up lists (omit for read-only)
 //   onAddTask(text, due)  adds a task from the line under "Needs you"; resolves to an error message or null (omit for read-only)
@@ -94,7 +94,9 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
 
   // Where "today" falls along the five dates, in proportion to the real days between the dates on either side of it (null when none are set).
   const tiles = cash ? DATES.filter(([key]) => !CASH_SKIPS.includes(key)) : DATES;
-  const todayAt = markerPosition(tiles.map(([key]) => dates[key] || ""), today);
+  // The TRR tile shows the deadline, which is worked out from the day the report was received and the days to negotiate (the TRR block below edits those).
+  const dateOf = (key) => (key === "trr_deadline" ? trrEnd : dates[key] || "");
+  const todayAt = markerPosition(tiles.map(([key]) => dateOf(key)), today);
 
   return (
     <div className="space-y-6">
@@ -127,7 +129,7 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
           <h3 className="font-display text-base font-semibold">Key dates</h3>
           {onCash ? (
-            <label className={`flex cursor-pointer items-center gap-2 text-xs ${muted}`} title="No loan, so no appraisal or financing dates">
+            <label className={`flex cursor-pointer items-center gap-2 text-xs ${muted}`} title="No loan, so no appraisal">
               <input type="checkbox" checked={cash} onChange={(e) => onCash(e.target.checked)} className="h-3.5 w-3.5 accent-[#ed2127]" />
               Cash purchase
             </label>
@@ -146,7 +148,7 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
         )}
         <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${tiles.length}, minmax(0, 1fr))` }}>
           {tiles.map(([key, label]) => {
-            const value = dates[key] || "";
+            const value = dateOf(key);
             const past = value && value < today;
             const diff = value ? daysBetween(today, value) : null;
             return (
@@ -158,7 +160,23 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
                   {value && key === "inspection_date" && dates.inspection_time && <span className="block truncate text-[10px] font-medium">{clockLabel(dates.inspection_time)}</span>}
                   {value && key === "closing_date" && dates.closing_time && <span className="block truncate text-[10px] font-medium">{clockLabel(dates.closing_time)}</span>}
                   {value && <span className={`block truncate text-[10px] ${muted}`}>{diff === 0 ? "today" : diff > 0 ? `in ${diff}d` : `${-diff}d ago`}</span>}
-                  {onDate && (
+                  {key === "trr_deadline" && onDate && (
+                    <button
+                      type="button"
+                      aria-label="Set the day the TRR report was received"
+                      onClick={() => {
+                        const input = document.getElementById("trr-received");
+                        input?.focus();
+                        try {
+                          input?.showPicker();
+                        } catch {
+                          /* the field still takes focus */
+                        }
+                      }}
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    />
+                  )}
+                  {key !== "trr_deadline" && onDate && (
                     <input
                       type="date"
                       value={value}
@@ -210,6 +228,7 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
             <label className="flex items-center gap-2">
               <span className={`text-xs ${muted}`}>Report received</span>
               <input
+                id="trr-received"
                 type="date"
                 value={dates.trr_received_date || ""}
                 disabled={!onDate}
