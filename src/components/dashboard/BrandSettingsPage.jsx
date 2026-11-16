@@ -23,7 +23,33 @@ const toForm = (org) => ({
   disclaimer: org.disclaimer || "",
   colors: [...(org.brand?.accent_colors || [])],
   logos: { ...(org.brand?.logos || {}) },
+  appIcon: org.brand?.app_icon || "",
 });
+
+// The Mac app's Dock icon: a square image with the mark filling it.
+const APP_ICON_SLOT = {
+  key: "app-icon",
+  label: "Mac app icon",
+  hint: "Optional. A square PNG, 512 × 512 or larger, with your mark filling it, used as the Latchpoint Mac app's Dock icon. Without one, the app can use your main logo on a white tile.",
+  previewBg: "#ffffff",
+};
+
+/** Resolves with the image's pixel size, or rejects when the file can't be read as an image. */
+function imageSize(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve({ w: img.naturalWidth, h: img.naturalHeight });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("That file can't be read as an image."));
+    };
+    img.src = url;
+  });
+}
 
 // How the organization's mark reads in the dashboard menu, in light and dark.
 function MenuPreview({ logo, darkLogo, name, location }) {
@@ -134,6 +160,28 @@ export default function BrandSettingsPage() {
     setUploadingKey("");
   };
 
+  const pickAppIcon = async (file) => {
+    setError("");
+    setUploadingKey("app-icon");
+    try {
+      const { w, h } = await imageSize(file);
+      if (Math.abs(w - h) > Math.max(w, h) * 0.05) throw new Error(`The app icon needs to be square. That image is ${w} × ${h}.`);
+      const url = await uploadOrgLogo(org.id, "app-icon", file);
+      if (form.appIcon) replaced.current.push(form.appIcon);
+      setJustSaved(false);
+      setForm((f) => ({ ...f, appIcon: url }));
+    } catch (err) {
+      setError(err.message);
+    }
+    setUploadingKey("");
+  };
+
+  const removeAppIcon = () => {
+    if (form.appIcon) replaced.current.push(form.appIcon);
+    setJustSaved(false);
+    setForm((f) => ({ ...f, appIcon: "" }));
+  };
+
   const removeLogo = (key) => {
     if (form.logos[key]) replaced.current.push(form.logos[key]);
     setJustSaved(false);
@@ -172,6 +220,11 @@ export default function BrandSettingsPage() {
       // A white version doubles as the dark-mode menu logo, so a dark main logo is still readable there.
       if (logos.white && mainKey !== "white") nextBrand.dark_nav_logo = "white";
       else delete nextBrand.dark_nav_logo;
+    }
+
+    if (!locked) {
+      if (form.appIcon) nextBrand.app_icon = form.appIcon;
+      else delete nextBrand.app_icon;
     }
 
     const { error: err } = await supabase
@@ -273,6 +326,12 @@ export default function BrandSettingsPage() {
             />
           ))}
         </div>
+      </section>
+
+      <section className={cardClass}>
+        <h2 className="font-display text-base font-semibold">Mac app icon</h2>
+        <LogoSlot slot={APP_ICON_SLOT} src={form.appIcon} locked={locked} uploading={uploadingKey === "app-icon"} onPick={pickAppIcon} onRemove={removeAppIcon} />
+        {locked && <p className={hintClass}>Set centrally for The Agency offices.</p>}
       </section>
 
       {!locked && !franchise && (

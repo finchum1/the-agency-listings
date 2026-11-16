@@ -6,6 +6,7 @@
 //   GET  /api/mac-app?a=search&q=    contacts matching a name, phone number or email (for quick add)
 //   POST /api/mac-app?a=note         {contact_id, kind, body, id?, occurred_at?}   `id` (a uuid the app made) makes a replay after a dropped connection harmless; `occurred_at` is when it was really written
 //   POST /api/mac-app?a=task         {title, due_date?, contact_id?, recurrence?, list?, start_time?, duration_min?, checklist?, today?}   returns the new task
+//   GET  /api/mac-app?a=app_icon     the office's own app icon for the Dock: {org_name, icon_url, logo_url} (brand.app_icon is a square icon; logo_url is the main logo, used when there is no icon)
 // Follow-ups and deal tasks that are due, dealt with from the Today window:
 //   POST /api/mac-app?a=followup_done   {person_id, today}   "Followed up": the next follow-up is today + the column's cadence (none when the column has none)
 //   POST /api/mac-app?a=followup_set    {person_id, date}    a chosen next follow-up date, or null to clear it
@@ -304,6 +305,15 @@ async function peopleSettings(admin, who) {
   return { stages, cadence };
 }
 
+// An address for an image in an office's brand: a path on this site or an https address, made absolute against the host the app called.
+function brandImageUrl(req, raw) {
+  const v = typeof raw === "string" ? raw.trim() : "";
+  if (!/^(\/[^/\\]|https:\/\/)[^\s<>"']{1,255}$/.test(v)) return "";
+  if (v.startsWith("https://")) return v;
+  const host = String(req.headers["x-forwarded-host"] || req.headers.host || "").split(",")[0].trim();
+  return host && /^[a-z0-9.:-]+$/i.test(host) ? `https://${host}${v}` : "";
+}
+
 const bad = (res, message, code = 400) => res.status(code).json({ error: message });
 
 export default async function handler(req, res) {
@@ -322,6 +332,18 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === "GET" && a === "today") return res.status(200).json(await today(admin, owner));
+
+    if (req.method === "GET" && a === "app_icon") {
+      const { data: prof } = await admin.from("profiles").select("org_id").eq("id", owner).maybeSingle();
+      const { data: org } = prof?.org_id ? await admin.from("organizations").select("name, brand").eq("id", prof.org_id).maybeSingle() : { data: null };
+      const brand = org?.brand || {};
+      const logos = brand.logos || {};
+      return res.status(200).json({
+        org_name: String(brand.admin_name || org?.name || "").slice(0, 80),
+        icon_url: brandImageUrl(req, brand.app_icon),
+        logo_url: brandImageUrl(req, logos[brand.default_logo] || logos.red || Object.values(logos)[0]),
+      });
+    }
 
     if (req.method === "GET" && a === "search") {
       const q = String(req.query?.q || "").trim().toLowerCase().slice(0, 60);

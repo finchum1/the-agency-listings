@@ -8,6 +8,7 @@ const NAMES = {
   "/dashboard/listings/new": "New listing",
   "/dashboard/upcoming": "Upcoming",
   "/dashboard/vendors": "Vendors",
+  "/dashboard/search": "Home Search",
   "/dashboard/profile": "My profile",
   "/dashboard/settings": "People settings",
   "/dashboard/people/overview": "People",

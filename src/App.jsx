@@ -25,6 +25,7 @@ const FlyerPage = lazyPage(() => import("./components/dashboard/FlyerPage"));
 const AgentsPage = lazyPage(() => import("./components/dashboard/AgentsPage"));
 const UpcomingModule = lazyPage(() => import("./components/dashboard/UpcomingModule"));
 const VendorsPage = lazyPage(() => import("./components/dashboard/VendorsPage"));
+const HomeSearchPage = lazyPage(() => import("./components/dashboard/HomeSearchPage"));
 const ListingAnalyticsPage = lazyPage(() => import("./components/dashboard/ListingAnalyticsPage"));
 const OfficeAnalyticsPage = lazyPage(() => import("./components/dashboard/OfficeAnalyticsPage"));
 const ContactsPage = lazyPage(() => import("./components/dashboard/people/contacts/ContactsPage"));
@@ -429,6 +430,7 @@ function AppRoutes() {
         <Route path="site/redirects" element={<MySitePage section="redirects" />} />
         <Route path="upcoming" element={<UpcomingModule />} />
         <Route path="vendors" element={<VendorsPage />} />
+        <Route path="search" element={<HomeSearchPage />} />
         <Route path="settings" element={<PeopleGate />}>
           <Route element={<PeopleLayout />}>
             <Route index element={<SettingsPage />} />

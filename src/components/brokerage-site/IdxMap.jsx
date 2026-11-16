@@ -19,9 +19,12 @@ const DEFAULT_ZOOM = 11;
 // of the listing card (see IdxListings.jsx's grid card), rendered into
 // Leaflet's own popup DOM node via a React root, since Leaflet popups
 // aren't React components themselves.
-function ListingPopup({ listing }) {
+function ListingPopup({ listing, onSelect }) {
+  // In the dashboard (onSelect given) a click opens that page's own detail panel instead of the public listing page.
+  const Tag = onSelect ? "button" : "a";
+  const tagProps = onSelect ? { type: "button", onClick: () => onSelect(listing) } : { href: `/brokerage/listings/${listing.mlsNumber}` };
   return (
-    <a href={`/brokerage/listings/${listing.mlsNumber}`} className="block w-48 no-underline">
+    <Tag {...tagProps} className="block w-48 text-left no-underline">
       {listing.hero_photo_url && (
         <img
           src={listing.hero_photo_url}
@@ -34,7 +37,7 @@ function ListingPopup({ listing }) {
         {listing.address_line1}, {listing.city}
       </p>
       <p className="mt-1 text-[11px] font-medium uppercase tracking-wide text-[#a84e2b]">View Details →</p>
-    </a>
+    </Tag>
   );
 }
 
@@ -44,7 +47,7 @@ function ListingPopup({ listing }) {
 // marker is a price-bubble divIcon (not a pin) — matches the reference
 // screenshot and sidesteps Leaflet's classic bundler-breaks-the-default-
 // pin-icon problem entirely, since no default icon image is used.
-function ClusterLayer({ listings }) {
+function ClusterLayer({ listings, onSelect }) {
   const map = useMap();
   const groupRef = useRef(null);
 
@@ -113,7 +116,7 @@ function ClusterLayer({ listings }) {
       });
       const popupNode = document.createElement("div");
       marker.bindPopup(popupNode, { minWidth: 200 });
-      marker.on("popupopen", () => createRoot(popupNode).render(<ListingPopup listing={listing} />));
+      marker.on("popupopen", () => createRoot(popupNode).render(<ListingPopup listing={listing} onSelect={onSelect} />));
       group.addLayer(marker);
     }
 
@@ -194,7 +197,7 @@ function DrawControl({ onBoundaryChange, boundaryActive }) {
         type="button"
         onClick={toggleDrawing}
         className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracked shadow ${
-          drawing ? "bg-[var(--as-accent)] text-white" : "bg-white text-[#1a1a1a] hover:bg-white/90"
+          drawing ? "bg-[var(--as-accent,#ed2127)] text-white" : "bg-white text-[#1a1a1a] hover:bg-white/90"
         }`}
       >
         {drawing ? "Click map to draw…" : "Draw"}
@@ -213,7 +216,7 @@ function DrawControl({ onBoundaryChange, boundaryActive }) {
 }
 
 // center: the organization's own [lat, lng] (brand.mapCenter), used only when no listing has coordinates.
-export default function IdxMap({ listings, onBoundaryChange, boundaryActive, center }) {
+export default function IdxMap({ listings, onBoundaryChange, boundaryActive, center, onSelect }) {
   const hasLocated = listings.some((l) => l.lat && l.lng);
 
   return (
@@ -223,7 +226,7 @@ export default function IdxMap({ listings, onBoundaryChange, boundaryActive, cen
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {hasLocated && <ClusterLayer listings={listings} />}
+        {hasLocated && <ClusterLayer listings={listings} onSelect={onSelect} />}
         <DrawControl onBoundaryChange={onBoundaryChange} boundaryActive={boundaryActive} />
       </MapContainer>
     </div>

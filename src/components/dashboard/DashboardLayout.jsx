@@ -10,6 +10,7 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrg } from "../../context/OrgContext";
+import { useIdxEnabled } from "../../hooks/useIdxEnabled";
 import BrandLogo from "../BrandLogo";
 import QuickActions from "./QuickActions";
 import GlobalSearch from "./GlobalSearch";
@@ -99,6 +100,12 @@ const ICON_PATHS = {
       <path d="M8 3v4M16 3v4M3.5 10h17" />
     </>
   ),
+  search: (
+    <>
+      <circle cx="10.5" cy="10.5" r="6" />
+      <path d="M15 15l5.5 5.5" />
+    </>
+  ),
   vendors: (
     <>
       <path d="M14.5 6.5a3.5 3.5 0 0 0-4.6 4.4L4 16.8V20h3.2l5.9-5.9a3.5 3.5 0 0 0 4.4-4.6l-2.3 2.3-2-.6-.6-2z" />
@@ -123,6 +130,10 @@ const NAV_ITEMS = [
   { to: "/dashboard/upcoming", label: "Upcoming", icon: "upcoming", activeWhen: (p) => p === "/dashboard/upcoming" },
   { to: "/dashboard/vendors", label: "Vendors", icon: "vendors", activeWhen: (p) => p === "/dashboard/vendors" },
 ];
+
+// Home Search (the live MLS feed) sits right after Listings, and only for an organization that has IDX switched on.
+const SEARCH_ITEM = { to: "/dashboard/search", label: "Home Search", icon: "search", activeWhen: (p) => p === "/dashboard/search" };
+const withSearch = (items) => [items[0], SEARCH_ITEM, ...items.slice(1)];
 
 // Website is one entry; its pages are the menu inside the page (SiteWorkspace). profiles.site_access decides what an agent gets: "full" = every
 // page, "limited" = Blog Posts only, "none" = no Website entry at all (Listings / Upcoming / People only).
@@ -423,6 +434,8 @@ export default function DashboardLayout() {
   // to use the Website or People tools for themselves, so those two menus step aside. Agents and admins of that
   // organization still get theirs, per their own switches.
   const workingElsewhere = Boolean(isPlatformAdmin && org && profile?.org_id && org.id !== profile.org_id);
+  const idx = useIdxEnabled(org?.slug);
+  const navItems = idx.enabled && !workingElsewhere ? withSearch(NAV_ITEMS) : NAV_ITEMS;
   const deals = dealAccess(profile);
   const dealsAttention = useDealAttention(deals.any && !workingElsewhere);
   // Deals' bubble: sent back, waiting for review and unread messages, plus the deal tasks that are overdue or due today.
@@ -508,7 +521,7 @@ export default function DashboardLayout() {
             {!workingElsewhere && siteAccess !== "none" && railItem("Website", "website", inSite, { to: siteHome, extra: siteAccess === "limited" ? undefined : flyTrigger("site", onNavigate) })}
             {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { to: "/dashboard/people/overview", badge: peopleAttention.total, extra: flyTrigger("people", onNavigate) })}
             {!workingElsewhere && deals.any && railItem("Deals", "deals", path.startsWith("/dashboard/deals"), { to: "/dashboard/deals", badge: dealsBadge, extra: deals.mine ? flyTrigger("deals", onNavigate) : undefined })}
-            {NAV_ITEMS.map((item) => railItem(item.label, item.icon, item.activeWhen(path), { to: item.to }))}
+            {navItems.map((item) => railItem(item.label, item.icon, item.activeWhen(path), { to: item.to }))}
           </div>
           {isAdmin && (
             <div className="mt-auto pt-3">
@@ -572,7 +585,7 @@ export default function DashboardLayout() {
           </div>
         )}
         <div className="mt-1 space-y-1">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <Link key={item.to} to={item.to} onClick={onNavigate} className={`${navLinkClass(item.activeWhen(path))} flex items-center gap-3`}>
               <NavIcon name={item.icon} />
               {item.label}

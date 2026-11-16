@@ -19,6 +19,8 @@
 //          polygon filter — see isValidMapPolygon below and IdxMap.jsx's
 //          Draw control, which produces this shape)
 // GET /api/repliers?mlsNumber=...    -> single listing (see useRepliersListing.js)
+// GET /api/repliers?probe=1          -> { enabled } only: does this organization have IDX at all (the dashboard menu uses it)
+// Searches also carry `enabled`, so the dashboard's Home Search page can tell "no IDX for this organization" from "no results".
 import { searchRepliersListings, getRepliersListing, normalizeRepliersListing } from "./_lib/repliers.js";
 import { resolveIdxConfig } from "./_lib/idxConfig.js";
 
@@ -64,7 +66,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { mlsNumber, city, minPrice, maxPrice, minBeds, minBaths, status, pageNum, resultsPerPage, office, sortBy, map } =
+  const { probe, mlsNumber, city, minPrice, maxPrice, minBeds, minBaths, status, pageNum, resultsPerPage, office, sortBy, map } =
     req.query;
 
   // Whose Repliers account? An organization without IDX gets a plain 404 / empty result, never another's data.
@@ -73,8 +75,13 @@ export default async function handler(req, res) {
     return null;
   });
   if (!config) {
+    if (probe) return res.status(200).json({ enabled: false });
     if (mlsNumber) return res.status(404).json({ error: "Listing not found." });
-    return res.status(200).json({ listings: [], count: 0, page: 1, numPages: 1 });
+    return res.status(200).json({ listings: [], count: 0, page: 1, numPages: 1, enabled: false });
+  }
+  if (probe) {
+    res.setHeader("Cache-Control", "private, max-age=300");
+    return res.status(200).json({ enabled: true });
   }
 
   let mapPolygon;
@@ -106,7 +113,7 @@ export default async function handler(req, res) {
 
   // "Our own listings only" with no office name on file would silently widen to the whole board: show nothing instead.
   if (office === "true" && !config.officeName) {
-    return res.status(200).json({ listings: [], count: 0, page: 1, numPages: 1 });
+    return res.status(200).json({ listings: [], count: 0, page: 1, numPages: 1, enabled: true });
   }
 
   try {
@@ -138,6 +145,7 @@ export default async function handler(req, res) {
       count: data.count ?? listings.length,
       page: data.page ?? (Number(pageNum) || 1),
       numPages: data.numPages ?? 1,
+      enabled: true,
     });
   } catch (err) {
     console.error("Repliers search error:", err);
