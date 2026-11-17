@@ -31,15 +31,28 @@ export default function WalkingProcess({ steps, preview, lastMinHeight = "22rem"
     return () => window.clearTimeout(t);
   }, [stage]);
 
+  // The current step is the one crossing the middle of the screen. The observer only says "something near the middle changed";
+  // the step is then worked out from where each step is right now, so it can't go stale when a boundary sits inside the band.
   useEffect(() => {
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) if (e.isIntersecting) setScrolled(Number(e.target.dataset.step));
-      },
-      { rootMargin: "-42% 0px -52% 0px" },
-    );
+    const pick = () => {
+      const mid = window.innerHeight * 0.45;
+      let idx = -1;
+      stepEls.current.forEach((el, i) => {
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        if (r.top <= mid && r.bottom > mid) idx = i;
+      });
+      if (idx >= 0) setScrolled(idx);
+    };
+    const io = new IntersectionObserver(pick, { rootMargin: "-42% 0px -52% 0px" });
     stepEls.current.forEach((el) => el && io.observe(el));
-    return () => io.disconnect();
+    // Also on scroll: three or four getBoundingClientRect calls, and setScrolled to the same value is a no-op.
+    window.addEventListener("scroll", pick, { passive: true });
+    pick();
+    return () => {
+      io.disconnect();
+      window.removeEventListener("scroll", pick);
+    };
   }, []);
 
   useLayoutEffect(() => {
