@@ -95,6 +95,7 @@ function readFields(body) {
     set(key, v === "" ? null : v);
   }
   set("earnest_money", number(body, "earnest_money", { min: 0, max: 1e10 }));
+  set("seller_concessions", number(body, "seller_concessions", { min: 0, max: 1e10 }));
   set("trr_days", number(body, "trr_days", { min: 1, max: 120 }));
   if (body.earnest_money_delivered !== undefined) {
     if (typeof body.earnest_money_delivered !== "boolean") throw bad("earnest_money_delivered must be true or false.");

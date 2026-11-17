@@ -58,6 +58,7 @@ export const MERGE_FIELDS = [
   ["street", "street address", "Deal"],
   ["price", "price", "Deal"],
   ["earnest_money", "earnest money", "Deal"],
+  ["seller_concessions", "seller concessions", "Deal"],
   ["contract_date", "contract date", "Dates"],
   ["inspection_date", "inspection date", "Dates"],
   ["inspection_time", "inspection time", "Dates"],
@@ -128,6 +129,7 @@ export function fieldValues(deal = {}, ctx = {}) {
     street: address.split(",")[0].trim(),
     price: usd(deal.price),
     earnest_money: usd(deal.earnest_money),
+    seller_concessions: usd(deal.seller_concessions),
     contract_date: longDate(deal.contract_date),
     inspection_date: longDate(deal.inspection_date),
     inspection_time: clock(deal.inspection_time),
@@ -312,6 +314,7 @@ Attached you will find the agreed-upon contract for {property_address}.
 * Buyer Name: {client_name}
 * Seller Name: {other_party_name}
 * Purchase Price & Earnest Money: {price} | {earnest_money}
+? * Seller Concessions at Closing: {seller_concessions}
 * Financing: {financing}
 * Contract Date: {contract_date}
 * Inspections: {inspection_date}

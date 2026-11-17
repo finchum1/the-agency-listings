@@ -59,7 +59,7 @@ const TEXT = [
 const CLIENT1 = [["name", "Client"], ["phone", "Phone"], ["email", "Email"]];
 const CLIENT2 = [["client2_name", "Second client"], ["client2_email", "Second client's email"]];
 const DATES = [["contract_date", "Contract"], ["inspection_date", "Inspection"], ["inspection_period_end", "Inspection period ends"], ["inspection_time", "Inspection time"], ["appraisal_date", "Appraisal"], ["closing_date", "Closing"], ["closing_time", "Closing time"]];
-const NUMBERS = [["price", "Price"], ["commission", "Commission"], ["earnest_money", "Earnest money"]];
+const NUMBERS = [["price", "Price"], ["commission", "Commission"], ["earnest_money", "Earnest money"], ["seller_concessions", "Seller concessions at closing ($)"]];
 
 // The deal as a coordinator or compliance sees it (the agent uses the People panel). A coordinator can edit the facts and
 // work the checklists; compliance reads them, marks documents, and approves or sends the deal back.
@@ -414,6 +414,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                       { label: "Price", value: fresh.price == null ? "" : money.format(fresh.price) },
                       { label: "Commission", value: fresh.commission == null ? "" : money.format(fresh.commission) },
                       { label: "Earnest money", value: earnestLine({ earnest_money: fresh.earnest_money, earnest_money_delivered: fresh.earnest_money_delivered }, fresh) },
+                      { label: "Seller concessions at closing", value: fresh.seller_concessions == null ? "" : money.format(fresh.seller_concessions) },
                       { label: "Financing", value: fresh.is_cash ? "Cash purchase" : fresh.financing_type },
                     ]}
                   />

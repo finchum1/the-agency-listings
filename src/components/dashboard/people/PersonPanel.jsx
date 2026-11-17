@@ -39,7 +39,7 @@ const navBtn =
   "h-8 w-8 flex items-center justify-center rounded-full border border-black/10 dark:border-white/15 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed";
 
 const DATE_FIELDS = ["next_follow_up", "contract_date", "inspection_date", "inspection_period_end", "inspection_time", "appraisal_date", "closing_date", "closing_time", "trr_received_date"];
-const NUMBER_FIELDS = ["price", "commission", "earnest_money", "trr_days"];
+const NUMBER_FIELDS = ["price", "commission", "earnest_money", "seller_concessions", "trr_days"];
 const TEXT_FIELDS = [
   "name", "email", "phone", "source", "property_address", "other_agent", "other_agent2", "title_company", "lender",
   "client2_name", "client2_email", "other_agent_email", "other_agent2_email", "other_agent_company", "other_agent_phone", "other_agent2_company", "other_agent2_phone", "other_party_name", "title_phone", "lender_phone", "financing_type", "other_agent_tc_name", "other_agent_tc_email", "escrow_officer", "escrow_officer_email", "title_processor_name", "title_processor_email", "lender_email", "loan_processor_name", "loan_processor_email",
@@ -287,6 +287,10 @@ export default function PersonPanel({
           <div>
             <label className={labelClass}>Earnest money ($)</label>
             <input type="number" min="0" step="any" inputMode="decimal" value={form.earnest_money} onChange={setField("earnest_money")} onBlur={flush} className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Seller concessions at closing ($)</label>
+            <input type="number" min="0" step="any" inputMode="decimal" value={form.seller_concessions} onChange={setField("seller_concessions")} onBlur={flush} className={inputClass} />
           </div>
           <label className="flex items-center gap-2.5 self-end pb-2.5 text-sm cursor-pointer">
             <input
@@ -974,6 +978,7 @@ export default function PersonPanel({
                   { label: "Price", value: money(form.price) },
                   { label: "Commission", value: money(form.commission) },
                   { label: "Earnest money", value: earnestLine(form, person) },
+                  { label: "Seller concessions at closing", value: money(form.seller_concessions) },
                   { label: "Financing", value: form.is_cash ? "Cash purchase" : form.financing_type },
                 ]}
               />
