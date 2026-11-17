@@ -1426,6 +1426,10 @@ export default async function handler(req, res) {
           if (ch[k] !== null && !DATE.test(String(ch[k]))) return fail("That date doesn't look right.");
           changes[k] = ch[k] || null;
         }
+        if ("trr_days" in ch) {
+          if (ch.trr_days === null || ch.trr_days === "") changes.trr_days = null;
+          else { const n = Number(ch.trr_days); if (!Number.isInteger(n) || n < 1 || n > 120) return fail("The days to negotiate the TRR must be a whole number from 1 to 120."); changes.trr_days = n; }
+        }
         for (const k of DEAL_TIMES) if (k in ch) {
           if (ch[k] !== null && !/^\d{2}:\d{2}(:\d{2})?$/.test(String(ch[k]))) return fail("That time doesn't look right.");
           changes[k] = ch[k] || null;
