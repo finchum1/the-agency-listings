@@ -1,7 +1,9 @@
 import { LatchpointWordmark } from "./LatchpointMarks";
+import AgencyWordmark from "../agent-site/AgencyWordmark";
 
 // This footer is deliberately identical to realestate.latchpointstudios.com's (latchpoint-studios repo,
 // src/components/realestate/re-footer.tsx): same wordmark, blurb, two link columns and bottom line. Change them together.
+// The one difference: the huge ghosted wordmark on the bottom edge is THE AGENCY here and REAL ESTATE there.
 const PRODUCT = [
   { href: "/#home", label: "Your day" },
   { href: "/#website", label: "Website" },
@@ -27,7 +29,7 @@ const link = "text-sm text-[#a4a5ac] transition-colors hover:text-[#f5f5f4]";
 export default function LatchpointFooter() {
   return (
     <footer className="border-t border-white/10 bg-[#08090b] font-geist">
-      <div className="mx-auto max-w-7xl px-6 py-14 lg:px-10">
+      <div className="mx-auto max-w-7xl px-6 pb-0 pt-14 lg:px-10">
         <div className="flex flex-col justify-between gap-12 lg:flex-row">
           <div className="max-w-sm">
             <a href="/" aria-label="Latchpoint Real Estate, home">
@@ -73,6 +75,9 @@ export default function LatchpointFooter() {
           </p>
         </div>
       </div>
+      {/* THE AGENCY, huge and ghosted on the bottom edge, in the letters of The Agency's own logo (the same watermark the
+          agent sites use). Only here, on the Agency page: realestate.latchpointstudios.com's footer has REAL ESTATE instead. */}
+      <AgencyWordmark tone="soft" flush color="rgba(245, 245, 244, 0.1)" />
     </footer>
   );
 }

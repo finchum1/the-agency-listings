@@ -5,6 +5,10 @@ import MarketingNav from "../components/marketing/MarketingNav";
 import MarketingFooter from "../components/marketing/MarketingFooter";
 import { BrowserFrame } from "../components/marketing/DeviceFrames";
 import { Reveal, variants, easeOut } from "../components/marketing/motion";
+import AgencyBrain from "../components/marketing/fx/AgencyBrain";
+import AgencyProcess from "../components/marketing/fx/AgencyProcess";
+import OrbitNode from "../components/marketing/fx/OrbitNode";
+import SpotlightCard from "../components/marketing/fx/SpotlightCard";
 import { isMarketingHost } from "../lib/appHosts";
 import { contactMailto } from "../lib/marketingContact";
 import brokerage from "../lib/brokerage";
@@ -113,11 +117,22 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#faf9f7] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] overflow-x-clip">
+    <div className="ag-fx min-h-screen bg-[#faf9f7] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] overflow-x-clip">
       <MarketingNav />
 
       {/* Hero */}
-      <section className="relative px-6 lg:px-10 pt-16 pb-16 lg:pt-24 lg:pb-32">
+      {/* On the Latchpoint host the header is fixed over a spacer; pulling the hero up under it lets its glow run straight
+          through the header, so there is no seam. On the app's own host the header is in the flow and the hero starts below it. */}
+      <section
+        className={`relative overflow-hidden px-6 lg:px-10 pb-16 lg:pb-32 ${
+          onMarketingHost
+            ? "-mt-[92px] sm:-mt-[104px] pt-[calc(4rem+92px)] sm:pt-[calc(4rem+104px)] lg:pt-[calc(6rem+104px)]"
+            : "pt-16 lg:pt-24"
+        }`}
+      >
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute left-1/2 top-[-6%] h-[480px] w-[780px] -translate-x-1/2 rounded-full bg-[#ed2127]/[0.08] blur-[120px] dark:bg-[#ed2127]/[0.12]" />
+        </div>
         <div className="mx-auto max-w-7xl grid lg:grid-cols-[0.85fr_1.15fr] gap-16 items-center">
           <motion.div initial="hidden" animate="show" variants={variants.rise}>
             <div className="flex items-center gap-3 mb-6">
@@ -157,25 +172,14 @@ export default function LandingPage() {
             </p>
           </motion.div>
 
-          <div className="relative min-w-0 pb-10">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.9, ease: easeOut, delay: 0.15 }}
-            >
-              <BrowserFrame eager src="/images/landing/dash-home.jpg" alt="The dashboard home page: an hourly schedule, tasks waiting to be scheduled, and today's follow-ups" />
-            </motion.div>
-            <motion.figure
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.9, ease: easeOut, delay: 0.35 }}
-              className="absolute -bottom-2 right-2 w-[92px] sm:w-[120px] lg:-right-4 lg:w-[140px] overflow-hidden rounded-[1.4rem] border-[4px] border-[#1c1a17] bg-[#1c1a17] shadow-xl shadow-black/25"
-            >
-              <div className="h-3.5 bg-white flex items-center justify-center"><span className="h-1 w-8 rounded-full bg-[#1c1a17]" /></div>
-              <img src="/images/landing/m-home.jpg" alt="The dashboard home page on a phone" className="block w-full h-auto" />
-            </motion.figure>
-            <p className="text-[11px] text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-3 max-w-[60%]">{SAMPLE}</p>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.9, ease: easeOut, delay: 0.15 }}
+            className="flex min-w-0 justify-center lg:justify-end"
+          >
+            <AgencyBrain ctaHref={cta} />
+          </motion.div>
         </div>
       </section>
 
@@ -204,6 +208,28 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* See it */}
+      <section className="px-6 lg:px-10 pt-24 lg:pt-32">
+        <div className="mx-auto max-w-6xl grid lg:grid-cols-[0.8fr_1.2fr] gap-12 lg:gap-16 items-center">
+          <Reveal>
+            <Eyebrow>The dashboard</Eyebrow>
+            <h2 className="text-3xl sm:text-5xl font-display font-semibold leading-tight mb-5">Your whole day, on one screen.</h2>
+            <p className="text-[15.5px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed max-w-md">
+              An hourly schedule, the tasks waiting for a time, and who to follow up with today, on a screen you&rsquo;ll
+              actually open. It looks the same on your phone.
+            </p>
+          </Reveal>
+          <Reveal delay={0.1} className="relative min-w-0 pb-10">
+            <BrowserFrame src="/images/landing/dash-home.jpg" alt="The dashboard home page: an hourly schedule, tasks waiting to be scheduled, and today's follow-ups" />
+            <figure className="absolute -bottom-2 right-2 w-[92px] sm:w-[120px] lg:-right-4 lg:w-[140px] overflow-hidden rounded-[1.4rem] border-[4px] border-[#1c1a17] bg-[#1c1a17] shadow-xl shadow-black/25">
+              <div className="h-3.5 bg-white flex items-center justify-center"><span className="h-1 w-8 rounded-full bg-[#1c1a17]" /></div>
+              <img src="/images/landing/m-home.jpg" alt="The dashboard home page on a phone" loading="lazy" className="block w-full h-auto" />
+            </figure>
+            <p className="text-[11px] text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-3 max-w-[60%]">{SAMPLE}</p>
+          </Reveal>
+        </div>
+      </section>
+
       {/* Two halves */}
       <section className="px-6 lg:px-10 py-24 lg:py-32">
         <div className="mx-auto max-w-6xl">
@@ -220,9 +246,12 @@ export default function LandingPage() {
               ["The website", ["Your own agent site on The Agency's brand, on your own domain, from three starter templates", "Six headers, five footers, and live previews of your site in every layout", "Seller, buyer, and home value pages, plus a Recently Sold section", "A property site for every listing, with video, visitor analytics, and printable flyers", "A blog with a post calendar and pinned posts"]],
               ["The back office", ["A home page for your day: an hourly schedule, new inquiries, tasks, and your goal", "A private contacts database with tags and keep-in-touch reminders", "Leads and a pipeline with a follow-up rhythm for every column", "Deals with key dates, checklists, a coordinator, and compliance review", "Timeline and vendor links you can send to a client"]],
             ].map(([title, items], i) => (
-              <Reveal key={title} variant="scaleIn" delay={i * 0.1} className="rounded-2xl bg-white dark:bg-[#161616] border border-black/5 dark:border-white/10 shadow-xl shadow-black/5 p-8">
-                <h3 className="text-xl font-display font-semibold">{title}</h3>
-                <Bullets items={items} />
+              <Reveal key={title} variant="scaleIn" delay={i * 0.1} className="orbit-wrap relative">
+                <SpotlightCard className="h-full rounded-2xl bg-white dark:bg-[#161616] border border-black/5 dark:border-white/10 shadow-xl shadow-black/5 p-8">
+                  <h3 className="text-xl font-display font-semibold">{title}</h3>
+                  <Bullets items={items} />
+                </SpotlightCard>
+                <OrbitNode radius={16} duration={16} delay={-(i * 8)} />
               </Reveal>
             ))}
           </div>
@@ -531,11 +560,14 @@ export default function LandingPage() {
               ["$500", "to set up", ["Your website built and live on your own domain", "Your blog posts and old URLs moved over, so you keep your search rankings", "Your dashboard set up with your logo and colors"]],
               ["$150", "a month", ["Hosting, upkeep, and updates for your site and dashboard", "New features as they ship", "A studio to call when you want something changed"]],
             ].map(([price, unit, items], i) => (
-              <Reveal key={price} variant="scaleIn" delay={i * 0.1} className="rounded-2xl bg-[#faf9f7] dark:bg-[#0d0d0d] p-8">
-                <p className="text-5xl font-display font-semibold">
-                  {price} <span className="text-base font-sans font-normal text-[#1c1a17]/60 dark:text-[#faf9f7]/60">{unit}</span>
-                </p>
-                <Bullets items={items} />
+              <Reveal key={price} variant="scaleIn" delay={i * 0.1} className="orbit-wrap relative">
+                <SpotlightCard className="h-full rounded-2xl bg-[#faf9f7] dark:bg-[#0d0d0d] border border-black/5 dark:border-white/10 p-8">
+                  <p className="text-5xl font-display font-semibold">
+                    {price} <span className="text-base font-sans font-normal text-[#1c1a17]/60 dark:text-[#faf9f7]/60">{unit}</span>
+                  </p>
+                  <Bullets items={items} />
+                </SpotlightCard>
+                <OrbitNode radius={16} duration={16} delay={-(i * 8)} />
               </Reveal>
             ))}
           </div>
@@ -555,9 +587,12 @@ export default function LandingPage() {
               ["Teams", "Give each person the access that fits: full website editing, blog only, or none, and switch the contacts, leads, pipeline, and deals tools on per agent. Add a transaction coordinator or a compliance reviewer where you need one."],
               ["Offices", "A brokerage site with an agent roster, areas, and a blog, and a dashboard for every listing and every agent, plus office analytics for the broker. Each office gets its own location and look."],
             ].map(([title, body], i) => (
-              <Reveal key={title} variant="scaleIn" delay={i * 0.1} className="rounded-2xl bg-white dark:bg-[#161616] border border-black/5 dark:border-white/10 shadow-xl shadow-black/5 p-8">
-                <h3 className="text-lg font-display font-semibold">{title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-[#1c1a17]/70 dark:text-[#faf9f7]/70">{body}</p>
+              <Reveal key={title} variant="scaleIn" delay={i * 0.1} className="orbit-wrap relative">
+                <SpotlightCard className="h-full rounded-2xl bg-white dark:bg-[#161616] border border-black/5 dark:border-white/10 shadow-xl shadow-black/5 p-8">
+                  <h3 className="text-lg font-display font-semibold">{title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-[#1c1a17]/70 dark:text-[#faf9f7]/70">{body}</p>
+                </SpotlightCard>
+                <OrbitNode radius={16} duration={11} delay={-(i * 3.7)} />
               </Reveal>
             ))}
           </div>
@@ -571,19 +606,7 @@ export default function LandingPage() {
             <Eyebrow>How it works</Eyebrow>
             <h2 className="text-3xl sm:text-5xl font-display font-semibold leading-tight">We build it around how you already work.</h2>
           </Reveal>
-          <div className="mt-12 grid md:grid-cols-3 gap-10">
-            {[
-              ["01", "We talk through your day", "Where leads come from, what stages your pipeline has, what happens between contract and closing. The back office gets shaped to that, not the other way around."],
-              ["02", "We build and move you over", "Your site, your dashboard, and your old blog posts. Old URLs are redirected to the new ones so the search ranking you've earned comes with you."],
-              ["03", "You run it, we keep it healthy", "Edits are forms, not code. And when you want something added later, you have a studio to call instead of a ticket queue."],
-            ].map(([n, title, body], i) => (
-              <Reveal key={n} delay={i * 0.1}>
-                <p className="font-display italic text-2xl text-[#ed2127]">{n}</p>
-                <h3 className="mt-2 text-lg font-display font-semibold">{title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-[#1c1a17]/70 dark:text-[#faf9f7]/70">{body}</p>
-              </Reveal>
-            ))}
-          </div>
+          <AgencyProcess />
         </div>
       </section>
 

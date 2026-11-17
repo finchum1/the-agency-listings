@@ -1,0 +1,81 @@
+/*
+  The hero map's orange node, riding the border of a card.
+
+  One rounded-rect stroke, normalised with pathLength=100, drawn as a dash:
+  a near-zero dash with round caps is the node, and a longer faint dash
+  behind it is its trail. Moving stroke-dashoffset slides both around the
+  card. Plain CSS keyframes, so no JavaScript and it stops under
+  prefers-reduced-motion.
+*/
+
+.orbit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.orbit rect {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  animation: orbit-run var(--dur, 12s) linear var(--delay, 0s) infinite;
+  transition: stroke-width 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s, filter 0.4s;
+}
+
+/* The outline: five overlapping dashes of different lengths. Each is faint on its own, but they stack,
+   so the border is brightest right behind the node and fades out along its length, as if the node
+   were drawing the box as it goes. */
+.orbit .orbit-trail {
+  stroke-width: 1.75;
+  stroke-linecap: butt;
+  opacity: 0.2;
+}
+.orbit .orbit-near {
+  stroke-dasharray: 0 97.6 2.4 0; /* 2.4 long, ending exactly where the node starts */
+  stroke-width: 2.5;
+  stroke-linecap: butt;
+  opacity: 0.55;
+}
+.orbit .orbit-head {
+  stroke-dasharray: 0.01 99.99;
+  stroke-width: 6;
+  filter: drop-shadow(0 0 5px var(--accent));
+}
+
+/* hovering the card makes its node swell and its outline brighten */
+.orbit-wrap:hover .orbit-head,
+.orbit-wrap:focus-within .orbit-head {
+  stroke-width: 9;
+  filter: drop-shadow(0 0 9px var(--accent));
+}
+.orbit-wrap:hover .orbit-trail,
+.orbit-wrap:focus-within .orbit-trail {
+  opacity: 0.34;
+  stroke-width: 2.25;
+}
+.orbit-wrap:hover .orbit-near,
+.orbit-wrap:focus-within .orbit-near {
+  opacity: 0.85;
+  stroke-width: 3.25;
+}
+
+/* Every trail dash is written as "0 gap len 0", so it ends exactly where the node starts and lies along the path behind it. */
+@keyframes orbit-run {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit {
+    display: none;
+  }
+}

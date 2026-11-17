@@ -1,0 +1,320 @@
+/*
+  Real Estate's "How it works" preview: one dashboard that fills in as the node reaches each step.
+  Rail, node and step styles come from process-steps.css; this is only the card.
+  Neutrals plus the one ember accent, and every change is a CSS transition keyed to data-stage.
+*/
+
+.rp-card {
+  position: relative;
+  height: 31rem;
+  overflow: hidden;
+  padding: 22px 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: 18px;
+  background: var(--bg-elevated);
+  box-shadow: 0 30px 80px -40px color-mix(in srgb, var(--accent) 35%, transparent), 0 0 0 1px var(--border);
+}
+
+.rp-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.rp-name {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.rp-sub {
+  margin-top: 3px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.rp-status {
+  position: relative;
+  min-width: 9rem;
+  height: 26px;
+  flex: none;
+}
+.rp-status > span {
+  position: absolute;
+  right: 0;
+  padding: 3px 11px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9999px;
+  font-family: var(--font-geist-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(5px);
+  transition: opacity 0.4s, transform 0.4s;
+}
+.rp[data-stage="0"] .rp-status > [data-for="0"],
+.rp[data-stage="1"] .rp-status > [data-for="1"],
+.rp[data-stage="2"] .rp-status > [data-for="2"] {
+  opacity: 1;
+  transform: none;
+}
+.rp[data-stage="2"] .rp-status > [data-for="2"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.rp-talk,
+.rp-build,
+.rp-run {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 88px;
+  transition: opacity 0.5s, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.rp-eyebrow {
+  font-family: var(--font-geist-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.rp ul {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* only the current step's layer is visible */
+.rp-build,
+.rp-run {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+.rp[data-stage="0"] .rp-talk,
+.rp[data-stage="1"] .rp-build,
+.rp[data-stage="2"] .rp-run {
+  opacity: 1;
+  transform: none;
+}
+.rp[data-stage="1"] .rp-talk,
+.rp[data-stage="2"] .rp-talk {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+.rp[data-stage="2"] .rp-build {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* step 1 */
+.rp-talk li {
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--bg);
+  font-size: 13.5px;
+  color: var(--text);
+}
+.rp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.rp-chips em {
+  font-style: normal;
+  padding: 2px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9999px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.rp[data-stage="0"] .rp-talk li {
+  animation: rp-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i) * 0.16s + 0.15s) both;
+}
+
+/* step 2 */
+.rp-build li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--bg);
+  font-size: 13.5px;
+  color: var(--text);
+}
+.rp-tick {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 1px solid var(--border-strong);
+  border-radius: 9999px;
+  color: transparent;
+  transition: background 0.4s, border-color 0.4s, color 0.4s;
+}
+.rp-tick svg {
+  width: 11px;
+  height: 11px;
+}
+/* the build ticks along while step 2 is current */
+.rp[data-stage="1"] .rp-tick {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-foreground);
+  transition-delay: calc(var(--i, 0) * 0.5s + 0.5s);
+}
+.rp-meter {
+  height: 4px;
+  margin-top: 16px;
+  border-radius: 9999px;
+  background: var(--border-strong);
+  overflow: hidden;
+}
+.rp-meter > span {
+  display: block;
+  height: 100%;
+  width: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transform-origin: left;
+  transform: scaleX(0);
+}
+.rp[data-stage="1"] .rp-meter > span {
+  animation: rp-fill 2.4s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards;
+}
+
+/* step 3 */
+.rp-form {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--bg);
+}
+.rp-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.rp-field {
+  padding: 9px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--text);
+}
+.rp-seg {
+  display: inline-flex;
+  gap: 6px;
+}
+.rp-seg em {
+  font-style: normal;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9999px;
+  font-size: 12px;
+  color: var(--text-muted);
+  transition: background 0.4s, border-color 0.4s, color 0.4s;
+}
+.rp-seg em[data-on="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.rp-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(6px);
+}
+.rp-save svg {
+  width: 13px;
+  height: 13px;
+}
+.rp[data-stage="2"] .rp-save {
+  animation: rp-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.9s forwards;
+}
+.rp-studio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.rp-studio svg {
+  width: 15px;
+  height: 15px;
+  color: var(--accent);
+}
+
+.rp-caption {
+  margin-top: 14px;
+  text-align: center;
+  font-family: var(--font-geist-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.rp-caption span {
+  color: var(--accent);
+}
+
+@keyframes rp-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes rp-fill {
+  to {
+    transform: scaleX(0.94);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rp *,
+  .rp *::before,
+  .rp *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+  .rp[data-stage="1"] .rp-meter > span {
+    transform: scaleX(0.94);
+  }
+  .rp[data-stage="2"] .rp-save {
+    opacity: 1;
+    transform: none;
+  }
+}

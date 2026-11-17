@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LatchpointWordmark } from "./LatchpointMarks";
 import ThemeToggle from "./MarketingThemeToggle";
@@ -21,12 +22,38 @@ function ArrowRight() {
 }
 
 export default function LatchpointNav({ links, open, onToggle, onClose }) {
+  // At the top of the page the header is a plain bar across the page's own width; once you scroll it condenses into the
+  // floating glass pill. One boolean flips on a passive scroll listener, and every visual change is a CSS transition:
+  // the width and padding animate, and the glass is its own layer that fades in, so the bar never snaps between looks.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <>
       <div className="h-[92px] sm:h-[104px]" aria-hidden="true" />
-      <header className="fixed inset-x-0 top-4 z-40 flex justify-center px-4 sm:top-6">
-        <div className="relative w-full max-w-6xl">
-          <div className="glass-pill flex items-center justify-between gap-2 rounded-full py-2 pl-4 pr-2 sm:gap-4 sm:pl-5">
+      <header className="fixed inset-x-0 top-4 z-40 sm:top-6">
+        <div
+          className={`mx-auto w-full transition-[max-width,padding] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            scrolled ? "max-w-6xl px-4" : "max-w-[85rem] px-6 lg:px-10" /* page content is max-w-7xl inside px-10 */
+          }`}
+        >
+        <div className="relative">
+          <div
+            className={`relative isolate flex items-center justify-between gap-2 rounded-full py-2 transition-[padding] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] sm:gap-4 ${
+              scrolled ? "pl-4 pr-2 sm:pl-5" : "pl-0 pr-0"
+            }`}
+          >
+            <div
+              aria-hidden="true"
+              className={`glass-pill pointer-events-none absolute inset-0 -z-10 rounded-full transition-opacity duration-500 ${
+                scrolled ? "opacity-100" : "opacity-0"
+              }`}
+            />
             <a href="/" className="flex shrink-0 items-center" aria-label="Latchpoint Real Estate, home">
               <LatchpointWordmark name="Real Estate" />
             </a>
@@ -79,7 +106,7 @@ export default function LatchpointNav({ links, open, onToggle, onClose }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.98 }}
                 transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                className="glass-pill glass-dense absolute inset-x-0 top-[calc(100%+0.5rem)] rounded-[20px] p-2 xl:hidden"
+                className="glass-pill glass-dense absolute inset-x-0 top-[calc(100%+0.5rem)] mx-auto max-w-6xl rounded-[20px] p-2 xl:hidden"
               >
                 <div className="flex flex-col gap-1">
                   {links.map((l) => (
@@ -103,6 +130,7 @@ export default function LatchpointNav({ links, open, onToggle, onClose }) {
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
         </div>
       </header>
     </>

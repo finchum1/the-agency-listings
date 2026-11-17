@@ -12,7 +12,9 @@ const TONES = {
   soft: "color-mix(in srgb, var(--as-on-dark) 12%, transparent)", // a ghosted watermark in the footer's text color
 };
 
-export default function AgencyWordmark({ tone = "red" }) {
+// `flush`: the wordmark sits outside any padded container (the marketing footer's), so it skips the negative side margins
+// that cancel an agent-site footer's padding. `color` overrides the tone's fill.
+export default function AgencyWordmark({ tone = "red", flush = false, color }) {
   const ref = useRef(null);
   const [shown, setShown] = useState(false);
 
@@ -38,7 +40,7 @@ export default function AgencyWordmark({ tone = "red" }) {
 
   return (
     // overflow hidden: the name comes up out of the bottom edge of the page rather than sliding over the footer above it
-    <div ref={ref} className="-mx-6 lg:-mx-10 mt-10 sm:mt-14 overflow-hidden" style={{ paddingInline: "clamp(10px, 1.6vw, 28px)", lineHeight: 0 }} aria-hidden="true">
+    <div ref={ref} className={`${flush ? "" : "-mx-6 lg:-mx-10 "}mt-10 sm:mt-14 overflow-hidden`} style={{ paddingInline: "clamp(10px, 1.6vw, 28px)", lineHeight: 0 }} aria-hidden="true">
       <div
         style={{
           transform: shown ? "none" : "translateY(34%)",
@@ -47,7 +49,7 @@ export default function AgencyWordmark({ tone = "red" }) {
         }}
       >
         <svg viewBox={VIEW} style={{ display: "block", width: "100%", height: "auto" }}>
-          <path fill={TONES[tone] || TONES.red} fillRule="evenodd" d={PATH} />
+          <path fill={color || TONES[tone] || TONES.red} fillRule="evenodd" d={PATH} />
         </svg>
       </div>
     </div>

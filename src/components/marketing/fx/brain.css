@@ -1,0 +1,428 @@
+/*
+  The homepage "second brain": a living map of everything Latchpoint builds.
+  All ambient motion here is plain CSS / SMIL, so it runs without JavaScript
+  and switches itself off under prefers-reduced-motion. Hover and focus only
+  toggle data-state attributes; every visual change is a CSS transition.
+
+  Colour rule from globals.css holds: neutrals plus the one ember accent.
+*/
+
+.brain {
+  container-type: inline-size;
+  width: 100%;
+  max-width: 640px;
+}
+
+.brain-stage {
+  position: relative;
+  aspect-ratio: 600 / 560;
+  width: 100%;
+  /* All label sizes scale with the graph, so it reads the same at 340px and 640px wide. */
+  font-size: clamp(9px, 2.15cqw, 13.5px);
+  --px: 0;
+  --py: 0;
+}
+
+/* ---- depth layers: pointer parallax, moved by CSS variables only ---- */
+.brain-layer {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.brain-layer-back {
+  transform: translate(calc(var(--px) * -10px), calc(var(--py) * -8px));
+}
+.brain-layer-mid {
+  transform: translate(calc(var(--px) * 7px), calc(var(--py) * 6px));
+}
+
+/* ---- backdrop ---- */
+.brain-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 70%;
+  height: 70%;
+  transform: translate(-50%, -50%);
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, var(--accent-soft), transparent 72%);
+  animation: brain-breathe 7s ease-in-out infinite;
+}
+.brain-ring {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 2 7;
+  transform-box: view-box;
+  transform-origin: 300px 280px;
+  animation: brain-spin 90s linear infinite;
+}
+.brain-ring-b {
+  animation-duration: 140s;
+  animation-direction: reverse;
+  stroke-dasharray: 1 10;
+}
+.brain-dust {
+  fill: var(--text-faint);
+  opacity: 0.35;
+  animation: brain-drift var(--dur, 14s) ease-in-out var(--delay, 0s) infinite alternate;
+}
+
+/* ---- edges ---- */
+.brain-edge {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+  fill: none;
+  opacity: 0.55;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: brain-draw 1.2s cubic-bezier(0.16, 1, 0.3, 1) var(--delay, 0s) forwards;
+  transition: stroke 0.25s, opacity 0.25s, stroke-width 0.25s;
+}
+.brain-edge-ghost {
+  stroke-dasharray: 3 5;
+  stroke-dashoffset: 0;
+  opacity: 0;
+  animation: brain-fade 1s ease var(--delay, 0s) forwards;
+}
+.brain-edge[data-state="on"] {
+  stroke: var(--accent);
+  opacity: 1;
+  stroke-width: 1.6;
+}
+.brain-edge[data-state="off"] {
+  opacity: 0.1;
+}
+.brain-pulse {
+  fill: var(--accent);
+  transition: opacity 0.25s;
+}
+.brain[data-active] .brain-pulse[data-state="off"] {
+  opacity: 0.12;
+}
+
+/* ---- nodes ---- */
+.brain-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+.brain-node > .brain-hit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  animation: brain-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) var(--delay, 0s) forwards;
+  transition: opacity 0.25s, filter 0.25s, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+  outline: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  text-decoration: none;
+  font: inherit;
+}
+.brain-node[data-state="off"] > .brain-hit {
+  filter: saturate(0.2);
+  opacity: 0.28 !important;
+  animation-fill-mode: none;
+}
+
+/* products: glass pills */
+.brain-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  white-space: nowrap;
+  padding: 0.6em 1em;
+  border-radius: 9999px;
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--bg-elevated) 82%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: var(--text);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  transition: border-color 0.25s, background 0.25s, box-shadow 0.35s, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.brain-dot {
+  width: 0.55em;
+  height: 0.55em;
+  border-radius: 9999px;
+  background: var(--accent);
+  animation: brain-fire 5.5s ease-in-out var(--fire, 0s) infinite;
+}
+.brain-node[data-kind="product"]:hover .brain-pill,
+.brain-node[data-state="on"] .brain-pill,
+.brain-hit:focus-visible .brain-pill {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-elevated));
+  box-shadow: 0 0 0 1px var(--accent-soft), 0 8px 30px -6px color-mix(in srgb, var(--accent) 45%, transparent);
+  transform: scale(1.1);
+}
+
+/* an active node stops its idle "firing" so the hover glow isn't overridden by the keyframes */
+.brain-node:hover .brain-dot,
+.brain-node[data-state="on"] .brain-dot,
+.brain-node:hover .brain-disc,
+.brain-node[data-state="on"] .brain-disc,
+.brain-hit:focus-visible .brain-disc {
+  animation: none;
+  filter: none;
+}
+
+/* capabilities: icon discs with a label underneath */
+/* The disc alone sets the node box, so each coordinate sits on the disc centre; the label floats outside it. */
+.brain-cap {
+  position: relative;
+  display: block;
+  color: var(--text-muted);
+}
+.brain-disc {
+  display: grid;
+  place-items: center;
+  width: 3.1em;
+  height: 3.1em;
+  border-radius: 9999px;
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--bg-elevated-2) 88%, transparent);
+  color: var(--text);
+  animation: brain-fire 6s ease-in-out var(--fire, 0s) infinite;
+  transition: border-color 0.25s, background 0.25s, color 0.25s, box-shadow 0.35s, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.brain-disc svg {
+  width: 1.45em;
+  height: 1.45em;
+}
+.brain-cap-label {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 0.4em);
+  transform: translateX(-50%);
+  font-size: 0.92em;
+  white-space: nowrap;
+  transition: color 0.25s;
+}
+.brain-cap-above .brain-cap-label {
+  top: auto;
+  bottom: calc(100% + 0.4em);
+}
+.brain-node[data-kind="cap"]:hover .brain-disc,
+.brain-node[data-kind="cap"][data-state="on"] .brain-disc,
+.brain-hit:focus-visible .brain-disc {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-foreground);
+  box-shadow: 0 0 0 6px var(--accent-soft), 0 10px 34px -6px color-mix(in srgb, var(--accent) 60%, transparent);
+  transform: scale(1.14);
+}
+.brain-node[data-kind="cap"]:hover .brain-cap-label,
+.brain-node[data-kind="cap"][data-state="on"] .brain-cap-label {
+  color: var(--text);
+}
+
+/* "your idea": the empty slot, always inviting */
+.brain-ghost {
+  border-style: dashed;
+  border-color: var(--accent);
+  background: transparent;
+  color: var(--accent);
+  animation: brain-ghost 3.2s ease-in-out infinite;
+}
+.brain-ghost .brain-dot {
+  animation: none;
+}
+
+/* the centre */
+.brain-core {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 6.4em;
+  height: 6.4em;
+  border-radius: 9999px;
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--bg-elevated) 90%, transparent);
+  color: var(--text);
+  box-shadow: 0 0 0 10px var(--accent-soft), 0 20px 60px -20px color-mix(in srgb, var(--accent) 55%, transparent);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s;
+}
+.brain-core svg {
+  width: 2.6em;
+  height: 2.6em;
+}
+.brain-core::before,
+.brain-core::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 1px solid var(--accent);
+  opacity: 0;
+  animation: brain-ripple 4.8s ease-out infinite;
+}
+.brain-core::after {
+  animation-delay: 2.4s;
+}
+.brain-node[data-kind="core"]:hover .brain-core,
+.brain-node[data-kind="core"][data-state="on"] .brain-core {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 14px var(--accent-soft), 0 24px 70px -18px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+/* ---- caption under the graph ---- */
+.brain-caption {
+  display: grid;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+.brain-caption-item {
+  grid-area: 1 / 1;
+  visibility: hidden;
+  opacity: 0;
+}
+.brain-caption-item[data-on="true"] {
+  visibility: visible;
+  opacity: 1;
+  animation: brain-caption-in 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---- keyframes ---- */
+@keyframes brain-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes brain-fade {
+  to {
+    opacity: 0.55;
+  }
+}
+@keyframes brain-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes brain-breathe {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.92);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.08);
+    opacity: 1;
+  }
+}
+@keyframes brain-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes brain-drift {
+  to {
+    transform: translate(var(--dx, 10px), var(--dy, -14px));
+  }
+}
+@keyframes brain-fire {
+  0%,
+  86%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    filter: none;
+  }
+  92% {
+    box-shadow: 0 0 0 5px var(--accent-soft), 0 0 22px color-mix(in srgb, var(--accent) 55%, transparent);
+    filter: brightness(1.35);
+  }
+}
+@keyframes brain-ripple {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.1);
+  }
+}
+@keyframes brain-ghost {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--accent-soft);
+  }
+  50% {
+    box-shadow: 0 0 0 7px var(--accent-soft);
+  }
+}
+@keyframes brain-caption-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brain *,
+  .brain *::before,
+  .brain *::after {
+    animation: none !important;
+  }
+  .brain-edge {
+    stroke-dashoffset: 0;
+  }
+  .brain-edge-ghost,
+  .brain-node > .brain-hit {
+    opacity: 1;
+  }
+  .brain-edge-ghost {
+    opacity: 0.55;
+  }
+}
+
+/* caption text (the studio version used utility classes for these) */
+.brain-tag {
+  font-family: var(--font-geist-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+}
+.brain-title {
+  margin-top: 6px;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.brain-tag + .brain-title {
+  margin-top: 6px;
+}
+.brain-blurb {
+  max-width: 24rem;
+  margin: 4px auto 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.brain-cta {
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+.brain-core img {
+  width: 3.6em;
+  height: 3.6em;
+  border-radius: 0.9em;
+}

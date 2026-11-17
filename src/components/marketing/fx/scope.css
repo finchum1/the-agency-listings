@@ -1,0 +1,30 @@
+/*
+  The effects ported from the Latchpoint Studios site (second-brain map, traveling-node outlines, walking steps) use a
+  small set of colour names. This maps them onto The Agency's own palette, light and dark, under one wrapper class,
+  so nothing here needs to know about either theme.
+*/
+.ag-fx {
+  --accent: #ed2127;
+  --accent-hover: #d41b21;
+  --accent-soft: rgba(237, 33, 39, 0.12);
+  --accent-foreground: #ffffff;
+  --bg: #faf9f7;
+  --bg-elevated: #ffffff;
+  --bg-elevated-2: #f1efea;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.16);
+  --text: #1c1a17;
+  --text-muted: rgba(28, 26, 23, 0.7);
+  --text-faint: rgba(28, 26, 23, 0.5);
+}
+.dark .ag-fx {
+  --accent-soft: rgba(237, 33, 39, 0.22);
+  --bg: #0d0d0d;
+  --bg-elevated: #161616;
+  --bg-elevated-2: #1f1f1f;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+  --text: #faf9f7;
+  --text-muted: rgba(250, 249, 247, 0.7);
+  --text-faint: rgba(250, 249, 247, 0.5);
+}

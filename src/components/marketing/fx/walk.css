@@ -1,0 +1,111 @@
+/*
+  The Agency page: the orange node walking the steps (ported from the Latchpoint Studios site, in The Agency's red).
+  The rail, node and step styles for WalkingProcess.
+*/
+
+/* ---- the rail and the node (the same orange node as the hero map) ---- */
+.pp-rail,
+.pp-ghost,
+.pp-node {
+  position: absolute;
+  left: 24px;
+  pointer-events: none;
+}
+.pp-rail {
+  width: 1px;
+  transform: translateX(-0.5px);
+  background: var(--border-strong);
+}
+.pp-rail-fill {
+  background: var(--accent);
+  transition: height 0.9s cubic-bezier(0.65, 0, 0.35, 1);
+  z-index: 1;
+}
+.pp-node,
+.pp-ghost {
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 9999px;
+  background: var(--accent);
+  transition: top 0.9s cubic-bezier(0.65, 0, 0.35, 1), transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s;
+}
+.pp-node {
+  z-index: 3;
+  box-shadow: 0 0 0 5px var(--accent-soft), 0 0 16px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+/* docked: tucked onto the upper-right of the marker ring; moving: back on the rail, full size */
+.pp-node {
+  transform: translate(17px, -17px) scale(0.75);
+}
+.pp-node[data-moving="true"] {
+  transform: none;
+}
+.pp-ghost {
+  z-index: 2;
+  opacity: 0;
+}
+.pp-ghost[data-moving="true"] {
+  transform: none;
+}
+.pp-ghost-1[data-moving="true"] {
+  opacity: 0.45;
+  transform: scale(0.8);
+  transition-delay: 0.08s;
+}
+.pp-ghost-2[data-moving="true"] {
+  opacity: 0.22;
+  transform: scale(0.6);
+  transition-delay: 0.17s;
+}
+
+/* ---- the steps ---- */
+.pp-step {
+  outline: none;
+  cursor: default;
+}
+.pp-marker {
+  /* positioned absolutely by its utility classes; the z-index keeps it above the rail */
+  z-index: 2;
+  transition: border-color 0.5s, background 0.5s, color 0.5s, box-shadow 0.5s, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.pp-step h3,
+.pp-step p {
+  transition: color 0.5s, opacity 0.5s;
+}
+.pp-step[data-state="next"] h3 {
+  color: var(--text-muted);
+}
+.pp-step[data-state="next"] > p:last-child {
+  opacity: 0.7;
+}
+.pp-step[data-state="done"] .pp-marker {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.pp-step[data-state="now"] .pp-marker {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: 0 0 0 6px var(--accent-soft);
+  transform: scale(1.06);
+}
+.pp-step[data-state="now"] .pp-num {
+  color: var(--accent);
+}
+.pp-step:focus-visible .pp-marker {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.pp-steps:not([data-ready="true"]) .pp-marker {
+  border-color: var(--border-strong);
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-steps * {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+  }
+}

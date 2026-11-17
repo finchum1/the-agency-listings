@@ -117,5 +117,8 @@ export default defineConfig({
   ],
   server: {
     port: Number(process.env.PORT) || 5173,
+    // Lets the dev server answer to the marketing subdomain's name (map it to 127.0.0.1 in your hosts file or the
+    // browser), so the Latchpoint header and footer that only show on that host can be tested locally.
+    allowedHosts: ['theagency.latchpointstudios.com'],
   },
 })
