@@ -161,7 +161,7 @@ export default function LandingPage() {
               </a>
               <a
                 href="#home"
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-black/15 px-6 py-3 font-geist text-[15px] font-medium leading-none transition-colors hover:border-[#ed2127] hover:text-[#ed2127] dark:border-white/20"
+                className="font-geist text-[15px] font-medium underline decoration-black/20 decoration-1 underline-offset-[7px] transition-colors duration-300 hover:text-[#ed2127] hover:decoration-[#ed2127] dark:decoration-white/25"
               >
                 See how it works
               </a>
