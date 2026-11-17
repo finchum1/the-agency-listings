@@ -49,7 +49,7 @@ export function EditorialHero() {
         </div>
         <div className="mt-16 overflow-hidden bg-[var(--as-surface)] aspect-[4/3] sm:aspect-[16/9]">
           {site.heroVideo ? (
-            <video className="h-full w-full object-cover" src={site.heroVideo} poster={site.heroPhoto} autoPlay muted loop playsInline />
+            <video className="h-full w-full object-cover bg-[var(--as-dark)]" src={site.heroVideo} poster={site.heroPhoto} autoPlay muted loop playsInline />
           ) : site.heroPhoto ? (
             <img src={site.heroPhoto} alt="" className="h-full w-full object-cover object-top" />
           ) : null}

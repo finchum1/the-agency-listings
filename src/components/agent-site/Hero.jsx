@@ -12,7 +12,7 @@ export default function Hero() {
     <section className="sticky top-0 z-0 h-screen min-h-[640px] w-full">
       {site.heroVideo ? (
         <video
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover bg-[var(--as-dark)]"
           src={site.heroVideo}
           poster={site.heroPhoto}
           autoPlay

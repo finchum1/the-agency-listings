@@ -37,7 +37,7 @@ export function BoldHero() {
   return (
     <section className="relative h-screen min-h-[700px] w-full overflow-hidden">
       {site.heroVideo ? (
-        <video className="absolute inset-0 h-full w-full object-cover" src={site.heroVideo} poster={site.heroPhoto} autoPlay muted loop playsInline />
+        <video className="absolute inset-0 h-full w-full object-cover bg-[var(--as-dark)]" src={site.heroVideo} poster={site.heroPhoto} autoPlay muted loop playsInline />
       ) : site.heroPhoto ? (
         <img src={site.heroPhoto} alt="" className="absolute inset-0 h-full w-full object-cover" />
       ) : (

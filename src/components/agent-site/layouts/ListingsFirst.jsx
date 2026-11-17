@@ -24,7 +24,7 @@ export function ListingsHero() {
   return (
     <section className="relative h-[62vh] min-h-[460px] w-full">
       {site.heroVideo ? (
-        <video className="absolute inset-0 h-full w-full object-cover" src={site.heroVideo} poster={site.heroPhoto} autoPlay muted loop playsInline />
+        <video className="absolute inset-0 h-full w-full object-cover bg-[var(--as-dark)]" src={site.heroVideo} poster={site.heroPhoto} autoPlay muted loop playsInline />
       ) : site.heroPhoto ? (
         <img src={site.heroPhoto} alt="" className="absolute inset-0 h-full w-full object-cover" />
       ) : (

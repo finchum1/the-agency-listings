@@ -67,7 +67,9 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     // site; most agents don't opt in.
     idxEnabled: !!site.idx_enabled,
     secondaryLogo: site.secondary_logo_url || "",
-    heroPhoto: site.hero_photo_url || agent?.photo_url || "",
+    // The agent's profile photo stands in for a missing hero photo, but not when there is a hero video: it would show as the video's poster
+    // (a flash of the profile picture before the video starts) on a site that was never meant to open on it.
+    heroPhoto: site.hero_photo_url || (site.hero_video_url ? "" : agent?.photo_url || ""),
     // A photo chosen just for the About section; empty means the section uses the agent's profile photo.
     bioPhoto: site.bio_photo_url || "",
     heroVideo: site.hero_video_url || null,
