@@ -902,6 +902,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
             folder={site.id}
             value={form.secondary_logo_url}
             onChange={(url) => set("secondary_logo_url", url || "")}
+            trim
             label={`Secondary logo (optional — shown next to the ${brand.name} logo in your header and footer)`}
           />
 

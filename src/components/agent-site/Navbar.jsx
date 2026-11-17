@@ -98,7 +98,7 @@ export default function Navbar() {
       {site.secondaryLogo && (
         <>
           <span className="h-8 w-px bg-[var(--as-on-dark)]/25 shrink-0" aria-hidden="true" />
-          <img src={site.secondaryLogo} alt="" className="agent-secondary-logo h-8 sm:h-10 w-auto" />
+          <img src={site.secondaryLogo} alt="" className={`agent-secondary-logo h-10 sm:h-12 w-auto ${solid ? "" : "drop-shadow-[0_1px_5px_rgba(0,0,0,0.6)]"}`} />
         </>
       )}
       {!centeredLogo && (

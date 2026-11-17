@@ -117,7 +117,7 @@ export default function Footer() {
   const logo = <BrandLogo src={brokerage.logo} name={brokerage.name} className="h-10 sm:h-12 w-auto" />;
   const agentLine = (className = "") => (
     <div className={`flex items-center gap-3 ${className}`}>
-      {site.secondaryLogo && <img src={site.secondaryLogo} alt="" className="agent-secondary-logo h-8 w-auto" />}
+      {site.secondaryLogo && <img src={site.secondaryLogo} alt="" className="agent-secondary-logo h-10 w-auto" />}
       <p className="font-display text-2xl tracked-wide text-[var(--as-on-dark)]">{agent.name}</p>
     </div>
   );

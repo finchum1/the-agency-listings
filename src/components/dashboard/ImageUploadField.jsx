@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import { trimTransparentEdges } from "../../lib/trimImage";
 
 // Single-image upload field, shared by SiteForm (hero photo, secondary
 // logo, OG image), AreasManager (area photo), PostsManager (post image),
@@ -8,16 +9,18 @@ import { supabase } from "../../lib/supabaseClient";
 // only by listings). `bucket`/`folder` decide where it lands — e.g.
 // bucket="agent-site-photos" folder={site.id}, or
 // bucket="profile-photos" folder={profileId}.
-export default function ImageUploadField({ bucket, folder, value, onChange, label = "Photo" }) {
+// `trim`: for a logo, cut the empty transparent margin off before uploading, so the logo is sized by its artwork (see lib/trimImage.js).
+export default function ImageUploadField({ bucket, folder, value, onChange, label = "Photo", trim = false }) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
 
   const handleUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const picked = e.target.files?.[0];
+    if (!picked) return;
     setUploading(true);
     setError("");
+    const file = trim ? await trimTransparentEdges(picked) : picked;
 
     const path = `${folder}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "-")}`;
     const { error: uploadError } = await supabase.storage.from(bucket).upload(path, file);
