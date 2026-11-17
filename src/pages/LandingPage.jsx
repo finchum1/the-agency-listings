@@ -189,10 +189,9 @@ export default function LandingPage() {
           <Reveal>
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Running at The Agency today</p>
-              <ul className="grid grid-cols-1 sm:grid-cols-3 gap-x-10 gap-y-4">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4">
                 {[
                   ["Terrence Finchum", "Agent website", "https://terrencefinchum.com"],
-                  ["The Agency Oklahoma", "Brokerage website", "https://the-agency-oklahoma.vercel.app"],
                   ["The dashboard", "In daily use", "https://app.latchpointstudios.com"],
                 ].map(([name, note, href]) => (
                   <li key={name}>
