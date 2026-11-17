@@ -72,7 +72,7 @@ export default function MarketingNav() {
   // the page's own title and description (lib/marketingMeta.js).
   useEffect(() => {
     const { path, meta } = marketingMetaFor(location.pathname);
-    applyPageMeta({ ...meta, url: `${window.location.origin}${path === "/" ? "/" : path}` });
+    applyPageMeta({ ...meta, image: meta.image ? `${window.location.origin}${meta.image}` : undefined, url: `${window.location.origin}${path === "/" ? "/" : path}` });
   }, [location.pathname]);
 
   useEffect(() => {

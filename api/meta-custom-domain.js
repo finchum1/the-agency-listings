@@ -451,15 +451,18 @@ async function handleMarketing(req, res) {
 
   const title = escapeHtml(meta.title);
   const description = escapeHtml(meta.description);
+  const image = meta.image ? `${origin}${meta.image}` : "";
   const tags = [
     `<link rel="canonical" href="${url}" />`,
     `<meta property="og:type" content="website" />`,
     `<meta property="og:title" content="${title}" />`,
     `<meta property="og:description" content="${description}" />`,
     `<meta property="og:url" content="${url}" />`,
-    `<meta name="twitter:card" content="summary" />`,
+    ...(image ? [`<meta property="og:image" content="${image}" />`, `<meta property="og:image:width" content="2400" />`, `<meta property="og:image:height" content="1260" />`] : []),
+    `<meta name="twitter:card" content="${image ? "summary_large_image" : "summary"}" />`,
     `<meta name="twitter:title" content="${title}" />`,
     `<meta name="twitter:description" content="${description}" />`,
+    ...(image ? [`<meta name="twitter:image" content="${image}" />`] : []),
   ].join("\n    ");
   const links = Object.entries(MARKETING_META)
     .map(([p, m]) => `<li><a href="${origin}${p}">${escapeHtml(m.title)}</a></li>`)
