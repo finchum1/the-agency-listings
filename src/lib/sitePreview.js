@@ -2,6 +2,9 @@
 // ?preview_layout=editorial&preview_theme=dark; the site renders with those instead of its saved ones, but nothing is saved
 // and the page isn't counted as a visit. The choice is also remembered in window.name (which survives in-page navigation
 // but is private to that one tab or frame), so clicking through About, Listings and so on keeps the same look.
+// The Latchpoint Mac app has ONE web view for everything, so window.name never gets a fresh start there: a preview opened once would stay on
+// that site for good (and turn off its light / dark switch). The memory therefore carries the time it was last used and lapses after
+// MEMORY_MS of not previewing; a memory with no time (made before this) counts as lapsed.
 export const LAYOUT_OPTIONS = [
   { value: "classic", label: "Classic", description: "Full-screen photo hero, then tidy sections. The original look." },
   { value: "editorial", label: "Minimal editorial", description: "Light and airy, like a magazine: big quiet headlines and thin rules." },
@@ -41,6 +44,7 @@ const HEADERS = HEADER_OPTIONS.map((h) => h.value);
 const FOOTERS = FOOTER_OPTIONS.map((f) => f.value);
 const THEMES = THEME_OPTIONS.map((t) => t.value);
 const PREFIX = "lp-preview:";
+const MEMORY_MS = 30 * 60 * 1000;
 
 // Where this page's links should point while rendering a share-link preview (/preview/<token>/site); null otherwise.
 let previewBase = null;
@@ -64,7 +68,7 @@ export function readPreviewOverrides(search, key) {
       footer: FOOTERS.includes(footer) ? footer : undefined,
     };
     try {
-      window.name = PREFIX + JSON.stringify({ key, ...found });
+      window.name = PREFIX + JSON.stringify({ key, ...found, at: Date.now() });
     } catch {
       /* the address still works without the memory */
     }
@@ -73,7 +77,14 @@ export function readPreviewOverrides(search, key) {
   try {
     if (window.name.startsWith(PREFIX)) {
       const saved = JSON.parse(window.name.slice(PREFIX.length));
-      if (saved.key === key) return { layout: saved.layout, theme: saved.theme, header: saved.header, footer: saved.footer };
+      if (!(Date.now() - Number(saved.at) < MEMORY_MS)) {
+        window.name = ""; // lapsed (or from before memories had a time): forget it
+        return null;
+      }
+      if (saved.key === key) {
+        window.name = PREFIX + JSON.stringify({ ...saved, at: Date.now() }); // still being used: keep it going
+        return { layout: saved.layout, theme: saved.theme, header: saved.header, footer: saved.footer };
+      }
     }
   } catch {
     /* no memory */
