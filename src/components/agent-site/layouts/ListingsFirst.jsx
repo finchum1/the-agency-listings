@@ -144,7 +144,7 @@ export function ListingsBio() {
     <section id="bio" className="px-6 lg:px-10 py-14 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
       <div className="mx-auto max-w-7xl flex flex-col lg:flex-row lg:items-center gap-8 lg:gap-14">
         <div className="flex items-center gap-5 shrink-0">
-          <div className="h-24 w-24 rounded-full overflow-hidden bg-[var(--as-surface)] shrink-0">{site.agent.photo && <img src={site.agent.photo} alt={site.agent.name} className="h-full w-full object-cover object-top" />}</div>
+          <div className="h-24 w-24 rounded-full overflow-hidden bg-[var(--as-surface)] shrink-0">{(site.bioPhoto || site.agent.photo) && <img src={site.bioPhoto || site.agent.photo} alt={site.agent.name} className="h-full w-full object-cover object-top" />}</div>
           <div>
             <p className="font-display text-2xl font-semibold text-[var(--as-text)]">{site.agent.name}</p>
             <p className="text-xs tracked-wide uppercase text-[var(--as-text)]/55 mt-1">{site.agent.title}</p>

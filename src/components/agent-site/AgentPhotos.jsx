@@ -3,14 +3,17 @@
 const photosOf = (site) => (site.team?.members || []).filter((m) => m.photo);
 
 // The box shape for a team portrait row, or "" for a single portrait (the layout then uses its own shape).
-export function teamAspect(site) {
+// `bio`: the About section, which shows its own chosen photo (site.bioPhoto) alone, when there is one, instead of the team's row.
+export function teamAspect(site, bio = false) {
+  if (bio && site.bioPhoto) return "";
   const n = photosOf(site).length;
   if (n >= 3) return "aspect-[3/2]";
   if (n === 2) return "aspect-[5/4]";
   return "";
 }
 
-export default function AgentPhotos({ site, className = "h-full w-full object-cover", fallback = "" }) {
+export default function AgentPhotos({ site, className = "h-full w-full object-cover", fallback = "", bio = false }) {
+  if (bio && site.bioPhoto) return <img src={site.bioPhoto} alt={site.agent.name} className={`${className} object-top`} loading="lazy" />;
   const people = photosOf(site);
   if (people.length >= 2) {
     return (

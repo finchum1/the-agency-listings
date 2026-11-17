@@ -71,8 +71,8 @@ export function EditorialBio() {
     <section id="bio" className="px-6 lg:px-10 py-28 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
       <div className="mx-auto max-w-6xl grid lg:grid-cols-[0.8fr_1.2fr] gap-14 lg:gap-24 items-center">
         <figure>
-          <div className={`overflow-hidden bg-[var(--as-surface)] ${teamAspect(site) || "aspect-[3/4]"} max-w-sm mx-auto lg:mx-0`}>
-            <AgentPhotos site={site} />
+          <div className={`overflow-hidden bg-[var(--as-surface)] ${teamAspect(site, true) || "aspect-[3/4]"} max-w-sm mx-auto lg:mx-0`}>
+            <AgentPhotos site={site} bio />
           </div>
           <figcaption className="mt-4 max-w-sm mx-auto lg:mx-0 text-[11px] tracked-wide uppercase text-[var(--as-text)]/45">
             {site.agent.name}

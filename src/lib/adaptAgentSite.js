@@ -68,6 +68,8 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     idxEnabled: !!site.idx_enabled,
     secondaryLogo: site.secondary_logo_url || "",
     heroPhoto: site.hero_photo_url || agent?.photo_url || "",
+    // A photo chosen just for the About section; empty means the section uses the agent's profile photo.
+    bioPhoto: site.bio_photo_url || "",
     heroVideo: site.hero_video_url || null,
     bio: site.bio || [],
     // bio_html is the new rich-text source of truth (RichTextEditor.jsx /

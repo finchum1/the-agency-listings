@@ -84,8 +84,8 @@ export function BoldBio() {
       <div className="mx-auto max-w-7xl grid lg:grid-cols-[0.9fr_1.1fr] gap-16 lg:gap-24 items-center">
         <div className="relative max-w-md mx-auto lg:mx-0 w-full">
           <div className="absolute -bottom-5 -right-5 inset-0 bg-[var(--as-accent-on-dark)]" aria-hidden="true" />
-          <div className={`relative overflow-hidden bg-[var(--as-surface)] ${teamAspect(site) || "aspect-[4/5]"}`}>
-            <AgentPhotos site={site} />
+          <div className={`relative overflow-hidden bg-[var(--as-surface)] ${teamAspect(site, true) || "aspect-[4/5]"}`}>
+            <AgentPhotos site={site} bio />
           </div>
         </div>
         <div>

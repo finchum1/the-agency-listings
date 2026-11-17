@@ -16,8 +16,8 @@ export default function Bio() {
   return (
     <section id="bio" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
       <div className="mx-auto max-w-6xl grid lg:grid-cols-[0.85fr_1.15fr] gap-14 items-start">
-        <div className={`overflow-hidden bg-[var(--as-surface)] ${teamAspect(site) || "aspect-[4/5]"}`}>
-          <AgentPhotos site={site} />
+        <div className={`overflow-hidden bg-[var(--as-surface)] ${teamAspect(site, true) || "aspect-[4/5]"}`}>
+          <AgentPhotos site={site} bio />
         </div>
 
         <div>

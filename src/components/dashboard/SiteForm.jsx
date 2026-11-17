@@ -299,6 +299,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
       color_toggle: !!s.color_toggle,
       secondary_logo_url: s.secondary_logo_url || "",
       hero_photo_url: s.hero_photo_url || "",
+      bio_photo_url: s.bio_photo_url || "",
       hero_video_url: s.hero_video_url || "",
       // bio_html is the new source of truth (RichTextEditor); falls back
       // to converting the old bio text[] array so a site saved before
@@ -410,6 +411,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
       color_toggle: form.color_toggle,
       secondary_logo_url: form.secondary_logo_url || null,
       hero_photo_url: form.hero_photo_url || null,
+      bio_photo_url: form.bio_photo_url || null,
       hero_video_url: form.hero_video_url || null,
       bio_html: form.bio_html,
       stats: form.stats.filter((s) => s.label.trim() || s.value.trim()),
@@ -909,6 +911,14 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
             value={form.hero_photo_url}
             onChange={(url) => set("hero_photo_url", url || "")}
             label="Hero photo"
+          />
+
+          <ImageUploadField
+            bucket="agent-site-photos"
+            folder={site.id}
+            value={form.bio_photo_url}
+            onChange={(url) => set("bio_photo_url", url || "")}
+            label="Bio photo (optional — the picture beside your bio in the About section. Leave it empty to use your profile photo)"
           />
 
           <div>
