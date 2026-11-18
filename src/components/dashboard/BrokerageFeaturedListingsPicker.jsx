@@ -143,13 +143,13 @@ export default function BrokerageFeaturedListingsPicker({ value, onChange }) {
             }
           }}
           placeholder="MLS number, e.g. ACT8714298"
-          className="flex-1 rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+          className="flex-1 rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
         />
         <button
           type="button"
           onClick={addListing}
           disabled={adding || !mlsInput.trim()}
-          className="rounded-lg bg-[#0d0d0c] dark:bg-[#f2454b] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-white hover:bg-[#ed2127] disabled:opacity-40"
+          className="rounded-lg bg-[#0d0d0c] dark:bg-[#f2454b] px-4 py-2.5 text-xs font-medium uppercase tracking-wide text-white hover:bg-[#D8091B] disabled:opacity-40"
         >
           {adding ? "Checking…" : "Add"}
         </button>

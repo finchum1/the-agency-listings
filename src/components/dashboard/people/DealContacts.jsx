@@ -3,7 +3,7 @@ import { useState } from "react";
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1";
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 
 // Everyone on a deal who has a name and an email: the clients first, then the other side and the closing team. Each is a card (role, name, how to reach
 // them) instead of a pair of loose fields. `name` and `email` are the column names on the deal's people row.
@@ -83,7 +83,7 @@ export default function DealContacts({ values, editing, onChange, onCommit, cash
           {[{ label: "clients", clients: true, emails: ["email", "client2_email"] }, ...TEAMS.filter((t) => !(cash && t.cashHides)), { label: "all", all: true, emails: roles.filter((r) => r.key !== "client" && r.key !== "client2").map((r) => r.email).filter(Boolean) }].map((t) => {
             const href = mailtoFor(values, t, ccEmail);
             const cls = `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium ${
-              t.all ? "border-[#1c1a17] dark:border-[#faf9f7] bg-[#1c1a17] dark:bg-[#faf9f7] text-white dark:text-[#1c1a17]" : t.clients ? "border-[#ed2127] dark:border-[#f2454b] bg-[#ed2127] dark:bg-[#f2454b] text-white" : "border-black/10 dark:border-white/15"
+              t.all ? "border-[#1c1a17] dark:border-[#faf9f7] bg-[#1c1a17] dark:bg-[#faf9f7] text-white dark:text-[#1c1a17]" : t.clients ? "border-[#D8091B] dark:border-[#f2454b] bg-[#D8091B] dark:bg-[#f2454b] text-white" : "border-black/10 dark:border-white/15"
             }`;
             const icon = (
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">

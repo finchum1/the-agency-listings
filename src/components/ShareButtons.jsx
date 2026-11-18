@@ -79,7 +79,7 @@ export default function ShareButtons({ url, title, className = "" }) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Share on Facebook"
-        className="h-8 w-8 rounded-full border border-[var(--as-text)]/15 flex items-center justify-center text-[var(--as-text)]/60 transition-colors hover:text-[var(--as-accent)] hover:border-[var(--as-accent)]/40"
+        className="h-8 w-8 rounded-full border border-[var(--as-text)]/15 flex items-center justify-center text-[var(--as-text)]/60 transition-colors hover:text-[var(--as-accent-text)] hover:border-[var(--as-accent)]/40"
       >
         <FacebookIcon />
       </a>
@@ -89,7 +89,7 @@ export default function ShareButtons({ url, title, className = "" }) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Share on LinkedIn"
-        className="h-8 w-8 rounded-full border border-[var(--as-text)]/15 flex items-center justify-center text-[var(--as-text)]/60 transition-colors hover:text-[var(--as-accent)] hover:border-[var(--as-accent)]/40"
+        className="h-8 w-8 rounded-full border border-[var(--as-text)]/15 flex items-center justify-center text-[var(--as-text)]/60 transition-colors hover:text-[var(--as-accent-text)] hover:border-[var(--as-accent)]/40"
       >
         <LinkedInIcon />
       </a>
@@ -99,14 +99,14 @@ export default function ShareButtons({ url, title, className = "" }) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Share on X"
-        className="h-8 w-8 rounded-full border border-[var(--as-text)]/15 flex items-center justify-center text-[var(--as-text)]/60 transition-colors hover:text-[var(--as-accent)] hover:border-[var(--as-accent)]/40"
+        className="h-8 w-8 rounded-full border border-[var(--as-text)]/15 flex items-center justify-center text-[var(--as-text)]/60 transition-colors hover:text-[var(--as-accent-text)] hover:border-[var(--as-accent)]/40"
       >
         <XIcon />
       </a>
       <a
         href={mail}
         aria-label="Share by email"
-        className="h-8 w-8 rounded-full border border-[var(--as-text)]/15 flex items-center justify-center text-[var(--as-text)]/60 transition-colors hover:text-[var(--as-accent)] hover:border-[var(--as-accent)]/40"
+        className="h-8 w-8 rounded-full border border-[var(--as-text)]/15 flex items-center justify-center text-[var(--as-text)]/60 transition-colors hover:text-[var(--as-accent-text)] hover:border-[var(--as-accent)]/40"
       >
         <EmailIcon />
       </a>

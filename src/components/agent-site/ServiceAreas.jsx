@@ -18,7 +18,7 @@ export default function ServiceAreas() {
 
   const header = (
     <>
-      <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3 text-center">Areas of Expertise</p>
+      <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3 text-center">Areas of Expertise</p>
       <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-10 text-center text-[var(--as-text)]">Find Your Area</Heading>
     </>
   );

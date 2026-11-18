@@ -127,7 +127,7 @@ export default function BuyersPage() {
         <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {OFFER_STEPS.map((c, i) => (
             <div key={c.title} className="bg-[var(--as-bg)] border border-[var(--as-text)]/10 p-7">
-              <p className="font-display text-4xl font-semibold text-[var(--as-accent)]">{String(i + 1).padStart(2, "0")}</p>
+              <p className="font-display text-4xl font-semibold text-[var(--as-accent-text)]">{String(i + 1).padStart(2, "0")}</p>
               <p className="mt-2 font-display text-xl font-semibold">{c.title}</p>
               <p className="mt-2 text-[15px] leading-relaxed opacity-75">{c.body}</p>
             </div>

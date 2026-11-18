@@ -11,7 +11,7 @@ import { TEAM_EMBED, teamAgentIds } from "../src/lib/teams.js";
 
 const TOKEN = /^pv[0-9a-f]{64}$/;
 const LAYOUTS = ["classic", "editorial", "bold", "portrait", "listings", "luxury", "warm", "guide"];
-const THEMES = ["classic", "dark", "sand", "red", "linen", "velvet", "velvet-night"];
+const THEMES = ["classic", "dark", "sand", "red", "linen", "velvet", "velvet-night", "chambray", "brownstone"];
 const HEADERS = { classic: "Classic bar", floating: "Floating pill", centered: "Centered logo", centered_pill: "Centered logo, floating", stacked: "Stacked", minimal: "Minimal" };
 const FOOTERS = { classic: "Three columns", centered: "Centered", cta: "Call to action", wide: "Four columns", slim: "Slim bar" };
 const LAYOUT_NAMES = { classic: "Classic", editorial: "Minimal editorial", bold: "Bold statement", portrait: "Portrait split", listings: "Listings first", luxury: "Luxury minimal", warm: "Warm editorial", guide: "Guide cards" };

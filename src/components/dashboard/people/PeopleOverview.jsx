@@ -141,7 +141,7 @@ export default function PeopleOverview() {
   const toggleMore = (key) => setExpanded((x) => ({ ...x, [key]: !x[key] }));
   const moreButton = (key, total) =>
     total > SHOW && (
-      <button type="button" onClick={() => toggleMore(key)} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+      <button type="button" onClick={() => toggleMore(key)} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
         {expanded[key] ? "Show fewer" : `${total - SHOW} more`}
       </button>
     );
@@ -164,7 +164,7 @@ export default function PeopleOverview() {
       {(error || crm.error) && <p className="text-sm text-red-600 dark:text-red-400">{error || crm.error}</p>}
 
       {peopleDrafts.length > 0 && (
-        <section className={`${card} space-y-3 border-[#ed2127]/30 dark:border-[#f2454b]/40`}>
+        <section className={`${card} space-y-3 border-[#D8091B]/30 dark:border-[#f2454b]/40`}>
           <h2 className="font-display text-lg font-semibold">Drafts waiting for you ({peopleDrafts.length})</h2>
           <p className={`text-xs ${muted}`}>Written by your bot. Nothing has been sent. Open a person to send, edit or discard.</p>
           <ul className="space-y-1.5">
@@ -181,7 +181,7 @@ export default function PeopleOverview() {
               onClick={() => setAllDrafts((v) => !v)}
               className="flex items-center gap-2.5 text-xs font-semibold text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"
             >
-              <span className={`relative h-5 w-9 rounded-full transition-colors ${allDrafts ? "bg-[#ed2127] dark:bg-[#f2454b]" : "bg-black/20 dark:bg-white/25"}`}>
+              <span className={`relative h-5 w-9 rounded-full transition-colors ${allDrafts ? "bg-[#D8091B] dark:bg-[#f2454b]" : "bg-black/20 dark:bg-white/25"}`}>
                 <span className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${allDrafts ? "translate-x-4" : ""}`} />
               </span>
               {allDrafts ? "Show fewer" : `Show ${peopleDrafts.length - DRAFTS_SHOWN} more`}

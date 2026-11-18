@@ -5,7 +5,7 @@ import { stats, icons, CountUp } from "../StatsBar";
 // open house banner) live in the parent folder.
 
 export function Kicker({ children, className = "" }) {
-  return <p className={`text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent)] ${className}`}>{children}</p>;
+  return <p className={`text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent-text)] ${className}`}>{children}</p>;
 }
 
 // "Active  ·  MLS# 12345" above the address.

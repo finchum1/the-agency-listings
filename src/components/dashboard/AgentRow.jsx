@@ -8,7 +8,7 @@ const AVATAR_FALLBACK =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4' fill='%23e5e0d8'/%3E%3Cpath d='M4 20c0-4 4-6 8-6s8 2 8 6' fill='%23e5e0d8'/%3E%3C/svg%3E";
 
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 const sectionTitle = "text-xs font-semibold uppercase tracking-wider text-[#1c1a17]/40 dark:text-[#faf9f7]/40";
 
@@ -147,7 +147,7 @@ export default function AgentRow({
         </span>
         <span className="flex items-center gap-2 shrink-0">
           {agent.role === "admin" && (
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#ed2127]/15 text-[#ed2127] dark:text-[#f2454b]">
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#D8091B]/15 text-[#D8091B] dark:text-[#f2454b]">
               Admin
             </span>
           )}
@@ -202,7 +202,7 @@ export default function AgentRow({
             {emailEdit === null ? (
               <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span>Email: {agent.email}</span>
-                <button type="button" onClick={() => setEmailEdit(agent.email || "")} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                <button type="button" onClick={() => setEmailEdit(agent.email || "")} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
                   Change email
                 </button>
               </p>

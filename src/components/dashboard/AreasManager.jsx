@@ -29,7 +29,7 @@ export default function AreasManager({ agentSiteId, areas, onChanged, table = "a
   const [showAll, setShowAll] = useState(false);
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   const startAdd = () => {
@@ -125,7 +125,7 @@ export default function AreasManager({ agentSiteId, areas, onChanged, table = "a
           <button
             type="button"
             onClick={startAdd}
-            className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline"
+            className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline"
           >
             + Add area
           </button>

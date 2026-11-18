@@ -108,7 +108,7 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
     <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-display text-lg font-semibold">Photos</h2>
-        <label className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline cursor-pointer">
+        <label className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline cursor-pointer">
           {uploading ? "Uploading…" : "+ Add photos"}
           <input
             ref={fileInputRef}
@@ -142,7 +142,7 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
                   dragId === photo.id
                     ? "opacity-40 border-black/10 dark:border-white/15"
                     : overId === photo.id
-                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                       : "border-black/10 dark:border-white/15"
                 }`}
               >
@@ -186,7 +186,7 @@ export default function PhotoManager({ listingId, photos, onChanged }) {
                 aria-label="Photo caption"
                 onBlur={(e) => saveCaption(photo, e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-                className="mt-1.5 w-full rounded-md border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+                className="mt-1.5 w-full rounded-md border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
               />
               </div>
             ))}

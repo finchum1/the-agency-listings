@@ -123,56 +123,71 @@ const THEMES = [
   {
     value: "classic",
     label: "Classic",
-    description: "Cream & white sections, dark footer. The current look.",
-    swatches: ["#faf9f7", "#1c1a17", "#ed2127"],
+    description: "Ecru & white sections, Iron hero + testimonials + footer. The current look.",
+    swatches: ["#F5F1E9", "#1C1C1B", "#D8091B"],
   },
   {
     value: "dark",
     label: "Dark",
-    description: "Ink backgrounds throughout with cream text, brighter accent.",
-    swatches: ["#1c1a17", "#2e2b24", "#f2454b"],
+    description: "Iron backgrounds throughout with Ecru text; The Agency Red for buttons.",
+    swatches: ["#1C1C1B", "#262625", "#D8091B"],
   },
   {
     value: "sand",
     label: "Sand",
-    description: "Taupe ground, true black ink, and the brand red.",
-    swatches: ["#ddd0ba", "#0d0d0d", "#ed2127"],
+    description: "Alabaster ground, Iron ink, and The Agency Red.",
+    swatches: ["#EBE3D6", "#1C1C1B", "#D8091B"],
   },
   {
     value: "red",
     label: "Red",
     description: "The brand red for the hero & footer — white & black everywhere else.",
-    swatches: ["#ffffff", "#ed2127", "#0d0d0d"],
+    swatches: ["#FFFFFF", "#D8091B", "#1C1C1B"],
   },
   {
     value: "linen",
     label: "Linen",
     description: "All-white and soft cream throughout, even the header & footer — the brand red as the only pop of color.",
-    swatches: ["#ffffff", "#f0ece4", "#ed2127"],
+    swatches: ["#FFFFFF", "#F5F1E9", "#D8091B"],
   },
   {
     value: "velvet",
     label: "Velvet",
     description: "Cream and white sections with The Agency's Velvet for the header, hero shade, testimonials & footer.",
-    swatches: ["#faf6f0", "#470300", "#ffffff"],
+    swatches: ["#F5F1E9", "#470300", "#FFFFFF"],
   },
   {
     value: "velvet-night",
     label: "Velvet Night",
-    description: "Velvet all the way through: a deep Velvet page with cream text and a bright red accent.",
-    swatches: ["#470300", "#260100", "#f2454b"],
+    description: "Velvet all the way through: a deep Velvet page with Alabaster text and a red button accent.",
+    swatches: ["#470300", "#260100", "#D8091B"],
+  },
+  {
+    value: "chambray",
+    label: "Chambray",
+    description: "Light Chambray blue for the header, footer & testimonials, with Iron text and The Agency Red for buttons.",
+    swatches: ["#FAF8F4", "#C2D7E6", "#D8091B"],
+  },
+  {
+    value: "brownstone",
+    label: "Brownstone",
+    description: "Warm Brownstone for the header, hero shade, testimonials & footer, with white text on it.",
+    swatches: ["#F5F1E9", "#906F57", "#D8091B"],
   },
 ];
 
 // Same six pairings as SiteForm.jsx's FONT_PAIRINGS, read via --ls-* in
 // index.css instead of --as-*.
+// 2026 brand refresh: every site uses the brand fonts for now (index.css maps every stored pairing to EB Garamond + Inter). The other pairings
+// stay defined so the picker can offer them again by flipping this switch.
+const BRAND_FONTS_ONLY = true;
 const FONT_PAIRINGS = [
   {
     value: "playfair-jost",
-    label: "Playfair Display + Lato",
-    tag: "Default pairing",
-    display: "'Playfair Display', Georgia, serif",
-    body: "'Lato', sans-serif",
+    label: "EB Garamond + Inter",
+    tag: "The Agency's 2026 brand",
+    display: "'EB Garamond', Georgia, serif",
+    body: "'Inter', sans-serif",
   },
   {
     value: "fraunces-inter",
@@ -394,7 +409,7 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   return (
@@ -503,7 +518,7 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
               onClick={() => setForm((f) => ({ ...f, site_template: t.value }))}
               className={`text-left rounded-xl border p-3.5 transition-colors ${
                 form.site_template === t.value
-                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                  ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                   : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
@@ -551,7 +566,7 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
               onClick={() => setForm((f) => ({ ...f, header_style: h.value }))}
               className={`text-left rounded-xl border p-3.5 transition-colors ${
                 form.header_style === h.value
-                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                  ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                   : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
@@ -595,7 +610,7 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
               onClick={() => setForm((f) => ({ ...f, theme: t.value }))}
               className={`text-left rounded-xl border p-3.5 transition-colors ${
                 form.theme === t.value
-                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                  ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                   : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
@@ -646,19 +661,19 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
       <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">
         <h2 className="font-display text-lg font-semibold">Font pairing</h2>
         <div className="grid sm:grid-cols-3 gap-3">
-          {FONT_PAIRINGS.map((f) => (
+          {FONT_PAIRINGS.filter((f) => !BRAND_FONTS_ONLY || f.value === "playfair-jost").map((f) => (
             <button
               key={f.value}
               type="button"
               onClick={() => setForm((prev) => ({ ...prev, font_pairing: f.value }))}
               className={`text-left rounded-xl border p-3.5 transition-colors ${
                 form.font_pairing === f.value
-                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                  ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                   : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
               {f.tag && (
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#ed2127] dark:text-[#f2454b] mb-1.5">{f.tag}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-[#D8091B] dark:text-[#f2454b] mb-1.5">{f.tag}</p>
               )}
               <p className="text-lg leading-none mb-2" style={{ fontFamily: f.display }}>
                 Aa
@@ -686,7 +701,7 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
               onClick={() => setForm((f) => ({ ...f, logo_variant: v.value }))}
               className={`rounded-xl border p-2.5 transition-colors ${
                 form.logo_variant === v.value
-                  ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                  ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                   : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
               }`}
             >
@@ -760,7 +775,7 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
           <button
             type="button"
             onClick={addFeatureGroup}
-            className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline"
+            className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline"
           >
             + Add category
           </button>

@@ -52,7 +52,7 @@ export default function BrokeragePostPage() {
         <article className="pt-32 pb-24 px-6 lg:px-10">
           <div className="mx-auto max-w-3xl">
             {post.category && (
-              <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">{post.category}</p>
+              <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">{post.category}</p>
             )}
             <h1 className="text-3xl sm:text-4xl font-display font-semibold mb-3 text-[var(--as-text)]">{post.title}</h1>
             <div className="flex flex-wrap items-center justify-between gap-4 mb-10">
@@ -77,7 +77,7 @@ export default function BrokeragePostPage() {
               <p className="text-sm text-[var(--as-text)]/60">
                 Written by <span className="text-[var(--as-text)]">{adapted.brokerage.name}</span>
               </p>
-              <Link to="/brokerage/blog" className="text-sm text-[var(--as-accent)] hover:underline">
+              <Link to="/brokerage/blog" className="text-sm text-[var(--as-accent-text)] hover:underline">
                 ← More posts
               </Link>
             </div>

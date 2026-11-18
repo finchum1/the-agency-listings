@@ -8,7 +8,7 @@ import OccasionCoverage from "./OccasionCoverage";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const card = "rounded-2xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] p-5";
-const control = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+const control = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const ghost = "rounded-full border border-black/15 dark:border-white/20 px-3.5 py-1.5 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10";
 const solid = "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] px-5 py-2 text-sm font-semibold text-white disabled:opacity-50";
 
@@ -111,7 +111,7 @@ function PlanEditor({ plan, stages, onSave, onCancel }) {
                     type="checkbox"
                     checked={draft.starts_when.relationships.includes(r.value)}
                     onChange={(e) => setDraft({ ...draft, starts_when: { ...draft.starts_when, relationships: e.target.checked ? [...draft.starts_when.relationships, r.value] : draft.starts_when.relationships.filter((x) => x !== r.value) } })}
-                    className="h-4 w-4 accent-[#ed2127]"
+                    className="h-4 w-4 accent-[#D8091B]"
                   />
                   {r.label}
                 </label>
@@ -307,7 +307,7 @@ export default function PlansPage() {
                 <p className={`text-sm ${muted}`}>{startText(p.starts_when)}</p>
               </div>
               <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-                <input type="checkbox" checked={p.active} onChange={() => toggle(p)} className="h-4 w-4 accent-[#ed2127]" />
+                <input type="checkbox" checked={p.active} onChange={() => toggle(p)} className="h-4 w-4 accent-[#D8091B]" />
                 {p.active ? "On" : "Off"}
               </label>
             </div>

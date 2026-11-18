@@ -20,10 +20,10 @@ function PersonRow({ person, brokerage }) {
           {brokerage.name}{person.license ? ` — ${person.license}` : ""}
         </p>
         <div className="flex flex-col gap-0.5 mt-1 text-sm">
-          <a href={`tel:${person.phone}`} onClick={() => trackListingEvent("phone_click")} className="text-[var(--ls-accent)] hover:underline">
+          <a href={`tel:${person.phone}`} onClick={() => trackListingEvent("phone_click")} className="text-[var(--ls-accent-text)] hover:underline">
             {person.phone}
           </a>
-          <a href={`mailto:${person.email}`} onClick={() => trackListingEvent("email_click")} className="text-[var(--ls-accent)] hover:underline break-all">
+          <a href={`mailto:${person.email}`} onClick={() => trackListingEvent("email_click")} className="text-[var(--ls-accent-text)] hover:underline break-all">
             {person.email}
           </a>
         </div>
@@ -40,7 +40,7 @@ export function AgentCard({ className = "" }) {
   if (team) {
     return (
       <div className={box}>
-        <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent)]">Listed by</p>
+        <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent-text)]">Listed by</p>
         <p className="font-display text-xl font-semibold text-[var(--ls-text)] mt-0.5 mb-5">{team.name}</p>
         <div className="space-y-5">
           {team.members.map((m) => (
@@ -191,7 +191,7 @@ export default function AgentContact() {
     <section id="contact" className="px-6 lg:px-10 py-24">
       <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-start">
         <div>
-          <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent)] mb-3">
+          <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent-text)] mb-3">
             Contact
           </p>
           <h2 className="text-3xl sm:text-4xl font-semibold mb-6 text-[var(--ls-text)]">

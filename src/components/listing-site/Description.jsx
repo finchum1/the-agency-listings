@@ -16,7 +16,7 @@ export default function Description() {
     <section className="px-6 lg:px-10 py-24">
       <div className="mx-auto max-w-6xl grid lg:grid-cols-3 gap-14">
         <div className="lg:col-span-2">
-          <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent)] mb-3">
+          <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent-text)] mb-3">
             About This Home
           </p>
           <h2 className="text-3xl sm:text-4xl font-semibold mb-6 text-[var(--ls-text)]">

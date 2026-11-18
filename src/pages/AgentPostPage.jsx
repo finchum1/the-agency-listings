@@ -91,7 +91,7 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
         <article className="pt-40 pb-24 px-6 lg:px-10">
           <div className="mx-auto max-w-3xl">
             {post.category && (
-              <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">
+              <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">
                 {post.category}
               </p>
             )}
@@ -156,7 +156,7 @@ export default function AgentPostPage({ site, agent, post, loading, notFound }) 
               <SiteLink
                 slug={site.slug}
                 path="/blog"
-                className="text-sm text-[var(--as-accent)] hover:underline"
+                className="text-sm text-[var(--as-accent-text)] hover:underline"
               >
                 ← More posts
               </SiteLink>

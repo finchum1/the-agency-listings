@@ -77,7 +77,7 @@ function SignIn({ store, reason, onClose }) {
           <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name (optional)" autoComplete="name" maxLength={80} className={input} />
           <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email address" autoComplete="email" className={input} />
           <input type="text" name="website" value={trap} onChange={(e) => setTrap(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" className="absolute left-[-9999px] h-0 w-0 opacity-0" />
-          {error && <p className="text-sm text-[var(--as-accent)]" role="alert">{error}</p>}
+          {error && <p className="text-sm text-[var(--as-accent-text)]" role="alert">{error}</p>}
           <button type="submit" disabled={busy || !email} className={`${primary} w-full`}>{busy ? "Sending…" : "Email me a code"}</button>
           <p className="text-xs leading-relaxed text-[var(--as-text)]/50">Signing in lets the agent follow up about homes you save. You can delete your account at any time.</p>
         </form>
@@ -85,7 +85,7 @@ function SignIn({ store, reason, onClose }) {
         <form onSubmit={verify} className="space-y-4">
           <p className="text-sm leading-relaxed text-[var(--as-text)]/70">We sent a 6-digit code to <strong>{email}</strong>. It works for 10 minutes.</p>
           <input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*" maxLength={6} required value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="123456" className={`${input} text-center text-2xl tracking-[0.4em]`} />
-          {error && <p className="text-sm text-[var(--as-accent)]" role="alert">{error}</p>}
+          {error && <p className="text-sm text-[var(--as-accent-text)]" role="alert">{error}</p>}
           <button type="submit" disabled={busy || code.length !== 6} className={`${primary} w-full`}>{busy ? "Checking…" : "Sign in"}</button>
           <button type="button" onClick={() => { setStep("email"); setCode(""); setError(""); }} className="w-full text-center text-xs text-[var(--as-text)]/60 underline underline-offset-2">Use a different email or send a new code</button>
         </form>
@@ -123,7 +123,7 @@ function SaveSearch({ store, params, path, onClose }) {
           <input type="checkbox" checked={alerts} onChange={(e) => setAlerts(e.target.checked)} className="mt-1 accent-[var(--as-accent)]" />
           <span>Email me when new homes match. One short email a day, and only when there is something new.</span>
         </label>
-        {error && <p className="text-sm text-[var(--as-accent)]" role="alert">{error}</p>}
+        {error && <p className="text-sm text-[var(--as-accent-text)]" role="alert">{error}</p>}
         <button type="submit" disabled={busy || !name.trim()} className={`${primary} w-full`}>{busy ? "Saving…" : "Save search"}</button>
       </form>
     </Dialog>
@@ -155,7 +155,7 @@ function Panel({ store, account, onRun, onClose }) {
                 <p className="font-medium">{s.name}</p>
                 <p className="mt-0.5 text-xs text-[var(--as-text)]/55">{describeSearch(s.params)}</p>
                 <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
-                  <button type="button" onClick={() => onRun(s)} className="font-medium uppercase tracked text-[var(--as-accent)]">Run search</button>
+                  <button type="button" onClick={() => onRun(s)} className="font-medium uppercase tracked text-[var(--as-accent-text)]">Run search</button>
                   <label className="flex cursor-pointer items-center gap-2 text-[var(--as-text)]/70">
                     <input type="checkbox" checked={s.alerts && !account.visitor.emailsOff} disabled={account.visitor.emailsOff} onChange={(e) => store.updateSearch(s.id, { alerts: e.target.checked })} className="accent-[var(--as-accent)]" />
                     Daily email
@@ -197,7 +197,7 @@ function Panel({ store, account, onRun, onClose }) {
             ) : (
               <span className="flex items-center gap-3 text-xs">
                 <span className="text-[var(--as-text)]/70">This removes your saved homes and searches.</span>
-                <button type="button" className="font-medium text-[var(--as-accent)]" onClick={() => store.deleteAccount()}>Yes, delete</button>
+                <button type="button" className="font-medium text-[var(--as-accent-text)]" onClick={() => store.deleteAccount()}>Yes, delete</button>
               </span>
             )}
           </div>

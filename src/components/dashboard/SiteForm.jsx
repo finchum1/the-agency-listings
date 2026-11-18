@@ -22,44 +22,56 @@ const THEMES = [
   {
     value: "classic",
     label: "Classic",
-    description: "Cream & white sections, dark hero + testimonials + footer. The current look.",
-    swatches: ["#f7f4ee", "#14130f", "#ed2127"],
+    description: "Ecru & white sections, Iron hero + testimonials + footer. The current look.",
+    swatches: ["#F5F1E9", "#1C1C1B", "#D8091B"],
   },
   {
     value: "dark",
     label: "Dark",
-    description: "Ink backgrounds throughout with cream text.",
-    swatches: ["#14130f", "#26241d", "#f2454b"],
+    description: "Iron backgrounds throughout with Ecru text; The Agency Red for buttons.",
+    swatches: ["#1C1C1B", "#262625", "#D8091B"],
   },
   {
     value: "sand",
     label: "Sand",
-    description: "Taupe ground, true black ink, and the brand red.",
-    swatches: ["#ddd0ba", "#0d0d0d", "#ed2127"],
+    description: "Alabaster ground, Iron ink, and The Agency Red.",
+    swatches: ["#EBE3D6", "#1C1C1B", "#D8091B"],
   },
   {
     value: "red",
     label: "Red",
     description: "The brand red for the hero, footer & testimonials — white & black everywhere else.",
-    swatches: ["#ffffff", "#ed2127", "#0d0d0d"],
+    swatches: ["#FFFFFF", "#D8091B", "#1C1C1B"],
   },
   {
     value: "linen",
     label: "Linen",
     description: "All-white and soft cream throughout, even the header & footer — the brand red as the only pop of color.",
-    swatches: ["#ffffff", "#f0ece4", "#ed2127"],
+    swatches: ["#FFFFFF", "#F5F1E9", "#D8091B"],
   },
   {
     value: "velvet",
     label: "Velvet",
     description: "Cream and white sections with The Agency's Velvet for the header, hero shade, testimonials & footer.",
-    swatches: ["#faf6f0", "#470300", "#ffffff"],
+    swatches: ["#F5F1E9", "#470300", "#FFFFFF"],
   },
   {
     value: "velvet-night",
     label: "Velvet Night",
-    description: "Velvet all the way through: a deep Velvet page with cream text and a bright red accent.",
-    swatches: ["#470300", "#260100", "#f2454b"],
+    description: "Velvet all the way through: a deep Velvet page with Alabaster text and a red button accent.",
+    swatches: ["#470300", "#260100", "#D8091B"],
+  },
+  {
+    value: "chambray",
+    label: "Chambray",
+    description: "Light Chambray blue for the header, footer & testimonials, with Iron text and The Agency Red for buttons.",
+    swatches: ["#FAF8F4", "#C2D7E6", "#D8091B"],
+  },
+  {
+    value: "brownstone",
+    label: "Brownstone",
+    description: "Warm Brownstone for the header, hero shade, testimonials & footer, with white text on it.",
+    swatches: ["#F5F1E9", "#906F57", "#D8091B"],
   },
 ];
 
@@ -136,13 +148,16 @@ const FOOTER_STYLES = [
 // alternate serif/sans pairings in the same spirit, for agents who want a
 // bit of their own personality; they don't touch color or logo, so they
 // stay within brand.
+// 2026 brand refresh: every site uses the brand fonts for now (index.css maps every stored pairing to EB Garamond + Inter). The other pairings
+// stay defined so the picker can offer them again by flipping this switch.
+const BRAND_FONTS_ONLY = true;
 const FONT_PAIRINGS = [
   {
     value: "playfair-jost",
-    label: "Playfair Display + Lato",
-    tag: "Default pairing",
-    display: "'Playfair Display', Georgia, serif",
-    body: "'Lato', sans-serif",
+    label: "EB Garamond + Inter",
+    tag: "The Agency's 2026 brand",
+    display: "'EB Garamond', Georgia, serif",
+    body: "'Inter', sans-serif",
   },
   {
     value: "fraunces-inter",
@@ -195,7 +210,7 @@ const DEFAULT_HOME_SECTIONS = ["bio", "testimonials", "cards", "listings", "area
 // A tiny wireframe of each layout for the picker.
 function LayoutSketch({ kind }) {
   const bar = "rounded-[2px] bg-[#1c1a17]/15 dark:bg-white/20";
-  const accent = "rounded-[2px] bg-[#ed2127]";
+  const accent = "rounded-[2px] bg-[#D8091B]";
   return (
     <div className="h-24 rounded-lg border border-black/10 dark:border-white/15 overflow-hidden bg-white dark:bg-[#111] p-1.5 flex flex-col gap-1" aria-hidden="true">
       {kind === "classic" && (
@@ -231,7 +246,7 @@ function LayoutSketch({ kind }) {
       )}
       {kind === "warm" && (
         <div className="h-full rounded-[3px] bg-[#1c1a17]/60 flex flex-col items-center justify-center gap-1.5">
-          <div className="flex gap-1"><div className="h-2 w-8 rounded-full bg-white/85" /><div className="h-2 w-4 rounded-full bg-[#ed2127]" /></div>
+          <div className="flex gap-1"><div className="h-2 w-8 rounded-full bg-white/85" /><div className="h-2 w-4 rounded-full bg-[#D8091B]" /></div>
           <div className="flex gap-1"><div className="h-2 w-6 rounded-full border border-white/70" /><div className="h-2 w-6 rounded-full border border-white/70" /></div>
         </div>
       )}
@@ -442,7 +457,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   return (
@@ -476,7 +491,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
           href={`/sites/${form.slug}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block rounded-full border border-[#ed2127] dark:border-[#f2454b] text-[#ed2127] dark:text-[#f2454b] text-xs font-semibold px-4 py-2 hover:bg-[#ed2127] dark:hover:bg-[#f2454b] hover:text-white dark:hover:text-white transition-colors"
+          className="inline-block rounded-full border border-[#D8091B] dark:border-[#f2454b] text-[#D8091B] dark:text-[#f2454b] text-xs font-semibold px-4 py-2 hover:bg-[#D8091B] dark:hover:bg-[#f2454b] hover:text-white dark:hover:text-white transition-colors"
         >
           View live site
         </a>
@@ -532,7 +547,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
                     onClick={() => applyTemplate(t.settings)}
                     className={`text-left rounded-xl border p-3.5 transition-colors ${
                       active
-                        ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                        ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                         : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
                     }`}
                   >
@@ -555,7 +570,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
                   onClick={() => set("layout", l.value)}
                   className={`text-left rounded-xl border p-3.5 transition-colors ${
                     form.layout === l.value
-                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                       : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
                   }`}
                 >
@@ -582,7 +597,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
                   onClick={() => set("theme", t.value)}
                   className={`text-left rounded-xl border p-3.5 transition-colors ${
                     form.theme === t.value
-                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                       : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
                   }`}
                 >
@@ -599,7 +614,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
           </div>
 
           <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
-            <input type="checkbox" checked={form.color_toggle} onChange={(e) => set("color_toggle", e.target.checked)} className="mt-0.5 accent-[#ed2127] dark:accent-[#f2454b]" />
+            <input type="checkbox" checked={form.color_toggle} onChange={(e) => set("color_toggle", e.target.checked)} className="mt-0.5 accent-[#D8091B] dark:accent-[#f2454b]" />
             <span>
               <span className="block text-sm font-medium">Light / dark switch</span>
               <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mt-0.5">
@@ -619,7 +634,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
                   onClick={() => set("header_style", h.value)}
                   className={`text-left rounded-xl border p-3.5 transition-colors ${
                     form.header_style === h.value
-                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                       : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
                   }`}
                 >
@@ -646,7 +661,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
                   onClick={() => set("footer_style", f.value)}
                   className={`text-left rounded-xl border p-3.5 transition-colors ${
                     form.footer_style === f.value
-                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                       : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
                   }`}
                 >
@@ -667,7 +682,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
                   else delete base.footer_wordmark;
                   set("landing", base);
                 }}
-                className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+                className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
               >
                 <option value="">Off</option>
                 <option value="red">The Agency red</option>
@@ -679,7 +694,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
                 type="checkbox"
                 checked={form.landing?.powered_by === true}
                 onChange={(e) => set("landing", { ...(form.landing && typeof form.landing === "object" ? form.landing : {}), powered_by: e.target.checked })}
-                className="mt-0.5 accent-[#ed2127] dark:accent-[#f2454b]"
+                className="mt-0.5 accent-[#D8091B] dark:accent-[#f2454b]"
               />
               <span>
                 <span className="block text-sm font-medium">Show "Powered by Latchpoint Studios" in the footer</span>
@@ -721,12 +736,12 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
                   onClick={() => set("button_style", b.value)}
                   className={`text-left rounded-xl border p-3.5 transition-colors ${
                     form.button_style === b.value
-                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                       : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
                   }`}
                 >
                   <span
-                    className="inline-block mb-2.5 bg-[#ed2127] text-white text-[10px] font-medium uppercase tracking-widest px-5 py-2"
+                    className="inline-block mb-2.5 bg-[#D8091B] text-white text-[10px] font-medium uppercase tracking-widest px-5 py-2"
                     style={{ borderRadius: b.radius }}
                   >
                     Contact
@@ -771,19 +786,19 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
           <div>
             <label className={labelClass}>Font pairing</label>
             <div className="grid sm:grid-cols-3 gap-3">
-              {FONT_PAIRINGS.map((f) => (
+              {FONT_PAIRINGS.filter((f) => !BRAND_FONTS_ONLY || f.value === "playfair-jost").map((f) => (
                 <button
                   key={f.value}
                   type="button"
                   onClick={() => set("font_pairing", f.value)}
                   className={`text-left rounded-xl border p-3.5 transition-colors ${
                     form.font_pairing === f.value
-                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                       : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
                   }`}
                 >
                   {f.tag && (
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[#ed2127] dark:text-[#f2454b] mb-1.5">{f.tag}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[#D8091B] dark:text-[#f2454b] mb-1.5">{f.tag}</p>
                   )}
                   <p className="text-lg leading-none mb-2" style={{ fontFamily: f.display }}>
                     Aa
@@ -809,7 +824,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
                   onClick={() => set("logo_variant", v.value)}
                   className={`rounded-xl border p-2.5 transition-colors ${
                     form.logo_variant === v.value
-                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                       : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
                   }`}
                 >
@@ -836,7 +851,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
                     type="checkbox"
                     checked
                     onChange={() => disableSection(key)}
-                    className="accent-[#ed2127] dark:accent-[#f2454b]"
+                    className="accent-[#D8091B] dark:accent-[#f2454b]"
                   />
                   <span className="flex-1 text-sm">{HOME_SECTION_LABELS[key]}</span>
                   <button
@@ -864,7 +879,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
                   key={key}
                   className="flex items-center gap-2 border border-dashed border-black/15 dark:border-white/20 rounded-lg px-3 py-2"
                 >
-                  <input type="checkbox" checked={false} onChange={() => enableSection(key)} className="accent-[#ed2127] dark:accent-[#f2454b]" />
+                  <input type="checkbox" checked={false} onChange={() => enableSection(key)} className="accent-[#D8091B] dark:accent-[#f2454b]" />
                   <span className="flex-1 text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{HOME_SECTION_LABELS[key]}</span>
                   <span className="text-xs text-[#1c1a17]/35 dark:text-[#faf9f7]/35">Hidden from home</span>
                 </div>
@@ -883,7 +898,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
               type="checkbox"
               checked={form.idx_enabled}
               onChange={(e) => set("idx_enabled", e.target.checked)}
-              className="mt-0.5 accent-[#ed2127] dark:accent-[#f2454b]"
+              className="mt-0.5 accent-[#D8091B] dark:accent-[#f2454b]"
             />
             <span>
               <span className="block text-sm font-medium">Enable full MLS home search</span>
@@ -973,7 +988,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
             <button
               type="button"
               onClick={addStat}
-              className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline mt-2"
+              className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline mt-2"
             >
               + Add stat
             </button>

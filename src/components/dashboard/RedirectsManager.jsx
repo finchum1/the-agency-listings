@@ -3,7 +3,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { normalizePath, normalizeTarget, parseBulk, validateRule } from "../../lib/redirectMatch";
 
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 const primaryBtn =
   "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60";
@@ -151,7 +151,7 @@ export default function RedirectsManager({ site }) {
             <button
               type="button"
               onClick={() => setBulkOpen((v) => !v)}
-              className="text-sm font-medium text-[#ed2127] dark:text-[#f2454b] hover:underline"
+              className="text-sm font-medium text-[#D8091B] dark:text-[#f2454b] hover:underline"
             >
               {bulkOpen ? "Hide bulk paste" : "Paste a whole list"}
             </button>
@@ -206,7 +206,7 @@ export default function RedirectsManager({ site }) {
                       href={`https://${domain}${r.from_path}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-[#ed2127] dark:text-[#f2454b] hover:underline"
+                      className="text-[#D8091B] dark:text-[#f2454b] hover:underline"
                     >
                       Test
                     </a>

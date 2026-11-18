@@ -19,7 +19,7 @@ export default function LandingCards() {
     <section id="cards" className="px-6 lg:px-10 py-20 sm:py-24 bg-[var(--as-bg)] text-[var(--as-text)]">
       <div className="mx-auto max-w-6xl">
         <div className="text-center max-w-2xl mx-auto">
-          <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">Make your move</p>
+          <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">Make your move</p>
           <h2 className="text-3xl sm:text-4xl font-display font-semibold">Where are you headed next?</h2>
           <p className="mt-4 text-[17px] leading-relaxed opacity-70">
             Whether you&rsquo;re selling, curious what your home is worth, or ready to buy, here&rsquo;s how it works and what to expect, start to finish.
@@ -56,7 +56,7 @@ function PhotoCard({ card, steps }) {
             ))}
           </div>
         )}
-        <p className="mt-2 text-xs font-medium tracked-wide uppercase text-[var(--as-accent)]">{card.cta} →</p>
+        <p className="mt-2 text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)]">{card.cta} →</p>
       </div>
     </SiteLink>
   );

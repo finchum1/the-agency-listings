@@ -148,7 +148,7 @@ export default function DealsPage({ page = "board" }) {
             if (e.target.value) setMode("tc");
           }}
           aria-label="Filter by agent"
-          className="rounded-full border border-black/10 dark:border-white/15 bg-transparent px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
+          className="rounded-full border border-black/10 dark:border-white/15 bg-transparent px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40"
         >
           <option value="">All agents</option>
           {agentOptions.map(([id, a]) => (
@@ -211,12 +211,12 @@ export default function DealsPage({ page = "board" }) {
               <button
                 type="button"
                 onClick={() => document.getElementById("other-deals")?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[#ed2127]/30 dark:border-[#f2454b]/40 bg-[#ed2127]/[0.04] px-4 py-3 text-left text-sm"
+                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[#D8091B]/30 dark:border-[#f2454b]/40 bg-[#D8091B]/[0.04] px-4 py-3 text-left text-sm"
               >
                 <span>
                   <span className="font-semibold">{waiting}</span> deal{waiting === 1 ? " is" : "s are"} waiting for your compliance review
                 </span>
-                <span className="shrink-0 font-semibold text-[#ed2127] dark:text-[#f2454b]">Review ↓</span>
+                <span className="shrink-0 font-semibold text-[#D8091B] dark:text-[#f2454b]">Review ↓</span>
               </button>
             )}
             <DealsHome {...merged} />

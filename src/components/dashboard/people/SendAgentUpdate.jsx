@@ -128,7 +128,7 @@ export default function SendAgentUpdate({ person, agentName, onSent }) {
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
               <label className="block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60">
                 Add a note (optional)
-                <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} maxLength={600} placeholder="Anything you want them to see at the top…" className="mt-1 w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40" />
+                <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} maxLength={600} placeholder="Anything you want them to see at the top…" className="mt-1 w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40" />
               </label>
               <div className="flex flex-wrap items-center gap-2">
                 <button type="button" onClick={makeLink} disabled={busy} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
@@ -159,7 +159,7 @@ export default function SendAgentUpdate({ person, agentName, onSent }) {
 
               <div className="border-t border-black/5 dark:border-white/10 pt-3">
                 {!emailing ? (
-                  <button type="button" onClick={() => { setEmailing(true); show(); }} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                  <button type="button" onClick={() => { setEmailing(true); show(); }} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
                     Or email it from here instead
                   </button>
                 ) : (

@@ -4,7 +4,7 @@ import { useAuth } from "../../../hooks/useAuth";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const STATUS = {
   sending: ["Sending…", "bg-black/[0.06] dark:bg-white/10 text-[#1c1a17]/70 dark:text-[#faf9f7]/70"],
   pending: ["Out for signature", "bg-amber-100 dark:bg-amber-400/15 text-amber-900 dark:text-amber-300"],
@@ -223,13 +223,13 @@ export default function DealSignatures({ person, viewer = "owner", agent }) {
                 <div className="mt-2 flex flex-wrap items-center gap-4">
                   <span className={`text-[11px] ${muted}`}>{new Date(r.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
                   {r.status === "completed" && (
-                    <button type="button" disabled={busyId === r.id} onClick={() => act(r, "download")} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline disabled:opacity-60">
+                    <button type="button" disabled={busyId === r.id} onClick={() => act(r, "download")} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline disabled:opacity-60">
                       Open signed copy
                     </button>
                   )}
                   {canSend && r.status === "pending" && (
                     <>
-                      <button type="button" disabled={busyId === r.id} onClick={() => act(r, "remind", (x) => `Reminder sent to ${x.reminded} ${x.reminded === 1 ? "person" : "people"}.`)} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline disabled:opacity-60">
+                      <button type="button" disabled={busyId === r.id} onClick={() => act(r, "remind", (x) => `Reminder sent to ${x.reminded} ${x.reminded === 1 ? "person" : "people"}.`)} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline disabled:opacity-60">
                         Send a reminder
                       </button>
                       <button type="button" disabled={busyId === r.id} onClick={() => act(r, "refresh", () => "Checked with Documenso.")} className={`text-xs font-medium hover:underline disabled:opacity-60 ${muted}`}>
@@ -245,7 +245,7 @@ export default function DealSignatures({ person, viewer = "owner", agent }) {
       )}
 
       {rows.length > 3 && (
-        <button type="button" onClick={() => setShowAll((v) => !v)} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+        <button type="button" onClick={() => setShowAll((v) => !v)} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
           {showAll ? "Show fewer" : `Show all ${rows.length}`}
         </button>
       )}

@@ -6,7 +6,7 @@ import { LIST_SUGGESTIONS, MAX_STEPS, cleanList, cleanSteps, listsOf, newStepId 
 import { muted } from "./styles";
 
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
 const tabClass = (on, disabled) =>
@@ -168,7 +168,7 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
         </div>
 
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={f.allDay} onChange={(e) => set({ allDay: e.target.checked })} className="h-4 w-4 accent-[#ed2127]" aria-label="All day" />
+          <input type="checkbox" checked={f.allDay} onChange={(e) => set({ allDay: e.target.checked })} className="h-4 w-4 accent-[#D8091B]" aria-label="All day" />
           All day (no set time)
         </label>
 
@@ -229,7 +229,7 @@ export default function TimeBlockModal({ range, task, openTasks, canAddEvent, ta
             <ul className="mb-2 space-y-1.5">
               {steps.map((st) => (
                 <li key={st.id} className="flex items-center gap-2">
-                  <input type="checkbox" checked={st.done} onChange={(e) => setSteps((l) => l.map((x) => (x.id === st.id ? { ...x, done: e.target.checked } : x)))} aria-label={`Done: ${st.text}`} className="h-4 w-4 shrink-0 accent-[#ed2127]" />
+                  <input type="checkbox" checked={st.done} onChange={(e) => setSteps((l) => l.map((x) => (x.id === st.id ? { ...x, done: e.target.checked } : x)))} aria-label={`Done: ${st.text}`} className="h-4 w-4 shrink-0 accent-[#D8091B]" />
                   <input
                     value={st.text}
                     maxLength={200}

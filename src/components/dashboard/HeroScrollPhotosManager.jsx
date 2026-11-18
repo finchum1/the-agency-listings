@@ -101,7 +101,7 @@ export default function HeroScrollPhotosManager({ listingId, photos, onChanged }
                 dragId === photo.id
                   ? "opacity-40 border-black/10 dark:border-white/15"
                   : overId === photo.id
-                    ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                    ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                     : "border-black/10 dark:border-white/15"
               }`}
             >
@@ -136,7 +136,7 @@ export default function HeroScrollPhotosManager({ listingId, photos, onChanged }
                 type="button"
                 onClick={() => add(photo)}
                 disabled={busy}
-                className="group relative rounded-lg overflow-hidden border border-black/10 dark:border-white/15 hover:border-[#ed2127] dark:border-[#f2454b] transition-colors disabled:opacity-50"
+                className="group relative rounded-lg overflow-hidden border border-black/10 dark:border-white/15 hover:border-[#D8091B] dark:border-[#f2454b] transition-colors disabled:opacity-50"
               >
                 <img src={photo.url} alt="" className="w-full h-20 object-cover" />
                 <span className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center text-white text-xs font-semibold opacity-0 group-hover:opacity-100">

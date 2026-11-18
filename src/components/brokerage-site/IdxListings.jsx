@@ -152,7 +152,7 @@ export default function IdxListings({
   return (
     <section id={sectionId} className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
       <div className="mx-auto max-w-7xl">
-        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">
+        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">
           {eyebrowOverride || (officeOnly ? `${brokerageSite?.site?.brokerage?.name || "Our"}'s Listings` : "Home Search")}
         </p>
         <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-10 text-[var(--as-text)]">
@@ -238,7 +238,7 @@ export default function IdxListings({
         {loading && <p className="text-sm text-[var(--as-text)]/50">Searching listings…</p>}
 
         {!loading && error && (
-          <p className="text-sm text-[var(--as-accent)]">
+          <p className="text-sm text-[var(--as-accent-text)]">
             {error} — confirm REPLIERS_API_KEY is set in Vercel and try again.
           </p>
         )}

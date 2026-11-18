@@ -4,9 +4,9 @@ import { browserTimeZone, checkCalendarAddress } from "../../../hooks/useCalenda
 import { toKey } from "../../../lib/homeDates";
 import { muted } from "./styles";
 
-export const PALETTE = ["#ed2127", "#1a5fb4", "#1c7c4d", "#7c3aed", "#0e7490", "#be185d", "#525252"];
+export const PALETTE = ["#D8091B", "#1a5fb4", "#1c7c4d", "#7c3aed", "#0e7490", "#be185d", "#525252"];
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 const smallBtn = "rounded-full border border-black/10 dark:border-white/15 text-xs font-semibold px-3.5 py-1.5 hover:bg-black/5 dark:hover:bg-white/10";
 const dot = (color) => <span className="inline-block h-2 w-2 rounded-full shrink-0" style={{ background: color }} aria-hidden="true" />;
@@ -61,7 +61,7 @@ function GoogleCalendarPicker({ cal, connection, onDone }) {
             {list.map((c) => (
               <li key={c.id}>
                 <label className={`flex items-center gap-2.5 text-sm ${c.linked ? "opacity-60" : "cursor-pointer"}`}>
-                  <input type="checkbox" disabled={c.linked} checked={c.linked || picked.has(c.id)} onChange={() => toggle(c.id)} className="h-4 w-4 accent-[#ed2127]" />
+                  <input type="checkbox" disabled={c.linked} checked={c.linked || picked.has(c.id)} onChange={() => toggle(c.id)} className="h-4 w-4 accent-[#D8091B]" />
                   {dot(c.color)}
                   <span className="min-w-0 flex-1 truncate">{c.name}</span>
                   <span className={`text-[11px] ${muted}`}>{c.linked ? "Already shown" : c.canWrite ? "Can edit" : "View only"}</span>
@@ -185,7 +185,7 @@ export function CalendarsPanel({ cal, onClose, notice, openConnectionId }) {
           <ul className="divide-y divide-black/5 dark:divide-white/10">
             {cal.calendars.map((c) => (
               <li key={c.id} className="flex items-center gap-3 py-2">
-                <input type="checkbox" checked={c.enabled} onChange={(e) => cal.updateCalendar(c.id, { enabled: e.target.checked })} aria-label={`Show ${c.name}`} className="h-4 w-4 accent-[#ed2127]" />
+                <input type="checkbox" checked={c.enabled} onChange={(e) => cal.updateCalendar(c.id, { enabled: e.target.checked })} aria-label={`Show ${c.name}`} className="h-4 w-4 accent-[#D8091B]" />
                 {dot(c.color)}
                 <span className="min-w-0 flex-1 text-sm truncate">{c.name}</span>
                 <span className={`text-[11px] ${muted}`}>{c.source === "google" ? (c.can_write ? "Google · can edit" : "Google · view only") : "Address · view only"}</span>
@@ -193,7 +193,7 @@ export function CalendarsPanel({ cal, onClose, notice, openConnectionId }) {
                   (c.is_default ? (
                     <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">Default for new events</span>
                   ) : (
-                    <button type="button" onClick={() => cal.setDefaultCalendar(c.id)} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                    <button type="button" onClick={() => cal.setDefaultCalendar(c.id)} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
                       Make default
                     </button>
                   ))}
@@ -325,7 +325,7 @@ export function EventModal({ cal, event, defaultDate, defaults, onClose }) {
               <input required autoFocus={canEdit} disabled={readOnly} value={f.title} onChange={(e) => set({ title: e.target.value })} maxLength={300} className={inputClass} />
             </div>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" disabled={readOnly} checked={f.allDay} onChange={(e) => set({ allDay: e.target.checked })} className="h-4 w-4 accent-[#ed2127]" />
+              <input type="checkbox" disabled={readOnly} checked={f.allDay} onChange={(e) => set({ allDay: e.target.checked })} className="h-4 w-4 accent-[#D8091B]" />
               All day
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -385,7 +385,7 @@ export function EventModal({ cal, event, defaultDate, defaults, onClose }) {
             </div>
             {editing && event.recurring && canEdit && <p className={`text-xs ${muted}`}>This is one occurrence of a repeating event. Changes apply to this occurrence only.</p>}
             {editing && event.htmlLink && (
-              <a href={event.htmlLink} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+              <a href={event.htmlLink} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
                 Open in Google Calendar ↗
               </a>
             )}

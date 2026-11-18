@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { adminApi } from "../../lib/adminApi";
 
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 const primaryBtn =
   "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60";
@@ -108,7 +108,7 @@ export default function ImportPosts({ agentSiteId, onImported }) {
             ending, date, summary and cover image.
           </p>
         </div>
-        <button type="button" onClick={() => setOpen((v) => !v)} className="text-sm font-medium text-[#ed2127] dark:text-[#f2454b] hover:underline shrink-0">
+        <button type="button" onClick={() => setOpen((v) => !v)} className="text-sm font-medium text-[#D8091B] dark:text-[#f2454b] hover:underline shrink-0">
           {open ? "Hide" : "Open"}
         </button>
       </div>

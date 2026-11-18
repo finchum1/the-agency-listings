@@ -112,7 +112,7 @@ function SellerReports({ listing }) {
                 /* storage blocked: the choice just won't persist */
               }
             }}
-            className="h-3.5 w-3.5 accent-[#ed2127]"
+            className="h-3.5 w-3.5 accent-[#D8091B]"
           />
           Send the link from {siteDomain}
         </label>
@@ -199,7 +199,7 @@ function WeeklyEmail({ listing, onChanged }) {
           <h3 className="font-display text-base font-semibold">Weekly email</h3>
           <p className={`text-xs mt-1 ${muted}`}>Every {DAY_NAMES[day]} morning, an email to the listing's agent with the past week's views, visitors, where they came from and what they did. The button in it opens a live report page, with no login, that can be forwarded to the seller.</p>
         </div>
-        <button type="button" role="switch" aria-checked={on} aria-label="Weekly email" onClick={toggle} className={`relative shrink-0 h-7 w-12 rounded-full transition-colors ${on ? "bg-[#ed2127] dark:bg-[#f2454b]" : "bg-black/20 dark:bg-white/25"}`}>
+        <button type="button" role="switch" aria-checked={on} aria-label="Weekly email" onClick={toggle} className={`relative shrink-0 h-7 w-12 rounded-full transition-colors ${on ? "bg-[#D8091B] dark:bg-[#f2454b]" : "bg-black/20 dark:bg-white/25"}`}>
           <span className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${on ? "translate-x-5" : ""}`} />
         </button>
       </div>
@@ -242,7 +242,7 @@ export default function ListingAnalyticsPage() {
     return (
       <div>
         <p className={`text-sm mb-4 ${muted}`}>Listing not found, or you don't have access to it.</p>
-        <Link to="/dashboard/listings" className="text-sm text-[#ed2127] dark:text-[#f2454b] hover:underline">
+        <Link to="/dashboard/listings" className="text-sm text-[#D8091B] dark:text-[#f2454b] hover:underline">
           ← Back to listings
         </Link>
       </div>

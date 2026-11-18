@@ -7,7 +7,7 @@ import { card, muted } from "./styles";
 
 const SHOW = 6;
 const smallInput =
-  "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 
 const openPicker = (e) => {
   try {
@@ -37,9 +37,9 @@ function TaskRow({ task, today, showDay, onComplete, onUpdate, onRemove, onEdit 
           checked={false}
           onChange={() => onComplete(task)}
           aria-label={task.recurrence === "none" ? "Mark done" : "Mark done and schedule the next one"}
-          className="h-4 w-4 shrink-0 accent-[#ed2127] cursor-pointer"
+          className="h-4 w-4 shrink-0 accent-[#D8091B] cursor-pointer"
         />
-        <button type="button" onClick={() => onEdit(task)} aria-label={`Edit “${task.title}”`} className="min-w-0 flex-1 flex items-center gap-3 text-left rounded-lg px-1 -mx-1 py-1 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ed2127]/40">
+        <button type="button" onClick={() => onEdit(task)} aria-label={`Edit “${task.title}”`} className="min-w-0 flex-1 flex items-center gap-3 text-left rounded-lg px-1 -mx-1 py-1 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8091B]/40">
           <span className="min-w-0 flex-1 text-sm font-medium leading-snug break-words">{task.title}</span>
           {task.list && <span className="hidden sm:inline-block shrink-0 rounded-full bg-black/[0.05] dark:bg-white/10 px-2 py-0.5 text-[10px] font-semibold">{task.list}</span>}
           {meta.length > 0 && <span className={`hidden sm:block shrink-0 text-[11px] ${muted}`}>{meta.join("  ·  ")}</span>}
@@ -67,7 +67,7 @@ function TaskRow({ task, today, showDay, onComplete, onUpdate, onRemove, onEdit 
                 checked={st.done}
                 onChange={() => onUpdate(task, { checklist: task.checklist.map((x) => (x.id === st.id ? { ...x, done: !x.done } : x)) })}
                 aria-label={st.text}
-                className="h-3.5 w-3.5 shrink-0 accent-[#ed2127] cursor-pointer"
+                className="h-3.5 w-3.5 shrink-0 accent-[#D8091B] cursor-pointer"
               />
               <span className={`text-xs ${st.done ? "line-through opacity-50" : ""}`}>{st.text}</span>
             </li>
@@ -147,7 +147,7 @@ export default function TasksCard({ tasksApi, span, onEdit }) {
           maxLength={300}
           placeholder="Add a task…"
           aria-label="New task"
-          className="min-w-[12rem] flex-1 rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+          className="min-w-[12rem] flex-1 rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
         />
         <input type="date" value={due} onChange={(e) => setDue(e.target.value)} onClick={openPicker} aria-label="Due date for the new task" className={`${smallInput} py-2.5 cursor-pointer`} />
         <select value={repeat} onChange={(e) => setRepeat(e.target.value)} aria-label="Repeat for the new task" className={`${smallInput} py-2.5`}>
@@ -208,7 +208,7 @@ export default function TasksCard({ tasksApi, span, onEdit }) {
                   ))}
                 </ul>
                 {g.items.length > SHOW && (
-                  <button type="button" onClick={() => setExpanded((e) => ({ ...e, [g.key]: !all }))} className="mt-1 text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                  <button type="button" onClick={() => setExpanded((e) => ({ ...e, [g.key]: !all }))} className="mt-1 text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
                     {all ? "Show fewer" : `Show all ${g.items.length}`}
                   </button>
                 )}
@@ -227,7 +227,7 @@ export default function TasksCard({ tasksApi, span, onEdit }) {
             <ul className="mt-2 space-y-1.5">
               {done.map((t) => (
                 <li key={t.id} className="flex items-center gap-3">
-                  <input type="checkbox" checked onChange={() => reopen(t)} aria-label="Mark not done" className="h-4 w-4 shrink-0 accent-[#ed2127] cursor-pointer" />
+                  <input type="checkbox" checked onChange={() => reopen(t)} aria-label="Mark not done" className="h-4 w-4 shrink-0 accent-[#D8091B] cursor-pointer" />
                   <span className={`min-w-0 flex-1 truncate text-sm line-through ${muted}`}>{t.title}</span>
                   <span className={`shrink-0 text-[11px] ${muted}`}>{t.done_at ? dayLabel(toKey(new Date(t.done_at)), today) : ""}</span>
                   <button type="button" onClick={() => remove(t.id)} aria-label="Delete task" className="shrink-0 px-1 text-[#1c1a17]/30 dark:text-[#faf9f7]/30 hover:text-red-600 dark:hover:text-red-400">

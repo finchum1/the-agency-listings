@@ -4,7 +4,7 @@ import Basemap, { PinIcon } from "../agent-site/AreaBasemaps";
 import { MAP_HEIGHT, MAP_WIDTH, areaPosition, resolveMap } from "../../lib/areaMaps";
 
 const selectClass =
-  "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const clamp = (n, max) => Math.max(0, Math.min(max, Math.round(n)));
 
@@ -61,7 +61,7 @@ export default function AreaMapEditor({ areas, value, onChange }) {
           <option value="plain">Plain map (any other city)</option>
         </select>
         {base === "okc" && Object.keys(pins).length > 0 && (
-          <button type="button" onClick={() => onChange({ base, pins: {} })} className="text-xs text-[#ed2127] dark:text-[#f2454b] hover:underline">
+          <button type="button" onClick={() => onChange({ base, pins: {} })} className="text-xs text-[#D8091B] dark:text-[#f2454b] hover:underline">
             Reset pins to the defaults
           </button>
         )}
@@ -74,7 +74,7 @@ export default function AreaMapEditor({ areas, value, onChange }) {
       <div
         ref={boxRef}
         className="jn-map jn-on !overflow-hidden select-none"
-        style={{ "--as-bg-alt": "#ffffff", "--as-bg": "#faf9f7", "--as-text": "#1c1a17", "--as-accent": "#ed2127", touchAction: "none" }}
+        style={{ "--as-bg-alt": "#ffffff", "--as-bg": "#faf9f7", "--as-text": "#1c1a17", "--as-accent": "#D8091B", touchAction: "none" }}
       >
         <Basemap base={base} />
         {placed.map(({ area, pos }) => (
@@ -117,7 +117,7 @@ export default function AreaMapEditor({ areas, value, onChange }) {
             + {area.name}
           </button>
         ))}
-        {placed.length < 3 && <span className="text-[#ed2127] dark:text-[#f2454b]">Only {placed.length} on the map. Add at least {3 - placed.length} more for it to show on your site.</span>}
+        {placed.length < 3 && <span className="text-[#D8091B] dark:text-[#f2454b]">Only {placed.length} on the map. Add at least {3 - placed.length} more for it to show on your site.</span>}
       </div>
     </div>
   );

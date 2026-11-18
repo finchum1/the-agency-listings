@@ -35,7 +35,7 @@ export default function VendorSharePage() {
   if (state.loading) return <p className="min-h-screen grid place-items-center text-sm text-[#1c1a17]/50">Loading…</p>;
   if (state.gone) {
     return (
-      <div className="min-h-screen grid place-items-center px-6 text-center bg-[#f7f4ee] text-[#1c1a17]">
+      <div className="agency-brand min-h-screen grid place-items-center px-6 text-center bg-[#F5F1E9] text-[#1C1C1B]">
         <div>
           <h1 className="font-display text-2xl font-semibold">This link has expired</h1>
           <p className="mt-2 text-sm text-[#1c1a17]/60">Ask whoever sent it for a new one.</p>
@@ -51,7 +51,7 @@ export default function VendorSharePage() {
   const btn = "inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold";
 
   return (
-    <div className="min-h-screen bg-[#f7f4ee] text-[#1c1a17]">
+    <div className="agency-brand min-h-screen bg-[#F5F1E9] text-[#1C1C1B]">
       <ClientHeader brand={brand} />
 
       <section className="bg-[#1c1a17] text-white">

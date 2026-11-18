@@ -6,7 +6,7 @@ import { upcomingHolidays } from "../../lib/holidayPost";
 
 const muted = "text-[#1c1a17]/55 dark:text-[#faf9f7]/55";
 const card = "bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6";
-const pill = "rounded-full border border-[#ed2127] dark:border-[#f2454b] text-[#ed2127] dark:text-[#f2454b] text-xs font-semibold px-4 py-2 hover:bg-[#ed2127] dark:hover:bg-[#f2454b] hover:text-white dark:hover:text-white transition-colors";
+const pill = "rounded-full border border-[#D8091B] dark:border-[#f2454b] text-[#D8091B] dark:text-[#f2454b] text-xs font-semibold px-4 py-2 hover:bg-[#D8091B] dark:hover:bg-[#f2454b] hover:text-white dark:hover:text-white transition-colors";
 const localToday = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

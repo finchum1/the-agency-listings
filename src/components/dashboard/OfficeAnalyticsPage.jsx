@@ -9,7 +9,7 @@ import { BarList, Stat, Trend, card, isWeekly, muted } from "./ListingAnalyticsV
 
 const SOURCES = ["facebook", "instagram", "text", "email", "mls", "flyer", "zillow", "google", "direct", "referral"];
 const select =
-  "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const th = "px-4 py-3 font-medium whitespace-nowrap";
 const LIVE = ["coming_soon", "for_sale", "pending"];
 
@@ -132,7 +132,7 @@ export default function OfficeAnalyticsPage() {
           </select>
         </label>
         {filtered && (
-          <button type="button" onClick={() => setParams((p) => { const n = new URLSearchParams(); if (p.get("days")) n.set("days", p.get("days")); if (p.get("tab")) n.set("tab", p.get("tab")); return n; }, { replace: true })} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline pb-2.5">
+          <button type="button" onClick={() => setParams((p) => { const n = new URLSearchParams(); if (p.get("days")) n.set("days", p.get("days")); if (p.get("tab")) n.set("tab", p.get("tab")); return n; }, { replace: true })} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline pb-2.5">
             Clear filters
           </button>
         )}
@@ -277,7 +277,7 @@ export default function OfficeAnalyticsPage() {
                         <td className="px-4 py-3 text-right tabular-nums">{s.visitors.toLocaleString()}</td>
                         <td className="px-4 py-3 text-right tabular-nums">{s.leads}</td>
                         <td className="px-4 py-3 text-right">
-                          <Link to={`/dashboard/sites/${s.agent_id}/analytics`} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                          <Link to={`/dashboard/sites/${s.agent_id}/analytics`} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
                             Open analytics
                           </Link>
                         </td>

@@ -74,7 +74,7 @@ export const LAYOUTS = {
 /** The brand colors a post can use: the organization's own accents first, then the house colors. */
 export function paletteFor(accentColors = []) {
   const house = [
-    { name: "Agency red", hex: "#ed2127" },
+    { name: "Agency red", hex: "#D8091B" },
     { name: "Ink", hex: "#14130f" },
     { name: "Cream", hex: "#f7f4ee" },
     { name: "Sand", hex: "#ddd0ba" },
@@ -219,7 +219,7 @@ export function drawHoliday(canvas, post, pictures, logos = {}) {
 
   if (m) {
     y += ruleGap;
-    ctx.fillStyle = post.bg === "#ed2127" ? "#ffffff" : light ? "#ed2127" : "#ffffff";
+    ctx.fillStyle = post.bg === "#D8091B" ? "#ffffff" : light ? "#D8091B" : "#ffffff";
     ctx.fillRect(align === "left" ? x : x - 60, y, 120, 4);
     y += 4 + ruleGap + m.size * 0.8;
     ctx.font = `400 ${m.size}px ${SANS}`;

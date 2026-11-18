@@ -197,7 +197,7 @@ function DrawControl({ onBoundaryChange, boundaryActive }) {
         type="button"
         onClick={toggleDrawing}
         className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracked shadow ${
-          drawing ? "bg-[var(--as-accent,#ed2127)] text-white" : "bg-white text-[#1a1a1a] hover:bg-white/90"
+          drawing ? "bg-[var(--as-accent,#D8091B)] text-white" : "bg-white text-[#1a1a1a] hover:bg-white/90"
         }`}
       >
         {drawing ? "Click map to draw…" : "Draw"}

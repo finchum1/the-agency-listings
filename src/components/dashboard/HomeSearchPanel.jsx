@@ -94,7 +94,7 @@ export default function HomeSearchPanel({ listing: summary, slug, brand, onClose
             {photos.length > 1 && (
               <div className="flex gap-1.5 overflow-x-auto px-5 py-2.5">
                 {photos.slice(0, 24).map((src, i) => (
-                  <button key={src + i} type="button" onClick={() => setShot(i)} aria-label={`Show photo ${i + 1}`} className={`h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 ${i === shot ? "border-[#ed2127] dark:border-[#f2454b]" : "border-transparent"}`}>
+                  <button key={src + i} type="button" onClick={() => setShot(i)} aria-label={`Show photo ${i + 1}`} className={`h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 ${i === shot ? "border-[#D8091B] dark:border-[#f2454b]" : "border-transparent"}`}>
                     <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
                   </button>
                 ))}

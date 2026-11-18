@@ -10,7 +10,7 @@ export default function Team() {
   return (
     <section id="team" className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)]">
       <div className="mx-auto max-w-5xl">
-        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3 text-center">Meet the team</p>
+        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3 text-center">Meet the team</p>
         <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-12 text-center text-[var(--as-text)]">{team.name}</h2>
 
         <div className={`grid gap-8 justify-center ${team.members.length === 2 ? "sm:grid-cols-2 max-w-3xl mx-auto" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
@@ -24,12 +24,12 @@ export default function Team() {
               {m.license && <p className="text-xs text-[var(--as-text)]/45">{m.license}</p>}
               <div className="mt-3 flex flex-col gap-0.5 text-sm">
                 {m.phone && (
-                  <a href={`tel:${m.phone}`} className="text-[var(--as-accent)] hover:underline">
+                  <a href={`tel:${m.phone}`} className="text-[var(--as-accent-text)] hover:underline">
                     {m.phone}
                   </a>
                 )}
                 {m.email && (
-                  <a href={`mailto:${m.email}`} className="text-[var(--as-accent)] hover:underline break-all">
+                  <a href={`mailto:${m.email}`} className="text-[var(--as-accent-text)] hover:underline break-all">
                     {m.email}
                   </a>
                 )}

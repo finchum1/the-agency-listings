@@ -5,7 +5,7 @@
 // Preview-chip backdrop so a white or black logo is actually visible while picking.
 const CHIP_BG = { white: "#14130f", black: "#f0eee9" };
 
-const COLOR_NAMES = { "#ed2127": "Corporate Red", "#000000": "Black", "#ffffff": "White" };
+const COLOR_NAMES = { "#d8091b": "Agency Red", "#1c1c1b": "Iron", "#ed2127": "Corporate Red (2025)", "#000000": "Black", "#ffffff": "White" };
 
 const titleCase = (s) => s.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -32,6 +32,14 @@ export function validLogoVariant(brand, current) {
   return keys.includes("red") ? "red" : keys[0];
 }
 
-// Themes whose header and footer are a solid dark brand color (Red, Velvet), so the white logo is always the one shown, whatever was picked.
-export const WHITE_LOGO_THEMES = ["red", "velvet", "velvet-night"];
+// Themes whose header and footer are a solid dark brand color (Red, Velvet, Brownstone, and the two dark ones), so the white logo is always the one shown,
+// whatever was picked. (The 2026 brand guide: no red mark on Iron or Velvet.)
+export const WHITE_LOGO_THEMES = ["red", "velvet", "velvet-night", "brownstone", "dark"];
 export const logoForTheme = (theme) => WHITE_LOGO_THEMES.includes(theme);
+// Agent sites keep an Iron or dark bar behind the logo in every state, so Classic and Sand show the white logo too. (A property site's bar turns light
+// on scroll in those themes, so there the agent's choice stands.)
+const AGENT_SITE_WHITE_EXTRA = ["classic", "sand"];
+// Chambray's header and footer are light blue, where the guide only allows Iron text: the Iron (black) mark is always the one shown.
+export const BLACK_LOGO_THEMES = ["chambray"];
+export const logoVariantForTheme = (theme, { agentSite = false } = {}) =>
+  WHITE_LOGO_THEMES.includes(theme) || (agentSite && AGENT_SITE_WHITE_EXTRA.includes(theme)) ? "white" : BLACK_LOGO_THEMES.includes(theme) ? "black" : null;

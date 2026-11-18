@@ -10,7 +10,7 @@ import HomeSearchPanel from "./HomeSearchPanel";
 
 const muted = "text-[#1c1a17]/60 dark:text-[#faf9f7]/60";
 const fieldClass =
-  "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 
 const PRICES = [100000, 150000, 200000, 250000, 300000, 400000, 500000, 750000, 1000000, 1500000, 2000000];
 const priceLabel = (n) => (n >= 1000000 ? `$${n / 1000000}M` : `$${n / 1000}k`);
@@ -40,7 +40,7 @@ function ResultRow({ listing, active, onOpen }) {
       aria-label={`${listing.address_line1}, ${listing.city}: ${formatPrice(listing.price)}`}
       className={`flex w-full gap-3 rounded-2xl border p-2.5 text-left transition-colors ${
         active
-          ? "border-[#ed2127]/50 dark:border-[#f2454b]/60 bg-[#ed2127]/[0.04]"
+          ? "border-[#D8091B]/50 dark:border-[#f2454b]/60 bg-[#D8091B]/[0.04]"
           : "border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] hover:bg-black/[0.02] dark:hover:bg-white/[0.04]"
       }`}
     >

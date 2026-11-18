@@ -32,11 +32,11 @@ export const AGENCY_DISCLAIMER = "This office is independently owned and operate
 export const AGENCY_FRANCHISE_DISCLAIMER =
   "THIS OFFICE IS AN INDEPENDENTLY OWNED AND OPERATED FRANCHISEE OF THE AGENCY REAL ESTATE FRANCHISING, LLC.";
 export const AGENCY_LOGOS = {
-  red: "/images/brokerage-logo.png",
-  white: "/images/brokerage-logo-white.png",
-  black: "/images/brokerage-logo-black.png",
+  red: "/brand/the-agency-lockup-red.svg",
+  white: "/brand/the-agency-lockup-white.svg",
+  black: "/brand/the-agency-lockup-iron.svg",
 };
-export const AGENCY_COLORS = ["#ed2127", "#000000"];
+export const AGENCY_COLORS = ["#d8091b", "#1c1c1b"];
 
 /** Everything a new Agency office needs from just its location, so it reads like "The Agency | OKLAHOMA". */
 export function agencyOfficeRow(location) {

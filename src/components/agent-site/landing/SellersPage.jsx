@@ -47,7 +47,7 @@ export default function SellersPage() {
         <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {SELLER_PREP.map((c, i) => (
             <div key={c.title} className="bg-[var(--as-bg)] border border-[var(--as-text)]/10 p-7">
-              <p className="font-display text-4xl font-semibold text-[var(--as-accent)]">{String(i + 1).padStart(2, "0")}</p>
+              <p className="font-display text-4xl font-semibold text-[var(--as-accent-text)]">{String(i + 1).padStart(2, "0")}</p>
               <p className="mt-2 font-display text-xl font-semibold">{c.title}</p>
               <p className="mt-2 text-[15px] leading-relaxed opacity-75">{c.body}</p>
             </div>
@@ -129,7 +129,7 @@ export default function SellersPage() {
             <ul className="mt-4 space-y-3">
               {CLOSING_CHECKLIST.map((c) => (
                 <li key={c} className="flex gap-3 text-[15.5px]">
-                  <span className="text-[var(--as-accent)]" aria-hidden="true">
+                  <span className="text-[var(--as-accent-text)]" aria-hidden="true">
                     ✓
                   </span>
                   <span>{c}</span>

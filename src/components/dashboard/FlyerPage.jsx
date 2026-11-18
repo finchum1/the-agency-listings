@@ -207,7 +207,7 @@ export default function FlyerPage() {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   // Only the very first load shows this — NOT a refresh triggered by
@@ -221,7 +221,7 @@ export default function FlyerPage() {
     return (
       <div>
         <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-4">Listing not found, or you don't have access to it.</p>
-        <Link to="/dashboard/listings" className="text-sm text-[#ed2127] dark:text-[#f2454b] hover:underline">
+        <Link to="/dashboard/listings" className="text-sm text-[#D8091B] dark:text-[#f2454b] hover:underline">
           ← Back to listings
         </Link>
       </div>
@@ -316,7 +316,7 @@ export default function FlyerPage() {
                     setSaved(false);
                     setTemplate(t.key);
                   }}
-                  className={`text-left rounded-xl border-2 p-3 transition-colors ${template === t.key ? "border-[#ed2127] dark:border-[#f2454b] bg-[#ed2127]/[0.04]" : "border-black/10 dark:border-white/15 hover:border-black/25 dark:hover:border-white/30"}`}
+                  className={`text-left rounded-xl border-2 p-3 transition-colors ${template === t.key ? "border-[#D8091B] dark:border-[#f2454b] bg-[#D8091B]/[0.04]" : "border-black/10 dark:border-white/15 hover:border-black/25 dark:hover:border-white/30"}`}
                 >
                   <span className="block text-sm font-semibold">{t.label}</span>
                   <span className="block text-xs text-[#1c1a17]/55 dark:text-[#faf9f7]/55 mt-0.5">{t.hint}</span>
@@ -377,12 +377,12 @@ export default function FlyerPage() {
                       type="button"
                       onClick={() => togglePhoto(photo.id)}
                       className={`relative rounded-lg overflow-hidden border-2 aspect-square ${
-                        idx !== -1 ? "border-[#ed2127] dark:border-[#f2454b]" : "border-transparent"
+                        idx !== -1 ? "border-[#D8091B] dark:border-[#f2454b]" : "border-transparent"
                       }`}
                     >
                       <img src={photo.url} alt="" className="w-full h-full object-cover" />
                       {idx !== -1 && (
-                        <span className="absolute top-1 left-1 h-5 w-5 rounded-full bg-[#ed2127] text-white text-[10px] font-semibold flex items-center justify-center">
+                        <span className="absolute top-1 left-1 h-5 w-5 rounded-full bg-[#D8091B] text-white text-[10px] font-semibold flex items-center justify-center">
                           {idx + 1}
                         </span>
                       )}
@@ -410,7 +410,7 @@ export default function FlyerPage() {
                               type="checkbox"
                               checked={included}
                               onChange={() => toggleFeature(key)}
-                              className="accent-[#ed2127] dark:accent-[#f2454b]"
+                              className="accent-[#D8091B] dark:accent-[#f2454b]"
                             />
                             <span className={included ? "text-[#1c1a17] dark:text-[#faf9f7]" : "text-[#1c1a17]/35 dark:text-[#faf9f7]/35 line-through"}>
                               {item}
@@ -427,7 +427,7 @@ export default function FlyerPage() {
 
           <div>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input type="checkbox" checked={includeQr && Boolean(qrUrl)} disabled={!qrUrl} onChange={(e) => setIncludeQr(e.target.checked)} className="accent-[#ed2127] dark:accent-[#f2454b]" />
+              <input type="checkbox" checked={includeQr && Boolean(qrUrl)} disabled={!qrUrl} onChange={(e) => setIncludeQr(e.target.checked)} className="accent-[#D8091B] dark:accent-[#f2454b]" />
               Include a QR code to the listing website
             </label>
             <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">

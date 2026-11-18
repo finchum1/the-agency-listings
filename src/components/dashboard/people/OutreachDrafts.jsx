@@ -57,7 +57,7 @@ export default function OutreachDrafts({ person, onLogged, onCount }) {
 
   if (drafts.length === 0) return null;
   return (
-    <div className="space-y-2.5 rounded-2xl border border-[#ed2127]/30 dark:border-[#f2454b]/40 bg-[#ed2127]/[0.04] p-3.5">
+    <div className="space-y-2.5 rounded-2xl border border-[#D8091B]/30 dark:border-[#f2454b]/40 bg-[#D8091B]/[0.04] p-3.5">
       <h3 className="font-display text-base font-semibold">Drafts waiting for you</h3>
       <p className="text-xs text-[#1c1a17]/55 dark:text-[#faf9f7]/55">Written by your bot. Nothing has been sent. Open one, send it from your own app, then mark it sent.</p>
       <ul className="space-y-2.5">

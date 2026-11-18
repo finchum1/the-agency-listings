@@ -55,7 +55,7 @@ export default function PostAnalytics({ posts, viewCounts, onEdit }) {
                 </div>
               </div>
               <div className="mt-2 ml-8 h-1.5 rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
-                <div className="h-full rounded-full bg-[#ed2127] dark:bg-[#f2454b]" style={{ width: `${(total / max) * 100}%` }} />
+                <div className="h-full rounded-full bg-[#D8091B] dark:bg-[#f2454b]" style={{ width: `${(total / max) * 100}%` }} />
               </div>
             </button>
           </li>

@@ -450,7 +450,7 @@ export default function DashboardLayout() {
   // The red number beside an item that has something waiting (99+ when it is a lot).
   const bubble = (n) =>
     n > 0 && (
-      <span aria-label={`${n} need attention`} className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[#ed2127] dark:bg-[#f2454b] px-1 text-[10px] font-semibold leading-none text-white">
+      <span aria-label={`${n} need attention`} className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-[#D8091B] dark:bg-[#f2454b] px-1 text-[10px] font-semibold leading-none text-white">
         {n > 99 ? "99+" : n}
       </span>
     );
@@ -485,7 +485,7 @@ export default function DashboardLayout() {
             <Link key={label} to={to} onClick={onNavigate} aria-label={label} aria-current={active ? "page" : undefined} className={itemClass(active, false)} {...handlers} {...extra}>
               <NavIcon name={icon} />
               {badge > 0 && (
-                <span aria-label={`${badge} need attention`} className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ed2127] dark:bg-[#f2454b] px-1 text-[9px] font-semibold leading-none text-white ring-2 ring-white dark:ring-[#1a1a1a]">
+                <span aria-label={`${badge} need attention`} className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D8091B] dark:bg-[#f2454b] px-1 text-[9px] font-semibold leading-none text-white ring-2 ring-white dark:ring-[#1a1a1a]">
                   {badge > 99 ? "99+" : badge}
                 </span>
               )}
@@ -620,7 +620,7 @@ export default function DashboardLayout() {
         <img src={avatarSrc} alt="" className="h-8 w-8 rounded-full object-cover bg-black/5 dark:bg-white/10 shrink-0" />
         <span className="min-w-0">
           <span className="block truncate">{profile?.full_name || profile?.email}</span>
-          {isAdmin && <span className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b]">ADMIN</span>}
+          {isAdmin && <span className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b]">ADMIN</span>}
         </span>
       </Link>
       <button
@@ -633,7 +633,7 @@ export default function DashboardLayout() {
   );
 
   return (
-    <div className="min-h-screen bg-[#faf9f7] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] scheme-light dark:scheme-dark md:flex print:block">
+    <div className="agency-brand min-h-screen bg-[#FAF8F4] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] scheme-light dark:scheme-dark md:flex print:block">
       {/* Desktop sidebar — print:hidden matters beyond just "don't print
           the sidebar": FlyerPage.jsx's #flyer-sheet print isolation
           previously relied on `visibility: hidden` for everything else on
@@ -716,7 +716,7 @@ export default function DashboardLayout() {
           title="Drag to resize"
           className="group absolute inset-y-0 -right-1.5 z-10 w-3 cursor-col-resize touch-none"
         >
-          <span className={`absolute inset-y-0 left-[5px] w-0.5 transition-colors ${navLive !== null ? "bg-[#ed2127]/70 dark:bg-[#f2454b]/70" : "bg-transparent group-hover:bg-[#ed2127]/40 dark:group-hover:bg-[#f2454b]/40"}`} />
+          <span className={`absolute inset-y-0 left-[5px] w-0.5 transition-colors ${navLive !== null ? "bg-[#D8091B]/70 dark:bg-[#f2454b]/70" : "bg-transparent group-hover:bg-[#D8091B]/40 dark:group-hover:bg-[#f2454b]/40"}`} />
         </div>
       </aside>
 

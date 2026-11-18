@@ -21,7 +21,7 @@ export default function Bio() {
         </div>
 
         <div>
-          <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">
+          <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">
             About {site.agent.first}
           </p>
           <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-6 text-[var(--as-text)]">

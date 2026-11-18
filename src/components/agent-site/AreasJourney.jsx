@@ -266,7 +266,7 @@ export default function AreasJourney({ pins, base = "okc", header, sectionClass,
               </div>
             </div>
             <div className="flex flex-1 flex-col p-6 pb-7">
-              <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-2">Area</p>
+              <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-2">Area</p>
               <p className="font-display text-[28px] font-semibold leading-tight">{current.area.name}</p>
               {current.area.blurb && <p className="mt-2.5 text-[15.5px] leading-relaxed opacity-70 min-h-[4.8em]">{current.area.blurb}</p>}
               <div className="jn-dots">
@@ -274,7 +274,7 @@ export default function AreasJourney({ pins, base = "okc", header, sectionClass,
                   <button key={p.area.id} type="button" onClick={() => pick(p.area.id)} aria-label={`Show ${p.area.name}`} className={p.area.id === current.area.id ? "jn-on" : ""} />
                 ))}
               </div>
-              <SiteLink slug={site.slug} path={`/areas/${current.area.slug}`} className="mt-auto pt-5 text-xs font-medium tracked-wide uppercase text-[var(--as-accent)]">
+              <SiteLink slug={site.slug} path={`/areas/${current.area.slug}`} className="mt-auto pt-5 text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)]">
                 Explore {current.area.name} →
               </SiteLink>
             </div>

@@ -50,7 +50,7 @@ export default function Contact() {
     <section id="contact" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
       <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-start">
         <div>
-          <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">
+          <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">
             Let&rsquo;s Connect
           </p>
           <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-6 text-[var(--as-text)]">
@@ -75,12 +75,12 @@ export default function Contact() {
                     </p>
                     <div className="flex flex-col gap-0.5 mt-1 text-sm">
                       {m.phone && (
-                        <a href={`tel:${m.phone}`} className="text-[var(--as-accent)] hover:underline">
+                        <a href={`tel:${m.phone}`} className="text-[var(--as-accent-text)] hover:underline">
                           {m.phone}
                         </a>
                       )}
                       {m.email && (
-                        <a href={`mailto:${m.email}`} className="text-[var(--as-accent)] hover:underline break-all">
+                        <a href={`mailto:${m.email}`} className="text-[var(--as-accent-text)] hover:underline break-all">
                           {m.email}
                         </a>
                       )}

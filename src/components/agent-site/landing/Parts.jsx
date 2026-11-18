@@ -30,7 +30,7 @@ export function Section({ tone = "bg", id, children, className = "" }) {
 }
 
 export function Eyebrow({ children, onDark }) {
-  return <p className={`text-xs font-medium tracked-wide uppercase mb-3 ${onDark ? "text-[var(--as-on-dark)]/70" : "text-[var(--as-accent)]"}`}>{children}</p>;
+  return <p className={`text-xs font-medium tracked-wide uppercase mb-3 ${onDark ? "text-[var(--as-on-dark)]/70" : "text-[var(--as-accent-text)]"}`}>{children}</p>;
 }
 
 export function Heading({ children, as: H = "h2", className = "" }) {

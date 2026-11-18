@@ -37,7 +37,7 @@ export default function SoldHomes({ limit, page = false }) {
   return (
     <section id="sold" className="px-6 lg:px-10 py-20 bg-[var(--as-bg)]">
       <div className="mx-auto max-w-7xl">
-        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">Track record</p>
+        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">Track record</p>
         <Heading className={`${page ? "text-3xl sm:text-4xl" : "text-2xl sm:text-3xl"} font-display font-semibold mb-8 text-[var(--as-text)]`}>{page ? "Past Sales" : "Recently Sold"}</Heading>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {sales.map((sale) => (
@@ -48,7 +48,7 @@ export default function SoldHomes({ limit, page = false }) {
               </div>
               <p className="mt-4 font-medium text-[var(--as-text)]">{sale.address}</p>
               {(sale.city || sale.state) && <p className="text-sm text-[var(--as-text)]/60">{[sale.city, sale.state].filter(Boolean).join(", ")}</p>}
-              {sale.price ? <p className="mt-1 font-display text-lg text-[var(--as-accent)]">{formatPrice(sale.price)}</p> : null}
+              {sale.price ? <p className="mt-1 font-display text-lg text-[var(--as-accent-text)]">{formatPrice(sale.price)}</p> : null}
             </div>
           ))}
         </div>

@@ -8,7 +8,7 @@ export default function Features() {
   return (
     <section id="features" className="px-6 lg:px-10 py-24">
       <div className="mx-auto max-w-6xl">
-        <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent)] mb-3">
+        <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent-text)] mb-3">
           Features
         </p>
         <h2 className="text-3xl sm:text-4xl font-semibold mb-12 text-[var(--ls-text)]">

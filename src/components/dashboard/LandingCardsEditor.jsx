@@ -3,7 +3,7 @@ import ImageUploadField from "./ImageUploadField";
 import AreaMapEditor from "./AreaMapEditor";
 
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const arrow =
   "text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dark:hover:text-[#faf9f7] disabled:opacity-20 px-1";
@@ -45,11 +45,11 @@ export default function LandingCardsEditor({ siteId, siteSlug, value, onChange, 
                   ↓
                 </button>
                 <span className="flex-1 text-sm font-semibold">{c.kind}</span>
-                <a href={`/sites/${siteSlug}${c.path}`} target="_blank" rel="noreferrer" className="text-xs text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                <a href={`/sites/${siteSlug}${c.path}`} target="_blank" rel="noreferrer" className="text-xs text-[#D8091B] dark:text-[#f2454b] hover:underline">
                   View page
                 </a>
                 <label className="flex items-center gap-1.5 text-xs cursor-pointer">
-                  <input type="checkbox" checked={c.on} onChange={(e) => patchCard(c.key, { on: e.target.checked })} className="accent-[#ed2127] dark:accent-[#f2454b]" />
+                  <input type="checkbox" checked={c.on} onChange={(e) => patchCard(c.key, { on: e.target.checked })} className="accent-[#D8091B] dark:accent-[#f2454b]" />
                   Show
                 </label>
               </div>
@@ -84,14 +84,14 @@ export default function LandingCardsEditor({ siteId, siteSlug, value, onChange, 
       </div>
 
       <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
-        <input type="checkbox" checked={landing.menu} onChange={(e) => patch({ menu: e.target.checked })} className="mt-0.5 accent-[#ed2127] dark:accent-[#f2454b]" />
+        <input type="checkbox" checked={landing.menu} onChange={(e) => patch({ menu: e.target.checked })} className="mt-0.5 accent-[#D8091B] dark:accent-[#f2454b]" />
         <span>
           <span className="block text-sm font-medium">Show these pages in the menu</span>
           <span className={`block text-xs mt-0.5 ${muted}`}>Sellers, Home Value and Buyers links in your site's navigation and footer.</span>
         </span>
       </label>
       <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
-        <input type="checkbox" checked={landing.animated} onChange={(e) => patch({ animated: e.target.checked })} className="mt-0.5 accent-[#ed2127] dark:accent-[#f2454b]" />
+        <input type="checkbox" checked={landing.animated} onChange={(e) => patch({ animated: e.target.checked })} className="mt-0.5 accent-[#D8091B] dark:accent-[#f2454b]" />
         <span>
           <span className="block text-sm font-medium">Animated cards and area map</span>
           <span className={`block text-xs mt-0.5 ${muted}`}>
@@ -103,7 +103,7 @@ export default function LandingCardsEditor({ siteId, siteSlug, value, onChange, 
       </label>
       {landing.animated && (areas.length > 0 ? <AreaMapEditor areas={areas} value={saved.map} onChange={(m) => patch({ map: m })} /> : <p className={`text-xs ${muted}`}>Add your areas of expertise first, then place them on the map here.</p>)}
       <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
-        <input type="checkbox" checked={landing.compsTask} onChange={(e) => patch({ comps_task: e.target.checked })} className="mt-0.5 accent-[#ed2127] dark:accent-[#f2454b]" />
+        <input type="checkbox" checked={landing.compsTask} onChange={(e) => patch({ comps_task: e.target.checked })} className="mt-0.5 accent-[#D8091B] dark:accent-[#f2454b]" />
         <span>
           <span className="block text-sm font-medium">Add a "Pull comps" task for each home value request</span>
           <span className={`block text-xs mt-0.5 ${muted}`}>

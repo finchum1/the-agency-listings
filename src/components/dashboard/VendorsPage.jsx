@@ -6,7 +6,7 @@ import { matchesSearch } from "../../lib/searchMatch";
 import { DEFAULT_VENDOR_CATEGORIES, compareCategories, groupByCategory, listText, mailHref, smsHref, telHref, vendorText, websiteHref } from "../../lib/vendors";
 
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const chipBase = "shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors";
 const quietBtn = "rounded-full border border-black/10 dark:border-white/15 px-3 py-1.5 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 const EMPTY = { category: "", name: "", contact_name: "", phone: "", email: "", website: "", notes: "" };
@@ -95,15 +95,15 @@ function VendorCard({ v, selected, onSelect, isAdmin, onEdit, onDelete, from }) 
   const text = vendorText(v, { from });
   const subject = `${v.category} recommendation: ${v.name}`;
   return (
-    <li className={`rounded-xl border p-4 bg-white dark:bg-[#1a1a1a] ${selected ? "border-[#ed2127] dark:border-[#f2454b]" : "border-black/10 dark:border-white/10"}`}>
+    <li className={`rounded-xl border p-4 bg-white dark:bg-[#1a1a1a] ${selected ? "border-[#D8091B] dark:border-[#f2454b]" : "border-black/10 dark:border-white/10"}`}>
       <div className="flex items-start gap-3">
-        <input type="checkbox" checked={selected} onChange={() => onSelect(v.id)} aria-label={`Select ${v.name}`} className="mt-1 h-4 w-4 accent-[#ed2127] shrink-0" />
+        <input type="checkbox" checked={selected} onChange={() => onSelect(v.id)} aria-label={`Select ${v.name}`} className="mt-1 h-4 w-4 accent-[#D8091B] shrink-0" />
         <div className="min-w-0 flex-1">
           <p className="font-semibold leading-snug">{v.name}</p>
           {v.contact_name && <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60">{v.contact_name}</p>}
           <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm">
             {v.phone && (
-              <a href={telHref(v.phone)} className="text-[#ed2127] dark:text-[#f2454b] font-medium hover:underline">
+              <a href={telHref(v.phone)} className="text-[#D8091B] dark:text-[#f2454b] font-medium hover:underline">
                 {v.phone}
               </a>
             )}
@@ -345,7 +345,7 @@ export default function VendorsPage() {
         <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>
       ) : groups.length === 0 ? (
         <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60">
-          {vendors.length === 0 ? "No vendors yet." : <>No vendors match. <button type="button" onClick={() => { setQuery(""); setCategory(""); }} className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">Clear search</button></>}
+          {vendors.length === 0 ? "No vendors yet." : <>No vendors match. <button type="button" onClick={() => { setQuery(""); setCategory(""); }} className="font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">Clear search</button></>}
         </p>
       ) : (
         <div className="space-y-7">
@@ -420,7 +420,7 @@ export default function VendorsPage() {
                     /* storage blocked: the choice just won't persist */
                   }
                 }}
-                className="h-3.5 w-3.5 accent-[#ed2127]"
+                className="h-3.5 w-3.5 accent-[#D8091B]"
               />
               Send the link from {siteDomain}
             </label>

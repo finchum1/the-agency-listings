@@ -13,7 +13,7 @@ import { TagChip, TagPicker } from "./TagParts";
 import DealTabs from "../DealTabs";
 import PlanSection from "../PlanSection";
 
-const input = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+const input = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const label = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1";
 const pill = "rounded-full border border-black/10 dark:border-white/15 px-3 py-1.5 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 const muted = "text-[#1c1a17]/55 dark:text-[#faf9f7]/55";
@@ -70,7 +70,7 @@ function TextSyncRow({ contact, synced, onSet, onCleared }) {
           </button>
         )}
       </div>
-      <button type="button" role="switch" aria-checked={Boolean(contact.text_sync)} aria-label="Text sync" disabled={!hasPhone && !contact.text_sync} onClick={() => onSet(!contact.text_sync)} className={`relative shrink-0 h-7 w-12 rounded-full transition-colors disabled:opacity-40 ${contact.text_sync ? "bg-[#ed2127] dark:bg-[#f2454b]" : "bg-black/20 dark:bg-white/25"}`}>
+      <button type="button" role="switch" aria-checked={Boolean(contact.text_sync)} aria-label="Text sync" disabled={!hasPhone && !contact.text_sync} onClick={() => onSet(!contact.text_sync)} className={`relative shrink-0 h-7 w-12 rounded-full transition-colors disabled:opacity-40 ${contact.text_sync ? "bg-[#D8091B] dark:bg-[#f2454b]" : "bg-black/20 dark:bg-white/25"}`}>
         <span className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${contact.text_sync ? "translate-x-5" : ""}`} />
       </button>
     </div>
@@ -251,7 +251,7 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
                   <ul className="space-y-1.5">
                     {mine.map((t) => (
                   <li key={t.id} className="flex items-center gap-2.5 rounded-xl border border-black/10 dark:border-white/15 px-3 py-2">
-                        <input type="checkbox" checked={false} onChange={async () => { await complete(t); onChanged(); }} aria-label="Mark done" className="h-4 w-4 shrink-0 accent-[#ed2127]" />
+                        <input type="checkbox" checked={false} onChange={async () => { await complete(t); onChanged(); }} aria-label="Mark done" className="h-4 w-4 shrink-0 accent-[#D8091B]" />
                         <div className="min-w-0 flex-1">
                           <p className="text-sm truncate">{t.title}</p>
                           <p className={`text-xs ${t.due_date && t.due_date < today ? "text-red-600 dark:text-red-400 font-medium" : muted}`}>
@@ -398,7 +398,7 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
 
               <section className="space-y-3">
                 <label className="flex items-start gap-2.5 text-sm cursor-pointer">
-                  <input type="checkbox" checked={contact.do_not_contact} onChange={(e) => set({ do_not_contact: e.target.checked })} className="mt-0.5 h-4 w-4 accent-[#ed2127]" />
+                  <input type="checkbox" checked={contact.do_not_contact} onChange={(e) => set({ do_not_contact: e.target.checked })} className="mt-0.5 h-4 w-4 accent-[#D8091B]" />
                   <span>
                     Do not contact
                     <span className={`block text-xs ${muted}`}>Keeps {first} out of "due for a touch" reminders.</span>

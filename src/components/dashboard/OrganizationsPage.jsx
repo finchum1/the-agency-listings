@@ -18,7 +18,7 @@ import {
 import BrandLogo from "../BrandLogo";
 
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 const hintClass = "text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-1.5 leading-snug";
 const cardClass = "bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-5";
@@ -46,7 +46,7 @@ function LoginLink({ slug }) {
           window.prompt("Copy this sign-in link", link);
         }
       }}
-      className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline"
+      className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline"
     >
       {copied ? "Copied" : "Copy sign-in link"}
     </button>
@@ -63,7 +63,7 @@ function OrgRow({ o, current, onOpen }) {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold truncate">
           {o.brand?.admin_name || o.name}
-          {current && <span className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-[#ed2127] dark:text-[#f2454b]">Open now</span>}
+          {current && <span className="ml-2 text-[10px] font-semibold uppercase tracking-wider text-[#D8091B] dark:text-[#f2454b]">Open now</span>}
         </p>
         <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 truncate">
           {o.type === "solo" ? "Solo agent" : o.brand?.franchise ? "Agency office" : "Brokerage"} · {o.slug}
@@ -247,7 +247,7 @@ export default function OrganizationsPage() {
                 onClick={() => set({ kind: k.value })}
                 className={`text-left rounded-xl border p-3.5 transition-colors ${
                   f.kind === k.value
-                    ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                    ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                     : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
                 }`}
               >

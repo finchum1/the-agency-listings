@@ -5,7 +5,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { formatPrice } from "../../lib/format";
 
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const FIELD_NAMES = { price: "price", beds: "beds", baths: "baths", sqft: "square feet", description: "description", photos: "photos", address_line1: "street address", city: "city", state: "state", zip: "zip" };
 
 async function call(body) {
@@ -135,7 +135,7 @@ export default function ListingFromLink({ agentId: fixedAgentId, onCreated }) {
 
           {notMine && (
             <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#ed2127]" />
+              <input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#D8091B]" />
               <span>The MLS shows another office listed this home. I confirm it's my listing.</span>
             </label>
           )}
@@ -152,7 +152,7 @@ export default function ListingFromLink({ agentId: fixedAgentId, onCreated }) {
             </div>
           )}
           <div className="flex items-center gap-3">
-            <button type="button" onClick={create} disabled={busy || !canCreate || (notMine && !mine)} className="rounded-full bg-[#ed2127] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-2.5 disabled:opacity-50">
+            <button type="button" onClick={create} disabled={busy || !canCreate || (notMine && !mine)} className="rounded-full bg-[#D8091B] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-2.5 disabled:opacity-50">
               {busy ? "Creating…" : "Create draft listing"}
             </button>
             {!canCreate && <span className="text-xs text-[#1c1a17]/55 dark:text-[#faf9f7]/55">Needs a street address, city, state and zip. Fill in the form below instead.</span>}

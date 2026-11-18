@@ -3,7 +3,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const fmt = (iso) => (iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "never");
 
 function CopyBox({ label, text }) {
@@ -21,7 +21,7 @@ function CopyBox({ label, text }) {
     <div>
       <div className="flex items-center justify-between mb-1">
         <p className="text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60">{label}</p>
-        <button type="button" onClick={copy} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+        <button type="button" onClick={copy} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
@@ -145,7 +145,7 @@ export default function ClaudeConnectionCard() {
 
       <h3 className="mt-6 text-sm font-semibold">Personal tokens (for bots that can't sign in)</h3>
       {fresh && (
-        <div className="mt-3 rounded-xl border border-[#ed2127]/30 dark:border-[#f2454b]/40 bg-[#ed2127]/[0.04] p-4 space-y-4">
+        <div className="mt-3 rounded-xl border border-[#D8091B]/30 dark:border-[#f2454b]/40 bg-[#D8091B]/[0.04] p-4 space-y-4">
           <p className="text-sm font-semibold">Your token for “{fresh.name}” — copy it now, it won't be shown again.</p>
           <CopyBox label="Token (send it as: Authorization: Bearer …)" text={fresh.token} />
           <CopyBox label="Claude Code: run this once in a terminal" text={code} />
@@ -166,7 +166,7 @@ export default function ClaudeConnectionCard() {
         <div className="flex flex-wrap gap-x-5 gap-y-1.5" role="group" aria-label="What this token may do">
           {SCOPES.filter(([scope]) => profile?.role === "admin" || !scope.startsWith("manage_")).map(([scope, label, hint]) => (
             <label key={scope} title={hint} className={`inline-flex items-center gap-1.5 text-xs ${scope === "read" ? "opacity-60" : "cursor-pointer"}`}>
-              <input type="checkbox" checked={picked.has(scope)} disabled={scope === "read"} onChange={() => toggle(scope)} className="h-3.5 w-3.5 accent-[#ed2127]" />
+              <input type="checkbox" checked={picked.has(scope)} disabled={scope === "read"} onChange={() => toggle(scope)} className="h-3.5 w-3.5 accent-[#D8091B]" />
               {label}
             </label>
           ))}

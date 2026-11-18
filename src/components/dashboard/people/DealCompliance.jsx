@@ -6,7 +6,7 @@ import { refreshDealAttention } from "../../../hooks/useDealAttention";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const primaryBtn =
   "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 disabled:opacity-60";
 const ghostBtn = "rounded-full border border-black/15 dark:border-white/20 text-sm font-semibold px-4 py-2 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60";

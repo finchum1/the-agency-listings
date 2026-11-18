@@ -6,7 +6,7 @@ import ImageUploadField from "./ImageUploadField";
 const emptyForm = { address: "", city: "", state: "OK", price: "", sold_on: "", photo_url: "" };
 
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 
@@ -109,7 +109,7 @@ export default function SalesManager({ agentSiteId, agentId, sales, onChanged })
                 From my closed listings
               </button>
             )}
-            <button type="button" onClick={() => { setForm(emptyForm); setEditingId("new"); setPicking(false); }} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+            <button type="button" onClick={() => { setForm(emptyForm); setEditingId("new"); setPicking(false); }} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
               + Add a sale
             </button>
           </div>
@@ -127,7 +127,7 @@ export default function SalesManager({ agentSiteId, agentId, sales, onChanged })
                 {l.address_line1}
                 <span className={muted}> · {l.city}</span>
               </p>
-              <button type="button" onClick={() => copyListing(l)} className="shrink-0 text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+              <button type="button" onClick={() => copyListing(l)} className="shrink-0 text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
                 Add
               </button>
             </div>

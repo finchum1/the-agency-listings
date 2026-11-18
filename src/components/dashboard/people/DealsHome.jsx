@@ -42,7 +42,7 @@ function Tile({ label, value, sub, tone }) {
 function Row({ onClick, primary, secondary, right, urgent, onCheck, indent = false }) {
   return (
     <li className={onCheck || indent ? "flex items-center gap-2.5" : undefined}>
-      {onCheck && <input type="checkbox" checked={false} onChange={onCheck} aria-label={`Mark done: ${primary}`} className="h-4 w-4 shrink-0 accent-[#ed2127] cursor-pointer" />}
+      {onCheck && <input type="checkbox" checked={false} onChange={onCheck} aria-label={`Mark done: ${primary}`} className="h-4 w-4 shrink-0 accent-[#D8091B] cursor-pointer" />}
       {!onCheck && indent && <span className="h-4 w-4 shrink-0" aria-hidden="true" />}
       <button type="button" onClick={onClick} className="flex w-full min-w-0 flex-1 items-center justify-between gap-3 rounded-xl border border-black/10 dark:border-white/15 px-3 py-2.5 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
         <span className="min-w-0">
@@ -173,7 +173,7 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
           ))}
         </ul>
         {items.length > SHOW && (
-          <button type="button" onClick={() => setMore((m) => ({ ...m, [key]: !expanded }))} className="mt-1.5 text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+          <button type="button" onClick={() => setMore((m) => ({ ...m, [key]: !expanded }))} className="mt-1.5 text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
             {expanded ? "Show fewer" : `${items.length - SHOW} more`}
           </button>
         )}
@@ -299,7 +299,7 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
             {justDone && (
               <p role="status" className="flex items-center justify-between gap-3 rounded-lg bg-black/[0.04] dark:bg-white/[0.06] px-3 py-2 text-xs">
                 <span className="min-w-0 truncate">Checked off "{justDone.text}"</span>
-                <button type="button" onClick={undoTask} className="shrink-0 font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                <button type="button" onClick={undoTask} className="shrink-0 font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
                   Undo
                 </button>
               </p>
@@ -315,7 +315,7 @@ export default function DealsHome({ deals, closedStage, stages = [], progress = 
           <h3 className="font-display text-base font-semibold">Tasks · next {UPCOMING_DAYS} days</h3>
           {taskDays.length === 0 ? <p className={`text-sm ${muted}`}>No tasks fall due in the next {UPCOMING_DAYS} days.</p> : dayList(shownTaskDays, shownTasks, { checks: true })}
           {taskCount > TASK_SHOW && (
-            <button type="button" onClick={() => setMore((m) => ({ ...m, tasks: !m.tasks }))} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+            <button type="button" onClick={() => setMore((m) => ({ ...m, tasks: !m.tasks }))} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
               {more.tasks ? "Show fewer" : `${taskCount - TASK_SHOW} more`}
             </button>
           )}

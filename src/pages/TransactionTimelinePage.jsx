@@ -31,11 +31,11 @@ const Icon = ({ name, size = 22 }) => (
 
 function Node({ m }) {
   const base = "relative h-12 w-12 shrink-0 rounded-full grid place-items-center";
-  if (m.state === "done") return <div className={`${base} bg-[#ed2127] text-white`}><Icon name="check" /></div>;
+  if (m.state === "done") return <div className={`${base} bg-[#D8091B] text-white`}><Icon name="check" /></div>;
   if (m.state === "later") return <div className={`${base} bg-white border-2 border-[#d9d3c5] text-[#9a9486]`}><Icon name={m.icon} /></div>;
   return (
     <div className={`${base} bg-[#1c1a17] text-white`}>
-      <span className="absolute inset-0 rounded-full bg-[#ed2127]/50 animate-ping" aria-hidden="true" />
+      <span className="absolute inset-0 rounded-full bg-[#D8091B]/50 animate-ping" aria-hidden="true" />
       <span className="relative"><Icon name={m.icon} /></span>
     </div>
   );
@@ -77,7 +77,7 @@ export default function TransactionTimelinePage() {
   if (state.loading) return <p className="min-h-screen grid place-items-center text-sm text-[#1c1a17]/50">Loading…</p>;
   if (state.gone) {
     return (
-      <div className="min-h-screen grid place-items-center px-6 text-center bg-[#f7f4ee] text-[#1c1a17]">
+      <div className="agency-brand min-h-screen grid place-items-center px-6 text-center bg-[#F5F1E9] text-[#1C1C1B]">
         <div>
           <h1 className="font-display text-2xl font-semibold">This link has expired</h1>
           <p className="mt-2 text-sm text-[#1c1a17]/60">Ask your agent for a new one.</p>
@@ -103,11 +103,11 @@ export default function TransactionTimelinePage() {
   ].filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-[#f7f4ee] text-[#1c1a17]">
+    <div className="agency-brand min-h-screen bg-[#F5F1E9] text-[#1C1C1B]">
       <ClientHeader brand={brand} />
 
       <section className="relative overflow-hidden bg-[#14130f] text-white">
-        <div className="absolute inset-0 opacity-60" style={{ background: "radial-gradient(60% 120% at 85% 0%, rgba(237,33,39,0.45), transparent 60%)" }} />
+        <div className="absolute inset-0 opacity-60" style={{ background: "radial-gradient(60% 120% at 85% 0%, rgba(216,9,27,0.45), transparent 60%)" }} />
         <div className="relative mx-auto max-w-5xl px-5 py-10 sm:py-14">
           <p className="text-[11px] font-semibold tracking-[0.28em] uppercase text-white/60">Your closing timeline</p>
           <h1 className="mt-2 font-display text-4xl sm:text-5xl font-semibold leading-tight">{deal.property_address || "Your home"}</h1>
@@ -130,7 +130,7 @@ export default function TransactionTimelinePage() {
             {first && closing && !closed && (
               <div className="flex-1 min-w-0 sm:max-w-md">
                 <div className="h-2.5 rounded-full bg-white/15 overflow-hidden">
-                  <div className="h-full rounded-full bg-[#ed2127] transition-all duration-[1400ms] ease-out" style={{ width: go ? `${Math.max(4, overall * 100)}%` : "0%" }} />
+                  <div className="h-full rounded-full bg-[#D8091B] transition-all duration-[1400ms] ease-out" style={{ width: go ? `${Math.max(4, overall * 100)}%` : "0%" }} />
                 </div>
                 <div className="mt-2 flex justify-between text-xs text-white/60">
                   <span>{prettyDate(first.date)}</span>
@@ -181,16 +181,16 @@ export default function TransactionTimelinePage() {
                       <Node m={m} />
                       {!last && (
                         <div className="relative my-1 w-1 flex-1 min-h-10 rounded-full bg-[#ddd7c9] overflow-hidden">
-                          <div className="absolute top-0 left-0 w-full rounded-full bg-[#ed2127] transition-all duration-[1400ms] ease-out" style={{ height: go ? `${fill[i] * 100}%` : "0%" }} />
+                          <div className="absolute top-0 left-0 w-full rounded-full bg-[#D8091B] transition-all duration-[1400ms] ease-out" style={{ height: go ? `${fill[i] * 100}%` : "0%" }} />
                         </div>
                       )}
                     </div>
                     <div className={`flex-1 min-w-0 pb-8 ${last ? "pb-0" : ""}`}>
-                      <div className={`rounded-2xl border p-5 ${m.state === "next" || m.state === "today" ? "bg-white border-[#ed2127]/50 shadow-md shadow-[#ed2127]/10" : m.state === "done" ? "bg-white/70 border-black/[0.05]" : "bg-white border-black/[0.06]"}`}>
+                      <div className={`rounded-2xl border p-5 ${m.state === "next" || m.state === "today" ? "bg-white border-[#D8091B]/50 shadow-md shadow-[#D8091B]/10" : m.state === "done" ? "bg-white/70 border-black/[0.05]" : "bg-white border-black/[0.06]"}`}>
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                           <h3 className="font-display text-xl font-semibold">{m.label}</h3>
                           {m.state === "done" && <span className="text-xs font-semibold text-[#2f7d4f] bg-[#2f7d4f]/10 rounded-full px-2.5 py-1">Done</span>}
-                          {(m.state === "next" || m.state === "today") && <span className="text-xs font-semibold text-white bg-[#ed2127] rounded-full px-2.5 py-1">{m.state === "today" ? "Today" : "Up next"}</span>}
+                          {(m.state === "next" || m.state === "today") && <span className="text-xs font-semibold text-white bg-[#D8091B] rounded-full px-2.5 py-1">{m.state === "today" ? "Today" : "Up next"}</span>}
                         </div>
                         <p className="mt-0.5 text-sm font-medium text-[#1c1a17]/55">
                           {prettyDate(m.date, { weekday: "long", month: "long", day: "numeric" })}

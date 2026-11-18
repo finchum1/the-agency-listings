@@ -6,7 +6,7 @@ import { useDealEmail } from "./DealEmailButton";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const smallInput =
-  "rounded-md border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
+  "rounded-md border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40";
 
 function todayKey() {
   const d = new Date();
@@ -65,7 +65,7 @@ function TaskEmail({ task, side, mail, readOnly, updateTask }) {
             type="button"
             onClick={() => setPicking(true)}
             title="Choose the email template for this task"
-            className={tpl ? `text-[11px] hover:underline ${muted}` : `text-[11px] text-[#ed2127] dark:text-[#f2454b] hover:underline md:opacity-0 md:group-hover:opacity-100 focus:opacity-100`}
+            className={tpl ? `text-[11px] hover:underline ${muted}` : `text-[11px] text-[#D8091B] dark:text-[#f2454b] hover:underline md:opacity-0 md:group-hover:opacity-100 focus:opacity-100`}
           >
             {tpl ? "Change" : "+ Email"}
           </button>
@@ -200,7 +200,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary, v
               done_at: e.target.checked ? new Date().toISOString() : null,
             })
           }
-          className="mt-1 h-4 w-4 shrink-0 accent-[#ed2127]"
+          className="mt-1 h-4 w-4 shrink-0 accent-[#D8091B]"
         />
         <div className="min-w-0 flex-1 space-y-1">
           <textarea
@@ -230,7 +230,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary, v
               <button
                 type="button"
                 onClick={() => updateTask(t.id, { due_override: null })}
-                className="text-[11px] text-[#ed2127] dark:text-[#f2454b] hover:underline"
+                className="text-[11px] text-[#D8091B] dark:text-[#f2454b] hover:underline"
               >
                 Back to automatic
               </button>
@@ -326,7 +326,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary, v
                           placeholder="New task"
                           className={`${smallInput} flex-1 py-1.5`}
                         />
-                        <button type="submit" className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b]">
+                        <button type="submit" className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b]">
                           Add
                         </button>
                         <button type="button" onClick={() => setAddingTo(null)} className={`text-xs ${muted}`}>
@@ -340,7 +340,7 @@ export default function TransactionChecklist({ person, side, dates, onSummary, v
                           setAddingTo(sec.title);
                           setNewText("");
                         }}
-                        className="ml-1 text-xs font-medium text-[#ed2127] dark:text-[#f2454b] hover:underline"
+                        className="ml-1 text-xs font-medium text-[#D8091B] dark:text-[#f2454b] hover:underline"
                       >
                         + Add task
                       </button>

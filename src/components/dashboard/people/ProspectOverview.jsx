@@ -9,7 +9,7 @@ import PlanSection from "./PlanSection";
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const card = "rounded-2xl border border-black/10 dark:border-white/15 p-4";
 const ghost = "rounded-full border border-black/15 dark:border-white/20 px-3.5 py-1.5 text-xs font-semibold hover:bg-black/5 dark:hover:bg-white/10";
-const control = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
+const control = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40";
 
 /** Where a person's follow-up stands: { label, tone } for a chip or line. */
 export function followUpState(nextFollowUp, today = toKey(new Date())) {

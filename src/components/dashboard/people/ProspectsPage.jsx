@@ -29,7 +29,7 @@ function useRemembered(key, initial, allowed) {
 
 const seg = "inline-flex rounded-full bg-black/5 dark:bg-white/10 p-0.5";
 const segBtn = (on) => `rounded-full px-3 py-1.5 text-xs font-semibold ${on ? "bg-white dark:bg-[#2a2a2a] shadow-sm" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"}`;
-const control = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+const control = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const todayKey = () => {
   const d = new Date();
   const pad = (n) => String(n).padStart(2, "0");

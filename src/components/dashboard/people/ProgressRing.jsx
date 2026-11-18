@@ -18,7 +18,7 @@ export default function ProgressRing({ done, total, size = 44, stroke = 5, textC
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - pct)}
-          className={`transition-[stroke-dashoffset] duration-500 ${complete ? "stroke-emerald-500" : "stroke-[#ed2127] dark:stroke-[#f2454b]"}`}
+          className={`transition-[stroke-dashoffset] duration-500 ${complete ? "stroke-emerald-500" : "stroke-[#D8091B] dark:stroke-[#f2454b]"}`}
         />
       </svg>
       <span className={`absolute inset-0 flex items-center justify-center font-semibold tabular-nums ${textClass}`}>{Math.round(pct * 100)}%</span>

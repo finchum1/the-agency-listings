@@ -49,7 +49,7 @@ function Links({ listing, className = "" }) {
   return (
     <div className={`flex items-center gap-4 ${className}`}>
       {listing.status !== "draft" && (
-        <a href={`/listings/${listing.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline whitespace-nowrap">
+        <a href={`/listings/${listing.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline whitespace-nowrap">
           View site
           <ExternalIcon />
         </a>

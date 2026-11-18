@@ -79,7 +79,7 @@ export default function BrokerageAreaPage() {
         {(area.description || area.stats?.length > 0) && (
           <section className="px-6 lg:px-10 py-16">
             <div className="mx-auto max-w-3xl">
-              <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">Overview</p>
+              <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">Overview</p>
               {area.description && (
                 <div
                   className="rich-text space-y-5 text-[15.5px] leading-relaxed text-[var(--as-text)]/80"

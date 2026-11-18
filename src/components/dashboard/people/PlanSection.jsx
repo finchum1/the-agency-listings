@@ -91,7 +91,7 @@ export default function PlanSection({ person, contactId, contact }) {
             </div>
             <div className="flex gap-1" aria-hidden="true">
               {steps.map((_, i) => (
-                <span key={i} className={`h-1 flex-1 rounded-full ${i < r.next_step || r.status === "done" ? "bg-emerald-600" : i === r.next_step && live ? "bg-[#ed2127] dark:bg-[#f2454b]" : "bg-black/10 dark:bg-white/15"}`} />
+                <span key={i} className={`h-1 flex-1 rounded-full ${i < r.next_step || r.status === "done" ? "bg-emerald-600" : i === r.next_step && live ? "bg-[#D8091B] dark:bg-[#f2454b]" : "bg-black/10 dark:bg-white/15"}`} />
               ))}
             </div>
             {next && (

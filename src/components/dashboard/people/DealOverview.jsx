@@ -23,7 +23,7 @@ const shortDate = (key) => new Date(`${key}T12:00:00`).toLocaleDateString(undefi
 function Row({ onClick, title, note, tone, onCheck, indent = false }) {
   return (
     <li className={onCheck || indent ? "flex items-center gap-2.5" : undefined}>
-      {onCheck && <input type="checkbox" checked={false} onChange={onCheck} aria-label={`Mark done: ${title}`} className="h-4 w-4 shrink-0 accent-[#ed2127] cursor-pointer" />}
+      {onCheck && <input type="checkbox" checked={false} onChange={onCheck} aria-label={`Mark done: ${title}`} className="h-4 w-4 shrink-0 accent-[#D8091B] cursor-pointer" />}
       {!onCheck && indent && <span className="h-4 w-4 shrink-0" aria-hidden="true" />}
       <button type="button" onClick={onClick} className="flex w-full min-w-0 flex-1 items-center justify-between gap-3 rounded-xl border border-black/10 dark:border-white/15 px-3 py-2.5 text-left hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
         <span className="min-w-0 truncate text-sm">{title}</span>
@@ -52,7 +52,7 @@ function QuickAddTask({ onAdd, today }) {
       setDue(today);
     }
   };
-  const field = "rounded-xl border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  const field = "rounded-xl border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
   return (
     <form onSubmit={submit} className="space-y-1">
       <div className="flex flex-wrap items-center gap-2">
@@ -130,7 +130,7 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
           <h3 className="font-display text-base font-semibold">Key dates</h3>
           {onCash ? (
             <label className={`flex cursor-pointer items-center gap-2 text-xs ${muted}`} title="No loan, so no appraisal">
-              <input type="checkbox" checked={cash} onChange={(e) => onCash(e.target.checked)} className="h-3.5 w-3.5 accent-[#ed2127]" />
+              <input type="checkbox" checked={cash} onChange={(e) => onCash(e.target.checked)} className="h-3.5 w-3.5 accent-[#D8091B]" />
               Cash purchase
             </label>
           ) : (
@@ -140,7 +140,7 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
         {todayAt != null && (
           <div className="relative h-7 -mb-1" aria-hidden="true">
             {/* The label sits centered on the spot, with the arrow centered right under it, pointing at the bars. */}
-            <span className="absolute flex -translate-x-1/2 flex-col items-center text-[#ed2127] dark:text-[#f2454b]" style={{ left: `${Math.min(Math.max(todayAt, 0.03), 0.97) * 100}%` }}>
+            <span className="absolute flex -translate-x-1/2 flex-col items-center text-[#D8091B] dark:text-[#f2454b]" style={{ left: `${Math.min(Math.max(todayAt, 0.03), 0.97) * 100}%` }}>
               <span className="text-[10px] font-semibold leading-none">Today</span>
               <span className="text-[11px] leading-none">▾</span>
             </span>
@@ -208,7 +208,7 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
                     type="time"
                     value={(dates[timeKey] || "").slice(0, 5)}
                     onChange={(e) => onDate(timeKey, e.target.value)}
-                    className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+                    className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
                   />
                   {dates[timeKey] && (
                     <button type="button" onClick={() => onDate(timeKey, "")} className={`text-xs underline underline-offset-2 ${muted} hover:opacity-80`}>
@@ -234,7 +234,7 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
                 disabled={!onDate}
                 onChange={(e) => onDate?.("trr_received_date", e.target.value)}
                 aria-label="TRR report received"
-                className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+                className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -247,7 +247,7 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
                 disabled={!onDate}
                 onChange={(e) => onDate?.("trr_days", e.target.value)}
                 aria-label="Days to negotiate the TRR"
-                className="w-16 rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+                className="w-16 rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
               />
             </label>
             {trrEnd ? (
@@ -274,7 +274,7 @@ export default function DealOverview({ person, summary, dates, cash = false, onC
               checked={!!earnest.delivered}
               disabled={!onEarnest}
               onChange={(e) => onEarnest?.(e.target.checked)}
-              className="h-4 w-4 shrink-0 accent-[#ed2127]"
+              className="h-4 w-4 shrink-0 accent-[#D8091B]"
             />
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-medium">Delivered to the title company</span>

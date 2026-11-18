@@ -45,7 +45,7 @@ export default function RelocationPage() {
               <SiteLink key={a.slug} slug={site.slug} path={`/areas/${a.slug}`} className="group block bg-[var(--as-bg)] border border-[var(--as-text)]/10 p-6 transition hover:-translate-y-0.5 hover:shadow-lg">
                 <p className="font-display text-xl font-semibold">{a.name}</p>
                 {a.blurb && <p className="mt-2 text-[15px] leading-relaxed opacity-70">{a.blurb}</p>}
-                <p className="mt-3 text-xs font-medium tracked-wide uppercase text-[var(--as-accent)]">Explore {a.name} →</p>
+                <p className="mt-3 text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)]">Explore {a.name} →</p>
               </SiteLink>
             ))}
           </div>
@@ -60,7 +60,7 @@ export default function RelocationPage() {
             <details key={f.q} className="group py-5">
               <summary className="flex cursor-pointer list-none items-start justify-between gap-4 font-display text-xl font-semibold">
                 {f.q}
-                <span aria-hidden="true" className="mt-1 text-[var(--as-accent)] transition group-open:rotate-45">
+                <span aria-hidden="true" className="mt-1 text-[var(--as-accent-text)] transition group-open:rotate-45">
                   +
                 </span>
               </summary>

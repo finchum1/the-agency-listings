@@ -31,7 +31,7 @@ export default function IdxListingDetail({ mlsNumber: mlsNumberProp } = {}) {
 
   if (error || !listing) {
     return (
-      <div className="px-6 lg:px-10 py-32 text-center text-[var(--as-accent)]">
+      <div className="px-6 lg:px-10 py-32 text-center text-[var(--as-accent-text)]">
         {error || "Failed to load this listing."}
       </div>
     );
@@ -64,7 +64,7 @@ export default function IdxListingDetail({ mlsNumber: mlsNumberProp } = {}) {
       <div className="mx-auto max-w-7xl px-6 py-16 lg:px-10">
         <div className="grid grid-cols-1 gap-16 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <p className="font-display text-3xl text-[var(--as-accent)]">{formatPrice(listing.price)}</p>
+            <p className="font-display text-3xl text-[var(--as-accent-text)]">{formatPrice(listing.price)}</p>
             <div className="mt-4 flex gap-8 border-y border-[var(--as-text)]/10 py-4 text-sm uppercase tracked text-[var(--as-text)]/60">
               <span>{listing.beds ?? "—"} Beds</span>
               <span>{listing.baths ?? "—"} Baths</span>

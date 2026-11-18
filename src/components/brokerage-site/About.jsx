@@ -11,7 +11,7 @@ export default function About({ isStandalonePage = false }) {
 
   const eyebrowAndHeading = (
     <>
-      <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">About</p>
+      <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">About</p>
       <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-6 text-[var(--as-text)]">
         {site.brokerage.name} — {site.brokerage.locationLabel}
       </Heading>

@@ -153,7 +153,7 @@ export default function AgentsPage() {
   const visibleAgents = agents.filter((a) => matchesSearch([a.full_name, a.email, a.title, a.license, a.phone, a.role === "admin" ? "admin" : "agent"], query));
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   return (
@@ -167,7 +167,7 @@ export default function AgentsPage() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by name, email, title, license or phone"
             aria-label="Search agents"
-            className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+            className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
           />
           {query.trim() && !loading && (
             <span className="shrink-0 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
@@ -179,7 +179,7 @@ export default function AgentsPage() {
           <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Loading…</p>
         ) : visibleAgents.length === 0 ? (
           <p className="text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
-            {agents.length === 0 ? "No agents yet." : <>No agents match “{query.trim()}”. <button type="button" onClick={() => setQuery("")} className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">Clear search</button></>}
+            {agents.length === 0 ? "No agents yet." : <>No agents match “{query.trim()}”. <button type="button" onClick={() => setQuery("")} className="font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">Clear search</button></>}
           </p>
         ) : (
           <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl divide-y divide-black/5 dark:divide-white/10">

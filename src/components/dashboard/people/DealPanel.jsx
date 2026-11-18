@@ -24,7 +24,7 @@ import { useAuth } from "../../../hooks/useAuth";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40 disabled:opacity-100 disabled:border-transparent disabled:px-0";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40 disabled:opacity-100 disabled:border-transparent disabled:px-0";
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1";
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
@@ -302,7 +302,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
           }}
           aria-label="The agent's stage"
           title="The agent's stage for this deal"
-          className="rounded-full border border-black/10 dark:border-white/15 bg-transparent px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
+          className="rounded-full border border-black/10 dark:border-white/15 bg-transparent px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40"
         >
           {stages.map((st) => (
             <option key={st} value={st}>{st}</option>
@@ -353,7 +353,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
           title="Drag to resize"
           className="group absolute inset-y-0 -left-1.5 z-10 w-3 cursor-col-resize touch-none"
         >
-          <span className={`absolute inset-y-0 left-[5px] w-0.5 transition-colors ${peek.resizing ? "bg-[#ed2127]/70 dark:bg-[#f2454b]/70" : "bg-transparent group-hover:bg-[#ed2127]/40 dark:group-hover:bg-[#f2454b]/40"}`} />
+          <span className={`absolute inset-y-0 left-[5px] w-0.5 transition-colors ${peek.resizing ? "bg-[#D8091B]/70 dark:bg-[#f2454b]/70" : "bg-transparent group-hover:bg-[#D8091B]/40 dark:group-hover:bg-[#f2454b]/40"}`} />
         </div>
         {children}
       </aside>
@@ -499,7 +499,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                       setFresh((f) => ({ ...f, earnest_money_delivered: v, earnest_money_delivered_at: at }));
                       save({ earnest_money_delivered: v, earnest_money_delivered_at: at });
                     }}
-                    className="h-4 w-4 accent-[#ed2127]"
+                    className="h-4 w-4 accent-[#D8091B]"
                   />
                   <span>Earnest money delivered to the title company</span>
                 </label>
@@ -512,7 +512,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                       setFresh((f) => ({ ...f, is_cash: e.target.checked }));
                       save({ is_cash: e.target.checked });
                     }}
-                    className="h-4 w-4 accent-[#ed2127]"
+                    className="h-4 w-4 accent-[#D8091B]"
                   />
                   <span>Cash purchase (no appraisal or financing)</span>
                 </label>

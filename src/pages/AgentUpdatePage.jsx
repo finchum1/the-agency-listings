@@ -23,7 +23,7 @@ function Bar({ done, total, dark }) {
   const pct = total ? Math.round((done / total) * 100) : 0;
   return (
     <div className={`mt-3 h-2 rounded-full overflow-hidden ${dark ? "bg-white/15" : "bg-black/10"}`} role="img" aria-label={`${pct}% done`}>
-      <div className="h-full rounded-full bg-[#ed2127] transition-all duration-[1200ms] ease-out" style={{ width: `${pct}%` }} />
+      <div className="h-full rounded-full bg-[#D8091B] transition-all duration-[1200ms] ease-out" style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -74,7 +74,7 @@ export default function AgentUpdatePage() {
   if (state.loading) return <p className="min-h-screen grid place-items-center text-sm text-[#1c1a17]/50">Loading…</p>;
   if (state.gone) {
     return (
-      <div className="min-h-screen grid place-items-center px-6 text-center bg-[#f7f4ee] text-[#1c1a17]">
+      <div className="agency-brand min-h-screen grid place-items-center px-6 text-center bg-[#F5F1E9] text-[#1C1C1B]">
         <div>
           <h1 className="font-display text-2xl font-semibold">This link has expired</h1>
           <p className="mt-2 text-sm text-[#1c1a17]/60">Ask your coordinator for a new one.</p>
@@ -106,11 +106,11 @@ export default function AgentUpdatePage() {
   const team = [deal.lender && ["Lender", deal.lender], deal.title_company && ["Title company", deal.title_company], deal.other_agent && [deal.side === "seller" ? "Buyer's agent" : "Seller's agent", [deal.other_agent, deal.other_agent2].filter(Boolean).join(" & ")]].filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-[#f7f4ee] text-[#1c1a17]">
+    <div className="agency-brand min-h-screen bg-[#F5F1E9] text-[#1C1C1B]">
       <ClientHeader brand={brand} />
 
       <section className="relative overflow-hidden bg-[#14130f] text-white">
-        <div className="absolute inset-0 opacity-60" style={{ background: "radial-gradient(60% 120% at 85% 0%, rgba(237,33,39,0.45), transparent 60%)" }} />
+        <div className="absolute inset-0 opacity-60" style={{ background: "radial-gradient(60% 120% at 85% 0%, rgba(216,9,27,0.45), transparent 60%)" }} />
         <div className="relative mx-auto max-w-5xl px-5 py-10 sm:py-14">
           <p className="text-[11px] font-semibold tracking-[0.28em] uppercase text-white/60">Deal update{agentFirst ? ` for ${agentFirst}` : ""}</p>
           <h1 className="mt-2 font-display text-4xl sm:text-5xl font-semibold leading-tight">{deal.property_address || deal.name}</h1>

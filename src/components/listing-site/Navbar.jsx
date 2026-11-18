@@ -32,10 +32,13 @@ export default function Navbar({ backLink, solid = false }) {
     </span>
   ) : null;
 
-  // Red and Velvet always show the white logo (their header is a solid brand color), but the page itself is light, so a bar that turned the page's
+  // Red, Velvet and Brownstone always show the white logo (Chambray the Iron one) (their header is a solid brand color), but the page itself is light, so a bar that turned the page's
   // own light color on scroll would lose the logo. For those themes the bar takes the theme's dark color instead, text and all.
-  const darkBar = (scrolled || open) && ["red", "velvet"].includes(listing.theme);
-  const barVars = darkBar ? { "--ls-bg": "var(--ls-dark)", "--ls-text": "var(--ls-on-dark)" } : undefined;
+  const darkBar = (scrolled || open) && ["red", "velvet", "brownstone", "chambray"].includes(listing.theme);
+  // Over the hero photo the bar is clear, so the mark and the links are white whatever the theme (a red, Iron or Velvet mark would vanish into the photo).
+  const overPhoto = !(scrolled || open);
+  const barVars = darkBar ? { "--ls-bg": "var(--ls-dark)", "--ls-text": "var(--ls-on-dark)" } : overPhoto ? { "--ls-on-dark": "#ffffff" } : undefined;
+  const logoSrc = overPhoto ? listing.brokerage.logos?.white || listing.brokerage.logo : listing.brokerage.logo;
 
   if (listing.headerStyle === "floating") {
     // A clear header at the top that becomes a detached, rounded pill once scrolled (same idea as the agent sites'
@@ -53,7 +56,7 @@ export default function Navbar({ backLink, solid = false }) {
             }`}
           >
             <a href="#overview" className="flex items-center min-w-0 shrink-0">
-              <BrandLogo src={listing.brokerage.logo} name={listing.brokerage.name} className="h-11 sm:h-12 w-auto" />
+              <BrandLogo src={logoSrc} name={listing.brokerage.name} className="h-11 sm:h-12 w-auto" />
             </a>
             {labelEl}
             {backLink && (
@@ -113,7 +116,7 @@ export default function Navbar({ backLink, solid = false }) {
       <div className="mx-auto max-w-7xl px-6 lg:px-10 flex items-center justify-between py-3">
         <div className="flex items-center gap-3 sm:gap-5 min-w-0">
           <a href="#overview" className="flex items-center min-w-0">
-            <BrandLogo src={listing.brokerage.logo} name={listing.brokerage.name} className="h-14 sm:h-16 w-auto" />
+            <BrandLogo src={logoSrc} name={listing.brokerage.name} className="h-14 sm:h-16 w-auto" />
           </a>
           {labelEl}
           {backLink && (

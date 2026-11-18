@@ -18,7 +18,7 @@ export default function TestimonialsManager({ agentSiteId, testimonials, onChang
   const [editError, setEditError] = useState("");
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 
   const handleAdd = async (e) => {
     e.preventDefault();

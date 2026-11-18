@@ -4,7 +4,7 @@ import { useAuth } from "../../../hooks/useAuth";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const select =
-  "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 
 // Who is coordinating this deal. The agent picks one or more coordinators from the office's TCs; a coordinator then sees (and can
 // work on) this deal only, not the agent's others. Coordinators an admin assigned to the agent for every deal show as "all deals".

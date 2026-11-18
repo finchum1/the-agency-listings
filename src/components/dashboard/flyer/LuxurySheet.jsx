@@ -36,7 +36,7 @@ export default function LuxurySheet({ listing, agent, team, brokerage, headline,
       <div data-flyer-body data-flyer-grow className="flex-1 px-[0.55in] pt-[0.2in]">
         <div className="flex items-end justify-between gap-6">
           <div>
-            <div className="h-[2px] w-10 bg-[#ed2127]" />
+            <div className="h-[2px] w-10 bg-[#D8091B]" />
             <p className="mt-3 font-display text-[32px] leading-none font-semibold text-white">{formatPrice(listing.price)}</p>
           </div>
           {listing.mls_number && <span className="text-[10px] tracking-[0.24em] uppercase text-white/45">MLS# {listing.mls_number}</span>}
@@ -59,7 +59,7 @@ export default function LuxurySheet({ listing, agent, team, brokerage, headline,
           <ul className="mt-3 columns-2 gap-8 text-[11px] leading-[1.9] text-white/75">
             {includedFeatures.map((item, i) => (
               <li key={i} className="break-inside-avoid flex gap-2">
-                <span className="text-[#ed2127]">—</span>
+                <span className="text-[#D8091B]">—</span>
                 <span>{item}</span>
               </li>
             ))}

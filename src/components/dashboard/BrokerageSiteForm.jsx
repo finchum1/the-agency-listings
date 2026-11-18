@@ -19,7 +19,7 @@ const THEMES = [
     value: "classic",
     label: "Classic",
     description: "Cream & white sections, dark hero + testimonials + footer. The current look.",
-    swatches: ["#f7f4ee", "#14130f", "#ed2127"],
+    swatches: ["#f7f4ee", "#14130f", "#D8091B"],
   },
   {
     value: "dark",
@@ -31,29 +31,32 @@ const THEMES = [
     value: "sand",
     label: "Sand",
     description: "Taupe ground, true black ink, and the brand red.",
-    swatches: ["#ddd0ba", "#0d0d0d", "#ed2127"],
+    swatches: ["#ddd0ba", "#0d0d0d", "#D8091B"],
   },
   {
     value: "red",
     label: "Red",
     description: "The brand red for the hero, footer & testimonials — white & black everywhere else.",
-    swatches: ["#ffffff", "#ed2127", "#0d0d0d"],
+    swatches: ["#ffffff", "#D8091B", "#0d0d0d"],
   },
   {
     value: "linen",
     label: "Linen",
     description: "All-white and soft cream throughout, even the header & footer — the brand red as the only pop of color.",
-    swatches: ["#ffffff", "#f0ece4", "#ed2127"],
+    swatches: ["#ffffff", "#f0ece4", "#D8091B"],
   },
 ];
 
+// 2026 brand refresh: every site uses the brand fonts for now (index.css maps every stored pairing to EB Garamond + Inter). The other pairings
+// stay defined so the picker can offer them again by flipping this switch.
+const BRAND_FONTS_ONLY = true;
 const FONT_PAIRINGS = [
   {
     value: "playfair-jost",
-    label: "Playfair Display + Lato",
-    tag: "Default pairing",
-    display: "'Playfair Display', Georgia, serif",
-    body: "'Lato', sans-serif",
+    label: "EB Garamond + Inter",
+    tag: "The Agency's 2026 brand",
+    display: "'EB Garamond', Georgia, serif",
+    body: "'Inter', sans-serif",
   },
   {
     value: "fraunces-inter",
@@ -259,7 +262,7 @@ export default function BrokerageSiteForm({ site, onSaved, focus }) {
   };
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   return (
@@ -293,7 +296,7 @@ export default function BrokerageSiteForm({ site, onSaved, focus }) {
           href="/brokerage"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block rounded-full border border-[#ed2127] dark:border-[#f2454b] text-[#ed2127] dark:text-[#f2454b] text-xs font-semibold px-4 py-2 hover:bg-[#ed2127] dark:hover:bg-[#f2454b] hover:text-white dark:hover:text-white transition-colors"
+          className="inline-block rounded-full border border-[#D8091B] dark:border-[#f2454b] text-[#D8091B] dark:text-[#f2454b] text-xs font-semibold px-4 py-2 hover:bg-[#D8091B] dark:hover:bg-[#f2454b] hover:text-white dark:hover:text-white transition-colors"
         >
           View live site
         </a>
@@ -314,7 +317,7 @@ export default function BrokerageSiteForm({ site, onSaved, focus }) {
                   onClick={() => set("theme", t.value)}
                   className={`text-left rounded-xl border p-3.5 transition-colors ${
                     form.theme === t.value
-                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                       : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
                   }`}
                 >
@@ -363,19 +366,19 @@ export default function BrokerageSiteForm({ site, onSaved, focus }) {
           <div>
             <label className={labelClass}>Font pairing</label>
             <div className="grid sm:grid-cols-3 gap-3">
-              {FONT_PAIRINGS.map((f) => (
+              {FONT_PAIRINGS.filter((f) => !BRAND_FONTS_ONLY || f.value === "playfair-jost").map((f) => (
                 <button
                   key={f.value}
                   type="button"
                   onClick={() => set("font_pairing", f.value)}
                   className={`text-left rounded-xl border p-3.5 transition-colors ${
                     form.font_pairing === f.value
-                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                       : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
                   }`}
                 >
                   {f.tag && (
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[#ed2127] dark:text-[#f2454b] mb-1.5">{f.tag}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[#D8091B] dark:text-[#f2454b] mb-1.5">{f.tag}</p>
                   )}
                   <p className="text-lg leading-none mb-2" style={{ fontFamily: f.display }}>
                     Aa
@@ -401,7 +404,7 @@ export default function BrokerageSiteForm({ site, onSaved, focus }) {
                   onClick={() => set("logo_variant", v.value)}
                   className={`rounded-xl border p-2.5 transition-colors ${
                     form.logo_variant === v.value
-                      ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/30 dark:ring-[#f2454b]/30"
+                      ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/30 dark:ring-[#f2454b]/30"
                       : "border-black/10 dark:border-white/15 hover:border-black/20 dark:hover:border-white/25"
                   }`}
                 >
@@ -423,7 +426,7 @@ export default function BrokerageSiteForm({ site, onSaved, focus }) {
           <div className="space-y-1.5">
             {form.home_sections.map((key, i) => (
               <div key={key} className="flex items-center gap-2 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3 py-2">
-                <input type="checkbox" checked onChange={() => disableSection(key)} className="accent-[#ed2127] dark:accent-[#f2454b]" />
+                <input type="checkbox" checked onChange={() => disableSection(key)} className="accent-[#D8091B] dark:accent-[#f2454b]" />
                 <span className="flex-1 text-sm">{HOME_SECTION_LABELS[key]}</span>
                 <button
                   type="button"
@@ -447,7 +450,7 @@ export default function BrokerageSiteForm({ site, onSaved, focus }) {
             ))}
             {ALL_SECTION_KEYS.filter((key) => !form.home_sections.includes(key)).map((key) => (
               <div key={key} className="flex items-center gap-2 border border-dashed border-black/15 dark:border-white/20 rounded-lg px-3 py-2">
-                <input type="checkbox" checked={false} onChange={() => enableSection(key)} className="accent-[#ed2127] dark:accent-[#f2454b]" />
+                <input type="checkbox" checked={false} onChange={() => enableSection(key)} className="accent-[#D8091B] dark:accent-[#f2454b]" />
                 <span className="flex-1 text-sm text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{HOME_SECTION_LABELS[key]}</span>
                 <span className="text-xs text-[#1c1a17]/35 dark:text-[#faf9f7]/35">Hidden from home</span>
               </div>
@@ -517,7 +520,7 @@ export default function BrokerageSiteForm({ site, onSaved, focus }) {
                 </div>
               ))}
             </div>
-            <button type="button" onClick={addStat} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline mt-2">
+            <button type="button" onClick={addStat} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline mt-2">
               + Add stat
             </button>
           </div>

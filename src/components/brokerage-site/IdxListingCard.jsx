@@ -63,7 +63,7 @@ export default function IdxListingCard({ listing, favorited, onToggleFavorite })
             aria-label={favorited ? "Remove from favorites" : "Save to favorites"}
             aria-pressed={favorited}
             className={`flex h-8 w-8 items-center justify-center rounded-full bg-black/45 backdrop-blur-sm transition-colors hover:bg-black/65 ${
-              favorited ? "text-[var(--as-accent)]" : "text-white"
+              favorited ? "text-[var(--as-accent-text)]" : "text-white"
             }`}
           >
             <HeartIcon filled={favorited} />
@@ -92,7 +92,7 @@ export default function IdxListingCard({ listing, favorited, onToggleFavorite })
       </div>
 
       <div className="mt-4 flex items-start justify-between gap-2">
-        <p className="font-display text-lg text-[var(--as-accent)]">{formatPrice(listing.price)}</p>
+        <p className="font-display text-lg text-[var(--as-accent-text)]">{formatPrice(listing.price)}</p>
         <span className="shrink-0 rounded border border-[var(--as-text)]/15 px-1.5 py-0.5 text-[9px] uppercase tracked text-[var(--as-text)]/40">
           MLS# {listing.mlsNumber}
         </span>

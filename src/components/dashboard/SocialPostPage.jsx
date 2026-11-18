@@ -7,7 +7,7 @@ import { FORMATS, POST_TYPES, TEMPLATES, defaultType, drawPost, loadPicture, loa
 
 const muted = "text-[#1c1a17]/55 dark:text-[#faf9f7]/55";
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const labelClass = `block text-xs font-medium mb-1.5 ${muted}`;
 const card = "bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-5 space-y-4";
 
@@ -235,7 +235,7 @@ export default function SocialPostPage() {
                 <label className={labelClass} htmlFor="sp-price">Price</label>
                 <input id="sp-price" value={text.price} onChange={edit("price")} className={inputClass} />
                 <label className="mt-2 flex items-center gap-2 text-xs cursor-pointer">
-                  <input type="checkbox" checked={text.showPrice} onChange={flag("showPrice")} className="accent-[#ed2127] dark:accent-[#f2454b]" />
+                  <input type="checkbox" checked={text.showPrice} onChange={flag("showPrice")} className="accent-[#D8091B] dark:accent-[#f2454b]" />
                   Show the price
                 </label>
               </div>
@@ -243,7 +243,7 @@ export default function SocialPostPage() {
                 <label className={labelClass} htmlFor="sp-agent">Your line</label>
                 <input id="sp-agent" value={text.agent} onChange={edit("agent")} className={inputClass} />
                 <label className="mt-2 flex items-center gap-2 text-xs cursor-pointer">
-                  <input type="checkbox" checked={text.showAgent} onChange={flag("showAgent")} className="accent-[#ed2127] dark:accent-[#f2454b]" />
+                  <input type="checkbox" checked={text.showAgent} onChange={flag("showAgent")} className="accent-[#D8091B] dark:accent-[#f2454b]" />
                   Show it
                 </label>
               </div>
@@ -261,7 +261,7 @@ export default function SocialPostPage() {
                     onClick={() => choosePhoto(p.id)}
                     aria-pressed={!upload && photoId === p.id}
                     aria-label="Use this photo"
-                    className={`aspect-square overflow-hidden rounded-lg border-2 ${!upload && photoId === p.id ? "border-[#ed2127] dark:border-[#f2454b]" : "border-transparent hover:border-black/20 dark:hover:border-white/30"}`}
+                    className={`aspect-square overflow-hidden rounded-lg border-2 ${!upload && photoId === p.id ? "border-[#D8091B] dark:border-[#f2454b]" : "border-transparent hover:border-black/20 dark:hover:border-white/30"}`}
                   >
                     <img src={p.url} alt="" loading="lazy" className="h-full w-full object-cover" />
                   </button>
@@ -283,7 +283,7 @@ export default function SocialPostPage() {
               ].map(([name, value, set, min, max, step]) => (
                 <label key={name} className="block">
                   <span className={labelClass}>{name}</span>
-                  <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => set(Number(e.target.value))} className="w-full accent-[#ed2127] dark:accent-[#f2454b]" />
+                  <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => set(Number(e.target.value))} className="w-full accent-[#D8091B] dark:accent-[#f2454b]" />
                 </label>
               ))}
             </div>

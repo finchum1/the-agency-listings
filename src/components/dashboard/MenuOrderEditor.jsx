@@ -54,7 +54,7 @@ export default function MenuOrderEditor({ homeSections, landing, value, onChange
               setOver(null);
             }}
             className={`flex items-center gap-2 rounded-lg border bg-white dark:bg-[#1a1a1a] px-3 py-2 text-sm ${
-              over === i && dragging !== i ? "border-[#ed2127] dark:border-[#f2454b]" : "border-black/10 dark:border-white/15"
+              over === i && dragging !== i ? "border-[#D8091B] dark:border-[#f2454b]" : "border-black/10 dark:border-white/15"
             } ${dragging === i ? "opacity-50" : ""}`}
           >
             <span className={`cursor-grab select-none ${muted}`} aria-hidden="true">

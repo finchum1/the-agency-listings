@@ -9,7 +9,7 @@ const money = new Intl.NumberFormat(undefined, { style: "currency", currency: "U
 const compact = new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1 });
 const MONTHS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 
 function MonthBars({ values, current }) {
   const max = Math.max(...values, 1);
@@ -25,11 +25,11 @@ function MonthBars({ values, current }) {
               width="14"
               height={h}
               rx="3"
-              className={v > 0 ? (i === current ? "fill-[#ed2127] dark:fill-[#f2454b]" : "fill-[#1c1a17]/55 dark:fill-[#faf9f7]/55") : "fill-black/10 dark:fill-white/15"}
+              className={v > 0 ? (i === current ? "fill-[#D8091B] dark:fill-[#f2454b]" : "fill-[#1c1a17]/55 dark:fill-[#faf9f7]/55") : "fill-black/10 dark:fill-white/15"}
             >
               <title>{`${new Date(2000, i, 1).toLocaleString(undefined, { month: "long" })}: ${money.format(v)}`}</title>
             </rect>
-            <text x={i * 20 + 10} y="66" textAnchor="middle" className={`text-[9px] ${i === current ? "fill-[#ed2127] dark:fill-[#f2454b] font-semibold" : "fill-[#1c1a17]/45 dark:fill-[#faf9f7]/45"}`}>
+            <text x={i * 20 + 10} y="66" textAnchor="middle" className={`text-[9px] ${i === current ? "fill-[#D8091B] dark:fill-[#f2454b] font-semibold" : "fill-[#1c1a17]/45 dark:fill-[#faf9f7]/45"}`}>
               {MONTHS[i]}
             </text>
           </g>
@@ -102,7 +102,7 @@ export default function ScorecardCard({ userId }) {
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-display text-lg font-semibold">Scorecard · {year}</h2>
         {!editing && (
-          <button type="button" onClick={startEdit} title="Edit your goal and past production" className="shrink-0 text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+          <button type="button" onClick={startEdit} title="Edit your goal and past production" className="shrink-0 text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
             {ringTotal || hasPrior ? "Edit" : "Set a goal"}
           </button>
         )}

@@ -9,7 +9,7 @@ export default function LocationMap() {
   return (
     <section id="location" className="px-6 lg:px-10 py-24 bg-[var(--ls-bg-alt)]">
       <div className="mx-auto max-w-6xl">
-        <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent)] mb-3">
+        <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent-text)] mb-3">
           Location
         </p>
         <h2 className="text-3xl sm:text-4xl font-semibold mb-6 text-[var(--ls-text)]">

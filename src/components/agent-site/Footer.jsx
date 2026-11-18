@@ -86,7 +86,7 @@ function SocialIcon({ href, children }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="h-9 w-9 rounded-full bg-[#ed2127] ring-1 ring-white/30 flex items-center justify-center text-white transition-opacity hover:opacity-85"
+      className="h-9 w-9 rounded-full bg-[#D8091B] ring-1 ring-white/30 flex items-center justify-center text-white transition-opacity hover:opacity-85"
     >
       {children}
     </a>

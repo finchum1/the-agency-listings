@@ -328,7 +328,7 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
           {filter("calendar", "Calendar", "#1a5fb4")}
           {wantsPeople && filter("deals", "Deal dates", DEAL_COLOR)}
           {filter("tasks", "Tasks", TASK_COLOR)}
-          <button type="button" onClick={() => setManaging((m) => !m)} aria-expanded={managing} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+          <button type="button" onClick={() => setManaging((m) => !m)} aria-expanded={managing} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
             Calendars
           </button>
           <button type="button" onClick={() => setBlock({ range: nextSlot() })} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-xs font-semibold px-3.5 py-1.5">
@@ -342,7 +342,7 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
       {noCalendars && !managing && (
         <p className={`mt-3 text-xs rounded-lg bg-black/[0.03] dark:bg-white/[0.05] px-3 py-2 ${muted}`}>
           Connect your Google Calendar to see and add appointments here.{" "}
-          <button type="button" onClick={() => setManaging(true)} className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+          <button type="button" onClick={() => setManaging(true)} className="font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
             Connect a calendar
           </button>
         </p>
@@ -402,7 +402,7 @@ export default function ScheduleCard({ userId, wantsPeople, tasksApi, span }) {
                     aria-label={`${dayLabel(key, today)}, ${list.length} item${list.length === 1 ? "" : "s"}`}
                     className={`flex flex-col items-start justify-start text-left p-1.5 min-h-[3.25rem] sm:min-h-[6.5rem] min-w-0 bg-white dark:bg-[#1a1a1a] hover:bg-black/[0.03] dark:hover:bg-white/[0.04] ${inMonth ? "" : "opacity-40"}`}
                   >
-                    <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold ${isToday ? "bg-[#ed2127] dark:bg-[#f2454b] text-white" : ""}`}>{fromKey(key).getDate()}</span>
+                    <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-semibold ${isToday ? "bg-[#D8091B] dark:bg-[#f2454b] text-white" : ""}`}>{fromKey(key).getDate()}</span>
                     <span className="hidden sm:block mt-1 space-y-0.5 w-full min-w-0">
                       {list.slice(0, 3).map((it) => (
                         <span key={it.id} className="flex items-center gap-1 min-w-0 text-[11px] leading-tight">

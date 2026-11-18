@@ -1,5 +1,5 @@
 import { adaptTeam } from "./teams";
-import { logoForTheme } from "./brandChoices";
+import { logoVariantForTheme } from "./brandChoices";
 import { brandFromOrg } from "./brand";
 import { paragraphsToHtml } from "./richTextFallback";
 
@@ -28,7 +28,7 @@ export function adaptAgentSite({ site, agent, testimonials, areas, posts, listin
     // near-matching background.
     brokerage: {
       ...brokerage,
-      logo: logoForTheme(site.theme) ? (brokerage.logos.white || brokerage.logo) : brokerage.logos[site.logo_variant] || brokerage.logo,
+      logo: brokerage.logos[logoVariantForTheme(site.theme, { agentSite: true }) || site.logo_variant] || brokerage.logo,
     },
     logoVariant: site.logo_variant || "red",
     slug: site.slug,

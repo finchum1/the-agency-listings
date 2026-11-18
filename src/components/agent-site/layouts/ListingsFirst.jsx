@@ -15,7 +15,7 @@ import AreasJourney from "../AreasJourney";
 // feature, and everything else kept compact. Colors come from the same --as-* theme tokens, so every color theme, font
 // pairing and button style still works with it.
 
-const eyebrow = "text-xs font-medium tracked-wide uppercase text-[var(--as-accent)]";
+const eyebrow = "text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)]";
 const h2Class = "font-display text-3xl sm:text-4xl font-semibold text-[var(--as-text)]";
 const btn = "as-btn inline-block text-xs font-medium tracked-wide uppercase px-8 py-4 bg-[var(--as-accent)] text-white transition duration-150 hover:opacity-90 active:scale-[0.98]";
 
@@ -99,13 +99,13 @@ export function ListingsListings() {
               <span className="as-btn absolute top-4 left-4 bg-[var(--as-dark)] text-[var(--as-on-dark)] text-[10px] font-medium tracked-wide uppercase px-3 py-1.5">{STATUS_LABELS[feature.status] || feature.status}</span>
             </div>
             <div className="p-8 sm:p-10 flex flex-col justify-center">
-              <p className="font-display text-4xl text-[var(--as-accent)]">{formatPrice(feature.price)}</p>
+              <p className="font-display text-4xl text-[var(--as-accent-text)]">{formatPrice(feature.price)}</p>
               <p className="mt-4 font-display text-2xl font-semibold text-[var(--as-text)]">{feature.address_line1}</p>
               <p className="mt-1 text-[var(--as-text)]/60">
                 {feature.city}, {feature.state} {feature.zip}
               </p>
               <p className="mt-5 pt-5 border-t border-[var(--as-text)]/10 text-sm text-[var(--as-text)]/60">{specs(feature)}</p>
-              <span className="mt-7 text-xs font-medium tracked-wide uppercase text-[var(--as-text)] border-b border-[var(--as-text)] pb-1 w-fit group-hover:text-[var(--as-accent)] group-hover:border-[var(--as-accent)] transition-colors">View property &rarr;</span>
+              <span className="mt-7 text-xs font-medium tracked-wide uppercase text-[var(--as-text)] border-b border-[var(--as-text)] pb-1 w-fit group-hover:text-[var(--as-accent-text)] group-hover:border-[var(--as-accent)] transition-colors">View property &rarr;</span>
             </div>
           </a>
         )}
@@ -120,7 +120,7 @@ export function ListingsListings() {
                 </div>
                 <div className="mt-3 flex items-baseline justify-between gap-4">
                   <p className="font-medium text-[var(--as-text)] truncate">{l.address_line1}</p>
-                  <p className="font-display text-lg text-[var(--as-accent)] shrink-0">{formatPrice(l.price)}</p>
+                  <p className="font-display text-lg text-[var(--as-accent-text)] shrink-0">{formatPrice(l.price)}</p>
                 </div>
                 <p className="text-sm text-[var(--as-text)]/55">
                   {l.city}, {l.state} · {specs(l)}
@@ -152,7 +152,7 @@ export function ListingsBio() {
         </div>
         <div className="min-w-0 flex-1">
           <div className="rich-text line-clamp-3 text-[15px] leading-relaxed text-[var(--as-text)]/75" dangerouslySetInnerHTML={{ __html: sanitizeHtml(site.bioHtml) }} />
-          <SiteLink slug={site.slug} path="/about" className="mt-3 inline-block text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] hover:underline">
+          <SiteLink slug={site.slug} path="/about" className="mt-3 inline-block text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] hover:underline">
             More about {first} &rarr;
           </SiteLink>
         </div>
@@ -211,7 +211,7 @@ export function ListingsAreas() {
     <SiteLink key={area.id} slug={site.slug} path={`/areas/${area.slug}`} className={`${sync.className || ""} group flex items-center gap-4 bg-[var(--as-bg)] border border-[var(--as-text)]/10 p-3 pr-5 transition-colors hover:border-[var(--as-accent)]`} onMouseEnter={sync.onMouseEnter} onFocus={sync.onFocus}>
       <div className="h-16 w-16 shrink-0 rounded-full overflow-hidden bg-[var(--as-surface)]">{area.photo_url && <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover" />}</div>
       <div className="min-w-0">
-        <p className="font-display text-lg font-semibold text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{area.name}</p>
+        <p className="font-display text-lg font-semibold text-[var(--as-text)] group-hover:text-[var(--as-accent-text)] transition-colors">{area.name}</p>
         {area.blurb && <p className="text-sm text-[var(--as-text)]/55 truncate">{area.blurb}</p>}
       </div>
     </SiteLink>
@@ -245,8 +245,8 @@ export function ListingsBlog({ posts, hasMore, standalone }) {
             <SiteLink key={post.id} slug={site.slug} path={`/blog/${post.slug}`} className="group flex gap-4">
               <div className="relative w-28 shrink-0 overflow-hidden bg-[var(--as-surface)] aspect-square">{post.featured && <FeaturedTag />}{post.image_url && <img src={post.image_url} alt={post.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}</div>
               <div className="min-w-0">
-                {post.category && <p className="text-[11px] font-medium tracked-wide uppercase text-[var(--as-accent)]">{post.category}</p>}
-                <p className="mt-1.5 font-medium leading-snug text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{post.title}</p>
+                {post.category && <p className="text-[11px] font-medium tracked-wide uppercase text-[var(--as-accent-text)]">{post.category}</p>}
+                <p className="mt-1.5 font-medium leading-snug text-[var(--as-text)] group-hover:text-[var(--as-accent-text)] transition-colors">{post.title}</p>
               </div>
             </SiteLink>
           ))}

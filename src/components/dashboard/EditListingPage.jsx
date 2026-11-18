@@ -28,7 +28,7 @@ export default function EditListingPage() {
         <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-4">
           Listing not found, or you don't have access to it.
         </p>
-        <Link to="/dashboard/listings" className="text-sm text-[#ed2127] dark:text-[#f2454b] hover:underline">
+        <Link to="/dashboard/listings" className="text-sm text-[#D8091B] dark:text-[#f2454b] hover:underline">
           ← Back to listings
         </Link>
       </div>
@@ -39,7 +39,7 @@ export default function EditListingPage() {
   // an outlined accent pill matches the weight of an actual action
   // without competing with the page's primary ink-fill buttons.
   const pillLinkClass =
-    "rounded-full border border-[#ed2127] dark:border-[#f2454b] text-[#ed2127] dark:text-[#f2454b] text-xs font-semibold px-4 py-2 hover:bg-[#ed2127] dark:hover:bg-[#f2454b] hover:text-white dark:hover:text-white transition-colors";
+    "rounded-full border border-[#D8091B] dark:border-[#f2454b] text-[#D8091B] dark:text-[#f2454b] text-xs font-semibold px-4 py-2 hover:bg-[#D8091B] dark:hover:bg-[#f2454b] hover:text-white dark:hover:text-white transition-colors";
 
   return (
     <div className="max-w-3xl space-y-8">

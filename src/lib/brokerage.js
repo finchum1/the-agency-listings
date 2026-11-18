@@ -9,9 +9,9 @@
 // let an agent pick among the three, via agent_sites.logo_variant (see
 // adaptAgentSite.js).
 const logos = {
-  red: "/images/brokerage-logo.png",
-  white: "/images/brokerage-logo-white.png",
-  black: "/images/brokerage-logo-black.png",
+  red: "/brand/the-agency-lockup-red.svg",
+  white: "/brand/the-agency-lockup-white.svg",
+  black: "/brand/the-agency-lockup-iron.svg",
 };
 
 const brokerage = {

@@ -120,14 +120,14 @@ export default function ListingsTable() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder={isAdmin ? "Search by address, city, zip, MLS number, or agent" : "Search by address, city, zip, or MLS number"}
           aria-label="Search listings"
-          className="min-w-0 flex-1 basis-64 rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+          className="min-w-0 flex-1 basis-64 rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
         />
         {withDomain > 0 && (
           <select
             value={domainFilter}
             onChange={(e) => setDomainFilter(e.target.value)}
             aria-label="Custom domain"
-            className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+            className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
           >
             <option value="all">Any domain</option>
             <option value="with">Has a custom domain ({withDomain})</option>
@@ -176,7 +176,7 @@ export default function ListingsTable() {
             ) : (
               <>
                 No listings match.{" "}
-                <button type="button" onClick={() => { setQuery(""); setFilter("all"); setDomainFilter("all"); }} className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                <button type="button" onClick={() => { setQuery(""); setFilter("all"); setDomainFilter("all"); }} className="font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
                   Clear search
                 </button>
               </>

@@ -54,7 +54,7 @@ export default function VideoUploadField({ bucket, folder, value, onChange, labe
           {value && <video src={value} className="h-full w-full object-cover" muted playsInline />}
         </div>
         <div className="flex-1 min-w-0">
-          <label className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline cursor-pointer">
+          <label className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline cursor-pointer">
             {uploading ? "Uploading…" : value ? "Replace video" : "Upload video"}
             <input
               ref={fileInputRef}

@@ -21,7 +21,7 @@ import StartPlanModal from "./StartPlanModal";
 const COLUMN_DRAG_TYPE = "application/x-people-column";
 
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 
 function todayKey() {
   const d = new Date();
@@ -160,7 +160,7 @@ function ColumnTitle({ name, onRename }) {
             setEditing(false);
           }
         }}
-        className="w-full min-w-0 rounded-md border border-black/15 dark:border-white/20 bg-transparent px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
+        className="w-full min-w-0 rounded-md border border-black/15 dark:border-white/20 bg-transparent px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40"
       />
     );
   }
@@ -747,7 +747,7 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
                 }
               }}
               className={`${isCollapsed ? "w-11 p-1.5" : "w-64 p-2.5"} shrink-0 h-full flex flex-col gap-2 rounded-2xl transition-colors ${
-                dragOver === stage || dropTarget ? "bg-[#ed2127]/10 dark:bg-[#f2454b]/15" : "bg-black/[0.03] dark:bg-white/[0.04]"
+                dragOver === stage || dropTarget ? "bg-[#D8091B]/10 dark:bg-[#f2454b]/15" : "bg-black/[0.03] dark:bg-white/[0.04]"
               }`}
             >
               {isCollapsed ? (
@@ -902,7 +902,7 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
                     data-placeholder=""
                     aria-hidden="true"
                     style={{ height: drag?.h }}
-                    className="rounded-xl border-2 border-dashed border-[#ed2127]/40 dark:border-[#f2454b]/50 bg-[#ed2127]/[0.06] dark:bg-[#f2454b]/10"
+                    className="rounded-xl border-2 border-dashed border-[#D8091B]/40 dark:border-[#f2454b]/50 bg-[#D8091B]/[0.06] dark:bg-[#f2454b]/10"
                   />
                 );
                 for (const p of col) {

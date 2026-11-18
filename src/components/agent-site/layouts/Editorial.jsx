@@ -42,7 +42,7 @@ export function EditorialHero() {
           <SiteLink
             slug={site.slug}
             path="/contact"
-            className="inline-block mt-8 text-xs font-medium tracked-wide uppercase text-[var(--as-text)] border-b border-[var(--as-text)] pb-1 transition-colors hover:text-[var(--as-accent)] hover:border-[var(--as-accent)]"
+            className="inline-block mt-8 text-xs font-medium tracked-wide uppercase text-[var(--as-text)] border-b border-[var(--as-text)] pb-1 transition-colors hover:text-[var(--as-accent-text)] hover:border-[var(--as-accent)]"
           >
             Let&rsquo;s connect &rarr;
           </SiteLink>
@@ -65,7 +65,7 @@ export function EditorialBio() {
   const Heading = isStandalonePage ? "h1" : "h2";
   const first = site.agent.first;
   const drop =
-    "[&>p:first-child]:first-letter:float-left [&>p:first-child]:first-letter:font-display [&>p:first-child]:first-letter:text-6xl [&>p:first-child]:first-letter:leading-[0.85] [&>p:first-child]:first-letter:pr-3 [&>p:first-child]:first-letter:pt-1 [&>p:first-child]:first-letter:text-[var(--as-accent)]";
+    "[&>p:first-child]:first-letter:float-left [&>p:first-child]:first-letter:font-display [&>p:first-child]:first-letter:text-6xl [&>p:first-child]:first-letter:leading-[0.85] [&>p:first-child]:first-letter:pr-3 [&>p:first-child]:first-letter:pt-1 [&>p:first-child]:first-letter:text-[var(--as-accent-text)]";
 
   return (
     <section id="bio" className="px-6 lg:px-10 py-28 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
@@ -129,7 +129,7 @@ export function EditorialListings() {
                     {listing.city}, {listing.state} {listing.zip}
                   </p>
                 </div>
-                <p className="font-display text-xl text-[var(--as-accent)] shrink-0">{formatPrice(listing.price)}</p>
+                <p className="font-display text-xl text-[var(--as-accent-text)] shrink-0">{formatPrice(listing.price)}</p>
               </div>
               <p className="mt-3 text-[11px] tracked-wide uppercase text-[var(--as-text)]/50">
                 {STATUS_LABELS[listing.status] || listing.status} &nbsp;·&nbsp; {listing.beds} bd &nbsp;·&nbsp; {listing.baths} ba &nbsp;·&nbsp; {listing.sqft?.toLocaleString()} sqft
@@ -152,7 +152,7 @@ export function EditorialTestimonials() {
         <div className="divide-y divide-[var(--as-text)]/15">
           {site.testimonials.map((t) => (
             <figure key={t.id} className="py-14 first:pt-0 last:pb-0 text-center">
-              <span className="font-display text-6xl leading-none text-[var(--as-accent)] block h-8" aria-hidden="true">
+              <span className="font-display text-6xl leading-none text-[var(--as-accent-text)] block h-8" aria-hidden="true">
                 &ldquo;
               </span>
               <blockquote className="font-display italic text-2xl sm:text-3xl leading-snug text-[var(--as-text)] mt-4">
@@ -181,7 +181,7 @@ export function EditorialAreas() {
       <div className="overflow-hidden bg-[var(--as-surface)] aspect-[4/5]">
         {area.photo_url && <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />}
       </div>
-      <p className="mt-5 font-display text-2xl text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{area.name}</p>
+      <p className="mt-5 font-display text-2xl text-[var(--as-text)] group-hover:text-[var(--as-accent-text)] transition-colors">{area.name}</p>
       {area.blurb && <p className="mt-2 text-sm leading-relaxed text-[var(--as-text)]/60 max-w-xs">{area.blurb}</p>}
     </SiteLink>
   );
@@ -212,8 +212,8 @@ export function EditorialBlog({ posts, hasMore, standalone }) {
           {posts.map((post) => (
             <SiteLink key={post.id} slug={site.slug} path={`/blog/${post.slug}`} className="group grid sm:grid-cols-[1fr_200px] gap-6 sm:gap-10 items-center py-8 border-t border-[var(--as-text)]/15">
               <div>
-                {post.category && <p className="text-[11px] font-medium tracked-wide uppercase text-[var(--as-accent)]">{post.category}</p>}
-                <p className="mt-2 font-display text-2xl sm:text-3xl leading-snug text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{post.title}</p>
+                {post.category && <p className="text-[11px] font-medium tracked-wide uppercase text-[var(--as-accent-text)]">{post.category}</p>}
+                <p className="mt-2 font-display text-2xl sm:text-3xl leading-snug text-[var(--as-text)] group-hover:text-[var(--as-accent-text)] transition-colors">{post.title}</p>
               </div>
               <div className="relative overflow-hidden bg-[var(--as-surface)] aspect-[4/3] order-first sm:order-none">
                 {post.featured && <FeaturedTag />}
@@ -224,7 +224,7 @@ export function EditorialBlog({ posts, hasMore, standalone }) {
         </div>
         {hasMore && (
           <div className="mt-12 text-center">
-            <SiteLink slug={site.slug} path="/blog" className="inline-block text-xs font-medium tracked-wide uppercase text-[var(--as-text)] border-b border-[var(--as-text)] pb-1 transition-colors hover:text-[var(--as-accent)] hover:border-[var(--as-accent)]">
+            <SiteLink slug={site.slug} path="/blog" className="inline-block text-xs font-medium tracked-wide uppercase text-[var(--as-text)] border-b border-[var(--as-text)] pb-1 transition-colors hover:text-[var(--as-accent-text)] hover:border-[var(--as-accent)]">
               Read more &rarr;
             </SiteLink>
           </div>

@@ -12,7 +12,7 @@ export default function ContactCard({ isStandalonePage = false }) {
   return (
     <section id="contact" className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-t border-[var(--as-text)]/10">
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">Let&rsquo;s Connect</p>
+        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">Let&rsquo;s Connect</p>
         <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-6 text-[var(--as-text)]">
           Get In Touch
         </Heading>

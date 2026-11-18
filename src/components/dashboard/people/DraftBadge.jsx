@@ -4,7 +4,7 @@ export default function DraftBadge({ count }) {
   if (!count) return null;
   return (
     <span
-      className="absolute -top-2 -right-2 z-10 inline-flex h-6 min-w-6 items-center justify-center gap-0.5 rounded-full bg-[#ed2127] px-1.5 text-white shadow-md shadow-black/25 ring-2 ring-[#f7f4ee] dark:ring-[#141414] pointer-events-none"
+      className="absolute -top-2 -right-2 z-10 inline-flex h-6 min-w-6 items-center justify-center gap-0.5 rounded-full bg-[#D8091B] px-1.5 text-white shadow-md shadow-black/25 ring-2 ring-[#f7f4ee] dark:ring-[#141414] pointer-events-none"
       title={`${count} draft message${count === 1 ? "" : "s"} waiting for you to send or discard`}
       role="img"
       aria-label={`${count} draft message${count === 1 ? "" : "s"} waiting for you`}

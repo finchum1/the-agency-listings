@@ -6,7 +6,7 @@ import BrandLogo from "../BrandLogo";
 import FormSaveBar from "./FormSaveBar";
 
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40 disabled:opacity-60";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40 disabled:opacity-60";
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 const hintClass = "text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-1.5 leading-snug";
 const cardClass = "bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-5";
@@ -87,7 +87,7 @@ function LogoSlot({ slot, src, locked, uploading, onPick, onRemove }) {
         {slot.hint && <p className={hintClass}>{slot.hint}</p>}
         {!locked && (
           <div className="flex items-center gap-4 mt-2">
-            <label className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline cursor-pointer">
+            <label className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline cursor-pointer">
               {uploading ? "Uploading…" : src ? "Replace" : "Upload"}
               <input
                 ref={fileRef}
@@ -364,7 +364,7 @@ export default function BrandSettingsPage() {
               <button
                 type="button"
                 onClick={() => set("colors", [...form.colors, "#1a5fb4"])}
-                className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline"
+                className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline"
               >
                 + Add a color
               </button>

@@ -366,8 +366,8 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
                 const isToday = key === today;
                 const label = (
                   <>
-                    <span className={`block text-[11px] font-semibold uppercase tracking-wide ${isToday ? "text-[#ed2127] dark:text-[#f2454b]" : muted}`}>{d.toLocaleDateString(undefined, { weekday: "short" })}</span>
-                    <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-sm font-semibold ${isToday ? "bg-[#ed2127] dark:bg-[#f2454b] text-white" : ""}`}>{d.getDate()}</span>
+                    <span className={`block text-[11px] font-semibold uppercase tracking-wide ${isToday ? "text-[#D8091B] dark:text-[#f2454b]" : muted}`}>{d.toLocaleDateString(undefined, { weekday: "short" })}</span>
+                    <span className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-sm font-semibold ${isToday ? "bg-[#D8091B] dark:bg-[#f2454b] text-white" : ""}`}>{d.getDate()}</span>
                   </>
                 );
                 return onDayClick && cols > 1 ? (
@@ -391,7 +391,7 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
                     data-allday={key}
                     onClick={(e) => e.target === e.currentTarget && onCreate({ date: key, allDay: true })}
                     title="Click to add an all-day task"
-                    className={`min-w-0 min-h-[30px] p-0.5 space-y-0.5 border-l border-black/5 dark:border-white/10 cursor-cell ${over ? "bg-[#ed2127]/10 ring-2 ring-inset ring-[#ed2127]/60 dark:ring-[#f2454b]/60" : ""}`}
+                    className={`min-w-0 min-h-[30px] p-0.5 space-y-0.5 border-l border-black/5 dark:border-white/10 cursor-cell ${over ? "bg-[#D8091B]/10 ring-2 ring-inset ring-[#D8091B]/60 dark:ring-[#f2454b]/60" : ""}`}
                   >
                     {itemsFor(key).allDay.map((it) => {
                       const chip = (
@@ -433,7 +433,7 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
                       );
                     })}
                     {over && (
-                      <span className="block truncate rounded px-1.5 py-0.5 text-[11px] font-medium leading-tight border border-dashed border-[#ed2127] dark:border-[#f2454b] text-[#ed2127] dark:text-[#f2454b]">
+                      <span className="block truncate rounded px-1.5 py-0.5 text-[11px] font-medium leading-tight border border-dashed border-[#D8091B] dark:border-[#f2454b] text-[#D8091B] dark:text-[#f2454b]">
                         {preview.label}
                       </span>
                     )}
@@ -471,7 +471,7 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
                   ref={(el) => (colRefs.current[key] = el)}
                   onPointerDown={(e) => startOnEmpty(e, key)}
                   data-day={key}
-                  className={`relative border-l border-black/5 dark:border-white/10 select-none ${key === today ? "bg-[#ed2127]/[0.03]" : ""} cursor-cell`}
+                  className={`relative border-l border-black/5 dark:border-white/10 select-none ${key === today ? "bg-[#D8091B]/[0.03]" : ""} cursor-cell`}
                   style={{ backgroundImage: `linear-gradient(to bottom, ${hairline} 1px, transparent 1px)`, backgroundSize: `100% ${HOUR_PX}px` }}
                 >
                   {shown.map((it) => {
@@ -492,7 +492,7 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
                         tabIndex={0}
                         role="button"
                         aria-label={`${it.title}, ${rangeLabel(it.startMin, it.endMin)}`}
-                        className={`absolute rounded-md overflow-hidden bg-white dark:bg-[#1a1a1a] text-left px-1.5 py-1 text-[11px] leading-tight ${it.editable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"} ${it.dragging ? "shadow-lg ring-2 ring-black/20 dark:ring-white/30 z-20" : "z-10"} focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ed2127]`}
+                        className={`absolute rounded-md overflow-hidden bg-white dark:bg-[#1a1a1a] text-left px-1.5 py-1 text-[11px] leading-tight ${it.editable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"} ${it.dragging ? "shadow-lg ring-2 ring-black/20 dark:ring-white/30 z-20" : "z-10"} focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D8091B]`}
                         style={{
                           top: (it.startMin / 60) * HOUR_PX + 1,
                           height: h - 2,
@@ -543,7 +543,7 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
 
                   {preview && preview.date === key && (preview.kind === "create" || preview.kind === "tray") && (
                     <div
-                      className="absolute left-0.5 right-0.5 rounded-md border-2 border-dashed border-[#ed2127] dark:border-[#f2454b] bg-[#ed2127]/10 pointer-events-none z-20 px-1.5 py-0.5 text-[11px] font-semibold text-[#ed2127] dark:text-[#f2454b]"
+                      className="absolute left-0.5 right-0.5 rounded-md border-2 border-dashed border-[#D8091B] dark:border-[#f2454b] bg-[#D8091B]/10 pointer-events-none z-20 px-1.5 py-0.5 text-[11px] font-semibold text-[#D8091B] dark:text-[#f2454b]"
                       style={{ top: (preview.startMin / 60) * HOUR_PX, height: ((preview.endMin - preview.startMin) / 60) * HOUR_PX }}
                     >
                       {rangeLabel(preview.startMin, preview.endMin)}
@@ -552,8 +552,8 @@ export default function TimeGrid({ days, today, itemsFor, tray, onOpen, onCreate
 
                   {key === today && (
                     <div className="absolute inset-x-0 z-20 pointer-events-none" style={{ top: (nowMin / 60) * HOUR_PX }} aria-hidden="true">
-                      <div className="h-px bg-[#ed2127] dark:bg-[#f2454b]" />
-                      <div className="-mt-[5px] -ml-1 h-2 w-2 rounded-full bg-[#ed2127] dark:bg-[#f2454b]" />
+                      <div className="h-px bg-[#D8091B] dark:bg-[#f2454b]" />
+                      <div className="-mt-[5px] -ml-1 h-2 w-2 rounded-full bg-[#D8091B] dark:bg-[#f2454b]" />
                     </div>
                   )}
                 </div>

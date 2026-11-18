@@ -15,7 +15,7 @@ import AreasJourney from "../AreasJourney";
 // accent color, big numbers. Colors come from the same --as-* theme tokens, so every color theme, font pairing and
 // button style still works with it. Text that sits on a photo overlay stays hardcoded white (see Hero.jsx).
 
-const label = "text-xs font-bold tracked-wide uppercase text-[var(--as-accent)]";
+const label = "text-xs font-bold tracked-wide uppercase text-[var(--as-accent-text)]";
 const bigHeading = "font-display font-bold uppercase tracking-tight leading-[0.92] text-5xl sm:text-6xl lg:text-7xl";
 
 function Head({ eyebrow, children, Heading, onDark }) {
@@ -225,8 +225,8 @@ export function BoldBlog({ posts, hasMore, standalone }) {
                 {post.image_url && <img src={post.image_url} alt={post.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}
                 <span className="absolute bottom-0 left-0 bg-[var(--as-accent)] text-white font-display text-2xl font-bold px-4 py-2">{String(i + 1).padStart(2, "0")}</span>
               </div>
-              {post.category && <p className="mt-5 text-xs font-bold tracked-wide uppercase text-[var(--as-accent)]">{post.category}</p>}
-              <p className="mt-2 font-display text-2xl font-bold leading-tight text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{post.title}</p>
+              {post.category && <p className="mt-5 text-xs font-bold tracked-wide uppercase text-[var(--as-accent-text)]">{post.category}</p>}
+              <p className="mt-2 font-display text-2xl font-bold leading-tight text-[var(--as-text)] group-hover:text-[var(--as-accent-text)] transition-colors">{post.title}</p>
             </SiteLink>
           ))}
         </div>

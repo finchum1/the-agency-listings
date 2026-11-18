@@ -86,11 +86,11 @@ export default function ClientTimelineCard({ person, dates, agentName }) {
         rows={2}
         maxLength={600}
         placeholder="Optional note to show at the top, like “We're right on track. Next up is the appraisal on Tuesday.”"
-        className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+        className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
       />
       {siteDomain && (
         <label className="flex items-center gap-2 text-xs text-[#1c1a17]/60 dark:text-[#faf9f7]/60">
-          <input type="checkbox" checked={useSite} onChange={(e) => setUseSite(e.target.checked)} className="h-3.5 w-3.5 accent-[#ed2127]" />
+          <input type="checkbox" checked={useSite} onChange={(e) => setUseSite(e.target.checked)} className="h-3.5 w-3.5 accent-[#D8091B]" />
           Send the link from {siteDomain}
         </label>
       )}

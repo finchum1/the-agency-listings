@@ -57,7 +57,7 @@ export default function HomeValuePage() {
         <div className="mt-12 grid md:grid-cols-3 gap-5">
           {HOW.map((h, i) => (
             <div key={h.title} className="bg-[var(--as-bg-alt)] border border-[var(--as-text)]/10 p-8">
-              <p className="font-display text-5xl font-semibold text-[var(--as-accent)]">{i + 1}</p>
+              <p className="font-display text-5xl font-semibold text-[var(--as-accent-text)]">{i + 1}</p>
               <p className="mt-2 font-display text-2xl font-semibold">{h.title}</p>
               <p className="mt-2 text-[15px] leading-relaxed opacity-75">{h.body}</p>
             </div>

@@ -100,7 +100,7 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
 
   const buttonClass = (active) =>
     `h-7 min-w-7 px-1.5 rounded-md text-xs font-semibold transition-colors ${
-      active ? "bg-[#ed2127]/10 text-[#ed2127] dark:text-[#f2454b]" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/5 dark:hover:bg-white/10"
+      active ? "bg-[#D8091B]/10 text-[#D8091B] dark:text-[#f2454b]" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:bg-black/5 dark:hover:bg-white/10"
     }`;
 
   const formatButtons = (
@@ -160,7 +160,7 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
           className={buttonClass(editor.isActive("brandRed"))}
           title="The Agency red"
         >
-          <span className="text-[#ed2127] dark:text-[#f2454b] border-b-2 border-[#ed2127] dark:border-[#f2454b] leading-none pb-px">A</span>
+          <span className="text-[#D8091B] dark:text-[#f2454b] border-b-2 border-[#D8091B] dark:border-[#f2454b] leading-none pb-px">A</span>
         </button>
         <span className="w-px h-5 bg-black/10 dark:bg-white/15 mx-1" />
         <button
@@ -181,7 +181,7 @@ export default function RichTextEditor({ value, onChange, placeholder, minHeight
   );
 
   return (
-    <div className="rounded-lg border border-black/10 dark:border-white/15 focus-within:ring-2 focus-within:ring-[#ed2127]/40 overflow-hidden">
+    <div className="rounded-lg border border-black/10 dark:border-white/15 focus-within:ring-2 focus-within:ring-[#D8091B]/40 overflow-hidden">
       <div className="flex items-center gap-1 px-2 py-1.5 border-b border-black/10 dark:border-white/15 bg-[#faf9f7] dark:bg-[#1c1a17]">
         {formatButtons}
       </div>

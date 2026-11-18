@@ -78,7 +78,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
   }, [agentId]);
 
   const inputClass =
-    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+    "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
   const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 
   const startAdd = () => {
@@ -241,7 +241,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
             >
               Analytics
             </button>
-            <button type="button" onClick={startAdd} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+            <button type="button" onClick={startAdd} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
               + Add post
             </button>
           </div>
@@ -269,7 +269,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
                     <button
                       type="button"
                       onClick={() => setShowSlugField(true)}
-                      className="text-[#ed2127] dark:text-[#f2454b] hover:underline font-medium"
+                      className="text-[#D8091B] dark:text-[#f2454b] hover:underline font-medium"
                     >
                       Customize
                     </button>
@@ -414,7 +414,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
             <div key={post.id} className="border border-black/10 dark:border-white/15 rounded-xl p-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">
-                  {post.featured_order ? <span className="mr-1.5 rounded-full bg-[#ed2127]/10 dark:bg-[#f2454b]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#ed2127] dark:text-[#f2454b]">Pinned {post.featured_order}</span> : null}
+                  {post.featured_order ? <span className="mr-1.5 rounded-full bg-[#D8091B]/10 dark:bg-[#f2454b]/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#D8091B] dark:text-[#f2454b]">Pinned {post.featured_order}</span> : null}
                   {post.title}
                 </p>
                 <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
@@ -447,7 +447,7 @@ export default function PostsManager({ agentSiteId, agentId, posts, onChanged })
                 </p>
               </div>
               <div className="flex items-center gap-3 shrink-0 text-xs">
-                <button onClick={() => togglePin(post)} className={post.featured_order ? "font-semibold text-[#ed2127] dark:text-[#f2454b]" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"}>{post.featured_order ? "Unpin" : "Pin"}</button>
+                <button onClick={() => togglePin(post)} className={post.featured_order ? "font-semibold text-[#D8091B] dark:text-[#f2454b]" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]"}>{post.featured_order ? "Unpin" : "Pin"}</button>
                 <button onClick={() => startEdit(post)} className="text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">Edit</button>
                 <button onClick={() => remove(post)} className="text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-red-600 dark:hover:text-red-400">✕</button>
               </div>

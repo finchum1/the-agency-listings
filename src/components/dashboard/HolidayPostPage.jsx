@@ -7,7 +7,7 @@ import { FORMATS, HOLIDAYS, LAYOUTS, drawHoliday, isLight, loadPicture, loadPost
 
 const muted = "text-[#1c1a17]/55 dark:text-[#faf9f7]/55";
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const labelClass = `block text-xs font-medium mb-1.5 ${muted}`;
 const card = "bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-5 space-y-4";
 const dayLabel = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -54,7 +54,7 @@ export default function HolidayPostPage() {
   const [custom, setCustom] = useState(false);
   const [format, setFormat] = useState("square");
   const [layout, setLayout] = useState("centered");
-  const [bg, setBg] = useState(palette[0]?.hex || "#ed2127");
+  const [bg, setBg] = useState(palette[0]?.hex || "#D8091B");
   const [text, setText] = useState({
     greeting: first.greeting,
     message: first.message,
@@ -213,7 +213,7 @@ export default function HolidayPostPage() {
                 className={inputClass}
               />
               <label className="mt-2 flex items-center gap-2 text-xs cursor-pointer">
-                <input type="checkbox" checked={text.showSign} onChange={flag("showSign")} className="accent-[#ed2127] dark:accent-[#f2454b]" />
+                <input type="checkbox" checked={text.showSign} onChange={flag("showSign")} className="accent-[#D8091B] dark:accent-[#f2454b]" />
                 Show it
               </label>
             </div>
@@ -226,7 +226,7 @@ export default function HolidayPostPage() {
               <p className={`mt-1.5 text-xs ${muted}`}>{LAYOUTS[layout].note}</p>
               {layout === "portrait" && (
                 <label className="mt-2 flex items-center gap-2 text-xs cursor-pointer">
-                  <input type="checkbox" checked={text.showPhoto} onChange={flag("showPhoto")} className="accent-[#ed2127] dark:accent-[#f2454b]" />
+                  <input type="checkbox" checked={text.showPhoto} onChange={flag("showPhoto")} className="accent-[#D8091B] dark:accent-[#f2454b]" />
                   Show my photo {profile?.photo_url ? "" : "(add one in My Profile first)"}
                 </label>
               )}

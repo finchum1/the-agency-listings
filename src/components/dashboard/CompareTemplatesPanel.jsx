@@ -9,7 +9,7 @@ const themeName = (v) => THEME_OPTIONS.find((t) => t.value === v)?.label || v;
 const headerName = (v) => HEADER_OPTIONS.find((h) => h.value === v)?.label || v;
 const footerName = (v) => FOOTER_OPTIONS.find((f) => f.value === v)?.label || v;
 const inputClass =
-  "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 
 // The agent's site in every layout and color theme, live, with a button to use one; plus private share links so the agent can
 // look and pick without signing in (the site may still be a draft). Used for an agent's own site and, by admins, for any agent's.
@@ -100,7 +100,7 @@ export default function CompareTemplatesPanel({ site, onChanged }) {
         {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
         {fresh && (
-          <div className="mt-4 rounded-xl border border-[#ed2127]/30 dark:border-[#f2454b]/40 bg-[#ed2127]/[0.04] p-4">
+          <div className="mt-4 rounded-xl border border-[#D8091B]/30 dark:border-[#f2454b]/40 bg-[#D8091B]/[0.04] p-4">
             <p className="text-sm font-semibold">Copy this link now. For safety it can't be shown again (make another if you lose it).</p>
             <div className="mt-2 flex items-center gap-2">
               <input readOnly value={fresh.url} onFocus={(e) => e.target.select()} aria-label="Share link" className={`${inputClass} flex-1 font-mono text-xs`} />
@@ -129,7 +129,7 @@ export default function CompareTemplatesPanel({ site, onChanged }) {
                 )}
                 <span className="ml-auto flex items-center gap-4">
                   {l.picked_layout && (
-                    <button type="button" onClick={() => use(l.picked_layout, l.picked_theme || site.theme, l.picked_header, l.picked_footer)} disabled={busy} className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline disabled:opacity-50">
+                    <button type="button" onClick={() => use(l.picked_layout, l.picked_theme || site.theme, l.picked_header, l.picked_footer)} disabled={busy} className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline disabled:opacity-50">
                       Use their pick
                     </button>
                   )}

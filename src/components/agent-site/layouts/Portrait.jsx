@@ -14,7 +14,7 @@ import AreasJourney from "../AreasJourney";
 // tagline and a way to connect, then warm, card-based sections underneath. Colors come from the same --as-* theme
 // tokens, so every color theme, font pairing and button style still works with it.
 
-const eyebrow = "text-xs font-medium tracked-wide uppercase text-[var(--as-accent)]";
+const eyebrow = "text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)]";
 const h2Class = "font-display text-3xl sm:text-4xl font-semibold text-[var(--as-text)]";
 const card = "bg-[var(--as-bg-alt)] border border-[var(--as-text)]/10";
 const btn = "as-btn inline-block text-xs font-medium tracked-wide uppercase px-8 py-4 bg-[var(--as-accent)] text-white transition duration-150 hover:opacity-90 active:scale-[0.98]";
@@ -43,13 +43,13 @@ export function PortraitHero() {
               Let&rsquo;s connect
             </SiteLink>
             {site.homeSections.includes("listings") && (
-              <SiteLink slug={site.slug} path="/listings" className="text-xs font-medium tracked-wide uppercase text-[var(--as-text)] border-b border-[var(--as-text)] pb-1 transition-colors hover:text-[var(--as-accent)] hover:border-[var(--as-accent)]">
+              <SiteLink slug={site.slug} path="/listings" className="text-xs font-medium tracked-wide uppercase text-[var(--as-text)] border-b border-[var(--as-text)] pb-1 transition-colors hover:text-[var(--as-accent-text)] hover:border-[var(--as-accent)]">
                 See {first}&rsquo;s listings &rarr;
               </SiteLink>
             )}
           </div>
           {site.agent.phone && (
-            <a href={`tel:${site.agent.phone}`} className="mt-8 text-[var(--as-text)]/60 hover:text-[var(--as-accent)] transition-colors w-fit">
+            <a href={`tel:${site.agent.phone}`} className="mt-8 text-[var(--as-text)]/60 hover:text-[var(--as-accent-text)] transition-colors w-fit">
               {site.agent.phone}
             </a>
           )}
@@ -113,7 +113,7 @@ export function PortraitListings() {
               <div className="p-5">
                 <div className="flex items-baseline justify-between gap-4">
                   <p className="font-medium text-[var(--as-text)] truncate">{listing.address_line1}</p>
-                  <p className="font-display text-lg text-[var(--as-accent)] shrink-0">{formatPrice(listing.price)}</p>
+                  <p className="font-display text-lg text-[var(--as-accent-text)] shrink-0">{formatPrice(listing.price)}</p>
                 </div>
                 <p className="mt-1 text-sm text-[var(--as-text)]/60">
                   {listing.city}, {listing.state} {listing.zip}
@@ -141,7 +141,7 @@ export function PortraitTestimonials() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {site.testimonials.map((t) => (
             <figure key={t.id} className="bg-[var(--as-bg)] border border-[var(--as-text)]/10 p-7 flex flex-col">
-              <span className="font-display text-5xl leading-none text-[var(--as-accent)] h-7 block" aria-hidden="true">
+              <span className="font-display text-5xl leading-none text-[var(--as-accent-text)] h-7 block" aria-hidden="true">
                 &ldquo;
               </span>
               <blockquote className="mt-3 font-display text-lg leading-snug text-[var(--as-text)] flex-1">
@@ -176,7 +176,7 @@ export function PortraitAreas() {
         {area.photo_url && <img src={area.photo_url} alt={area.name} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}
       </div>
       <div className="p-5 sm:p-6 flex flex-col justify-center min-w-0">
-        <p className="font-display text-xl font-semibold text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{area.name}</p>
+        <p className="font-display text-xl font-semibold text-[var(--as-text)] group-hover:text-[var(--as-accent-text)] transition-colors">{area.name}</p>
         {area.blurb && <p className="mt-1.5 text-sm leading-relaxed text-[var(--as-text)]/60">{area.blurb}</p>}
       </div>
     </SiteLink>
@@ -212,8 +212,8 @@ export function PortraitBlog({ posts, hasMore, standalone }) {
                 {post.image_url && <img src={post.image_url} alt={post.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />}
               </div>
               <div className="p-5">
-                {post.category && <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)]">{post.category}</p>}
-                <p className="mt-2 font-medium leading-snug text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">{post.title}</p>
+                {post.category && <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)]">{post.category}</p>}
+                <p className="mt-2 font-medium leading-snug text-[var(--as-text)] group-hover:text-[var(--as-accent-text)] transition-colors">{post.title}</p>
               </div>
             </SiteLink>
           ))}

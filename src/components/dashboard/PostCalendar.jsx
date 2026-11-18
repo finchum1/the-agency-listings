@@ -117,7 +117,7 @@ export default function PostCalendar({ posts, onEdit, onAddDate, viewCounts = {}
               <span
                 className={`text-[11px] font-medium self-start ${
                   isToday
-                    ? "h-5 w-5 flex items-center justify-center rounded-full bg-[#ed2127] dark:bg-[#f2454b] text-white"
+                    ? "h-5 w-5 flex items-center justify-center rounded-full bg-[#D8091B] dark:bg-[#f2454b] text-white"
                     : "text-[#1c1a17]/50 dark:text-[#faf9f7]/50"
                 }`}
               >

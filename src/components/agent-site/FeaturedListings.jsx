@@ -31,7 +31,7 @@ export default function FeaturedListings() {
     <>
     <section id="listings" className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
       <div className="mx-auto max-w-7xl">
-        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">
+        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">
           Portfolio
         </p>
         <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-10 text-[var(--as-text)]">
@@ -60,7 +60,7 @@ export default function FeaturedListings() {
               <p className="mt-1 text-sm text-[var(--as-text)]/50">
                 {listing.beds} bd | {listing.baths} ba | {listing.sqft?.toLocaleString()} sqft
               </p>
-              <p className="mt-1 font-display text-lg text-[var(--as-accent)]">{formatPrice(listing.price)}</p>
+              <p className="mt-1 font-display text-lg text-[var(--as-accent-text)]">{formatPrice(listing.price)}</p>
             </a>
           ))}
         </div>

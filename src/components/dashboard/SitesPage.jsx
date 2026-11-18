@@ -66,7 +66,7 @@ export default function SitesPage() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search by agent, email, web address, domain or region"
           aria-label="Search agent sites"
-          className="flex-1 min-w-[16rem] rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40"
+          className="flex-1 min-w-[16rem] rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
         />
         <div className="flex items-center gap-1.5" role="group" aria-label="Show">
           {[
@@ -100,7 +100,7 @@ export default function SitesPage() {
                 setQuery("");
                 setShow("all");
               }}
-              className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline"
+              className="font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline"
             >
               Clear filters
             </button>
@@ -154,7 +154,7 @@ export default function SitesPage() {
                             href={`/sites/${site.slug}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="rounded-full border border-[#ed2127] dark:border-[#f2454b] text-[#ed2127] dark:text-[#f2454b] text-[11px] font-semibold px-3 py-1 hover:bg-[#ed2127] dark:hover:bg-[#f2454b] hover:text-white dark:hover:text-white transition-colors"
+                            className="rounded-full border border-[#D8091B] dark:border-[#f2454b] text-[#D8091B] dark:text-[#f2454b] text-[11px] font-semibold px-3 py-1 hover:bg-[#D8091B] dark:hover:bg-[#f2454b] hover:text-white dark:hover:text-white transition-colors"
                           >
                             View live
                           </a>

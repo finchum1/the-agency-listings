@@ -5,7 +5,7 @@ import { refreshAuth } from "../../hooks/useAuth";
 // Teams (supabase/agent-teams.sql) on the Agents page: create a team, name it, and pick who is on it. Everyone on a team shows together on the
 // property sites, flyers, social posts and inquiry emails of each other's listings. Only an admin can change this (the database enforces it).
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const pillClass =
   "rounded-full border border-black/10 dark:border-white/15 text-xs font-semibold px-3.5 py-1.5 hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-50";
 

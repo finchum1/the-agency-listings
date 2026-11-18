@@ -16,13 +16,15 @@ export const LAYOUT_OPTIONS = [
   { value: "guide", label: "Guide cards", description: "A light headline with buying and selling guides, then the buyer and seller cards." },
 ];
 export const THEME_OPTIONS = [
-  { value: "classic", label: "Classic", swatches: ["#f7f4ee", "#14130f", "#ed2127"] },
-  { value: "dark", label: "Dark", swatches: ["#14130f", "#26241d", "#f2454b"] },
-  { value: "sand", label: "Sand", swatches: ["#ddd0ba", "#0d0d0d", "#ed2127"] },
-  { value: "red", label: "Red", swatches: ["#ffffff", "#ed2127", "#0d0d0d"] },
-  { value: "linen", label: "Linen", swatches: ["#ffffff", "#f0ece4", "#ed2127"] },
-  { value: "velvet", label: "Velvet", swatches: ["#faf6f0", "#470300", "#ffffff"] },
-  { value: "velvet-night", label: "Velvet Night", swatches: ["#470300", "#260100", "#f2454b"] },
+  { value: "classic", label: "Classic", swatches: ["#F5F1E9", "#1C1C1B", "#D8091B"] },
+  { value: "dark", label: "Dark", swatches: ["#1C1C1B", "#262625", "#D8091B"] },
+  { value: "sand", label: "Sand", swatches: ["#EBE3D6", "#1C1C1B", "#D8091B"] },
+  { value: "red", label: "Red", swatches: ["#FFFFFF", "#D8091B", "#1C1C1B"] },
+  { value: "linen", label: "Linen", swatches: ["#FFFFFF", "#F5F1E9", "#D8091B"] },
+  { value: "velvet", label: "Velvet", swatches: ["#F5F1E9", "#470300", "#FFFFFF"] },
+  { value: "velvet-night", label: "Velvet Night", swatches: ["#470300", "#260100", "#D8091B"] },
+  { value: "chambray", label: "Chambray", swatches: ["#FAF8F4", "#C2D7E6", "#D8091B"] },
+  { value: "brownstone", label: "Brownstone", swatches: ["#F5F1E9", "#906F57", "#D8091B"] },
 ];
 export const HEADER_OPTIONS = [
   { value: "classic", label: "Classic bar" },

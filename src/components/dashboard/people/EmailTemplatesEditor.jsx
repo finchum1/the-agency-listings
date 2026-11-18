@@ -3,7 +3,7 @@ import { EMAIL_GROUPS, MERGE_FIELDS, RECIPIENT_ROLES, STARTER_TEMPLATES, renderD
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1";
 const primary = "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2 disabled:opacity-50";
 const ghost = "rounded-full border border-black/10 dark:border-white/15 text-sm font-medium px-4 py-2 hover:bg-black/[0.03] dark:hover:bg-white/[0.05]";
@@ -40,7 +40,7 @@ function RoleChecks({ legend, value, onChange }) {
       <div className="grid gap-x-3 gap-y-1 sm:grid-cols-2">
         {RECIPIENT_ROLES.map((r) => (
           <label key={r.key} className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={value.includes(r.key)} onChange={() => toggle(r.key)} className="h-4 w-4 accent-[#ed2127]" />
+            <input type="checkbox" checked={value.includes(r.key)} onChange={() => toggle(r.key)} className="h-4 w-4 accent-[#D8091B]" />
             {r.label}
           </label>
         ))}

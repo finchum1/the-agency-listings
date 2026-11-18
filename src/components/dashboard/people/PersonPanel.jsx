@@ -31,7 +31,7 @@ import { addDays, dayLabel, toKey } from "../../../lib/homeDates";
 import { useAuth } from "../../../hooks/useAuth";
 
 const inputClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3.5 py-2.5 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const labelClass = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1.5";
 const primaryBtn =
   "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors disabled:opacity-60";
@@ -297,7 +297,7 @@ export default function PersonPanel({
               type="checkbox"
               checked={form.earnest_money_delivered}
               onChange={(e) => setField("earnest_money_delivered", true)({ target: { value: e.target.checked } })}
-              className="h-4 w-4 accent-[#ed2127]"
+              className="h-4 w-4 accent-[#D8091B]"
             />
             <span>
               Delivered to the title company
@@ -305,7 +305,7 @@ export default function PersonPanel({
             </span>
           </label>
           <label className="flex items-center gap-2.5 text-sm cursor-pointer @md:col-span-2">
-            <input type="checkbox" checked={form.is_cash} onChange={(e) => setField("is_cash", true)({ target: { value: e.target.checked } })} className="h-4 w-4 accent-[#ed2127]" />
+            <input type="checkbox" checked={form.is_cash} onChange={(e) => setField("is_cash", true)({ target: { value: e.target.checked } })} className="h-4 w-4 accent-[#D8091B]" />
             <span>Cash purchase (no appraisal or financing)</span>
           </label>
           {!form.is_cash && (
@@ -612,7 +612,7 @@ export default function PersonPanel({
         value={person.stage}
         onChange={(e) => patch({ stage: e.target.value })}
         aria-label="Stage"
-        className="rounded-full border border-black/10 dark:border-white/15 bg-transparent px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
+        className="rounded-full border border-black/10 dark:border-white/15 bg-transparent px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40"
       >
         {stageNames.map((st) => (
           <option key={st} value={st}>{st}</option>
@@ -634,7 +634,7 @@ export default function PersonPanel({
         value={person.stage}
         onChange={(e) => patch({ stage: e.target.value })}
         aria-label="Stage"
-        className="rounded-full border border-black/10 dark:border-white/15 bg-transparent px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40"
+        className="rounded-full border border-black/10 dark:border-white/15 bg-transparent px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40"
       >
         {stageNames.map((st) => (
           <option key={st} value={st}>{st}</option>
@@ -756,7 +756,7 @@ export default function PersonPanel({
         <button
           type="button"
           onClick={() => setSnap("full")}
-          className="flex w-full items-center justify-between gap-2 rounded-xl bg-[#ed2127]/10 dark:bg-[#f2454b]/15 px-3.5 py-2.5 text-left text-sm font-semibold text-[#b3151a] dark:text-[#ff8a8e]"
+          className="flex w-full items-center justify-between gap-2 rounded-xl bg-[#D8091B]/10 dark:bg-[#f2454b]/15 px-3.5 py-2.5 text-left text-sm font-semibold text-[#b3151a] dark:text-[#ff8a8e]"
         >
           <span>
             {draftCount} draft message{draftCount === 1 ? "" : "s"} waiting for you
@@ -1113,7 +1113,7 @@ export default function PersonPanel({
           title="Drag to resize"
           className="group absolute inset-y-0 -left-1.5 z-10 w-3 cursor-col-resize touch-none"
         >
-          <span className={`absolute inset-y-0 left-[5px] w-0.5 transition-colors ${peek?.resizing ? "bg-[#ed2127]/70 dark:bg-[#f2454b]/70" : "bg-transparent group-hover:bg-[#ed2127]/40 dark:group-hover:bg-[#f2454b]/40"}`} />
+          <span className={`absolute inset-y-0 left-[5px] w-0.5 transition-colors ${peek?.resizing ? "bg-[#D8091B]/70 dark:bg-[#f2454b]/70" : "bg-transparent group-hover:bg-[#D8091B]/40 dark:group-hover:bg-[#f2454b]/40"}`} />
         </div>
         {panelHeader}
         {tabsBar}

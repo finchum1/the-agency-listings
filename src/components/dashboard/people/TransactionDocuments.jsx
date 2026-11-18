@@ -6,7 +6,7 @@ import { SIDE_LABELS, loadDocumentTemplate } from "../../../lib/checklists";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const smallInput =
-  "rounded-md border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
+  "rounded-md border border-black/10 dark:border-white/15 bg-transparent px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40";
 
 // The deal's document checklist — the paperwork to collect for a buyer or
 // seller/listing deal. Mirrors TransactionChecklist (sections, completed
@@ -136,7 +136,7 @@ export default function TransactionDocuments({ person, side, onSummary, viewer =
           onChange={(e) =>
             updateDoc(d.id, { done: e.target.checked, done_at: e.target.checked ? new Date().toISOString() : null })
           }
-          className="mt-1 h-4 w-4 shrink-0 accent-[#ed2127]"
+          className="mt-1 h-4 w-4 shrink-0 accent-[#D8091B]"
         />
         <textarea
           defaultValue={d.text}
@@ -193,7 +193,7 @@ export default function TransactionDocuments({ person, side, onSummary, viewer =
                 aria-label="What needs fixing"
                 className={`${smallInput} min-w-0 flex-1 py-1.5`}
               />
-              <button type="submit" className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b]">Flag</button>
+              <button type="submit" className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b]">Flag</button>
               <button type="button" onClick={() => setFlagging(null)} className={`text-xs ${muted}`}>Cancel</button>
             </form>
           ) : (
@@ -233,7 +233,7 @@ export default function TransactionDocuments({ person, side, onSummary, viewer =
           placeholder="New document"
           className={`${smallInput} flex-1 py-1.5`}
         />
-        <button type="submit" className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b]">
+        <button type="submit" className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b]">
           Add
         </button>
         <button type="button" onClick={() => setAddingTo(null)} className={`text-xs ${muted}`}>
@@ -247,7 +247,7 @@ export default function TransactionDocuments({ person, side, onSummary, viewer =
           setAddingTo(title);
           setNewText("");
         }}
-        className="ml-1 text-xs font-medium text-[#ed2127] dark:text-[#f2454b] hover:underline"
+        className="ml-1 text-xs font-medium text-[#D8091B] dark:text-[#f2454b] hover:underline"
       >
         + Add document
       </button>

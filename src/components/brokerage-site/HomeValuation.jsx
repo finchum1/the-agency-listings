@@ -62,7 +62,7 @@ export default function HomeValuation({ isStandalonePage = false }) {
   return (
     <section className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">
+        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">
           Home Valuation
         </p>
         <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-4 text-[var(--as-text)]">
@@ -145,7 +145,7 @@ export default function HomeValuation({ isStandalonePage = false }) {
             {status === "sending" ? "Sending…" : "Get My Free Valuation"}
           </button>
           {status === "sent" && (
-            <p className="text-xs text-center text-[var(--as-accent)]">
+            <p className="text-xs text-center text-[var(--as-accent-text)]">
               Thanks! We'll be in touch shortly with your home's valuation.
             </p>
           )}
@@ -155,7 +155,7 @@ export default function HomeValuation({ isStandalonePage = false }) {
             </p>
           )}
           {status === "error" && (
-            <p className="text-xs text-center text-[var(--as-accent)]">
+            <p className="text-xs text-center text-[var(--as-accent-text)]">
               Something went wrong — please call {site.contact.phone || "us"} instead.
             </p>
           )}

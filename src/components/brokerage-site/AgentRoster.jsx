@@ -24,7 +24,7 @@ export default function AgentRoster({ preview = false, isStandalonePage = false 
     <section id="agents" className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
       <div className="mx-auto max-w-7xl">
         <div className="text-center mb-14">
-          <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">Our Team</p>
+          <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">Our Team</p>
           <Heading className="text-3xl sm:text-4xl font-display font-semibold text-[var(--as-text)]">
             Meet The Agents
           </Heading>
@@ -64,7 +64,7 @@ export default function AgentRoster({ preview = false, isStandalonePage = false 
                 {(agent.phone || agent.email) && (
                   <a
                     href={agent.phone ? `tel:${agent.phone}` : `mailto:${agent.email}`}
-                    className="mt-2 inline-block text-xs font-medium uppercase tracked text-[var(--as-accent)] hover:underline"
+                    className="mt-2 inline-block text-xs font-medium uppercase tracked text-[var(--as-accent-text)] hover:underline"
                   >
                     Contact {agent.name.split(" ")[0]} &rarr;
                   </a>

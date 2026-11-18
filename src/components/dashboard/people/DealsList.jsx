@@ -5,7 +5,7 @@ import { DEAL_COMPLIANCE } from "../../../lib/dealFeatures";
 
 const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
-const control = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+const control = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const SORTS = {
   closing: ["Closing date", (a, b) => (a.closing_date || "9999").localeCompare(b.closing_date || "9999")],
   newest: ["Recently updated", (a, b) => String(b.updated_at).localeCompare(String(a.updated_at))],
@@ -46,7 +46,7 @@ export default function DealsList({ own, foreign, progress, closedStage, stages,
             <option key={k} value={k}>{label}</option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} className="accent-[#ed2127]" /> Show closed</label>
+        <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} className="accent-[#D8091B]" /> Show closed</label>
         <span className={`ml-auto text-xs ${muted}`}>{rows.length} deal{rows.length === 1 ? "" : "s"}</span>
       </div>
 

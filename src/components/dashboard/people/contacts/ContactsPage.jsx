@@ -35,7 +35,7 @@ const readWidths = () => {
 };
 const gridFor = (widths) => ["40px", ...COLUMNS.map((c) => (widths[c.key] ? `${widths[c.key]}px` : c.fixed ? `${c.fixed}px` : `minmax(${c.min}px,${c.fr}fr)`))].join(" ");
 const minWidthFor = (widths) => 40 + 24 + COLUMNS.reduce((n, c) => n + (widths[c.key] || c.fixed || c.min) + 12, 0);
-const select = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+const select = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const pill = "rounded-full border border-black/10 dark:border-white/15 px-3.5 py-2 text-sm font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 const primary = "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-5 py-2.5 hover:bg-[#1c1a17]/90 disabled:opacity-60";
 const muted = "text-[#1c1a17]/55 dark:text-[#faf9f7]/55";
@@ -225,8 +225,8 @@ function DuplicatesModal({ groups, boardsByContact, onClose, onMerge }) {
               <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${muted}`}>{g.reasons.length === 1 && g.reasons[0] === "name" ? "Same name only" : g.reasons.map((r) => REASON[r]).join(" · ")}</p>
               <div className="space-y-1.5">
                 {g.members.map((c) => (
-                  <label key={c.id} className={`flex items-start gap-3 rounded-lg border p-2.5 cursor-pointer ${keepId === c.id ? "border-[#ed2127] dark:border-[#f2454b] bg-[#ed2127]/[0.04]" : "border-black/10 dark:border-white/15"}`}>
-                    <input type="radio" name={`keep-${g.id}`} checked={keepId === c.id} onChange={() => setKeep((k) => ({ ...k, [g.id]: c.id }))} className="mt-1 accent-[#ed2127]" />
+                  <label key={c.id} className={`flex items-start gap-3 rounded-lg border p-2.5 cursor-pointer ${keepId === c.id ? "border-[#D8091B] dark:border-[#f2454b] bg-[#D8091B]/[0.04]" : "border-black/10 dark:border-white/15"}`}>
+                    <input type="radio" name={`keep-${g.id}`} checked={keepId === c.id} onChange={() => setKeep((k) => ({ ...k, [g.id]: c.id }))} className="mt-1 accent-[#D8091B]" />
                     <span className="min-w-0 text-sm">
                       <span className="flex items-center gap-1.5">
                         <span className="font-semibold">{fullName(c)}</span>
@@ -265,8 +265,8 @@ function MergeModal({ pair, onClose, onMerge }) {
       <p className={`text-sm ${muted}`}>Pick the one to keep. Notes, tags, follow-ups and cards from the other move onto it, and anything the kept one is missing is filled in.</p>
       <div className="mt-4 space-y-2">
         {pair.map((c) => (
-          <label key={c.id} className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer ${keep === c.id ? "border-[#ed2127] dark:border-[#f2454b] bg-[#ed2127]/[0.04]" : "border-black/10 dark:border-white/15"}`}>
-            <input type="radio" name="keep" checked={keep === c.id} onChange={() => setKeep(c.id)} className="mt-1 accent-[#ed2127]" />
+          <label key={c.id} className={`flex items-start gap-3 rounded-xl border p-3 cursor-pointer ${keep === c.id ? "border-[#D8091B] dark:border-[#f2454b] bg-[#D8091B]/[0.04]" : "border-black/10 dark:border-white/15"}`}>
+            <input type="radio" name="keep" checked={keep === c.id} onChange={() => setKeep(c.id)} className="mt-1 accent-[#D8091B]" />
             <span className="text-sm">
               <span className="block font-semibold">{fullName(c)}</span>
               <span className={`block ${muted}`}>{[c.email, c.phone, cityLine(c)].filter(Boolean).join(" · ") || "No contact details"}</span>
@@ -465,7 +465,7 @@ export default function ContactsPage() {
                 <b className="text-lg font-semibold text-[#1c1a17] dark:text-[#faf9f7]" data-testid="match-count">{filtered.length.toLocaleString()}</b>{" "}
                 {filtered.length === 1 ? "person matches" : "people match"}
                 {activeList ? ` “${lists.find((l) => l.id === activeList)?.name || "this list"}”` : " these filters"} · of {active.length.toLocaleString()} total ·{" "}
-                <button type="button" onClick={() => { setFilters(EMPTY_FILTERS); setActiveList(""); setShown(PAGE); }} className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                <button type="button" onClick={() => { setFilters(EMPTY_FILTERS); setActiveList(""); setShown(PAGE); }} className="font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
                   Clear filters
                 </button>
               </>
@@ -475,7 +475,7 @@ export default function ContactsPage() {
             {dueCount > 0 && !(filtersOn || activeList) && (
               <>
                 {" · "}
-                <button type="button" onClick={() => openWith({ touch: true })} className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                <button type="button" onClick={() => openWith({ touch: true })} className="font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
                   {dueCount} due for a touch
                 </button>
               </>
@@ -585,8 +585,8 @@ export default function ContactsPage() {
           <option value="no_anniversary">No home anniversary saved</option>
           <option value="has_anniversary">Has a home anniversary</option>
         </select>
-        <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={filters.touch} onChange={(e) => set({ touch: e.target.checked })} className="accent-[#ed2127]" /> Due for a touch</label>
-        <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={filters.archived} onChange={(e) => set({ archived: e.target.checked })} className="accent-[#ed2127]" /> Archived</label>
+        <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={filters.touch} onChange={(e) => set({ touch: e.target.checked })} className="accent-[#D8091B]" /> Due for a touch</label>
+        <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={filters.archived} onChange={(e) => set({ archived: e.target.checked })} className="accent-[#D8091B]" /> Archived</label>
         <select value={sort} onChange={(e) => { setSort(e.target.value); setDesc(false); }} aria-label="Sort" className={`${select} sm:ml-auto`}>
           {SORTS.map((s) => (
             <option key={s.value} value={s.value}>{s.label}</option>
@@ -633,7 +633,7 @@ export default function ContactsPage() {
               </div>
             </>
           ) : (
-            <p className={muted}>No contacts match. <button type="button" onClick={() => { setFilters(EMPTY_FILTERS); setActiveList(""); }} className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">Clear filters</button></p>
+            <p className={muted}>No contacts match. <button type="button" onClick={() => { setFilters(EMPTY_FILTERS); setActiveList(""); }} className="font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">Clear filters</button></p>
           )}
         </div>
       ) : (
@@ -648,7 +648,7 @@ export default function ContactsPage() {
           <div className="overflow-x-auto">
           <div className="md:min-w-[var(--minw)]" style={{ "--cols": gridFor(widths), "--minw": `${minWidthFor(widths)}px` }}>
           <div className={`hidden md:grid md:[grid-template-columns:var(--cols)] items-center gap-3 border-b border-black/5 dark:border-white/10 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-[#1c1a17]/45 dark:text-[#faf9f7]/45`}>
-            <input type="checkbox" checked={allShownSelected} onChange={() => setSelected((s) => { const n = new Set(s); visible.forEach((c) => (allShownSelected ? n.delete(c.id) : n.add(c.id))); return n; })} aria-label="Select all shown" className="accent-[#ed2127]" />
+            <input type="checkbox" checked={allShownSelected} onChange={() => setSelected((s) => { const n = new Set(s); visible.forEach((c) => (allShownSelected ? n.delete(c.id) : n.add(c.id))); return n; })} aria-label="Select all shown" className="accent-[#D8091B]" />
             {COLUMNS.map(({ key, title }) => (
               <div key={key} className="relative min-w-0">
                 {key === "tags" ? (
@@ -668,7 +668,7 @@ export default function ContactsPage() {
                   onPointerDown={startResize(key)}
                   onKeyDown={nudge(key)}
                   onDoubleClick={() => resetWidth(key)}
-                  className="absolute -right-2 top-[-6px] bottom-[-6px] w-3 cursor-col-resize touch-none select-none after:absolute after:left-1/2 after:top-1 after:bottom-1 after:w-px after:bg-black/10 dark:after:bg-white/15 hover:after:bg-[#ed2127] focus:outline-none focus-visible:after:bg-[#ed2127] focus-visible:after:w-0.5"
+                  className="absolute -right-2 top-[-6px] bottom-[-6px] w-3 cursor-col-resize touch-none select-none after:absolute after:left-1/2 after:top-1 after:bottom-1 after:w-px after:bg-black/10 dark:after:bg-white/15 hover:after:bg-[#D8091B] focus:outline-none focus-visible:after:bg-[#D8091B] focus-visible:after:w-0.5"
                 />
               </div>
             ))}
@@ -682,7 +682,7 @@ export default function ContactsPage() {
               return (
                 <li key={c.id} className="border-b border-black/5 dark:border-white/10 last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
                   <div className="grid grid-cols-[2.5rem_minmax(0,1fr)] md:[grid-template-columns:var(--cols)] items-center gap-x-3 gap-y-1.5 px-4 py-3">
-                    <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} aria-label={`Select ${fullName(c)}`} className="accent-[#ed2127]" />
+                    <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} aria-label={`Select ${fullName(c)}`} className="accent-[#D8091B]" />
                     <button type="button" onClick={() => setOpenId(c.id)} className="flex items-center gap-3 min-w-0 text-left">
                       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-black/[0.07] dark:bg-white/10 text-xs font-semibold">{initials(c)}</span>
                       <span className="min-w-0">
@@ -724,7 +724,7 @@ export default function ContactsPage() {
           </div>
           </div>
           {filtered.length > shown && (
-            <button type="button" onClick={() => setShown((n) => n + PAGE)} className="w-full border-t border-black/5 dark:border-white/10 py-3 text-sm font-semibold text-[#ed2127] dark:text-[#f2454b] hover:bg-black/[0.02]">
+            <button type="button" onClick={() => setShown((n) => n + PAGE)} className="w-full border-t border-black/5 dark:border-white/10 py-3 text-sm font-semibold text-[#D8091B] dark:text-[#f2454b] hover:bg-black/[0.02]">
               Show {Math.min(PAGE, filtered.length - shown)} more ({filtered.length - shown} left)
             </button>
           )}

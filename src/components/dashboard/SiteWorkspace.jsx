@@ -138,7 +138,7 @@ export default function SiteWorkspace({ title, back, viewHref, groups, address, 
           <h1 className="text-2xl font-display font-semibold">{title}</h1>
           <div className="flex items-center gap-3">
             {viewHref && (
-              <a href={viewHref} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+              <a href={viewHref} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
                 View site ↗
               </a>
             )}

@@ -4,7 +4,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import { ANCHORS, DEFAULT_DOCUMENT_TEMPLATES, DEFAULT_TEMPLATES, SIDE_LABELS, ruleLabel } from "../../../lib/checklists";
 
 const inputClass =
-  "rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const iconBtn =
   "h-7 w-7 flex items-center justify-center rounded-full text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed";
@@ -213,7 +213,7 @@ export default function ChecklistTemplateEditor({ side, kind = "tasks" }) {
             <button
               type="button"
               onClick={() => patchSection(i, { items: [...sec.items, ""] })}
-              className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline"
+              className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline"
             >
               + Add {noun}
             </button>

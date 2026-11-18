@@ -47,7 +47,7 @@ export default function DashboardHomePage() {
           {wantsPeople && (
             <>
               {" "}
-              <Link to="/dashboard/people/overview" className="font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+              <Link to="/dashboard/people/overview" className="font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
                 Open People overview →
               </Link>
             </>

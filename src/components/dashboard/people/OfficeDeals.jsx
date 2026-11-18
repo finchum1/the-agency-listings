@@ -10,7 +10,7 @@ import StartDealModal from "./StartDealModal";
 import useUrlParamSync from "../../../hooks/useUrlParamSync";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
-const select = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40";
+const select = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40";
 const FILTERS = [
   ["all", "All"],
   ["submitted", "To review"],
@@ -110,7 +110,7 @@ export default function OfficeDeals({ viewer, excludeOwn = false }) {
               <option key={id} value={id}>{agents[id] || "Unknown"}</option>
             ))}
           </select>
-          <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} className="accent-[#ed2127]" /> Show closed</label>
+          <label className="flex items-center gap-1.5 text-sm"><input type="checkbox" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} className="accent-[#D8091B]" /> Show closed</label>
         </div>
       </div>
       {viewer === "tc" && (
@@ -146,7 +146,7 @@ export default function OfficeDeals({ viewer, excludeOwn = false }) {
                     <span className="min-w-0">
                       <span className="flex items-center gap-2">
                         <span className="truncate font-medium">{d.property_address || d.name}</span>
-                        {unread[d.id] > 0 && <span title={`${unread[d.id]} unread`} className="h-2 w-2 shrink-0 rounded-full bg-[#ed2127] dark:bg-[#f2454b]" aria-label={`${unread[d.id]} unread messages`} />}
+                        {unread[d.id] > 0 && <span title={`${unread[d.id]} unread`} className="h-2 w-2 shrink-0 rounded-full bg-[#D8091B] dark:bg-[#f2454b]" aria-label={`${unread[d.id]} unread messages`} />}
                       </span>
                       <span className={`block truncate text-xs ${muted}`}>{d.property_address ? `${d.name} · ` : ""}{d.side === "buyer" ? "Buyer" : d.side === "seller" ? "Seller" : "Side not set"}</span>
                     </span>

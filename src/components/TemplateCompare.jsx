@@ -98,7 +98,7 @@ export default function TemplateCompare({ buildUrl, current, action, intro }) {
           const isCurrent = current?.layout === l.value && current?.theme === theme && (current?.header || "classic") === header && (current?.footer || "classic") === footer;
           const picked = action?.pickedLayout === l.value;
           return (
-            <section key={l.value} className={`rounded-2xl border p-4 bg-white dark:bg-[#1a1a1a] ${picked ? "border-[#ed2127] dark:border-[#f2454b] ring-2 ring-[#ed2127]/25" : "border-black/10 dark:border-white/10"}`} aria-label={l.label}>
+            <section key={l.value} className={`rounded-2xl border p-4 bg-white dark:bg-[#1a1a1a] ${picked ? "border-[#D8091B] dark:border-[#f2454b] ring-2 ring-[#D8091B]/25" : "border-black/10 dark:border-white/10"}`} aria-label={l.label}>
               <Frame src={buildUrl(l.value, theme, header, footer)} title={`${l.label} layout`} />
               <div className="mt-3 flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -118,7 +118,7 @@ export default function TemplateCompare({ buildUrl, current, action, intro }) {
                 >
                   {picked ? "Picked ✓" : isCurrent ? "In use" : action.label}
                 </button>
-                <a href={buildUrl(l.value, theme, header, footer)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-[#ed2127] dark:text-[#f2454b] hover:underline">
+                <a href={buildUrl(l.value, theme, header, footer)} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-[#D8091B] dark:text-[#f2454b] hover:underline">
                   Open full size ↗
                 </a>
               </div>

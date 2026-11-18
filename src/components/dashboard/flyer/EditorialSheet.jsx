@@ -60,7 +60,7 @@ export default function EditorialSheet({ listing, agent, team, brokerage, headli
             <ul className="mt-4 columns-2 gap-6 text-[11px] leading-[1.9] text-[#1c1a17]/75">
               {includedFeatures.map((item, i) => (
                 <li key={i} className="break-inside-avoid flex gap-2">
-                  <span className="text-[#ed2127]">—</span>
+                  <span className="text-[#D8091B]">—</span>
                   <span>{item}</span>
                 </li>
               ))}

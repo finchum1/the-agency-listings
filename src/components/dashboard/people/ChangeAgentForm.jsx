@@ -4,7 +4,7 @@ import { useAuth } from "../../../hooks/useAuth";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
 const selectClass =
-  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+  "w-full rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-sm bg-transparent focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 
 // Hand a deal to a different agent in the office (deal_change_agent, supabase/deal-change-agent.sql): the agent's own panel and a coordinator's
 // both use it. The deal, checklist, documents and notes move to the new agent's board; a coordinator stays on it. Nobody is emailed.

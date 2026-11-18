@@ -35,7 +35,7 @@ export function useColorMode(site, { disabled = false } = {}) {
     refresh();
   };
   let shown = site;
-  if (isDark && !ownIsDark) shown = { ...site, theme: site.theme === "velvet" ? "velvet-night" : "dark", ...(site.theme === "linen" ? { logo_variant: "white" } : {}) };
+  if (isDark && !ownIsDark) shown = { ...site, theme: site.theme === "velvet" ? "velvet-night" : "dark", ...(["linen", "chambray", "brownstone"].includes(site.theme) ? { logo_variant: "white" } : {}) };
   if (!isDark && ownIsDark) shown = { ...site, theme: site.theme === "velvet-night" ? "velvet" : "classic" };
   return { site: shown, colorMode: { enabled: true, isDark, toggle } };
 }

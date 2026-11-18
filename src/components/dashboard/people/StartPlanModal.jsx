@@ -4,7 +4,7 @@ import { startPlan } from "../../../lib/plansApi";
 import { isOccasion, startText, stepSummary } from "../../../lib/plans";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
-const control = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+const control = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 
 // "Start a plan" for a group: everyone in a board column, the rows ticked in a list, or the contacts ticked in Contacts. The plan's first steps run
 // straight away, like starting it from one card.

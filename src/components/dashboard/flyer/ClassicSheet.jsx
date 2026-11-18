@@ -76,7 +76,7 @@ export default function ClassicSheet({ listing, agent, team, brokerage, headline
               { key: "year", label: "Built", value: f.year },
             ].map((s) => (
               <div key={s.key} className="flex flex-col items-center justify-center gap-1 py-3 px-1 text-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="1.6">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D8091B" strokeWidth="1.6">
                   {STAT_ICONS[s.key]}
                 </svg>
                 <span className="text-sm font-semibold text-[#1c1a17]">{s.value}</span>
@@ -91,7 +91,7 @@ export default function ClassicSheet({ listing, agent, team, brokerage, headline
             <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1">
               {includedFeatures.map((item, i) => (
                 <div key={i} className="flex items-center gap-1.5 text-[11px] text-[#1c1a17]/75">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2.5" className="shrink-0">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#D8091B" strokeWidth="2.5" className="shrink-0">
                     <path d="M20 6 9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <span className="truncate">{item}</span>

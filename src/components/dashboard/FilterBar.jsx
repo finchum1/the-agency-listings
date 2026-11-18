@@ -27,7 +27,7 @@ export default function FilterBar({
 }) {
   const fieldLabelClass = "block text-[10px] font-semibold uppercase tracking-wide text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mb-1";
   const selectClass =
-    "rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+    "rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
   const numberClass = `${selectClass} w-24`;
   const smallNumberClass = `${selectClass} w-16`;
 
@@ -120,7 +120,7 @@ export default function FilterBar({
       </div>
 
       {hasActiveFilters && (
-        <button type="button" onClick={onClear} className="text-xs font-medium text-[#ed2127] dark:text-[#f2454b] hover:underline pb-2">
+        <button type="button" onClick={onClear} className="text-xs font-medium text-[#D8091B] dark:text-[#f2454b] hover:underline pb-2">
           Clear filters
         </button>
       )}

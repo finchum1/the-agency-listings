@@ -6,7 +6,7 @@ import { SIDE_TAGS } from "../../../lib/peopleSides";
 import StartPlanModal from "./StartPlanModal";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
-const control = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#ed2127]/40 dark:focus:ring-[#f2454b]/40";
+const control = "rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const SORTS = {
   followup: ["Next follow-up", (a, b) => (a.next_follow_up || "9999").localeCompare(b.next_follow_up || "9999")],
   newest: ["Recently added", (a, b) => String(b.created_at).localeCompare(String(a.created_at))],
@@ -108,7 +108,7 @@ export default function ProspectsList({ own, stages, openDeal, info, tagById, ca
               <thead>
                 <tr className="border-b border-black/5 dark:border-white/10 text-left text-xs uppercase tracking-wider text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
                   <th className="w-10 pl-5 py-3">
-                    <input type="checkbox" checked={allPicked} onChange={() => setPicked(allPicked ? new Set() : new Set(rows.map((p) => p.id)))} aria-label="Select everyone shown" className="accent-[#ed2127]" />
+                    <input type="checkbox" checked={allPicked} onChange={() => setPicked(allPicked ? new Set() : new Set(rows.map((p) => p.id)))} aria-label="Select everyone shown" className="accent-[#D8091B]" />
                   </th>
                   <th className="px-3 py-3 font-medium">Name</th>
                   <th className="px-3 py-3 font-medium">Column</th>
@@ -122,7 +122,7 @@ export default function ProspectsList({ own, stages, openDeal, info, tagById, ca
                 {rows.map((p) => (
                   <tr key={p.id} onClick={() => openDeal(p.id)} className="cursor-pointer border-b border-black/5 dark:border-white/10 last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.04]">
                     <td className="pl-5 py-3.5 w-10" onClick={(e) => e.stopPropagation()}>
-                      <input type="checkbox" checked={picked.has(p.id)} onChange={() => toggle(p.id)} aria-label={`Select ${p.name}`} className="accent-[#ed2127]" />
+                      <input type="checkbox" checked={picked.has(p.id)} onChange={() => toggle(p.id)} aria-label={`Select ${p.name}`} className="accent-[#D8091B]" />
                     </td>
                     <td className="px-3 py-3.5 min-w-[13rem]">
                       <p className="flex items-center gap-2 font-medium">

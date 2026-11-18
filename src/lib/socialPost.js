@@ -354,7 +354,7 @@ export function drawPost(canvas, post, pictures) {
   const story = post.format === "story";
   const template = TEMPLATES[post.template] ? post.template : "classic";
   const { photo, logo } = pictures;
-  const ACCENT = "#ed2127";
+  const ACCENT = "#D8091B";
   const M = 88;
   // A Story keeps its words and logo clear of the strips the app covers at the top and bottom.
   const topY = story ? 250 : 84;

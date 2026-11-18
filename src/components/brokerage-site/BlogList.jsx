@@ -12,7 +12,7 @@ export default function BlogList({ preview = false, isStandalonePage = false }) 
   return (
     <section id="blog" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
       <div className="mx-auto max-w-7xl">
-        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mb-3">From the Blog</p>
+        <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">From the Blog</p>
         <Heading className="text-3xl sm:text-4xl font-display font-semibold mb-10 text-[var(--as-text)]">
           Market Insights
         </Heading>
@@ -26,9 +26,9 @@ export default function BlogList({ preview = false, isStandalonePage = false }) 
                 )}
               </div>
               {post.category && (
-                <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent)] mt-4">{post.category}</p>
+                <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mt-4">{post.category}</p>
               )}
-              <p className="mt-2 font-medium leading-snug text-[var(--as-text)] group-hover:text-[var(--as-accent)] transition-colors">
+              <p className="mt-2 font-medium leading-snug text-[var(--as-text)] group-hover:text-[var(--as-accent-text)] transition-colors">
                 {post.title}
               </p>
             </Link>
