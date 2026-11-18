@@ -40,6 +40,7 @@ function DomainBadge({ listing, check, checking }) {
         <span className="truncate">{listing.custom_domain}</span>
       </a>
       {bad && <p className="mt-1 max-w-xs text-[11px] leading-snug text-red-700 dark:text-red-300">{check.label}</p>}
+      {!bad && check?.www_label && <p className="mt-1 max-w-xs text-[11px] leading-snug text-amber-700 dark:text-amber-300">{check.www_label}</p>}
     </div>
   );
 }

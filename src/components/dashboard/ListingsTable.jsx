@@ -61,6 +61,7 @@ export default function ListingsTable() {
     if (!loading) runChecks();
   }, [loading, runChecks]);
   const down = listings.filter((l) => l.custom_domain && domainChecks[l.id] && domainChecks[l.id].status !== "ok");
+  const wwwBad = listings.filter((l) => l.custom_domain && domainChecks[l.id]?.status === "ok" && domainChecks[l.id]?.www_label).length;
 
   const handleStatusChange = async (id, status) => {
     const { error } = await supabase.from("listings").update({ status }).eq("id", id);
@@ -94,6 +95,12 @@ export default function ListingsTable() {
                 <button type="button" onClick={() => setDomainFilter("down")} className="font-semibold text-red-600 dark:text-red-400 hover:underline">
                   {down.length} not responding
                 </button>
+              </>
+            )}
+            {wwwBad > 0 && (
+              <>
+                {" · "}
+                <span className="font-semibold text-amber-700 dark:text-amber-300">{wwwBad} with www not redirecting</span>
               </>
             )}
           </p>

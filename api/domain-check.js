@@ -2,7 +2,7 @@
 // domains come from the listings the caller can read (never from the request), so this can't be pointed at an arbitrary address.
 // What the results mean, and who is emailed when a working domain stops responding, is in api/_lib/domainCheck.js.
 import { authenticate, serviceClient } from "./_lib/authUser.js";
-import { LABELS, checkMany, recordHealth } from "./_lib/domainCheck.js";
+import { LABELS, WWW_LABELS, checkMany, recordHealth } from "./_lib/domainCheck.js";
 
 const MAX_DOMAINS = 80;
 
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   const { data: rows, error } = await query;
   if (error) return res.status(500).json({ error: "Couldn't read the listings." });
 
-  const checked = await checkMany((rows || []).map((r) => ({ id: r.id, org_id: r.org_id, domain: r.custom_domain })));
+  const checked = await checkMany((rows || []).map((r) => ({ id: r.id, org_id: r.org_id, domain: r.custom_domain })), 8, { www: true });
   // Keep the monitor's memory current (and send the alert if this check is what noticed). Never lets a failure here break the page.
   try {
     await recordHealth(serviceClient(), checked);
@@ -28,6 +28,6 @@ export default async function handler(req, res) {
     console.error("domain health update failed:", err);
   }
   const checkedAt = new Date().toISOString();
-  const results = Object.fromEntries(checked.map((c) => [c.id, { domain: c.domain, status: c.status, label: LABELS[c.status], checked_at: checkedAt }]));
+  const results = Object.fromEntries(checked.map((c) => [c.id, { domain: c.domain, status: c.status, label: LABELS[c.status], www: c.www || null, www_label: WWW_LABELS[c.www] || "", checked_at: checkedAt }]));
   return res.status(200).json({ results });
 }

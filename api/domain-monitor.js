@@ -19,7 +19,10 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server not configured." });
   }
   const { data: rows } = await admin.from("listings").select("id, org_id, custom_domain").not("custom_domain", "is", null).neq("custom_domain", "").limit(500);
-  const checked = await checkMany((rows || []).map((r) => ({ id: r.id, org_id: r.org_id, domain: r.custom_domain })), 10);
+  const checked = await checkMany((rows || []).map((r) => ({ id: r.id, org_id: r.org_id, domain: r.custom_domain })), 10, { www: true });
+  // www should redirect to the plain domain. Listed in the run's result and the function log (no email: it is a tidy-up, not an outage).
+  const wwwProblems = checked.filter((c) => c.www && c.www !== "ok").map((c) => ({ domain: c.domain, www: c.www }));
+  if (wwwProblems.length) console.warn("www not redirecting:", JSON.stringify(wwwProblems));
   const { down, back } = await recordHealth(admin, checked);
-  return res.status(200).json({ checked: checked.length, notAnswering: checked.filter((c) => c.status !== "ok").length, newlyDown: down, backUp: back });
+  return res.status(200).json({ checked: checked.length, notAnswering: checked.filter((c) => c.status !== "ok").length, newlyDown: down, backUp: back, wwwProblems });
 }

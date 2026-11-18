@@ -12,13 +12,13 @@
 import { assertPublicUrl } from "./safeFetch.js";
 import { fromAs, sendNotification } from "./inquiry.js";
 import { buildDomainAlertEmail } from "./domainEmail.js";
-import { FIX, LABELS } from "./domainInfo.js";
+import { FIX, LABELS, WWW_LABELS } from "./domainInfo.js";
 import { SITE_ORIGIN } from "../../src/lib/seo.js";
 
 const MARKER = "agency-listings-ok";
 const TIMEOUT_MS = 6000;
 
-export { LABELS };
+export { LABELS, WWW_LABELS };
 
 export async function checkDomain(domain) {
   try {
@@ -51,14 +51,41 @@ export async function checkDomain(domain) {
 
 export const cleanDomain = (d) => String(d || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
 
-/** Checks many domains, a few at a time. items: [{ id, domain, ... }] -> the same items with `status` added. */
-export async function checkMany(items, concurrency = 8) {
+/** Only a plain domain (name.com) has a "www" twin worth checking; a subdomain such as listings.name.com does not. (Two-part endings like .co.uk are skipped too.) */
+export const isApexDomain = (d) => d.split(".").length === 2;
+
+/**
+ * Does www.<domain> send visitors on to <domain>? Property sites use the plain domain, so www should permanently redirect to it.
+ *   ok              www redirects to the plain domain
+ *   not_redirecting www loads the site itself (or redirects somewhere else) instead of redirecting to the plain domain
+ *   missing         www has no DNS record, or the domain was never added to the Vercel project
+ * Returns null when the answer isn't clear (a timeout), so a blip never shows up as a problem, and for domains with no www twin.
+ */
+export async function checkWww(domain) {
+  if (!isApexDomain(domain)) return null;
+  try {
+    const url = await assertPublicUrl(`https://www.${domain}/`);
+    const res = await fetch(url, { redirect: "manual", signal: AbortSignal.timeout(TIMEOUT_MS), headers: { "User-Agent": "AgencyDomainCheck/1.0" } });
+    if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
+      return new URL(res.headers.get("location"), url).hostname === domain ? "ok" : "not_redirecting";
+    }
+    if (res.headers.get("x-vercel-error") || (res.status === 404 && /vercel/i.test(res.headers.get("server") || ""))) return "missing";
+    return "not_redirecting";
+  } catch (err) {
+    const code = err?.code || err?.cause?.code || "";
+    return code === "ENOTFOUND" || code === "ENODATA" ? "missing" : null;
+  }
+}
+
+/** Checks many domains, a few at a time. items: [{ id, domain, ... }] -> the same items with `status` added (and `www`, when asked, for domains that are live). */
+export async function checkMany(items, concurrency = 8, { www = false } = {}) {
   const queue = items.map((it) => ({ ...it }));
   const out = [];
   const worker = async () => {
     for (let it = queue.shift(); it; it = queue.shift()) {
       it.domain = cleanDomain(it.domain);
       it.status = await checkDomain(it.domain);
+      if (www && it.status === "ok") it.www = await checkWww(it.domain);
       out.push(it);
     }
   };

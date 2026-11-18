@@ -17,3 +17,14 @@ export const FIX = {
   timeout: "This is often temporary. You'll get another email when it answers again.",
   unreachable: "This is often temporary. You'll get another email when it answers again.",
 };
+
+// The www check: property sites use the plain domain, and www should permanently redirect to it.
+export const WWW_LABELS = {
+  not_redirecting: "www doesn't redirect to the plain domain yet.",
+  missing: "www has no address yet, so www.<domain> doesn't load.",
+};
+
+export const WWW_FIX = {
+  not_redirecting: "In the Vercel project (Settings, then Domains), edit the www entry: choose Redirect to Another Domain, pick the plain domain, and set 308 Permanent Redirect.",
+  missing: "In the Vercel project (Settings, then Domains), add www.<domain> with Redirect to Another Domain pointing at the plain domain (308). If the domain's DNS is not on Vercel, also add a www CNAME to cname.vercel-dns.com.",
+};
