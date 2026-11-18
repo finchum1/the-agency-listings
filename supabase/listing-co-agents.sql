@@ -1,15 +1,19 @@
 -- Co-listing agents: a property site can show a second agent beside the listing agent (two agents who list together but are not a team).
 -- A separate table instead of a second agent column on listings: a second foreign key from listings to profiles would make every existing
--- `agent:profiles(...)` query ambiguous. The table also keeps room for more than one co-agent later (the form offers one for now).
+-- `agent:profiles(...)` query ambiguous (and see the primary-key note below). The table also keeps room for more than one co-agent later (the form offers one for now).
 --
 -- What a co-listing agent gets (decided with Terrence): they appear on the property site, flyer and social post, they are emailed every
 -- inquiry (api/contact.js), and the listing shows in their own Listings list with its analytics, read-only. Only the listing agent or an
 -- admin edits it.
+-- NOTE: the primary key is a surrogate id, not (listing_id, agent_id). A table whose primary key is made of foreign keys to both listings and
+-- profiles is a "junction table" to PostgREST, which then sees listings <-> profiles as many-to-many and makes EVERY `agent:profiles(...)` embed on
+-- listings ambiguous (PGRST201: property sites 404). The unique constraint keeps one row per listing and agent. (Found and fixed on 2026-11-18.)
 create table if not exists public.listing_co_agents (
+  id uuid primary key default gen_random_uuid(),
   listing_id uuid not null references public.listings(id) on delete cascade,
   agent_id uuid not null references public.profiles(id) on delete cascade,
   created_at timestamptz not null default now(),
-  primary key (listing_id, agent_id)
+  constraint listing_co_agents_unique unique (listing_id, agent_id)
 );
 create index if not exists listing_co_agents_agent_idx on public.listing_co_agents (agent_id);
 alter table public.listing_co_agents enable row level security;
