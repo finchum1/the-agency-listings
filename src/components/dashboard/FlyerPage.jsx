@@ -7,7 +7,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { formatNumber } from "../../lib/format";
 import { brandFromOrg } from "../../lib/brand";
 import { FLYER_TEMPLATES, FlyerSheet } from "./flyer/templates";
-import { adaptTeam } from "../../lib/teams";
+import { adaptListingTeam, coAgentsOf } from "../../lib/teams";
 import { listingUrl, taggedUrl } from "../../lib/listingAnalytics";
 
 
@@ -460,7 +460,7 @@ export default function FlyerPage() {
         template={template}
         listing={listing}
         agent={agent}
-        team={adaptTeam(agent, listing.show_team !== false)}
+        team={adaptListingTeam(agent, listing.show_team !== false, coAgentsOf(listing))}
         brokerage={brokerage}
         headline={headline}
         blurb={blurb}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { TEAM_EMBED } from "../lib/teams";
+import { CO_AGENT_EMBED, TEAM_EMBED } from "../lib/teams";
 
 // Fetches one listing — by slug (public site path), id (dashboard edit
 // form), or customDomain (a listing reached via its own attached domain,
@@ -19,7 +19,7 @@ export function useListing({ slug, id, customDomain } = {}) {
     setLoading(true);
     setNotFound(false);
 
-    let query = supabase.from("listings").select(`*, agent:profiles(*, ${TEAM_EMBED}), org:organizations(*)`);
+    let query = supabase.from("listings").select(`*, agent:profiles(*, ${TEAM_EMBED}), org:organizations(*), ${CO_AGENT_EMBED}`);
     if (slug) query = query.eq("slug", slug);
     else if (id) query = query.eq("id", id);
     else query = query.ilike("custom_domain", customDomain);

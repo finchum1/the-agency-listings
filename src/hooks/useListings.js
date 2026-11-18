@@ -32,10 +32,15 @@ export function useListings({ agentId, ready = true } = {}) {
     setError(null);
     let query = supabase
       .from("listings")
-      .select("*, agent:profiles(id, full_name, email)")
+      .select("*, agent:profiles(id, full_name, email), co_agents:listing_co_agents(agent_id, agent:profiles(id, full_name))")
       .eq("org_id", orgId)
       .order("updated_at", { ascending: false });
-    if (agentId) query = query.eq("agent_id", agentId);
+    if (agentId) {
+      // Their own listings, plus the ones they were named co-listing agent on (read-only for them; see supabase/listing-co-agents.sql).
+      const { data: co } = await supabase.from("listing_co_agents").select("listing_id").eq("agent_id", agentId);
+      const coIds = (co || []).map((r) => r.listing_id);
+      query = coIds.length ? query.or(`agent_id.eq.${agentId},id.in.(${coIds.join(",")})`) : query.eq("agent_id", agentId);
+    }
     const { data, error } = await query;
     if (error) {
       console.error("Failed to load listings:", error);

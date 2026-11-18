@@ -21,7 +21,7 @@ export default function Footer() {
           </div>
 
           <div>
-            <p className="text-[var(--ls-on-dark)]/90 font-medium mb-2">{team ? team.name : "Listing Agent"}</p>
+            <p className="text-[var(--ls-on-dark)]/90 font-medium mb-2">{team ? team.name || "Listing Agents" : "Listing Agent"}</p>
             <div className="space-y-3">
               {people.map((p) => (
                 <div key={p.id || p.email}>

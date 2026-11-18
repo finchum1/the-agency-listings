@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { formatPrice } from "../../lib/format";
+import { STATUS_LABELS, formatPrice } from "../../lib/format";
+import { useAuth } from "../../hooks/useAuth";
 import StatusSelect from "./StatusSelect";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
@@ -45,7 +46,18 @@ function DomainBadge({ listing, check, checking }) {
   );
 }
 
-function Links({ listing, className = "" }) {
+// "Co-listed with Jordan Lee" for the listing's agent, "Co-listed · Alex Morgan is the listing agent" for the co-agent (who sees it read-only).
+function CoTag({ listing, readOnly }) {
+  const names = (listing.co_agents || []).map((c) => c.agent?.full_name).filter(Boolean);
+  if (!names.length) return null;
+  return (
+    <p className="mt-1 text-[11px] font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60">
+      {readOnly ? `Co-listed · ${listing.agent?.full_name || "another agent"} is the listing agent` : `Co-listed with ${names.join(" & ")}`}
+    </p>
+  );
+}
+
+function Links({ listing, readOnly = false, className = "" }) {
   return (
     <div className={`flex items-center gap-4 ${className}`}>
       {listing.status !== "draft" && (
@@ -57,9 +69,11 @@ function Links({ listing, className = "" }) {
       <Link to={`/dashboard/listings/${listing.id}/analytics`} className={linkClass}>
         Analytics
       </Link>
-      <Link to={`/dashboard/listings/${listing.id}/edit`} className="text-xs font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:underline whitespace-nowrap">
-        Edit
-      </Link>
+      {!readOnly && (
+        <Link to={`/dashboard/listings/${listing.id}/edit`} className="text-xs font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:underline whitespace-nowrap">
+          Edit
+        </Link>
+      )}
     </div>
   );
 }
@@ -69,6 +83,12 @@ function Links({ listing, className = "" }) {
 // BuyerNeedsTable.jsx for the same pattern already established there).
 // A table on wider screens; a stack of cards on phones, where a table's columns would crush each other.
 export default function ListingsDataTable({ rows, onStatusChange, domainChecks = {}, checking = false }) {
+  const { user, isAdmin } = useAuth();
+  // A listing the signed-in agent is only the co-listing agent on: they can look at it and its analytics, but not change it.
+  const isReadOnly = (l) => !isAdmin && l.agent_id !== user?.id;
+  const open = (l) => `/dashboard/listings/${l.id}/${isReadOnly(l) ? "analytics" : "edit"}`;
+  const statusCell = (l) =>
+    isReadOnly(l) ? <span className="text-xs text-[#1c1a17]/70 dark:text-[#faf9f7]/70">{STATUS_LABELS[l.status] || l.status}</span> : <StatusSelect value={l.status} onChange={(status) => onStatusChange(l.id, status)} />;
   return (
     <>
       <div className="hidden md:block bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl overflow-hidden">
@@ -86,22 +106,23 @@ export default function ListingsDataTable({ rows, onStatusChange, domainChecks =
             {rows.map((listing) => (
               <tr key={listing.id} className="border-b border-black/5 dark:border-white/10 last:border-0 align-top hover:bg-black/[0.02] dark:hover:bg-white/[0.04]">
                 <td className="px-5 py-4 min-w-[15rem]">
-                  <Link to={`/dashboard/listings/${listing.id}/edit`} className="font-medium hover:underline">
+                  <Link to={open(listing)} className="font-medium hover:underline">
                     {listing.address_line1}
                   </Link>
                   <p className={`text-xs ${muted}`}>
                     {listing.city}, {listing.state} {listing.zip}
                     <span className="opacity-60"> · Updated {new Date(listing.updated_at).toLocaleDateString()}</span>
                   </p>
+                  <CoTag listing={listing} readOnly={isReadOnly(listing)} />
                   <DomainBadge listing={listing} check={domainChecks[listing.id]} checking={checking} />
                 </td>
                 <td className="px-3 py-4 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 whitespace-nowrap">{listing.agent?.full_name || "—"}</td>
                 <td className="px-3 py-4 text-[#1c1a17]/70 dark:text-[#faf9f7]/70 whitespace-nowrap">{formatPrice(listing.price)}</td>
                 <td className="px-3 py-3.5">
-                  <StatusSelect value={listing.status} onChange={(status) => onStatusChange(listing.id, status)} />
+                  {statusCell(listing)}
                 </td>
                 <td className="px-5 py-4">
-                  <Links listing={listing} className="justify-end" />
+                  <Links listing={listing} readOnly={isReadOnly(listing)} className="justify-end" />
                 </td>
               </tr>
             ))}
@@ -114,7 +135,7 @@ export default function ListingsDataTable({ rows, onStatusChange, domainChecks =
           <li key={listing.id} className="rounded-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#1a1a1a] p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <Link to={`/dashboard/listings/${listing.id}/edit`} className="block font-medium leading-snug">
+                <Link to={open(listing)} className="block font-medium leading-snug">
                   {listing.address_line1}
                 </Link>
                 <p className={`text-xs mt-0.5 ${muted}`}>
@@ -124,12 +145,13 @@ export default function ListingsDataTable({ rows, onStatusChange, domainChecks =
               <p className="shrink-0 text-sm font-semibold">{formatPrice(listing.price)}</p>
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-              <StatusSelect value={listing.status} onChange={(status) => onStatusChange(listing.id, status)} />
+              {statusCell(listing)}
               {listing.agent?.full_name && <span className={`text-xs ${muted}`}>{listing.agent.full_name}</span>}
             </div>
+            <CoTag listing={listing} readOnly={isReadOnly(listing)} />
             <DomainBadge listing={listing} check={domainChecks[listing.id]} checking={checking} />
             <div className="mt-3 flex items-center justify-between border-t border-black/5 dark:border-white/10 pt-3">
-              <Links listing={listing} />
+              <Links listing={listing} readOnly={isReadOnly(listing)} />
               <span className={`text-[11px] ${muted}`}>Updated {new Date(listing.updated_at).toLocaleDateString()}</span>
             </div>
           </li>

@@ -7,7 +7,7 @@ export default function FlyerTeam({ team, tone = "light" }) {
   const faint = dark ? "text-white/45" : "text-[#1c1a17]/45";
   return (
     <div className="min-w-0">
-      <p className={`mb-1.5 text-[9px] font-semibold uppercase tracking-[0.2em] ${faint}`}>{team.name}</p>
+      {team.name && <p className={`mb-1.5 text-[9px] font-semibold uppercase tracking-[0.2em] ${faint}`}>{team.name}</p>}
       <div className="flex items-start gap-5">
         {team.members.map((m) => (
           <div key={m.id || m.email} className="flex min-w-0 items-center gap-2.5">

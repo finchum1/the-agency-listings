@@ -41,7 +41,7 @@ export function AgentCard({ className = "" }) {
     return (
       <div className={box}>
         <p className="text-xs font-semibold tracking-wider-plus uppercase text-[var(--ls-accent-text)]">Listed by</p>
-        <p className="font-display text-xl font-semibold text-[var(--ls-text)] mt-0.5 mb-5">{team.name}</p>
+        {team.name ? <p className="font-display text-xl font-semibold text-[var(--ls-text)] mt-0.5 mb-5">{team.name}</p> : <div className="mb-4" />}
         <div className="space-y-5">
           {team.members.map((m) => (
             <PersonRow key={m.id || m.email} person={m} brokerage={brokerage} />

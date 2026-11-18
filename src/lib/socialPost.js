@@ -72,9 +72,16 @@ export function startingText(listing, agent, type, openHouses) {
     detailDay: oh?.day || "",
     detailTime: oh?.time || "",
     showAgent: true,
-    // The team's name when the agent is on one (and this listing shows it), else the agent's own.
-    agent: (listing.show_team !== false && agent?.team?.name) || agent?.full_name ? `Listed by: ${(listing.show_team !== false && agent?.team?.name) || agent.full_name}` : "",
+    // The team's name when the agent is on one (and this listing shows it), else the agent's own name with any co-listing agent ("Alex Morgan & Jordan Lee").
+    agent: listedBy(listing, agent),
   };
+}
+
+function listedBy(listing, agent) {
+  const teamName = listing.show_team !== false && agent?.team?.name;
+  if (teamName) return `Listed by: ${teamName}`;
+  const names = [agent?.full_name, ...(listing.co_agents || []).map((c) => c.agent?.full_name)].filter(Boolean);
+  return names.length ? `Listed by: ${names.join(" & ")}` : "";
 }
 
 // ---- drawing -----------------------------------------------------------------------------------------------------------------------------

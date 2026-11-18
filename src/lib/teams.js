@@ -33,3 +33,26 @@ export function adaptTeam(agent, show = true) {
   const list = [...(mine.length ? mine : [person(agent)]), ...others];
   return { name: team.name, members: list };
 }
+
+// Co-listing agents (supabase/listing-co-agents.sql): a listing can name a second agent who is not a team with the listing agent. Added to a
+// listings select next to the agent embed: `*, agent:profiles(...), ${CO_AGENT_EMBED}`.
+export const CO_AGENT_EMBED = "co_agents:listing_co_agents(agent_id, agent:profiles(id, full_name, title, license, phone, email, photo_url))";
+
+/** The listing's co-listing agents as people ({ id, name, title, license, phone, email, photo }). */
+export const coAgentsOf = (listing) => (listing?.co_agents || []).map((c) => c.agent).filter(Boolean).map(person);
+
+/**
+ * Everyone a listing shows: the agent's team (when they're on one and the listing shows it) plus any co-listing agents, as { name, members }.
+ * With no team, `name` is "" and the members are the listing agent and the co-agents. Null when there's nothing beyond the one agent.
+ */
+export function adaptListingTeam(agent, show = true, coAgents = []) {
+  const team = adaptTeam(agent, show);
+  const seen = new Set((team?.members || [agent && person(agent)]).filter(Boolean).map((m) => m.id));
+  const extra = coAgents.filter((c) => c.id && !seen.has(c.id));
+  if (!extra.length) return team;
+  if (team) return { ...team, members: [...team.members, ...extra] };
+  return { name: "", members: [person(agent), ...extra] };
+}
+
+/** A short label for a shown group: the team's name, else the people's names joined ("Alex Morgan & Jordan Lee"). */
+export const teamLabel = (team) => (team ? team.name || team.members.map((m) => m.name).filter(Boolean).join(" & ") : "");

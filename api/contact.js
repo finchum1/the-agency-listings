@@ -73,7 +73,7 @@ export default async function handler(req, res) {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
   let recipientEmail, leadTargetType, leadTargetId, leadAgentId, subject, bodyLines, agentName, about;
-  let teamEmails = [], teamName = "", greeting = "";
+  let teamEmails = [], teamName = "", greeting = "", confirmName = "";
 
   if (isValuation) {
     // Which brokerage is this form for? The one that owns the domain it was submitted from, or The Agency on the
@@ -97,7 +97,7 @@ export default async function handler(req, res) {
   } else {
     const { data: listing, error: listingError } = await supabase
       .from("listings")
-      .select("address_line1, agent_id, show_team, agent:profiles(email, full_name, team:teams(name, members:profiles(email, full_name)))")
+      .select("address_line1, agent_id, show_team, agent:profiles(email, full_name, team:teams(name, members:profiles(email, full_name))), co_agents:listing_co_agents(agent:profiles(email, full_name))")
       .eq("id", listingId)
       .maybeSingle();
     if (listingError || !listing || !listing.agent?.email) {
@@ -110,12 +110,19 @@ export default async function handler(req, res) {
     leadAgentId = listing.agent_id;
     agentName = listing.agent.full_name;
     // An agent on a team: the inquiry goes to everyone on the team, and the visitor's thank-you is from the team (unless this listing shows only its agent).
+    // A co-listing agent (two agents who list together without being a team) is emailed too, and named in the thank-you when there is no team name.
     const team = listing.show_team !== false ? listing.agent.team : null;
-    if (team?.name) {
-      const mates = (team.members || []).filter((m) => m.email && m.email.toLowerCase() !== recipientEmail.toLowerCase());
-      teamEmails = mates.map((m) => m.email);
-      teamName = team.name;
-      greeting = [listing.agent.full_name, ...mates.map((m) => m.full_name)].filter(Boolean).map((n) => n.split(" ")[0]).join(" and ");
+    const own = recipientEmail.toLowerCase();
+    const mates = team?.name ? (team.members || []).filter((m) => m.email && m.email.toLowerCase() !== own) : [];
+    const coAgents = (listing.co_agents || [])
+      .map((c) => c.agent)
+      .filter((a) => a?.email && a.email.toLowerCase() !== own && !mates.some((m) => m.email.toLowerCase() === a.email.toLowerCase()));
+    const others = [...mates, ...coAgents];
+    if (others.length) {
+      teamEmails = others.map((m) => m.email);
+      teamName = team?.name || "";
+      greeting = [listing.agent.full_name, ...others.map((m) => m.full_name)].filter(Boolean).map((n) => n.split(" ")[0]).join(" and ");
+      confirmName = teamName || [listing.agent.full_name, ...coAgents.map((a) => a.full_name)].filter(Boolean).join(" and ");
     }
     about = listing.address_line1;
     subject = `New inquiry: ${listing.address_line1} — ${name}`;
@@ -192,7 +199,7 @@ export default async function handler(req, res) {
       await sendConfirmation(apiKey, {
         from: fromEmail,
         visitor: { name, email },
-        agentName: teamName || agentName,
+        agentName: confirmName || teamName || agentName,
         agentEmail: isValuation ? null : recipientEmail,
         about,
       });

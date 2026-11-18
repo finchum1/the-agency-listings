@@ -224,6 +224,7 @@ const FONT_PAIRINGS = [
 const emptyListing = {
   slug: "",
   agent_id: "",
+  co_agent_id: "", // not a listings column: saved to listing_co_agents (see syncCoAgent)
   status: "draft",
   theme: "classic",
   font_pairing: "playfair-jost",
@@ -277,8 +278,9 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
   const snapshot = JSON.stringify({ form, descriptionText, features });
   const dirty = snapshot !== baseline;
 
+  // Everyone in the office: admins pick the listing's agent from it, and the listing's agent (or an admin) picks the co-listing agent.
   useEffect(() => {
-    if (isAdmin && orgId) {
+    if (orgId) {
       supabase
         .from("profiles")
         .select("id, full_name, email")
@@ -286,13 +288,14 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
         .order("full_name")
         .then(({ data }) => setAgents(data || []));
     }
-  }, [isAdmin, orgId]);
+  }, [orgId]);
 
   useEffect(() => {
     if (listing) {
       const loaded = {
         slug: listing.slug || "",
         agent_id: listing.agent_id || "",
+        co_agent_id: listing.co_agents?.[0]?.agent_id || "",
         status: listing.status || "draft",
         theme: listing.theme || "classic",
         font_pairing: listing.font_pairing || "playfair-jost",
@@ -347,6 +350,22 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
     setFeatures((f) => f.map((g, idx) => (idx === i ? { ...g, ...patch } : g)));
   const removeFeatureGroup = (i) => setFeatures((f) => f.filter((_, idx) => idx !== i));
 
+  // Makes the listing's co-listing agent match the picker ("" = none). Returns an error message, or "" when it worked.
+  const syncCoAgent = async (listingId, want) => {
+    const { data: have } = await supabase.from("listing_co_agents").select("agent_id").eq("listing_id", listingId);
+    const haveIds = (have || []).map((r) => r.agent_id);
+    const drop = haveIds.filter((id) => id !== want);
+    if (drop.length) {
+      const { error } = await supabase.from("listing_co_agents").delete().eq("listing_id", listingId).in("agent_id", drop);
+      if (error) return error.message;
+    }
+    if (want && !haveIds.includes(want)) {
+      const { error } = await supabase.from("listing_co_agents").insert({ listing_id: listingId, agent_id: want });
+      if (error) return error.message;
+    }
+    return "";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -362,8 +381,9 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
       return;
     }
 
+    const { co_agent_id: coAgentId, ...listingFields } = form;
     const payload = {
-      ...form,
+      ...listingFields,
       agent_id: agentId,
       price: form.price === "" ? null : Number(form.price),
       beds: form.beds === "" ? null : Number(form.beds),
@@ -394,12 +414,22 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
         setError(error.message);
         return;
       }
+      const coError = await syncCoAgent(data.id, coAgentId === agentId ? "" : coAgentId);
+      if (coError) {
+        setError(`The listing was saved, but the co-listing agent wasn't: ${coError}`);
+        return;
+      }
       onSaved?.(data.id);
     } else {
       const { error } = await supabase.from("listings").update(payload).eq("id", listing.id);
       setSaving(false);
       if (error) {
         setError(error.message);
+        return;
+      }
+      const coError = await syncCoAgent(listing.id, coAgentId === agentId ? "" : coAgentId);
+      if (coError) {
+        setError(`The listing was saved, but the co-listing agent wasn't: ${coError}`);
         return;
       }
       setBaseline(savedSnapshot);
@@ -500,6 +530,24 @@ export default function ListingForm({ mode, listing, onSaved, defaultAgentId }) 
             </select>
           </div>
         )}
+
+        <div>
+          <label className={labelClass}>Co-listing agent (optional)</label>
+          <select value={form.co_agent_id} onChange={update("co_agent_id")} className={inputClass}>
+            <option value="">None</option>
+            {agents
+              .filter((a) => a.id !== (isAdmin ? form.agent_id || user.id : user.id))
+              .map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.full_name || a.email}
+                </option>
+              ))}
+          </select>
+          <p className="mt-1.5 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+            For two agents who list this home together but aren't a team. They're shown beside the listing agent on the property site and flyer, emailed every inquiry, and
+            see the listing and its analytics in their own Listings list. Only the listing agent (or an admin) can edit it.
+          </p>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 space-y-4">

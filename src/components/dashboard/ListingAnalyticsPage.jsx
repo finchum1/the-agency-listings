@@ -238,7 +238,7 @@ export default function ListingAnalyticsPage() {
   const { data, loading: dataLoading, error } = useListingAnalytics(listing?.id, days);
 
   if (loading && !listing) return <p className={`text-sm ${muted}`}>Loading…</p>;
-  if (notFound || !listing || (!isAdmin && listing.agent_id !== user?.id)) {
+  if (notFound || !listing || (!isAdmin && listing.agent_id !== user?.id && !listing.co_agents?.some((c) => c.agent_id === user?.id))) {
     return (
       <div>
         <p className={`text-sm mb-4 ${muted}`}>Listing not found, or you don't have access to it.</p>
