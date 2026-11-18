@@ -10,9 +10,9 @@ export const MARKETING_META = {
     title: "Your Agency Website & Back Office, in One Place | The Agency",
     description:
       "For Agency agents: your website, blog, leads, pipeline, transactions, and Google Calendar schedule in one dashboard, built and maintained for you. $500 to set up, then $150 a month, no contracts. Request early access.",
-    // The link-preview picture: a capture of the page's own hero (public/og-agency.jpg, 2400x1260). A new filename is needed
+    // The link-preview picture: a capture of the page's own hero (public/og-agency-2026.jpg, 2400x1260, built from the 2026 brand guide). A new filename is needed
     // whenever the picture changes, because link-preview sites cache by address.
-    image: "/og-agency.jpg",
+    image: "/og-agency-2026.jpg",
   },
   "/brokerage-website": {
     title: "Brokerage Website with Full MLS Home Search | The Agency",
