@@ -73,11 +73,16 @@ export const LAYOUTS = {
 
 /** The brand colors a post can use: the organization's own accents first, then the house colors. */
 export function paletteFor(accentColors = []) {
+  // The 2026 brand palette (the guide's primary colors and the supporting ones that carry accessible text: Iron, Velvet, Brownstone, Chambray...).
   const house = [
-    { name: "Agency red", hex: "#D8091B" },
-    { name: "Ink", hex: "#14130f" },
-    { name: "Cream", hex: "#f7f4ee" },
-    { name: "Sand", hex: "#ddd0ba" },
+    { name: "Agency Red", hex: "#D8091B" },
+    { name: "Iron", hex: "#1C1C1B" },
+    { name: "Ecru", hex: "#F5F1E9" },
+    { name: "Alabaster", hex: "#EBE3D6" },
+    { name: "Quartzite", hex: "#D5C5B1" },
+    { name: "Velvet", hex: "#470300" },
+    { name: "Brownstone", hex: "#906F57" },
+    { name: "Chambray", hex: "#C2D7E6" },
   ];
   const named = (hex) => house.find((c) => c.hex.toLowerCase() === hex.toLowerCase())?.name;
   const own = accentColors.filter((c) => /^#[0-9a-f]{6}$/i.test(c)).map((hex, i) => ({ name: named(hex) || `Brand ${i + 1}`, hex }));
@@ -98,7 +103,7 @@ export const isLight = (hex) => luminance(hex) > 0.42;
 
 // ---- drawing -------------------------------------------------------------------------------------------------------------------------------
 
-const SERIF = '"Playfair Display", Georgia, serif';
+const SERIF = '"EB Garamond", Georgia, serif';
 const SANS = 'Inter, "Helvetica Neue", Arial, sans-serif';
 
 function wrap(ctx, text, maxWidth, maxLines, font, size, minSize) {
@@ -132,10 +137,10 @@ export function drawHoliday(canvas, post, pictures, logos = {}) {
   const ctx = canvas.getContext("2d");
   const story = post.format === "story";
   const light = isLight(post.bg);
-  const ink = light ? "#1c1a17" : "#ffffff";
-  const soft = light ? "rgba(28,26,23,0.72)" : "rgba(255,255,255,0.82)";
-  const faint = light ? "rgba(28,26,23,0.07)" : "rgba(255,255,255,0.08)";
-  const line = light ? "rgba(28,26,23,0.35)" : "rgba(255,255,255,0.5)";
+  const ink = light ? "#1C1C1B" : "#ffffff";
+  const soft = light ? "rgba(28,28,27,0.72)" : "rgba(255,255,255,0.82)";
+  const faint = light ? "rgba(28,28,27,0.07)" : "rgba(255,255,255,0.08)";
+  const line = light ? "rgba(28,28,27,0.35)" : "rgba(255,255,255,0.5)";
   const t = post.text;
   const layout = LAYOUTS[post.layout] ? post.layout : "centered";
 
@@ -162,7 +167,9 @@ export function drawHoliday(canvas, post, pictures, logos = {}) {
   const top = story ? 300 : 120;
   const bottom = H - (story ? 300 : 120);
   // `logos` = { onLight, onDark }: the mark that reads on a light color, and the one that reads on a dark color.
-  const logo = light ? logos.onLight || pictures.logo : logos.onDark || pictures.logo;
+  // Chambray allows only Iron on it (the guide: no red on Chambray), so it gets the Iron mark.
+  const chambray = String(post.bg).toLowerCase() === "#c2d7e6";
+  const logo = chambray && logos.iron ? logos.iron : light ? logos.onLight || pictures.logo : logos.onDark || pictures.logo;
   const align = layout === "left" ? "left" : "center";
   const x = align === "left" ? M : W / 2;
   ctx.textAlign = align;
@@ -175,8 +182,9 @@ export function drawHoliday(canvas, post, pictures, logos = {}) {
   };
 
   // The greeting and the line under it.
-  const gSize = layout === "left" ? (story ? 190 : 150) : layout === "portrait" ? (story ? 140 : 100) : story ? 150 : 124;
-  const g = wrap(ctx, t.greeting, maxW, layout === "left" ? 4 : 3, (s) => `600 ${s}px ${SERIF}`, gSize, 56);
+  // EB Garamond is smaller on the line than the old face, so the sizes are a notch larger.
+  const gSize = layout === "left" ? (story ? 206 : 162) : layout === "portrait" ? (story ? 152 : 108) : story ? 162 : 134;
+  const g = wrap(ctx, t.greeting, maxW, layout === "left" ? 4 : 3, (s) => `500 ${s}px ${SERIF}`, gSize, 60);
   const gLine = g.size * 1.06;
   const gHeight = gLine * (g.lines.length - 1) + g.size * 0.75;
   const mSize = story ? 44 : 38;
@@ -211,10 +219,12 @@ export function drawHoliday(canvas, post, pictures, logos = {}) {
     ctx.stroke();
   }
 
-  ctx.font = `600 ${g.size}px ${SERIF}`;
+  ctx.font = `500 ${g.size}px ${SERIF}`;
+  if ("letterSpacing" in ctx) ctx.letterSpacing = `${(-0.02 * g.size).toFixed(1)}px`;
   ctx.fillStyle = ink;
   y += g.size * 0.75;
   g.lines.forEach((l, i) => ctx.fillText(l, x, y + i * gLine));
+  if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
   y += gLine * (g.lines.length - 1);
 
   if (m) {

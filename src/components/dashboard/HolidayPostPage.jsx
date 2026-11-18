@@ -63,7 +63,7 @@ export default function HolidayPostPage() {
     showPhoto: true,
   });
   const [pictures, setPictures] = useState({ logo: null, photo: null });
-  const [logos, setLogos] = useState({ onLight: null, onDark: null });
+  const [logos, setLogos] = useState({ onLight: null, onDark: null, iron: null });
   const [fontsReady, setFontsReady] = useState(false);
   const [error, setError] = useState("");
   const canvasRef = useRef(null);
@@ -85,9 +85,9 @@ export default function HolidayPostPage() {
   useEffect(() => {
     let live = true;
     const get = (u) => (u ? loadPicture(u).catch(() => null) : Promise.resolve(null));
-    Promise.all([get(brokerage.logos?.white || brokerage.logo), get(brokerage.logos?.red || brokerage.logos?.black || brokerage.logo), get(profile?.photo_url)]).then(([onDark, onLight, photo]) => {
+    Promise.all([get(brokerage.logos?.white || brokerage.logo), get(brokerage.logos?.red || brokerage.logos?.black || brokerage.logo), get(profile?.photo_url), get(brokerage.logos?.black)]).then(([onDark, onLight, photo, iron]) => {
       if (!live) return;
-      setLogos({ onDark, onLight });
+      setLogos({ onDark, onLight, iron });
       setPictures({ logo: onDark || onLight, photo });
     });
     return () => {

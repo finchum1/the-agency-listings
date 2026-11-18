@@ -86,7 +86,8 @@ function listedBy(listing, agent) {
 
 // ---- drawing -----------------------------------------------------------------------------------------------------------------------------
 
-const SERIF = '"Playfair Display", Georgia, serif';
+// The Agency's 2026 brand: EB Garamond for headlines (Regular weights read best on a phone, so 500), Inter for everything else.
+const SERIF = '"EB Garamond", Georgia, serif';
 const SANS = 'Inter, "Helvetica Neue", Arial, sans-serif';
 
 /** Loads the web fonts the post uses, so the canvas does not fall back to a plain one on the first draw. */
@@ -94,6 +95,7 @@ export async function loadPostFonts() {
   if (!document.fonts?.load) return;
   await Promise.all([
     document.fonts.load(`600 80px ${SERIF}`),
+    document.fonts.load(`italic 500 80px ${SERIF}`),
     document.fonts.load(`500 80px ${SERIF}`),
     document.fonts.load(`500 30px ${SANS}`),
     document.fonts.load(`600 30px ${SANS}`),
@@ -194,7 +196,7 @@ function badgeBox(ctx, label, story, mode, ink, accent) {
   const text = label.toUpperCase();
   const padX = 30;
   const padY = 17;
-  const bw = spacedWidth(ctx, text, 6) + padX * 2;
+  const bw = spacedWidth(ctx, text, 1.8) + padX * 2;
   const bh = size + padY * 2;
   return {
     bw,
@@ -213,7 +215,7 @@ function badgeBox(ctx, label, story, mode, ink, accent) {
       ctx.font = `600 ${size}px ${SANS}`;
       ctx.fillStyle = mode === "solid" ? "#ffffff" : ink;
       ctx.textAlign = "left";
-      spaced(ctx, text, left + padX + 1, top + padY + size * 0.78, 6);
+      spaced(ctx, text, left + padX + 1, top + padY + size * 0.78, 1.8);
     },
   };
 }
@@ -295,18 +297,20 @@ function buildBlocks(ctx, post, S) {
     blocks.push({ h: 30, gap: 26, draw: (y) => {
       ctx.font = `500 ${story ? 30 : 27}px ${SANS}`;
       ctx.fillStyle = soft;
-      spaced(ctx, t.place.toUpperCase(), x, y, 5, align === "center" ? "center" : "left");
+      spaced(ctx, t.place.toUpperCase(), x, y, 1.6, align === "center" ? "center" : "left");
     } });
   }
 
   if (t.address) {
-    const size = story ? 96 : 84;
-    const fit = fitLines(ctx, t.address, maxW, 2, (s2) => `600 ${s2}px ${SERIF}`, size, 44);
+    const size = story ? 104 : 92;
+    const fit = fitLines(ctx, t.address, maxW, 2, (s2) => `500 ${s2}px ${SERIF}`, size, 48);
     const lineH = fit.size * 1.08;
     blocks.push({ h: lineH * (fit.lines.length - 1) + fit.size * 0.72, gap: S.addrGap ?? 46, draw: (y) => {
-      ctx.font = `600 ${fit.size}px ${SERIF}`;
+      ctx.font = `500 ${fit.size}px ${SERIF}`;
+      if ("letterSpacing" in ctx) ctx.letterSpacing = `${(-0.02 * fit.size).toFixed(1)}px`;
       ctx.fillStyle = ink;
       fit.lines.forEach((l, i) => put(l, x, y - lineH * (fit.lines.length - 1 - i)));
+      if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
     } });
   }
 
@@ -387,7 +391,7 @@ export function drawPost(canvas, post, pictures) {
     const photoH = Math.round(Math.min(H * (story ? 0.62 : 0.56), Math.max(H * 0.36, wanted)));
     drawPhoto(ctx, photo, 0, 0, W, photoH, post);
     shade(ctx, 0, 0, W, photoH * 0.3, 0, 1, 0.4, 0);
-    ctx.fillStyle = "#14130f";
+    ctx.fillStyle = "#1C1C1B";
     ctx.fillRect(0, photoH, W, H - photoH);
     ctx.fillStyle = ACCENT;
     ctx.fillRect(0, photoH, W, 8);
@@ -406,7 +410,7 @@ export function drawPost(canvas, post, pictures) {
     const pad = 56;
     const cardX = 52;
     const cardW = W - cardX * 2;
-    const ink = { ink: "#1c1a17", soft: "rgba(28,26,23,0.62)", rule: ACCENT, accent: ACCENT, story };
+    const ink = { ink: "#1C1C1B", soft: "rgba(28,28,27,0.62)", rule: ACCENT, accent: ACCENT, story };
     const blocks = buildBlocks(ctx, post, { ...ink, x: cardX + pad, maxW: cardW - pad * 2, align: "left", badge: "solid" });
     const inner = stackHeight(blocks);
     const cardBottom = bottomY + (story ? 40 : 36);
@@ -415,7 +419,7 @@ export function drawPost(canvas, post, pictures) {
     ctx.shadowColor = "rgba(0,0,0,0.35)";
     ctx.shadowBlur = 40;
     ctx.shadowOffsetY = 12;
-    ctx.fillStyle = "#faf9f7";
+    ctx.fillStyle = "#F5F1E9";
     ctx.beginPath();
     ctx.roundRect(cardX, cardTop, cardW, cardBottom - cardTop, 28);
     ctx.fill();
