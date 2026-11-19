@@ -1,29 +1,12 @@
 import { useEffect, useState } from "react";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { resolveLanding } from "../../lib/landingPages";
+import { FEED_HOST, fetchFeed, handleFrom } from "../../lib/instagramFeed";
 import "./instagram.css";
 
 // "Follow along" (the line is the agent's own to change): the agent's latest Instagram posts as a row of square photos above the footer, closing the home page after Let's Connect.
 // The posts come from a Behold feed (behold.so: the agent connects their Instagram there once and pastes the feed address into Site Details, in
 // landing.instagram.feed_url), so the strip updates by itself when they post. No feed address, nothing shown.
-const FEED_HOST = /^https:\/\/feeds\.behold\.so\//;
-
-// Behold's JSON is { username, posts: [...] } (older feeds are a bare array); each post has a permalink and sizes of its picture.
-function readFeed(json) {
-  const posts = Array.isArray(json) ? json : Array.isArray(json?.posts) ? json.posts : [];
-  const tiles = posts
-    .map((p) => ({
-      id: p.id || p.permalink,
-      href: p.permalink,
-      src: p.sizes?.medium?.mediaUrl || p.sizes?.small?.mediaUrl || p.thumbnailUrl || p.mediaUrl || "",
-      alt: String(p.prunedCaption || p.caption || "").replace(/\s+/g, " ").slice(0, 120),
-    }))
-    .filter((t) => t.src && t.href);
-  return { username: json?.username || "", tiles: tiles.slice(0, 8) };
-}
-
-const handleFrom = (value) => String(value || "").trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/^@/, "").replace(/[/?#].*$/, "");
-
 export default function InstagramStrip() {
   const { site } = useAgentSiteContext();
   const { instagram } = resolveLanding(site.landing, site.agent.first);
@@ -33,9 +16,8 @@ export default function InstagramStrip() {
   useEffect(() => {
     if (!instagram.on || !FEED_HOST.test(url)) return undefined;
     let live = true;
-    fetch(url)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`feed ${r.status}`))))
-      .then((j) => live && setFeed(readFeed(j)))
+    fetchFeed(url)
+      .then((f) => live && setFeed(f))
       .catch(() => live && setFeed({ username: "", tiles: [] }));
     return () => {
       live = false;

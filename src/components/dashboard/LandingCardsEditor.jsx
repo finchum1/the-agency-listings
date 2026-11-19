@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { fetchFeed, FEED_HOST } from "../../lib/instagramFeed";
 import { LANDING_DEFAULTS, resolveLanding } from "../../lib/landingPages";
 import ImageUploadField from "./ImageUploadField";
 import AreaMapEditor from "./AreaMapEditor";
@@ -132,37 +134,105 @@ export default function LandingCardsEditor({ siteId, siteSlug, value, onChange, 
           </span>
         </span>
       </label>
-      <div className="bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 space-y-2.5">
-        <div>
-          <p className="text-sm font-medium">Instagram strip</p>
-          <p className={`text-xs mt-0.5 ${muted}`}>
-            Your latest posts as a row of photos above the footer, updating by themselves. Connect your Instagram at behold.so (free), create a feed, and paste its
-            feed address here. Leave it empty to hide the strip.
-          </p>
-        </div>
-        <input
-          value={saved.instagram?.feed_url || ""}
-          onChange={(e) => patch({ instagram: { ...(saved.instagram || {}), feed_url: e.target.value.trim() } })}
-          placeholder="https://feeds.behold.so/…"
-          className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
-        />
-        {saved.instagram?.feed_url && !/^https:\/\/feeds\.behold\.so\//.test(saved.instagram.feed_url) && (
-          <p className="text-xs text-red-600 dark:text-red-400">That doesn't look like a Behold feed address (it starts with https://feeds.behold.so/).</p>
-        )}
-        <input
-          value={saved.instagram?.label || ""}
-          onChange={(e) => patch({ instagram: { ...(saved.instagram || {}), label: e.target.value } })}
-          maxLength={40}
-          placeholder='The line above your handle (default: "Follow along")'
-          className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
-        />
-        <input
-          value={saved.instagram?.handle || ""}
-          onChange={(e) => patch({ instagram: { ...(saved.instagram || {}), handle: e.target.value.trim() } })}
-          placeholder="Handle to show (optional, taken from your Instagram link otherwise)"
-          className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
-        />
+      <InstagramSettings value={saved.instagram || {}} onChange={(instagram) => patch({ instagram })} />
+    </div>
+  );
+}
+
+const fieldClass = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
+
+// The Instagram strip's settings: a short how-to for getting a Behold feed address, the address itself, and a live check that the address works.
+function InstagramSettings({ value, onChange }) {
+  const url = (value.feed_url || "").trim();
+  const set = (changes) => onChange({ ...value, ...changes });
+  const [check, setCheck] = useState({ state: "idle" }); // idle | checking | ok | error
+  const [tick, setTick] = useState(0);
+
+  // Checks the address a moment after it stops changing (or when "Check again" is pressed).
+  useEffect(() => {
+    if (!url) {
+      setCheck({ state: "idle" });
+      return undefined;
+    }
+    if (!FEED_HOST.test(url)) {
+      setCheck({ state: "error", message: "That isn't a Behold feed address. It should start with https://feeds.behold.so/" });
+      return undefined;
+    }
+    const ctl = new AbortController();
+    setCheck({ state: "checking" });
+    const t = setTimeout(() => {
+      fetchFeed(url, ctl.signal)
+        .then((feed) =>
+          setCheck(
+            feed.tiles.length === 0
+              ? { state: "error", message: "The feed works, but it has no posts yet. Behold shows posts once your Instagram has some, and it can take a minute after you connect." }
+              : { state: "ok", feed },
+          ),
+        )
+        .catch((e) => e?.name !== "AbortError" && setCheck({ state: "error", message: e.message }));
+    }, 500);
+    return () => {
+      clearTimeout(t);
+      ctl.abort();
+    };
+  }, [url, tick]);
+
+  return (
+    <div className="bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 space-y-2.5">
+      <div>
+        <p className="text-sm font-medium">Instagram strip</p>
+        <p className={`text-xs mt-0.5 ${muted}`}>
+          Your latest posts as a row of photos above the footer, updating by themselves when you post. Leave the feed address empty to hide the strip.
+        </p>
       </div>
+
+      <details className="rounded-lg border border-black/10 dark:border-white/15 px-3 py-2 text-xs">
+        <summary className="cursor-pointer font-medium">How to get your feed address (about 5 minutes, free)</summary>
+        <ol className={`mt-2 list-decimal space-y-1.5 pl-4 leading-relaxed ${muted}`}>
+          <li>
+            <span className="font-medium text-[#1c1a17] dark:text-[#faf9f7]">Check your Instagram account type.</span> Behold works with Business and Creator accounts. In the Instagram app: Settings,
+            then Account type and tools, then switch to a Professional account (it's free, and your posts and followers stay the same).
+          </li>
+          <li>
+            <span className="font-medium text-[#1c1a17] dark:text-[#faf9f7]">Make a free account at behold.so</span> and choose to connect Instagram. Log in to your own
+            Instagram when it asks. Behold only reads your public posts.
+          </li>
+          <li>
+            <span className="font-medium text-[#1c1a17] dark:text-[#faf9f7]">Create a feed</span> for that account. Any layout will do: we only use the posts, not Behold's look.
+          </li>
+          <li>
+            <span className="font-medium text-[#1c1a17] dark:text-[#faf9f7]">Copy the feed's JSON address.</span> It starts with <code>https://feeds.behold.so/</code>.
+          </li>
+          <li>
+            <span className="font-medium text-[#1c1a17] dark:text-[#faf9f7]">Paste it below.</span> The check underneath shows your latest posts if it worked. Then save the page.
+          </li>
+        </ol>
+      </details>
+
+      <input value={value.feed_url || ""} onChange={(e) => set({ feed_url: e.target.value.trim() })} placeholder="https://feeds.behold.so/…" className={fieldClass} aria-label="Behold feed address" />
+
+      {check.state === "checking" && <p className={`text-xs ${muted}`}>Checking the feed…</p>}
+      {check.state === "error" && <p className="text-xs text-red-600 dark:text-red-400">{check.message}</p>}
+      {check.state === "ok" && (
+        <div className="space-y-2">
+          <p className="text-xs text-emerald-700 dark:text-emerald-400">
+            The feed works: {check.feed.tiles.length} recent posts{check.feed.username ? ` from @${check.feed.username}` : ""}. This is what visitors will see.
+          </p>
+          <div className="flex gap-1.5 overflow-x-auto">
+            {check.feed.tiles.slice(0, 6).map((t) => (
+              <img key={t.id} src={t.src} alt="" className="h-14 w-14 shrink-0 rounded object-cover bg-black/5" />
+            ))}
+          </div>
+        </div>
+      )}
+      {url && check.state !== "checking" && (
+        <button type="button" onClick={() => setTick((n) => n + 1)} className="text-xs font-medium text-[#D8091B] dark:text-[#f2454b] hover:underline">
+          Check again
+        </button>
+      )}
+
+      <input value={value.label || ""} onChange={(e) => set({ label: e.target.value })} maxLength={40} placeholder='The line above your handle (default: "Follow along")' className={fieldClass} aria-label="Line above your handle" />
+      <input value={value.handle || ""} onChange={(e) => set({ handle: e.target.value.trim() })} placeholder="Handle to show (optional, taken from your Instagram link otherwise)" className={fieldClass} aria-label="Instagram handle" />
     </div>
   );
 }
