@@ -746,10 +746,22 @@
   mask: url(/brand/the-agency-icon-red.svg) center / contain no-repeat;
   pointer-events: none;
 }
-.agency-clip[data-side="right"] { right: -12%; }
-.agency-clip[data-side="left"] { left: -12%; }
-.agency-clip[data-pos="bottom"] { top: auto; bottom: -18%; transform: none; }
-.agency-clip[data-pos="top"] { top: -10%; transform: none; }
+/* Offsets are a share of the mark's own width, not of the section: a percentage of a tall section (a phone) would push a bottom or top one clean out of it. */
+.agency-clip[data-side="right"] { right: calc(var(--clip-w) * -0.2); }
+.agency-clip[data-side="left"] { left: calc(var(--clip-w) * -0.2); }
+.agency-clip[data-pos="bottom"] { top: auto; bottom: calc(var(--clip-w) * -0.14); transform: none; }
+.agency-clip[data-pos="top"] { top: calc(var(--clip-w) * -0.12); transform: none; }
 .agency-clip[data-size="md"] { --clip-w: min(48vw, 600px); }
 .agency-clip[data-tone="light"] { --clip-color: #fff; --clip-opacity: 0.06; }
 .agency-clip[data-tone="onred"] { --clip-color: #fff; --clip-opacity: 0.13; }
+/* A phone: bigger against the narrow screen, a touch stronger, and up in the heading area of the section. The sections stack there, so a form or the photo
+   would hide a mark that sat in the middle or at the foot; the words above them have no card behind them for it to hide behind. */
+@media (max-width: 639px) {
+  .agency-clip, .agency-clip[data-size="md"] { --clip-w: 86vw; }
+  .agency-clip[data-tone="accent"] { --clip-opacity: 0.1; }
+  .agency-clip[data-side="right"] { right: calc(var(--clip-w) * -0.28); }
+  .agency-clip[data-side="left"] { left: calc(var(--clip-w) * -0.28); }
+  .agency-clip, .agency-clip[data-pos="top"], .agency-clip[data-pos="bottom"] { top: calc(var(--clip-w) * -0.06); bottom: auto; transform: none; }
+  /* the About bio opens with the photo, so there the mark goes behind the text below it */
+  .agency-clip[data-pos="bottom"] { top: auto; bottom: 8%; }
+}
