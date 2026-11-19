@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { HoneypotField, useSpamGuard } from "../../lib/spamGuard";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
+import { resolveLanding } from "../../lib/landingPages";
 
 export default function Contact() {
   const { site, siteId, isStandalonePage } = useAgentSiteContext();
@@ -10,6 +11,8 @@ export default function Contact() {
   const Heading = isStandalonePage ? "h1" : "h2";
   const [form, setForm] = useState({ name: "", email: "", phone: "", message: "" });
   const guard = useSpamGuard();
+  // The Agency's paperclip A, huge and faint, running off the right edge behind the form.
+  const clip = site.brokerage?.franchise === "the-agency" && resolveLanding(site.landing, agent.first).paperclip;
   // "idle" | "sending" | "sent" | "fallback" | "error"
   const [status, setStatus] = useState("idle");
 
@@ -47,8 +50,9 @@ export default function Contact() {
     "w-full border border-[var(--as-text)]/15 px-3.5 py-2.5 text-sm bg-[var(--as-bg-alt)] text-[var(--as-text)] focus:outline-none focus:border-[var(--as-accent)] focus:ring-2 focus:ring-[var(--as-accent)]/25 transition";
 
   return (
-    <section id="contact" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
-      <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-start">
+    <section id="contact" className="relative overflow-hidden px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
+      {clip && <span className="agency-clip" aria-hidden="true" />}
+      <div className="relative mx-auto max-w-6xl grid lg:grid-cols-2 gap-14 items-start">
         <div>
           <p className="text-xs font-medium tracked-wide uppercase text-[var(--as-accent-text)] mb-3">
             Let&rsquo;s Connect

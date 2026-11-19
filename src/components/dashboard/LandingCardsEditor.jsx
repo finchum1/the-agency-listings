@@ -122,6 +122,37 @@ export default function LandingCardsEditor({ siteId, siteSlug, value, onChange, 
           </span>
         </span>
       </label>
+      <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
+        <input type="checkbox" checked={landing.paperclip} onChange={(e) => patch({ paperclip: e.target.checked })} className="mt-0.5 accent-[#D8091B] dark:accent-[#f2454b]" />
+        <span>
+          <span className="block text-sm font-medium">Paperclip A in the Contact section</span>
+          <span className={`block text-xs mt-0.5 ${muted}`}>The Agency's paperclip, large and faint, running off the right edge behind the contact form (The Agency offices only).</span>
+        </span>
+      </label>
+      <div className="bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 space-y-2.5">
+        <div>
+          <p className="text-sm font-medium">Instagram strip</p>
+          <p className={`text-xs mt-0.5 ${muted}`}>
+            Your latest posts as a row of photos above the footer, updating by themselves. Connect your Instagram at behold.so (free), create a feed, and paste its
+            feed address here. Leave it empty to hide the strip.
+          </p>
+        </div>
+        <input
+          value={saved.instagram?.feed_url || ""}
+          onChange={(e) => patch({ instagram: { ...(saved.instagram || {}), feed_url: e.target.value.trim() } })}
+          placeholder="https://feeds.behold.so/…"
+          className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
+        />
+        {saved.instagram?.feed_url && !/^https:\/\/feeds\.behold\.so\//.test(saved.instagram.feed_url) && (
+          <p className="text-xs text-red-600 dark:text-red-400">That doesn't look like a Behold feed address (it starts with https://feeds.behold.so/).</p>
+        )}
+        <input
+          value={saved.instagram?.handle || ""}
+          onChange={(e) => patch({ instagram: { ...(saved.instagram || {}), handle: e.target.value.trim() } })}
+          placeholder="Handle to show (optional, taken from your Instagram link otherwise)"
+          className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
+        />
+      </div>
     </div>
   );
 }

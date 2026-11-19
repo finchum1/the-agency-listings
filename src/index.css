@@ -730,3 +730,19 @@
 [data-theme] .uppercase {
   letter-spacing: 0.06em;
 }
+
+/* The paperclip A bleeding off the page (Contact.jsx): the guide's icon as a mask, filled with the site's accent at a whisper. Sits behind the content. */
+.agency-clip {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  right: -12%;
+  width: min(62vw, 820px);
+  aspect-ratio: 855 / 698;
+  transform: translateY(-50%);
+  background: var(--as-accent);
+  opacity: 0.09;
+  -webkit-mask: url(/brand/the-agency-icon-red.svg) center / contain no-repeat;
+  mask: url(/brand/the-agency-icon-red.svg) center / contain no-repeat;
+  pointer-events: none;
+}

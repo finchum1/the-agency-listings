@@ -76,5 +76,11 @@ export function resolveLanding(landing, agentFirstName = "") {
       photo: clean(mine.photo_url) || d.photo,
     };
   });
-  return { order, menu: l.menu !== false, compsTask: l.comps_task !== false, animated: l.animated === true, panels: l.panels === true, cards };
+  return { order, menu: l.menu !== false, compsTask: l.comps_task !== false, animated: l.animated === true,
+    panels: l.panels === true,
+    // The paperclip A bleeding off the edge of the Contact section (The Agency offices only; on unless turned off).
+    paperclip: l.paperclip !== false,
+    // The Instagram strip above the footer: a Behold feed address (feeds.behold.so/...) and, optionally, the handle to show.
+    instagram: { on: !(l.instagram && l.instagram.on === false), feedUrl: clean(l.instagram?.feed_url), handle: clean(l.instagram?.handle) },
+    cards };
 }

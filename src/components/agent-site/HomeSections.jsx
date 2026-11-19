@@ -8,6 +8,7 @@ import ServiceAreas from "./ServiceAreas";
 import BlogTeaser from "./BlogTeaser";
 import LandingCards from "./landing/LandingCards";
 import Contact from "./Contact";
+import InstagramStrip from "./InstagramStrip";
 import Team from "./Team";
 import { LISTINGS_FIRST_LAYOUTS } from "./layouts";
 
@@ -101,6 +102,7 @@ export default function HomeSections() {
             return Section ? <Section key={key} /> : null;
           })}
           <Contact />
+          <InstagramStrip />
         </div>
       </div>
     );
@@ -114,6 +116,7 @@ export default function HomeSections() {
           return Section ? <Section key={key} /> : null;
         })}
         <Contact />
+        <InstagramStrip />
       </div>
     </>
   );

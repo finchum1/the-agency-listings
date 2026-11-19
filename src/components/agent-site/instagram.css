@@ -1,0 +1,18 @@
+/* The Instagram strip (InstagramStrip.jsx): a centered card with the handle, and a row of square posts that runs a little wider than the card and
+   slides sideways on a phone. Colors come from the site theme (--as-*). */
+.ig-card { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: 640px; margin: 0 auto; padding: 40px 24px 150px; background: var(--as-bg-alt); text-align: center; }
+.ig-badge { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 9999px; background: var(--as-accent); color: #fff; }
+.ig-kicker { margin: 6px 0 0; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+.ig-handle { color: inherit; font-size: clamp(26px, 4vw, 40px); line-height: 1.1; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 6px; }
+.ig-handle:hover { color: var(--as-accent-text); }
+.ig-row { position: relative; z-index: 2; display: flex; gap: 14px; margin: -118px 0 0; padding: 0 0 6px; list-style: none; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.ig-row::-webkit-scrollbar { display: none; }
+.ig-row li { flex: 0 0 min(64vw, 240px); scroll-snap-align: start; }
+.ig-row a { display: block; aspect-ratio: 1; overflow: hidden; background: var(--as-surface); }
+.ig-row img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s cubic-bezier(0.22, 0.8, 0.2, 1); }
+.ig-row a:hover img, .ig-row a:focus-visible img { transform: scale(1.06); }
+@media (min-width: 1024px) {
+  .ig-row { overflow: visible; justify-content: center; }
+  .ig-row li { flex: 1 1 0; min-width: 0; max-width: 216px; }
+}
+@media (prefers-reduced-motion: reduce) { .ig-row img { transition: none; } }
