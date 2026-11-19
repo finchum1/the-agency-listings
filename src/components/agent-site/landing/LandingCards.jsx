@@ -5,6 +5,7 @@ import { agentSiteHref, isAgentSiteAppHost } from "../../../lib/agentSiteLinks";
 import { resolveLanding } from "../../../lib/landingPages";
 import SiteLink from "../SiteLink";
 import "../journey.css";
+import "./panels.css";
 
 // The "cards" home section: Sellers, Home Value and Buyers side by side, right under the bio and testimonials (agent_sites.home_sections has
 // "cards"; the agent moves it up or down in Site Details, and orders, hides and rewords the cards themselves there too).
@@ -14,6 +15,17 @@ export default function LandingCards() {
   const landing = resolveLanding(site.landing, first);
   const cards = landing.cards.filter((c) => c.on);
   if (cards.length === 0) return null;
+
+  // The photo panels style (landing.panels) has its own heading, in the intro block beside the photos.
+  if (landing.panels) {
+    return (
+      <section id="cards" className="px-6 lg:px-10 py-20 sm:py-24 bg-[var(--as-bg)] text-[var(--as-text)]">
+        <div className="mx-auto max-w-7xl">
+          <PanelCards cards={cards} />
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="cards" className="px-6 lg:px-10 py-20 sm:py-24 bg-[var(--as-bg)] text-[var(--as-text)]">
@@ -34,6 +46,95 @@ export default function LandingCards() {
         )}
       </div>
     </section>
+  );
+}
+
+// Where an address typed on the Home Value card goes: that page, with the address carried along (?address=).
+function useAddressGo(card) {
+  const { site } = useAgentSiteContext();
+  const navigate = useNavigate();
+  const [address, setAddress] = useState("");
+  const go = (e) => {
+    e.preventDefault();
+    const href = `${agentSiteHref(site.slug, card.path)}${address.trim() ? `?address=${encodeURIComponent(address.trim())}` : ""}`;
+    if (isAgentSiteAppHost()) navigate(href);
+    else window.location.assign(href);
+  };
+  return { address, setAddress, go };
+}
+
+// The photo panels: an intro block and a tall photo strip for each card. A strip opens to nearly full view under the pointer (see panels.css), and the
+// cards' names and descriptions are listed again, numbered, underneath for anyone who wants to read them without hovering.
+function PanelCards({ cards }) {
+  const { site } = useAgentSiteContext();
+  const lightBand = ["linen", "chambray"].includes(site.theme);
+  const logos = site.brokerage?.logos || {};
+  // The Agency offices show just the paperclip A (the guide's icon mark) in the intro block; any other brokerage shows its own logo.
+  const agency = site.brokerage?.franchise === "the-agency";
+  const mark = agency ? `/brand/the-agency-icon-${lightBand ? "iron" : "white"}.svg` : (lightBand ? logos.black : logos.white) || site.brokerage?.logo;
+  return (
+    <div className="pn-wrap">
+      <div className="pn-row">
+        <div className="pn-intro">
+          <div className="pn-intro-inner">
+            {mark && <img src={mark} alt="" className={`pn-mark${agency ? " pn-mark-icon" : ""}`} />}
+            <div>
+              <p className="pn-kicker">Make your move</p>
+              <h2 className="pn-heading font-display">
+                Where are you headed <em>next?</em>
+              </h2>
+            </div>
+            <p className="pn-by">{site.agent.name}</p>
+          </div>
+        </div>
+        {cards.map((c) => (
+          <Panel key={c.key} card={c} />
+        ))}
+      </div>
+      <ol className="pn-captions">
+        {cards.map((c, i) => (
+          <li key={c.key}>
+            <SiteLink slug={site.slug} path={c.path}>
+              <small>{String(i + 1).padStart(2, "0")}</small>
+              <strong>{c.title}</strong>
+              <span>{c.blurb}</span>
+            </SiteLink>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function Panel({ card }) {
+  const { site } = useAgentSiteContext();
+  const { address, setAddress, go } = useAddressGo(card);
+  const value = card.key === "value";
+  return (
+    <div className="pn">
+      <img src={card.photo} alt="" loading="lazy" className="pn-photo" />
+      <div className="pn-shade" aria-hidden="true" />
+      <SiteLink slug={site.slug} path={card.path} className="pn-link" aria-label={`${card.title}: ${card.cta}`} />
+      <p className="pn-label">{card.nav}</p>
+      <div className="pn-detail">
+        <span className="pn-eyebrow">{card.eyebrow}</span>
+        <p className="pn-title">{card.title}</p>
+        <p className="pn-blurb">{card.blurb}</p>
+        {value ? (
+          <form onSubmit={go} className="pn-form">
+            <label htmlFor="panel-address" className="sr-only">
+              Property address
+            </label>
+            <input id="panel-address" value={address} onChange={(e) => setAddress(e.target.value)} autoComplete="street-address" placeholder="123 Main St, Edmond" />
+            <button type="submit" className="as-btn">
+              Go
+            </button>
+          </form>
+        ) : (
+          <span className="pn-cta">{card.cta} →</span>
+        )}
+      </div>
+    </div>
   );
 }
 

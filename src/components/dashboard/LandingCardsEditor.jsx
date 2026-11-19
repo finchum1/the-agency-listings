@@ -91,6 +91,17 @@ export default function LandingCardsEditor({ siteId, siteSlug, value, onChange, 
         </span>
       </label>
       <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
+        <input type="checkbox" checked={landing.panels} onChange={(e) => patch({ panels: e.target.checked })} className="mt-0.5 accent-[#D8091B] dark:accent-[#f2454b]" />
+        <span>
+          <span className="block text-sm font-medium">Photo panels</span>
+          <span className={`block text-xs mt-0.5 ${muted}`}>
+            The cards become tall photo panels beside a short heading. On a computer, the panel under the pointer opens to nearly full view and shows its wording
+            (the Home Value panel opens with its address box). On a phone they stack as ordinary cards, and the wording is also listed below the panels. Replaces
+            the route-line cards above; the area map below is unaffected.
+          </span>
+        </span>
+      </label>
+      <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
         <input type="checkbox" checked={landing.animated} onChange={(e) => patch({ animated: e.target.checked })} className="mt-0.5 accent-[#D8091B] dark:accent-[#f2454b]" />
         <span>
           <span className="block text-sm font-medium">Animated cards and area map</span>

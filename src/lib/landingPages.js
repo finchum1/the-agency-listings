@@ -1,6 +1,7 @@
 // The landing pages on an agent's site (Sellers, Home Value, Buyers, and the optional Relocation page) and the cards that lead to them from the home page.
 // agent_sites.landing (adapted as site.landing) holds the agent's own settings; anything missing falls back to the defaults here.
 //   { order: ["sellers","value","buyers"], menu: true, comps_task: true, animated: false,  (animated: the route-line cards and the area map, see journey.css)
+//     panels: false,  (panels: the home cards as tall photo strips that open on hover, see landing/panels.css; replaces the route-line cards when on)
 //     sellers: { on: true, title: "", blurb: "", photo_url: "" }, value: {...}, buyers: {...} }
 // The photos are from The Agency's seller and buyer guides until the agent has their own (see public/landing).
 
@@ -75,5 +76,5 @@ export function resolveLanding(landing, agentFirstName = "") {
       photo: clean(mine.photo_url) || d.photo,
     };
   });
-  return { order, menu: l.menu !== false, compsTask: l.comps_task !== false, animated: l.animated === true, cards };
+  return { order, menu: l.menu !== false, compsTask: l.comps_task !== false, animated: l.animated === true, panels: l.panels === true, cards };
 }
