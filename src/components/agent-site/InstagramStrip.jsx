@@ -3,7 +3,7 @@ import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { resolveLanding } from "../../lib/landingPages";
 import "./instagram.css";
 
-// "Follow our world": the agent's latest Instagram posts as a row of square photos above the footer, closing the home page after Let's Connect.
+// "Follow along" (the line is the agent's own to change): the agent's latest Instagram posts as a row of square photos above the footer, closing the home page after Let's Connect.
 // The posts come from a Behold feed (behold.so: the agent connects their Instagram there once and pastes the feed address into Site Details, in
 // landing.instagram.feed_url), so the strip updates by itself when they post. No feed address, nothing shown.
 const FEED_HOST = /^https:\/\/feeds\.behold\.so\//;
@@ -56,7 +56,7 @@ export default function InstagramStrip() {
               <circle cx="17.2" cy="6.8" r="0.9" fill="currentColor" stroke="none" />
             </svg>
           </a>
-          <p className="ig-kicker">Follow our world</p>
+          <p className="ig-kicker">{instagram.label}</p>
           {handle && (
             <a href={`https://instagram.com/${handle}`} target="_blank" rel="noopener noreferrer" className="ig-handle font-display">
               @{handle.toUpperCase()}

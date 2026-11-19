@@ -147,6 +147,13 @@ export default function LandingCardsEditor({ siteId, siteSlug, value, onChange, 
           <p className="text-xs text-red-600 dark:text-red-400">That doesn't look like a Behold feed address (it starts with https://feeds.behold.so/).</p>
         )}
         <input
+          value={saved.instagram?.label || ""}
+          onChange={(e) => patch({ instagram: { ...(saved.instagram || {}), label: e.target.value } })}
+          maxLength={40}
+          placeholder='The line above your handle (default: "Follow along")'
+          className="w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40"
+        />
+        <input
           value={saved.instagram?.handle || ""}
           onChange={(e) => patch({ instagram: { ...(saved.instagram || {}), handle: e.target.value.trim() } })}
           placeholder="Handle to show (optional, taken from your Instagram link otherwise)"
