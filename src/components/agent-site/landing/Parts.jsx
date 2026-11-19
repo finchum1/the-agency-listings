@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAgentSiteContext } from "../../../context/AgentSiteContext";
 import SiteLink from "../SiteLink";
+import AgencyClip from "../AgencyClip";
 
 // Shared pieces of the Sellers, Buyers and Home Value pages. Everything is painted with the site's own --as-* tokens, so every layout, color
 // theme and font pairing works with it.
@@ -21,10 +22,12 @@ const TONES = {
 // line under it. (Every other theme's footer is dark or colored and needs nothing extra.)
 export const aboveFooter = (site) => (site.theme === "linen" ? "!bg-white border-b border-[var(--as-text)]/20" : "");
 
-export function Section({ tone = "bg", id, children, className = "" }) {
+// `clip`: the paperclip A running off an edge of this band ({ side: "left" | "right", pos, size }; see AgencyClip.jsx). White on a dark band, the accent otherwise.
+export function Section({ tone = "bg", id, children, className = "", clip }) {
   return (
-    <section id={id} className={`${sectionPad} ${TONES[tone]} ${className}`}>
-      <div className="mx-auto max-w-6xl">{children}</div>
+    <section id={id} className={`${clip ? "relative overflow-hidden " : ""}${sectionPad} ${TONES[tone]} ${className}`}>
+      {clip && <AgencyClip size="md" {...clip} tone={tone === "dark" ? "light" : "accent"} />}
+      <div className={`${clip ? "relative " : ""}mx-auto max-w-6xl`}>{children}</div>
     </section>
   );
 }

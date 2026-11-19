@@ -72,7 +72,7 @@ export default function RelocationPage() {
 
       <MoveForm />
 
-      <Section tone={areas.length > 0 ? "alt" : "bg"} id="start" className={aboveFooter(site)}>
+      <Section tone={areas.length > 0 ? "alt" : "bg"} id="start" className={aboveFooter(site)} clip={{ side: "right" }}>
         <div className="flex flex-wrap items-center justify-between gap-8">
           <div>
             <Eyebrow>Ready when you are</Eyebrow>

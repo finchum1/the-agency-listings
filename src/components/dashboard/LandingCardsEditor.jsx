@@ -125,8 +125,11 @@ export default function LandingCardsEditor({ siteId, siteSlug, value, onChange, 
       <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
         <input type="checkbox" checked={landing.paperclip} onChange={(e) => patch({ paperclip: e.target.checked })} className="mt-0.5 accent-[#D8091B] dark:accent-[#f2454b]" />
         <span>
-          <span className="block text-sm font-medium">Paperclip A in the Contact section</span>
-          <span className={`block text-xs mt-0.5 ${muted}`}>The Agency's paperclip, large and faint, running off the right edge behind the contact form (The Agency offices only).</span>
+          <span className="block text-sm font-medium">Paperclip A in the background</span>
+          <span className={`block text-xs mt-0.5 ${muted}`}>
+            The Agency's paperclip, large and faint, running off the right edge of one section per page: Contact on the home page, the About page, and the closing
+            form band of the Sellers, Buyers, Home Value and Relocation pages (The Agency offices only).
+          </span>
         </span>
       </label>
       <div className="bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 space-y-2.5">

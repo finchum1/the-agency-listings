@@ -731,18 +731,25 @@
   letter-spacing: 0.06em;
 }
 
-/* The paperclip A bleeding off the page (Contact.jsx): the guide's icon as a mask, filled with the site's accent at a whisper. Sits behind the content. */
+/* The paperclip A bleeding off the page (AgencyClip.jsx): the guide's icon as a mask, filled with a whisper of colour, behind a section's content. The
+   data attributes set which edge it runs off, how big, and the colour for the section's background. */
 .agency-clip {
   position: absolute;
   z-index: 0;
   top: 50%;
-  right: -12%;
-  width: min(62vw, 820px);
+  width: var(--clip-w, min(62vw, 820px));
   aspect-ratio: 855 / 698;
   transform: translateY(-50%);
-  background: var(--as-accent);
-  opacity: 0.09;
+  background: var(--clip-color, var(--as-accent));
+  opacity: var(--clip-opacity, 0.09);
   -webkit-mask: url(/brand/the-agency-icon-red.svg) center / contain no-repeat;
   mask: url(/brand/the-agency-icon-red.svg) center / contain no-repeat;
   pointer-events: none;
 }
+.agency-clip[data-side="right"] { right: -12%; }
+.agency-clip[data-side="left"] { left: -12%; }
+.agency-clip[data-pos="bottom"] { top: auto; bottom: -18%; transform: none; }
+.agency-clip[data-pos="top"] { top: -10%; transform: none; }
+.agency-clip[data-size="md"] { --clip-w: min(48vw, 600px); }
+.agency-clip[data-tone="light"] { --clip-color: #fff; --clip-opacity: 0.06; }
+.agency-clip[data-tone="onred"] { --clip-color: #fff; --clip-opacity: 0.13; }

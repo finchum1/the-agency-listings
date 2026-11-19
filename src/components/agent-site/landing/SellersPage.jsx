@@ -182,7 +182,7 @@ function SellerCta() {
     submit({ name: f.name, email: f.email, phone: f.phone, address: f.address, details: { timeline: f.timeline } });
   };
   return (
-    <Section tone="alt" id="start" className={aboveFooter(site)}>
+    <Section tone="alt" id="start" className={aboveFooter(site)} clip={{ side: "right" }}>
       <div className="grid lg:grid-cols-2 gap-14 items-start">
         <div>
           <Eyebrow>Ready to sell your home?</Eyebrow>

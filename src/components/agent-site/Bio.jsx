@@ -1,3 +1,4 @@
+import AgencyClip from "./AgencyClip";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import { sanitizeHtml } from "../../lib/sanitizeHtml";
 import { LAYOUT_SECTIONS, FULL_SECTION_ON_OWN_PAGE } from "./layouts";
@@ -14,8 +15,9 @@ export default function Bio() {
   const Heading = isStandalonePage ? "h1" : "h2";
 
   return (
-    <section id="bio" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
-      <div className="mx-auto max-w-6xl grid lg:grid-cols-[0.85fr_1.15fr] gap-14 items-start">
+    <section id="bio" className="relative overflow-hidden px-6 lg:px-10 py-24 bg-[var(--as-bg)]">
+      {isStandalonePage && <AgencyClip side="right" pos="bottom" size="md" />}
+      <div className="relative mx-auto max-w-6xl grid lg:grid-cols-[0.85fr_1.15fr] gap-14 items-start">
         <div className={`overflow-hidden bg-[var(--as-surface)] ${teamAspect(site, true) || "aspect-[4/5]"}`}>
           <AgentPhotos site={site} bio />
         </div>

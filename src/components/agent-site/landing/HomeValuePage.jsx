@@ -68,7 +68,7 @@ export default function HomeValuePage() {
       {site.sales.length > 0 && <SoldHomes limit={3} />}
 
       {quote && (
-        <Section tone="alt" id="quote">
+        <Section tone="alt" id="quote" clip={{ side: "right" }}>
           <div className="max-w-3xl mx-auto text-center">
             <div className="font-display text-2xl sm:text-3xl leading-snug italic">
               &ldquo;

@@ -78,7 +78,7 @@ export function resolveLanding(landing, agentFirstName = "") {
   });
   return { order, menu: l.menu !== false, compsTask: l.comps_task !== false, animated: l.animated === true,
     panels: l.panels === true,
-    // The paperclip A bleeding off the edge of the Contact section (The Agency offices only; on unless turned off).
+    // The paperclip A bleeding off the edge of a few sections (see components/agent-site/AgencyClip.jsx; The Agency offices only, on unless turned off).
     paperclip: l.paperclip !== false,
     // The Instagram strip above the footer: a Behold feed address (feeds.behold.so/...) and, optionally, the handle to show and the line above it (default "Follow along").
     instagram: { on: !(l.instagram && l.instagram.on === false), feedUrl: clean(l.instagram?.feed_url), handle: clean(l.instagram?.handle), label: clean(l.instagram?.label) || "Follow along" },

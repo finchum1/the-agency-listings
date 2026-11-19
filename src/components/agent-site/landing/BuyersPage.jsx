@@ -171,7 +171,7 @@ export default function BuyersPage() {
       )}
 
       {/* The last band is light (the footer under it is dark); it takes whichever light tone the section above it is not. */}
-      <Section tone={isAgency ? "bg" : "alt"} id="start" className={`${isAgency ? "border-t border-[var(--as-text)]/10" : ""} ${aboveFooter(site)}`}>
+      <Section tone={isAgency ? "bg" : "alt"} id="start" className={`${isAgency ? "border-t border-[var(--as-text)]/10" : ""} ${aboveFooter(site)}`} clip={{ side: "right" }}>
         <div className="flex flex-wrap items-center justify-between gap-8">
           <div>
             <Eyebrow>Ready to find your dream home?</Eyebrow>
