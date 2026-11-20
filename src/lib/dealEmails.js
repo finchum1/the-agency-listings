@@ -264,6 +264,36 @@ export function mailtoHref({ to = [], cc = [], subject = "", body = "" }) {
   const query = [cc.length && `cc=${enc(cc.join(","))}`, subject && `subject=${enc(subject)}`, body && `body=${enc(body.replace(/\r?\n/g, "\r\n"))}`].filter(Boolean).join("&");
   return `mailto:${to.map(enc).join(",").replace(/%40/g, "@")}${query ? `?${query}` : ""}`;
 }
+/**
+ * The one-click "Email client / title team / lending team / other agent & TC / all" buttons on a deal: each is a new email to that whole group, with the
+ * property as the subject and the deal's agent copied (unless they are already a recipient). `enabled` is false for a group with no addresses yet.
+ * The same five groups as the Mac app's deal header (Deals/DealModels.swift, DealEmailGroup). A cash purchase has no lending team and "all" leaves the lender out.
+ */
+export function dealEmailGroups(deal, agentEmail = "") {
+  const clean = (list) => {
+    const seen = new Set();
+    return list.map((v) => String(v || "").trim()).filter((v) => v && !seen.has(v.toLowerCase()) && seen.add(v.toLowerCase()));
+  };
+  const agent = String(agentEmail || "").trim();
+  const subject = deal.property_address ? `Re: ${deal.property_address}` : "";
+  const make = (key, label, emails) => {
+    const to = clean(emails);
+    const cc = agent && !to.some((t) => t.toLowerCase() === agent.toLowerCase()) ? [agent] : [];
+    return { key, label, to, cc, subject, enabled: to.length > 0 };
+  };
+  const cash = !!deal.is_cash;
+  const other = [deal.other_agent_email, deal.other_agent2_email, deal.other_agent_tc_email];
+  const title = [deal.escrow_officer_email, deal.title_processor_email];
+  const lending = [deal.lender_email, deal.loan_processor_email];
+  return [
+    make("client", "Email client", [deal.email, deal.client2_email]),
+    make("title", "Email title team", title),
+    ...(cash ? [] : [make("lending", "Email lending team", lending)]),
+    make("other", "Email other agent & TC", other),
+    make("all", "Email all", [...other, ...title, ...(cash ? [] : lending)]),
+  ];
+}
+
 /** The same email as a Gmail compose window. */
 export function gmailHref({ to = [], cc = [], subject = "", body = "" }) {
   return `https://mail.google.com/mail/?view=cm&fs=1&to=${enc(to.join(","))}&cc=${enc(cc.join(","))}&su=${enc(subject)}&body=${enc(body)}`;

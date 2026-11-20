@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuth } from "../../../hooks/useAuth";
 import { useEmailTemplates } from "../../../hooks/useEmailTemplates";
-import { EMAIL_GROUPS, gmailHref, mailtoHref, renderDealEmail, templatesForDeal } from "../../../lib/dealEmails";
+import { EMAIL_GROUPS, dealEmailGroups, gmailHref, mailtoHref, renderDealEmail, templatesForDeal } from "../../../lib/dealEmails";
 import EmailTemplatesEditor from "./EmailTemplatesEditor";
 
 const muted = "text-[#1c1a17]/50 dark:text-[#faf9f7]/50";
@@ -182,6 +182,39 @@ export default function DealEmailButton({ deal }) {
           <EmailTemplatesEditor tpl={mail.tpl} />
         </Modal>
       )}
+    </div>
+  );
+}
+
+// The party buttons on a deal's Overview: "Email client", "Email title team", "Email lending team", "Email other agent & TC" and "Email all". One click opens
+// a new email to that whole group in the person's own email app, so a quick note to the title team doesn't need the deal's Details page or a template.
+export function DealPartyEmails({ deal, agentEmail }) {
+  const groups = dealEmailGroups(deal, agentEmail);
+  return (
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Email the people on this deal">
+      {groups.map((g) => {
+        const title = g.enabled ? `Email ${g.to.join(", ")}${g.cc.length ? `, copying ${g.cc.join(", ")}` : ""}` : "No email addresses added yet. Add them in Details.";
+        const cls = `inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium ${
+          g.key === "client" ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "border border-black/10 dark:border-white/15 hover:bg-black/[0.03] dark:hover:bg-white/[0.05]"
+        }`;
+        const icon = (
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <path d="M3.5 7l8.5 6 8.5-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        );
+        return g.enabled ? (
+          <a key={g.key} href={mailtoHref({ to: g.to, cc: g.cc, subject: g.subject })} title={title} className={cls}>
+            {icon}
+            {g.label}
+          </a>
+        ) : (
+          <span key={g.key} title={title} aria-disabled="true" className={`${cls} opacity-40 cursor-not-allowed`}>
+            {icon}
+            {g.label}
+          </span>
+        );
+      })}
     </div>
   );
 }
