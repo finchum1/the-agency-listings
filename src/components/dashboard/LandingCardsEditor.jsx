@@ -103,6 +103,23 @@ export default function LandingCardsEditor({ siteId, siteSlug, value, onChange, 
           </span>
         </span>
       </label>
+      <fieldset className="bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 space-y-2">
+        <legend className="px-1 text-sm font-medium">Areas of Expertise layout</legend>
+        {[
+          ["cards", "Cards", "A grid of photo cards, with the animated map when it is turned on below."],
+          ["panels", "Photo panels", "Tall photo strips that open on hover to show each area's wording, like the cards above. Rows of up to five."],
+          ["index", "Index with photo", "A large list of area names with one photo that changes as you point at a name. Suits any number of areas."],
+        ].map(([value, label, note]) => (
+          <label key={value} className="flex items-start gap-3 cursor-pointer">
+            <input type="radio" name="areas-style" checked={landing.areasStyle === value} onChange={() => patch({ areas_style: value })} className="mt-0.5 accent-[#D8091B] dark:accent-[#f2454b]" />
+            <span>
+              <span className="block text-sm font-medium">{label}</span>
+              <span className={`block text-xs mt-0.5 ${muted}`}>{note}</span>
+            </span>
+          </label>
+        ))}
+        <p className={`text-xs ${muted}`}>Photo panels and Index replace the map. Each area still links to its own page.</p>
+      </fieldset>
       <label className="flex items-start gap-3 bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/15 rounded-lg px-3.5 py-3 cursor-pointer">
         <input type="checkbox" checked={landing.animated} onChange={(e) => patch({ animated: e.target.checked })} className="mt-0.5 accent-[#D8091B] dark:accent-[#f2454b]" />
         <span>

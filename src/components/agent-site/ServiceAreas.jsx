@@ -5,12 +5,16 @@ import SiteLink from "./SiteLink";
 import { LAYOUT_SECTIONS } from "./layouts";
 import { journeyPins, resolveMap } from "../../lib/areaMaps";
 import AreasJourney from "./AreasJourney";
+import { AreaIndex, AreaPanels } from "./AreaStyles";
+import { resolveLanding } from "../../lib/landingPages";
 
 export default function ServiceAreas() {
   const { site, isStandalonePage } = useAgentSiteContext();
   const more = useShowMore(site.areas);
+  const areasStyle = resolveLanding(site.landing, site.agent.first).areasStyle;
   const Variant = LAYOUT_SECTIONS[site.layout]?.Areas;
-  if (Variant) return <Variant />;
+  // The agent's own pick of the panels or the index layout (Site Details) wins over a template's built-in Areas section.
+  if (Variant && !(areasStyle !== "cards" && site.areas.length > 0)) return <Variant />;
   if (site.areas.length === 0) return null;
   // See Bio.jsx's comment — Home already has an H1 from Hero.jsx, but
   // this section IS the page at standalone /areas.
@@ -43,6 +47,9 @@ export default function ServiceAreas() {
       </div>
     </SiteLink>
   );
+
+  if (areasStyle === "panels") return <AreaPanels header={header} />;
+  if (areasStyle === "index") return <AreaIndex header={header} />;
 
   // The animated map (landing.animated, set in Site Details): only when enough of the agent's areas have a place on it.
   const pins = journeyPins(site);
