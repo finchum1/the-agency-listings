@@ -6,7 +6,7 @@ import SiteEditor from "./SiteEditor";
 import SiteWorkspace from "./SiteWorkspace";
 import { SITE_GROUP_KEYS, SITE_GROUPS, partAnchor, siteGroup, locateSitePart } from "../../lib/siteGroups";
 
-// The site editor is four pages — Content, Design, Settings and Insights (lib/siteGroups.js) — each one scrolling through all of its parts. The Website
+// The site editor is five pages — Content, Blog, Design, Settings and Insights (lib/siteGroups.js) — each one scrolling through all of its parts. The Website
 // entry in the dashboard menu opens them (hover it for the list). An address that names a single part (/site/blog, /site/details#domain) goes to the
 // page that part is on, scrolled to it.
 export const AGENT_SITE_SECTIONS = [...SITE_GROUP_KEYS, ...new Set(SITE_GROUPS.flatMap((g) => g.items.map((i) => i.key)))];
@@ -84,7 +84,7 @@ export default function AgentSiteWorkspace({ agentId, agentName, mode, section, 
       onStatusChange={site ? changeStatus : null}
       checklist={checklist}
     >
-      {/* The four pages of the editor, and under them the parts of the one showing (a page is long, so those are jump links). Both stay in view while it scrolls. */}
+      {/* The five pages of the editor, and under them the parts of the one showing (a page is long, so those are jump links). Both stay in view while it scrolls. */}
       <div className="sticky top-[3.4rem] z-20 -mx-1 mb-4 bg-[#faf9f7] dark:bg-[#0d0d0d] px-1 pt-2">
         <nav aria-label="Site pages" className="flex flex-wrap items-center gap-1 border-b border-black/10 dark:border-white/15">
           {SITE_GROUPS.map((g) => (
@@ -100,6 +100,7 @@ export default function AgentSiteWorkspace({ agentId, agentName, mode, section, 
             </Link>
           ))}
         </nav>
+        {group.items.length > 1 && (
         <nav aria-label={`${group.title} on this page`} className="flex flex-wrap items-center gap-1.5 py-2">
           <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/45 dark:text-[#faf9f7]/45">Jump to</span>
           {group.items.map((item) => (
@@ -113,6 +114,7 @@ export default function AgentSiteWorkspace({ agentId, agentName, mode, section, 
             </button>
           ))}
         </nav>
+        )}
       </div>
       <SiteEditor key={`${agentId}-${section}`} agentId={agentId} agentName={agentName} group={section} hideHeader />
     </SiteWorkspace>

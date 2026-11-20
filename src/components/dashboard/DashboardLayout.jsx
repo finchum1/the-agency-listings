@@ -36,7 +36,7 @@ function readNav() {
 }
 
 // What the menus that open beside a row offer. Clicking the row itself goes to the first page (People: Overview, Website: Content). Settings sits in
-// the People menu now that the page has no row of pills above it.
+// the People menu now that the page has no row of pills above it. The Website menu is its pages in order: Content, Blog, Design, Settings, Insights.
 const FLYOUTS = {
   people: {
     title: "People",
@@ -60,6 +60,7 @@ const FLYOUTS = {
     title: "Website",
     items: [
       { to: "/dashboard/site/content", label: "Content" },
+      { to: "/dashboard/site/blog", label: "Blog" },
       { to: "/dashboard/site/design", label: "Design" },
       { to: "/dashboard/site/settings", label: "Settings" },
       { to: "/dashboard/site/insights", label: "Insights" },

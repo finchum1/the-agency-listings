@@ -10,10 +10,11 @@ export const SITE_GROUPS = [
       { key: "listings", label: "Listings" },
       { key: "testimonials", label: "Testimonials" },
       { key: "areas", label: "Areas of expertise" },
-      { key: "blog", label: "Blog posts" },
       { key: "sales", label: "Past sales" },
     ],
   },
+  // The blog is its own page (it was a part of Content): write posts, the calendar, analytics and importing. The old /site/blog address now opens this page.
+  { key: "blog", title: "Blog", items: [{ key: "blog", label: "Blog posts" }] },
   {
     key: "design",
     title: "Design",
