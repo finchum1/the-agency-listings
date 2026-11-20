@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
+import { AgentSiteContext } from "../../context/AgentSiteContext";
+import { BrokerageSiteContext } from "../../context/BrokerageSiteContext";
 import { describeSearch } from "../../lib/visitorSearch";
 import { useDialogHost, useVisitor } from "../../lib/visitorStore";
 
@@ -9,7 +11,18 @@ const btn = "inline-flex items-center gap-2 rounded-full border border-[var(--as
 const primary = "rounded-full bg-[var(--as-dark)] px-5 py-2.5 text-xs font-medium uppercase tracked text-[var(--as-on-dark)] transition-opacity hover:opacity-85 disabled:opacity-50";
 const input = "w-full rounded-full border border-[var(--as-text)]/15 bg-transparent px-4 py-3 text-sm text-[var(--as-text)] outline-none placeholder:text-[var(--as-text)]/40 focus:border-[var(--as-accent)]";
 
+// Whose site this is, for the band at the top of every dialog: the brokerage's logo and the agent (or team) it belongs to on an agent site, or just
+// the brokerage on the brokerage site. The band uses the site's own header colors, so the logo is the one made for them.
+function useVisitorBrand() {
+  const agent = useContext(AgentSiteContext)?.site;
+  const brokerage = useContext(BrokerageSiteContext)?.site?.brokerage;
+  if (agent) return { logo: agent.brokerage?.logo || "", secondary: agent.secondaryLogo || "", org: agent.brokerage?.name || "", name: agent.agent?.name || "", photo: agent.agent?.photo || "" };
+  if (brokerage) return { logo: brokerage.logo || "", secondary: "", org: brokerage.name || "", name: "", photo: "" };
+  return null;
+}
+
 function Dialog({ title, onClose, children, wide }) {
+  const brand = useVisitorBrand();
   const ref = useRef(null);
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -25,6 +38,21 @@ function Dialog({ title, onClose, children, wide }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-6" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div ref={ref} role="dialog" aria-modal="true" aria-label={title} className={`max-h-[92vh] w-full overflow-y-auto bg-[var(--as-bg)] p-6 text-[var(--as-text)] shadow-2xl sm:rounded-2xl sm:p-8 ${wide ? "sm:max-w-2xl" : "sm:max-w-md"}`}>
+        {brand && (brand.logo || brand.org) && (
+          <div className="-mx-6 -mt-6 mb-6 flex items-center gap-4 bg-[var(--as-dark)] px-6 py-4 text-[var(--as-on-dark)] sm:-mx-8 sm:-mt-8 sm:px-8">
+            {brand.logo ? <img src={brand.logo} alt={brand.org} className="h-9 w-auto max-w-[45%] object-contain" /> : <span className="font-display text-lg font-semibold">{brand.org}</span>}
+            {brand.secondary && <img src={brand.secondary} alt="" className="agent-secondary-logo h-9 w-auto object-contain" />}
+            {brand.name && (
+              <span className="ml-auto flex min-w-0 items-center gap-3">
+                {brand.photo && <img src={brand.photo} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />}
+                <span className="min-w-0 text-right text-[11px] font-medium uppercase leading-tight tracked">
+                  <span className="block truncate">{brand.name}</span>
+                  <span className="block opacity-60">Home Search</span>
+                </span>
+              </span>
+            )}
+          </div>
+        )}
         <div className="mb-5 flex items-start justify-between gap-4">
           <h2 className="font-display text-2xl font-semibold leading-tight">{title}</h2>
           <button type="button" onClick={onClose} aria-label="Close" className="-mr-2 -mt-1 p-2 text-xl leading-none text-[var(--as-text)]/50 hover:text-[var(--as-text)]">×</button>

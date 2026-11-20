@@ -29,6 +29,7 @@ import {
   cleanText,
   clientIp,
   codeEmail,
+  emailBrand,
   describeSearch,
   hmac,
   newCode,
@@ -190,7 +191,7 @@ export default async function handler(req, res) {
         console.error("Visitor code insert failed:", error);
         return bad(res, 500, "Couldn't send a code. Please try again.");
       }
-      const mail = codeEmail({ siteName: site.label, code });
+      const mail = codeEmail({ siteName: site.label, code, brand: site.brand });
       const sent = await sendNotification(apiKey, { from: fromAs(`${site.label} Home Search`, "Home Search", "alerts"), to: email, subject: mail.subject, text: mail.text, html: mail.html });
       if (!sent) return bad(res, 502, "Couldn't send the email. Please try again.");
       return res.status(200).json({ ok: true });
@@ -342,7 +343,7 @@ async function runAlerts(admin) {
   }
 
   const siteIds = [...new Set((rows || []).map((r) => r.visitor.agent_site_id).filter(Boolean))];
-  const { data: sites } = siteIds.length ? await admin.from("agent_sites").select("id, org_id, idx_enabled, agent:profiles(full_name)").in("id", siteIds) : { data: [] };
+  const { data: sites } = siteIds.length ? await admin.from("agent_sites").select("id, org_id, idx_enabled, theme, accent_color, agent:profiles(full_name, photo_url), org:organizations(name)").in("id", siteIds) : { data: [] };
   const siteById = new Map((sites || []).map((s) => [s.id, s]));
   const configs = new Map();
   const configFor = async (orgId) => {
@@ -397,7 +398,9 @@ async function runAlerts(admin) {
   for (const { visitor, sections, updates } of byVisitor.values()) {
     if (!apiKey) break;
     const label = await labelFor(visitor);
-    const mail = alertEmail({ siteName: label, sections, unsubscribeUrl: `${SITE_ORIGIN}/api/visitor?a=unsubscribe&t=${unsubscribeToken(visitor.id)}`, disclaimer: DISCLAIMER });
+    const site = visitor.agent_site_id ? siteById.get(visitor.agent_site_id) : null;
+    const brand = site ? emailBrand(site.theme, site.accent_color, { name: site.agent?.full_name, photo: site.agent?.photo_url, org: site.org?.name }) : emailBrand("classic", "", { org: label });
+    const mail = alertEmail({ siteName: label, brand, sections, unsubscribeUrl: `${SITE_ORIGIN}/api/visitor?a=unsubscribe&t=${unsubscribeToken(visitor.id)}`, disclaimer: DISCLAIMER });
     const sent = await sendNotification(apiKey, { from: fromAs(`${label} Home Search`, "Home Search", "alerts"), to: visitor.email, subject: mail.subject, text: mail.text, html: mail.html });
     if (!sent) continue;
     stats.emailed += 1;

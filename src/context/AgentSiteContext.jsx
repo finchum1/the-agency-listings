@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-const AgentSiteContext = createContext(null);
+export const AgentSiteContext = createContext(null);
 
 // value: { site, siteId } — `site` is the adaptAgentSite() shape.
 export function AgentSiteProvider({ value, children }) {

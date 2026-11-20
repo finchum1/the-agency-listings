@@ -34,12 +34,31 @@ export function readUnsubscribeToken(token) {
 // here from the database, never taken from the request.
 //   { kind: "agent", id }   an agent's website (must have Home Search switched on)
 //   { kind: "brokerage" }   the brokerage site on the request's host (the default organization on the app host)
+// The look of a site in an email, from its theme: the header color, the text on it, and the accent (the same palettes as the site's own themes in
+// src/index.css; an email can't read CSS variables). An agent's own accent color wins when they set one.
+const THEME_COLORS = {
+  classic: ["#1C1C1B", "#F5F1E9", "#D8091B"],
+  dark: ["#121211", "#F5F1E9", "#D8091B"],
+  sand: ["#1C1C1B", "#F5F1E9", "#D8091B"],
+  red: ["#D8091B", "#FFFFFF", "#1C1C1B"],
+  linen: ["#F5F1E9", "#1C1C1B", "#D8091B"],
+  velvet: ["#470300", "#EBE3D6", "#470300"],
+  "velvet-night": ["#260100", "#EBE3D6", "#D8091B"],
+  chambray: ["#C2D7E6", "#1C1C1B", "#D8091B"],
+  brownstone: ["#906F57", "#FFFFFF", "#D8091B"],
+};
+const HEX = /^#[0-9a-f]{6}$/i;
+export function emailBrand(theme, accentColor, { name = "", photo = "", org = "" } = {}) {
+  const [dark, onDark, accent] = THEME_COLORS[theme] || THEME_COLORS.classic;
+  return { dark, onDark, accent: HEX.test(accentColor || "") ? accentColor : accent, name, photo: /^https:\/\//.test(photo || "") ? photo : "", org };
+}
+
 export async function resolveSite(admin, req, ref) {
   const host = bareHost(String(req.headers["x-forwarded-host"] || req.headers.host || ""));
   if (ref?.kind === "agent" && /^[0-9a-f-]{36}$/.test(String(ref.id || ""))) {
     const { data: site } = await admin
       .from("agent_sites")
-      .select("id, slug, agent_id, org_id, idx_enabled, custom_domain, agent:profiles(full_name, email)")
+      .select("id, slug, agent_id, org_id, idx_enabled, custom_domain, theme, accent_color, agent:profiles(full_name, email, photo_url), org:organizations(name)")
       .eq("id", ref.id)
       .maybeSingle();
     if (!site || !site.idx_enabled || !site.agent?.email) return null;
@@ -51,6 +70,7 @@ export async function resolveSite(admin, req, ref) {
       agentId: site.agent_id,
       agent: site.agent,
       label: site.agent.full_name || "your agent",
+      brand: emailBrand(site.theme, site.accent_color, { name: site.agent.full_name, photo: site.agent.photo_url, org: site.org?.name }),
       notifyEmail: site.agent.email,
       origin: originFor(host, site.custom_domain),
     };
@@ -65,6 +85,7 @@ export async function resolveSite(admin, req, ref) {
       agentId: null,
       agent: null,
       label: site.org.name || "The brokerage",
+      brand: emailBrand("classic", "", { name: "", photo: "", org: site.org.name }),
       notifyEmail: site.contact_email || "",
       origin: originFor(host, site.custom_domain),
     };
@@ -145,20 +166,29 @@ export { describeSearch } from "../../src/lib/visitorSearch.js";
 
 // ------------------------------------------------------------------ emails
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-const shell = (inner) => `<!doctype html><html><body style="margin:0;background:#f4f2ee;padding:24px 12px;font-family:Helvetica,Arial,sans-serif;color:#14130f"><div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e3ded3;padding:28px">${inner}</div></body></html>`;
+const shell = (inner, band = "") => `<!doctype html><html><body style="margin:0;background:#f4f2ee;padding:24px 12px;font-family:Helvetica,Arial,sans-serif;color:#14130f"><div style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e3ded3">${band}<div style="padding:28px">${inner}</div></div></body></html>`;
 
-export function codeEmail({ siteName, code }) {
+/** The branded top of a visitor email: the site's header color, the agent's photo and name, and the brokerage. Plain table markup, no images that mail apps block. */
+function brandBand(brand) {
+  if (!brand) return "";
+  const who = brand.name || brand.org;
+  const photo = brand.photo ? `<td width="56" style="padding-right:14px;vertical-align:middle"><img src="${esc(brand.photo)}" width="48" height="48" alt="" style="display:block;border:0;width:48px;height:48px;border-radius:24px;object-fit:cover"></td>` : "";
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${brand.dark};width:100%"><tr><td style="padding:18px 28px"><table role="presentation" cellpadding="0" cellspacing="0"><tr>${photo}<td style="vertical-align:middle"><div style="font:600 19px Georgia,'Times New Roman',serif;color:${brand.onDark}">${esc(who)}</div><div style="margin-top:3px;font:11px Helvetica,Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:${brand.onDark};opacity:.7">${esc(brand.name && brand.org ? `${brand.org} · Home Search` : "Home Search")}</div></td></tr></table></td></tr></table>`;
+}
+
+export function codeEmail({ siteName, code, brand = null }) {
+  const accent = brand?.accent || "#14130f";
   return {
     subject: `${code} is your ${siteName} sign-in code`,
     text: `Your sign-in code for ${siteName} is ${code}.\n\nIt works for 10 minutes. If you didn't ask for it, you can ignore this email.`,
-    html: shell(`<p style="margin:0 0 6px;font-size:13px;color:#6b665a">${esc(siteName)} Home Search</p><p style="margin:0 0 18px;font-size:16px">Your sign-in code:</p><p style="margin:0 0 18px;font-size:34px;letter-spacing:8px;font-weight:700">${esc(code)}</p><p style="margin:0;font-size:13px;color:#6b665a">It works for 10 minutes. If you didn't ask for it, you can ignore this email.</p>`),
+    html: shell(`<p style="margin:0 0 6px;font-size:13px;color:#6b665a">${esc(siteName)} Home Search</p><p style="margin:0 0 18px;font-size:16px">Your sign-in code:</p><p style="margin:0 0 18px;font-size:34px;letter-spacing:8px;font-weight:700;color:${accent}">${esc(code)}</p><p style="margin:0;font-size:13px;color:#6b665a">It works for 10 minutes. If you didn't ask for it, you can ignore this email.</p>`, brandBand(brand)),
   };
 }
 
 const money = (n) => (Number.isFinite(Number(n)) && n !== null ? `$${Number(n).toLocaleString("en-US")}` : "");
 
 /** The daily email of new homes: `sections` is [{ name, url, homes: [normalized listings], extra }]. */
-export function alertEmail({ siteName, sections, unsubscribeUrl, disclaimer }) {
+export function alertEmail({ siteName, sections, unsubscribeUrl, disclaimer, brand = null }) {
   const total = sections.reduce((n, s) => n + s.homes.length + (s.extra || 0), 0);
   const subject = `${total} new ${total === 1 ? "home" : "homes"} for your saved ${sections.length === 1 ? "search" : "searches"}`;
   const homeText = (h) => `${money(h.price)}  ${[h.address_line1, h.city].filter(Boolean).join(", ")}  ${[h.beds && `${h.beds} bd`, h.baths && `${h.baths} ba`, h.sqft && `${Number(h.sqft).toLocaleString("en-US")} sqft`].filter(Boolean).join(" | ")}${h.officeName ? `  (Courtesy of ${h.officeName})` : ""}`;
@@ -181,6 +211,7 @@ export function alertEmail({ siteName, sections, unsubscribeUrl, disclaimer }) {
         )
         .join("") +
       `<p style="margin:26px 0 0;font-size:11px;color:#8c887d;line-height:1.5">${esc(disclaimer)}</p><p style="margin:10px 0 0;font-size:11px;color:#8c887d"><a href="${esc(unsubscribeUrl)}" style="color:#8c887d">Stop these emails</a></p>`,
+    brandBand(brand),
   );
   return { subject, text, html };
 }
