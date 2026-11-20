@@ -3,10 +3,10 @@ import { supabase } from "../lib/supabaseClient";
 
 const PAGE = 1000;
 
-async function fetchAll(table) {
+async function fetchAll(table, columns = "person_id, done") {
   const rows = [];
   for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase.from(table).select("person_id, done").order("created_at").range(from, from + PAGE - 1);
+    const { data, error } = await supabase.from(table).select(columns).order("created_at").range(from, from + PAGE - 1);
     if (error) {
       console.error(`useTransactionProgress: ${table} failed`, error);
       break;
@@ -17,7 +17,7 @@ async function fetchAll(table) {
   return rows;
 }
 
-// { [personId]: { tasks: { done, total }, docs: { done, total } } } for every deal, for the Transactions board cards.
+// { [personId]: { tasks: { done, total }, docs: { done, total }, open: [the tasks still to do] } } for every deal, for the Transactions board cards.
 // Pass enabled=false on the other boards to skip the queries. `reload` refetches (call it after the deal panel closes,
 // since ticking items off happens in there).
 export function useTransactionProgress(enabled) {
@@ -25,13 +25,15 @@ export function useTransactionProgress(enabled) {
 
   const reload = useCallback(async () => {
     if (!enabled) return;
-    const [tasks, docs] = await Promise.all([fetchAll("transaction_tasks"), fetchAll("transaction_documents")]);
+    // The tasks come with what is needed to tell when each is due, so the cards can say what is overdue or next.
+    const [tasks, docs] = await Promise.all([fetchAll("transaction_tasks", "person_id, done, text, anchor, offset_days, due_override"), fetchAll("transaction_documents")]);
     const next = {};
     const add = (rows, key) => {
       for (const r of rows) {
         const entry = (next[r.person_id] ||= { tasks: { done: 0, total: 0 }, docs: { done: 0, total: 0 } });
         entry[key].total += 1;
         if (r.done) entry[key].done += 1;
+        else if (key === "tasks") (entry.open ||= []).push({ text: r.text, anchor: r.anchor, offset_days: r.offset_days, due_override: r.due_override });
       }
     };
     add(tasks, "tasks");

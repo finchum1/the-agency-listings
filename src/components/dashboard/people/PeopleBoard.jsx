@@ -17,6 +17,7 @@ import { usePeekWidth } from "../../../hooks/usePeekWidth";
 import { useMediaQuery } from "../../../hooks/useMediaQuery";
 import useUrlParamSync from "../../../hooks/useUrlParamSync";
 import StartPlanModal from "./StartPlanModal";
+import { dealCardStatus, whenText } from "../../../lib/dealCard";
 
 const COLUMN_DRAG_TYPE = "application/x-people-column";
 
@@ -59,10 +60,62 @@ const COLLAPSED_KEY = (group) => `peopleCollapsedColumns:${group}`;
 
 // The colored edge on a deal card's left side, by buyer / seller (same hues as the tags in lib/peopleSides.js).
 const SIDE_EDGE = { buyer: "bg-sky-500", seller: "bg-amber-500", both: "bg-violet-500" };
+// A deal card's edge says how the deal is doing, not which side it is: red = something overdue, amber = something due today or within two days, green = on
+// track, grey = nothing scheduled yet, and a quiet green once closed (lib/dealCard.js).
+const HEALTH_EDGE = { red: "bg-red-500", amber: "bg-amber-500", green: "bg-emerald-500", grey: "bg-zinc-300 dark:bg-zinc-600", closed: "bg-emerald-700/50" };
+const TONE_TEXT = { red: "text-red-600 dark:text-red-400", amber: "text-amber-700 dark:text-amber-400", muted: "text-[#1c1a17]/55 dark:text-[#faf9f7]/55" };
+
+// A deal's card: the name with a bubble when something needs you, the address, the one next thing, and a thin line for the checklist. Everything else (price,
+// side, closing date) is in the card's hover text and in the deal itself.
+function DealCardBody({ p, progress, today, closed, extra }) {
+  const st = dealCardStatus(p, progress[p.id], today, closed);
+  const closedOn = p.closing_date && p.closing_date <= today ? followUpLabel(p.closing_date) : "";
+  const side = SIDE_TAGS[p.side]?.label;
+  const hover = [p.name, p.property_address, p.price ? `$${Number(p.price).toLocaleString()}` : "", side, p.closing_date ? `${closed ? "Closed" : "Closes"} ${followUpLabel(p.closing_date)}` : ""].filter(Boolean).join(" · ");
+  const bubble = st.overdue > 0 ? { text: `${st.overdue} overdue`, cls: "bg-red-600 text-white" } : st.dueToday > 0 ? { text: `${st.dueToday} due today`, cls: "bg-amber-500 text-white" } : null;
+  const pct = st.tasks.total ? Math.round((st.tasks.done / st.tasks.total) * 100) : 0;
+  return (
+    <>
+      <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1.5 rounded-l-xl ${HEALTH_EDGE[st.health]}`} />
+      <div title={hover} className="space-y-1">
+        {p._foreign && <p className="text-[10px] font-semibold uppercase tracking-wider text-[#1c1a17]/45 dark:text-[#faf9f7]/45 truncate">TC for {p._agent || "another agent"}</p>}
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <p className="text-sm font-semibold truncate">{p.name}</p>
+          {bubble && <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none ${bubble.cls}`}>{bubble.text}</span>}
+        </div>
+        {p.property_address && <p className="text-xs text-[#1c1a17]/60 dark:text-[#faf9f7]/60 truncate">{p.property_address}</p>}
+        {p.compliance_status && p.compliance_status !== "none" && <ComplianceChip status={p.compliance_status} />}
+        <p className="flex items-baseline justify-between gap-2 text-xs pt-0.5">
+          {st.closed ? (
+            <span className="font-semibold text-emerald-700 dark:text-emerald-400 truncate">Closed{closedOn ? ` ${closedOn}` : ""}</span>
+          ) : st.next ? (
+            <>
+              <span className="min-w-0 truncate font-medium">
+                <span className={TONE_TEXT[st.next.tone]} aria-hidden="true">● </span>
+                {st.next.text}
+              </span>
+              <span className={`shrink-0 font-medium ${TONE_TEXT[st.next.tone]}`}>{whenText(st.next.days)}</span>
+            </>
+          ) : (
+            <span className="text-[#1c1a17]/45 dark:text-[#faf9f7]/45">Nothing scheduled yet</span>
+          )}
+        </p>
+      </div>
+      {st.tasks.total > 0 && !st.closed && (
+        <div className="h-1 rounded-full bg-black/[0.07] dark:bg-white/10 overflow-hidden" role="progressbar" aria-label={`Checklist ${st.tasks.done} of ${st.tasks.total}`} aria-valuenow={st.tasks.done} aria-valuemin={0} aria-valuemax={st.tasks.total}>
+          <div className={`h-full rounded-full ${st.health === "red" ? "bg-red-500" : "bg-[#1c1a17]/55 dark:bg-[#faf9f7]/60"}`} style={{ width: `${pct}%` }} />
+        </div>
+      )}
+      {extra}
+    </>
+  );
+}
+
 
 // What's inside a person's card: the same markup is used for the card in its column and for the card floating under
 // the pointer while it is being dragged.
-function PersonCardBody({ p, group, progress, today, extra }) {
+function PersonCardBody({ p, group, progress, today, extra, closedStage }) {
+  if (group === "transaction") return <DealCardBody p={p} progress={progress} today={today} closed={Boolean(closedStage) && p.stage === closedStage} extra={extra} />;
   const overdue = p.next_follow_up && p.next_follow_up < today;
   const dueToday = p.next_follow_up === today;
   return (
@@ -928,7 +981,7 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
                       }}
                       className={`${CARD_CLASS} cursor-grab hover:shadow-sm transition-shadow`}
                     >
-                      <PersonCardBody p={p} group={group} progress={progress} today={today} extra={cardExtra?.(p)} />
+                      <PersonCardBody p={p} group={group} progress={progress} today={today} extra={cardExtra?.(p)} closedStage={closedStage} />
                       {!p._foreign && <DraftBadge count={draftCounts[p.id]} />}
                     </div>,
                   );
@@ -1004,7 +1057,7 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
               transform: dragRef.current ? floatTransform(dragRef.current) : undefined,
             }}
           >
-            <PersonCardBody p={people.find((x) => x.id === drag.id) || foreign.find((x) => x.id === drag.id)} group={group} progress={progress} today={today} extra={cardExtra?.(people.find((x) => x.id === drag.id))} />
+            <PersonCardBody p={people.find((x) => x.id === drag.id) || foreign.find((x) => x.id === drag.id)} group={group} progress={progress} today={today} extra={cardExtra?.(people.find((x) => x.id === drag.id))} closedStage={closedStage} />
             {!foreign.some((x) => x.id === drag.id) && <DraftBadge count={draftCounts[drag.id]} />}
           </div>,
           document.body,

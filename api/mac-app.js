@@ -82,6 +82,7 @@ import crypto from "node:crypto";
 import { serviceClient } from "./_lib/authUser.js";
 import { deviceFor } from "./_lib/macDevice.js";
 import { effectiveDue } from "../src/lib/checklistDefaults.js";
+import { dealCardStatus } from "../src/lib/dealCard.js";
 import { IMPORT_FIELDS, bestToKeep, duplicateGroups, guessMapping, parseCsv, rowToContact, touchDue } from "../src/lib/contacts.js";
 import { nextDue } from "../src/lib/taskRecurrence.js";
 import { cleanList, cleanSteps } from "../src/lib/taskLists.js";
@@ -403,9 +404,21 @@ export default async function handler(req, res) {
       const closed = named && stages.includes(named) ? named : stages.includes("Closed") ? "Closed" : stages[stages.length - 1];
       const ids = deals.map((d) => d.id);
       const [tasks, docs] = await Promise.all([progressOf(admin, "transaction_tasks", ids), progressOf(admin, "transaction_documents", ids)]);
+      // What each card says at a glance (src/lib/dealCard.js, the same rules as the web board): what is overdue, what is next, how the deal is doing.
+      const open = new Map();
+      for (let i = 0; i < ids.length; i += 100) {
+        const rows = await readAll(() => admin.from("transaction_tasks").select("person_id, text, anchor, offset_days, due_override").eq("done", false).in("person_id", ids.slice(i, i + 100)).order("id"));
+        for (const t of rows) open.set(t.person_id, [...(open.get(t.person_id) || []), t]);
+      }
+      const today = todayKey();
+      const cardOf = (d) => {
+        const column = d._foreign ? d._column || d.stage : d.stage;
+        const st = dealCardStatus(d, { tasks: tasks.get(d.id), open: open.get(d.id) }, today, column === closed);
+        return { health: st.health, overdue: st.overdue, due_today: st.dueToday, next: st.next ? { text: st.next.text, date: st.next.date } : null };
+      };
       return res.status(200).json({
         stages, closed,
-        deals: deals.map((d) => ({ ...d, column: d._foreign ? d._column || d.stage : d.stage, foreign: d._foreign, agent: d._agent, tasks: tasks.get(d.id), docs: docs.get(d.id), _foreign: undefined, _agent: undefined, _column: undefined })),
+        deals: deals.map((d) => ({ ...d, column: d._foreign ? d._column || d.stage : d.stage, foreign: d._foreign, agent: d._agent, tasks: tasks.get(d.id), docs: docs.get(d.id), card: cardOf(d), _foreign: undefined, _agent: undefined, _column: undefined })),
       });
     }
 
