@@ -85,6 +85,8 @@ export default defineConfig({
         // fires the "activated" event our registerSW() call (main.jsx)
         // is already listening for, triggering its own automatic
         // reload — closing the loop with zero manual DevTools steps.
+        // Phone / desktop alerts: the push and notification-click handlers (public/push-sw.js) run inside this service worker.
+        importScripts: ['push-sw.js'],
         skipWaiting: true,
         clientsClaim: true,
         // Pages load on demand (src/lib/lazyPage.js), so the app is ~160 small files. They are NOT precached: installing the

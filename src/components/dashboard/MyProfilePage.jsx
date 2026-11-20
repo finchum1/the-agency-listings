@@ -7,6 +7,7 @@ import { useTheme } from "../../hooks/useTheme";
 import ImageUploadField from "./ImageUploadField";
 import OrgSwitcher from "./OrgSwitcher";
 import { useOrg } from "../../context/OrgContext";
+import PhoneAlerts from "./PhoneAlerts";
 
 const THEME_OPTIONS = [
   { value: "light", label: "Light" },
@@ -312,6 +313,8 @@ export default function MyProfilePage() {
           {deadlineNudgesError && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{deadlineNudgesError}</p>}
         </div>
       )}
+
+      {profile.people_enabled && <PhoneAlerts />}
 
       {profile.people_enabled && (
         <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mt-6">

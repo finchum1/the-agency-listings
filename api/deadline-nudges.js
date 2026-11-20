@@ -1,10 +1,12 @@
 // GET /api/deadline-nudges: run by the Vercel cron every morning (vercel.json). For each agent with open deals, emails ONE digest of what is
 // due today, tomorrow or the day after (key dates and tasks) plus anything overdue; nothing is sent on a day with nothing to report. Goes out once
-// per agent per day (deadline_nudge_log). An agent can turn it off in My Profile (deadline_nudges). ?dryRun=1 lists what would be sent without
+// per agent per day (deadline_nudge_log). An agent can turn it off in My Profile (deadline_nudges). An agent who has turned phone alerts on (api/push.js)
+// also gets a short push notification of the same things, whether or not they keep the email. ?dryRun=1 lists what would be sent without
 // sending or logging; ?to=<agent id> limits a run to one agent. If CRON_SECRET is set, the call must carry it.
 import { serviceClient } from "./_lib/authUser.js";
 import { fromAs, sendNotification, viaOrg } from "./_lib/inquiry.js";
 import { daysBetween, gatherDeal, summarize, todayKey } from "./_lib/dealUpdate.js";
+import { sendPushTo } from "./_lib/push.js";
 import { SITE_ORIGIN } from "../src/lib/seo.js";
 
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -54,11 +56,15 @@ export default async function handler(req, res) {
   const sent = [];
   for (const [agentId, ids] of byAgent) {
     try {
-      const [{ data: settings }, { data: logged }] = await Promise.all([
+      const [{ data: settings }, { data: logged }, { count: devices }] = await Promise.all([
         admin.from("agent_notification_settings").select("deadline_nudges").eq("agent_id", agentId).maybeSingle(),
-        admin.from("deadline_nudge_log").select("day").eq("agent_id", agentId).eq("day", today).maybeSingle(),
+        admin.from("deadline_nudge_log").select("channel").eq("agent_id", agentId).eq("day", today),
+        admin.from("push_subscriptions").select("id", { count: "exact", head: true }).eq("user_id", agentId),
       ]);
-      if (settings?.deadline_nudges === false || logged) continue;
+      const done = new Set((logged || []).map((l) => l.channel));
+      const wantEmail = settings?.deadline_nudges !== false && !done.has("email");
+      const wantPush = (devices || 0) > 0 && !done.has("push");
+      if (!wantEmail && !wantPush) continue;
       const { data: ps } = await admin.from("people_settings").select("stages").eq("owner_id", agentId).maybeSingle();
       const closedName = String(ps?.stages?.transaction_closed || "Closed").toLowerCase();
 
@@ -71,7 +77,7 @@ export default async function handler(req, res) {
         const items = nudgeItems(data, today);
         if (items) sections.push({ id, where: data.deal.property_address || data.deal.name, ...items });
       }
-      if (!owner?.email || !sections.length) continue;
+      if (!sections.length) continue;
       sections.sort((a, b) => (b.overdue.length ? 1 : 0) - (a.overdue.length ? 1 : 0) || (a.soon[0]?.days ?? 9) - (b.soon[0]?.days ?? 9));
 
       const count = sections.reduce((n, s) => n + s.soon.length + s.overdue.length, 0);
@@ -95,15 +101,25 @@ export default async function handler(req, res) {
       const html = `<!doctype html><html><body style="margin:0;background:#f7f4ee"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px"><table role="presentation" width="600" style="max-width:600px;width:100%"><tr><td style="padding:0 6px 14px"><div style="font:600 11px Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#d3181d">Deadlines</div><div style="margin-top:6px;font:600 24px Georgia,serif;color:#1c1a17">${esc(subject)}</div></td></tr>${sections.map(block).join("")}<tr><td style="padding:8px 6px 0;font:12px/1.5 Arial,sans-serif;color:#7a756b">${esc(owner.org?.name || "")} · You can turn this email off in My Profile.</td></tr></table></td></tr></table></body></html>`;
 
       if (dryRun) {
-        sent.push({ agent: owner.full_name, deals: sections.length, items: count, subject });
+        sent.push({ agent: owner.full_name, deals: sections.length, items: count, subject, email: wantEmail && Boolean(owner.email), push: wantPush });
         continue;
       }
-      // Claim the day first, so an overlapping run can't send it twice; give it back if the email fails.
-      const { error } = await admin.from("deadline_nudge_log").insert({ agent_id: agentId, day: today });
-      if (error) continue;
-      const ok = await sendNotification(apiKey, { from: fromAs(viaOrg("", owner.org?.name), "Deals", "deals"), to: [owner.email], subject, text, html });
-      if (!ok) await admin.from("deadline_nudge_log").delete().eq("agent_id", agentId).eq("day", today);
-      else sent.push({ agent: owner.full_name, deals: sections.length, items: count });
+      // Claim the day first, so an overlapping run can't send it twice; give it back if the send fails.
+      const claim = async (channel) => !(await admin.from("deadline_nudge_log").insert({ agent_id: agentId, day: today, channel })).error;
+      const release = (channel) => admin.from("deadline_nudge_log").delete().eq("agent_id", agentId).eq("day", today).eq("channel", channel);
+      const result = { agent: owner.full_name, deals: sections.length, items: count };
+      if (wantEmail && owner.email && (await claim("email"))) {
+        const ok = await sendNotification(apiKey, { from: fromAs(viaOrg("", owner.org?.name), "Deals", "deals"), to: [owner.email], subject, text, html });
+        if (!ok) await release("email");
+        else result.emailed = true;
+      }
+      if (wantPush && (await claim("push"))) {
+        const top = sections.flatMap((s) => [...s.overdue.map((t) => `${t.text} (overdue)`), ...s.soon.map((i) => `${i.text} ${when(i.days)}`)].map((line) => `${s.where}: ${line}`));
+        const r = await sendPushTo(admin, [agentId], { title: subject, body: top.slice(0, 3).join("\n") + (top.length > 3 ? `\n+${top.length - 3} more` : ""), url: sections.length === 1 ? `/dashboard/deals?deal=${sections[0].id}` : "/dashboard/deals", tag: "deadlines" });
+        if (r.sent === 0) await release("push");
+        else result.pushed = r.sent;
+      }
+      if (result.emailed || result.pushed) sent.push(result);
     } catch (err) {
       console.error("deadline nudge failed for", agentId, err);
     }
