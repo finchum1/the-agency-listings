@@ -104,7 +104,7 @@ export default function BrokerageAreaPage() {
           preview
           officeOnly
           brand={adapted.brokerage}
-          initialCity={area.name}
+          initialCity={area.search_term?.trim() || area.name}
           previewCount={6}
           viewAllHref={null}
           eyebrowOverride={`${adapted.brokerage.name}'s Listings`}
@@ -115,7 +115,7 @@ export default function BrokerageAreaPage() {
           isStandalonePage
           officeOnly={false}
           brand={adapted.brokerage}
-          initialCity={area.name}
+          initialCity={area.search_term?.trim() || area.name}
           sectionId="area-search"
           eyebrowOverride="Home Search"
           titleOverride={`Search Homes in ${area.name}`}

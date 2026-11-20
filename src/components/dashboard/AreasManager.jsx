@@ -3,7 +3,7 @@ import { supabase } from "../../lib/supabaseClient";
 import ImageUploadField from "./ImageUploadField";
 import RichTextEditor from "./RichTextEditor";
 
-const emptyForm = { slug: "", name: "", blurb: "", description: "", photo_url: "" };
+const emptyForm = { slug: "", name: "", blurb: "", description: "", photo_url: "", search_term: "" };
 
 // Areas arrive in sort_order (see useAgentSiteEditor.js) — an agent with
 // a long list used to just render as one long stacked list here; show
@@ -42,6 +42,7 @@ export default function AreasManager({ agentSiteId, areas, onChanged, table = "a
       slug: area.slug,
       name: area.name,
       blurb: area.blurb || "",
+      search_term: area.search_term || "",
       description: area.description || "",
       photo_url: area.photo_url || "",
     });
@@ -75,6 +76,7 @@ export default function AreasManager({ agentSiteId, areas, onChanged, table = "a
       slug: form.slug.trim(),
       name: form.name.trim(),
       blurb: form.blurb,
+      search_term: form.search_term.trim(),
       description: form.description,
       photo_url: form.photo_url || null,
     };
@@ -185,6 +187,11 @@ export default function AreasManager({ agentSiteId, areas, onChanged, table = "a
               <label className={labelClass}>Slug</label>
               <input required value={form.slug} onChange={update("slug")} className={inputClass} />
             </div>
+          </div>
+          <div>
+            <label className={labelClass}>Search homes for (optional)</label>
+            <input value={form.search_term} onChange={update("search_term")} maxLength={80} placeholder="The city, as the MLS spells it" className={inputClass} />
+            <p className="mt-1 text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">The Home Search on this area's page starts with this city. Leave it empty to use the area's name, which is right when the area is a city. Use it when the area is a neighborhood.</p>
           </div>
           <div>
             <label className={labelClass}>Short blurb (shown on the card)</label>

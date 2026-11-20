@@ -117,7 +117,7 @@ export default function AgentAreaPage({ site, agent, area, loading, notFound }) 
           preview
           officeOnly
           brand={adapted.brokerage}
-          initialCity={area.name}
+          initialCity={area.search_term?.trim() || area.name}
           previewCount={6}
           viewAllHref={null}
           visitorSite={adapted.idxEnabled ? { kind: "agent", id: site.id } : undefined}
@@ -131,7 +131,7 @@ export default function AgentAreaPage({ site, agent, area, loading, notFound }) 
             officeOnly={false}
             brand={adapted.brokerage}
             visitorSite={{ kind: "agent", id: site.id }}
-            initialCity={area.name}
+            initialCity={area.search_term?.trim() || area.name}
             sectionId="area-search"
             eyebrowOverride="Home Search"
             titleOverride={`Search Homes in ${area.name}`}
