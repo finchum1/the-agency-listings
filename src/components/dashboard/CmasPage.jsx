@@ -7,6 +7,7 @@ import { ADJUSTMENT_PRESETS, COMP_STATUSES, adjustedPrice, adjustmentTotal, comp
 import { formatPrice } from "../../lib/format";
 import CmaReport from "../public/CmaReport";
 import ClientPicker from "./ClientPicker";
+import CmaFindComps from "./CmaFindComps";
 
 const muted = "text-[#1c1a17]/60 dark:text-[#faf9f7]/60";
 const input =
@@ -116,6 +117,7 @@ function CmaEditor({ id }) {
   const [error, setError] = useState("");
   const [openId, setOpenId] = useState(null);
   const [preview, setPreview] = useState(false);
+  const [finding, setFinding] = useState(false);
   const [link, setLink] = useState(""); // the full share address, only known right after it is made
   const [copied, setCopied] = useState(false);
   const loaded = useRef(false);
@@ -180,6 +182,17 @@ function CmaEditor({ id }) {
     setOpenId(c.id);
   };
 
+  // Comps picked in "Find comps" join the lists; facts the MLS knows about the home fill in whatever the agent left blank.
+  const addFound = (found, mlsSubject) => {
+    change((d) => {
+      const have = new Set(d.comps.map((c) => c.mls).filter(Boolean));
+      const fresh = found.filter((c) => !c.mls || !have.has(c.mls));
+      const subject = { ...d.subject };
+      for (const k of ["beds", "sqft", "year_built"]) if (!subject[k] && mlsSubject?.[k] != null) subject[k] = String(mlsSubject[k]);
+      return { ...d, subject, comps: [...d.comps, ...fresh] };
+    });
+  };
+
   const makeLink = async () => {
     clearTimeout(timer.current);
     await save(doc);
@@ -218,6 +231,14 @@ function CmaEditor({ id }) {
       </div>
       {error && <p role="alert" className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
+      {finding && (
+        <CmaFindComps
+          subject={doc.subject}
+          haveMls={new Set(doc.comps.map((c) => c.mls).filter(Boolean))}
+          onAdd={addFound}
+          onClose={() => setFinding(false)}
+        />
+      )}
       {preview ? (
         <div className="overflow-hidden rounded-2xl border border-black/10 dark:border-white/15">
           <CmaReport cma={reportCma} agent={profile} brand={brand} preview />
@@ -243,6 +264,13 @@ function CmaEditor({ id }) {
                 <Field label="Lot"><input value={doc.subject.lot || ""} onChange={setSubject("lot")} className={input} /></Field>
               </div>
             </section>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="button" onClick={() => setFinding(true)} disabled={!doc.subject.address} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40" title={doc.subject.address ? "" : "Enter the home's address first"}>
+                Find comps in the MLS
+              </button>
+              <span className={`text-xs ${muted}`}>Or add them by hand below.</span>
+            </div>
 
             {grouped.map((g) => (
               <section key={g.value}>
