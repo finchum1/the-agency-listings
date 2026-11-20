@@ -14,7 +14,7 @@ export const CONTACT_ROLES = [
   { key: "agent", label: "Other agent", name: "other_agent", email: "other_agent_email", phone: "other_agent_phone", company: "other_agent_company", nameLabel: "Name" },
   { key: "agent2", label: "Second agent on the other side", name: "other_agent2", email: "other_agent2_email", phone: "other_agent2_phone", company: "other_agent2_company", nameLabel: "Name" },
   { key: "agent_tc", label: "Other agent's TC", name: "other_agent_tc_name", email: "other_agent_tc_email", nameLabel: "Name" },
-  { key: "title", label: "Title company", name: "title_company", nameLabel: "Company" },
+  { key: "title", label: "Title company", name: "title_company", address: "title_address", nameLabel: "Company" },
   { key: "escrow", label: "Escrow officer", name: "escrow_officer", email: "escrow_officer_email", phone: "title_phone", nameLabel: "Name" },
   { key: "processor", label: "Title processor", name: "title_processor_name", email: "title_processor_email", nameLabel: "Name" },
   { key: "lender", label: "Lender", name: "lender", email: "lender_email", phone: "lender_phone", nameLabel: "Name or company", cashHides: true },
@@ -70,7 +70,7 @@ function CopyButton({ text }) {
  */
 export default function DealContacts({ values, editing, onChange, onCommit, cash = false, ccEmail = "" }) {
   const roles = CONTACT_ROLES.filter((r) => !(cash && r.cashHides));
-  const filled = (r) => Boolean(values[r.name] || (r.email && values[r.email]) || (r.phone && values[r.phone]) || (r.company && values[r.company]));
+  const filled = (r) => Boolean(values[r.name] || (r.email && values[r.email]) || (r.phone && values[r.phone]) || (r.company && values[r.company]) || (r.address && values[r.address]));
   const roleLabel = (r) => (typeof r.label === "function" ? r.label(values) : r.label);
   const shown = editing ? roles : roles.filter(filled);
   const hidden = roles.length - shown.length;
@@ -111,6 +111,7 @@ export default function DealContacts({ values, editing, onChange, onCommit, cash
           const email = r.email ? values[r.email] || "" : "";
           const phone = r.phone ? values[r.phone] || "" : "";
           const company = r.company ? values[r.company] || "" : "";
+          const address = r.address ? values[r.address] || "" : "";
           return (
             <div key={r.key} className="min-w-0 rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] p-3.5">
               <div className="flex items-center gap-3">
@@ -138,6 +139,12 @@ export default function DealContacts({ values, editing, onChange, onCommit, cash
                       <input value={company} onChange={(e) => onChange(r.company, e.target.value)} onBlur={() => onCommit(r.company)} autoComplete="off" className={inputClass} />
                     </div>
                   )}
+                  {r.address && (
+                    <div>
+                      <label className={labelClass}>Address</label>
+                      <input value={address} onChange={(e) => onChange(r.address, e.target.value)} onBlur={() => onCommit(r.address)} placeholder="Street, city, state ZIP" autoComplete="street-address" className={inputClass} />
+                    </div>
+                  )}
                   {r.email && (
                     <div>
                       <label className={labelClass}>Email</label>
@@ -162,6 +169,14 @@ export default function DealContacts({ values, editing, onChange, onCommit, cash
                     </div>
                   ) : (
                     <p className={muted}>No email yet</p>
+                  )}
+                  {address && (
+                    <div className="flex items-center justify-between gap-3">
+                      <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noreferrer" className="min-w-0 truncate underline decoration-black/25 dark:decoration-white/30 underline-offset-2 hover:decoration-current" title="Open in Maps">
+                        {address}
+                      </a>
+                      <CopyButton text={address} />
+                    </div>
                   )}
                   {phone && (
                     <a href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="block truncate underline decoration-black/25 dark:decoration-white/30 underline-offset-2 hover:decoration-current">

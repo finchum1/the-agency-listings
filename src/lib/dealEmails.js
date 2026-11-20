@@ -72,6 +72,8 @@ export const MERGE_FIELDS = [
   ["other_party_name", "the other side's client", "Deal"],
   ["other_party_role", "Seller or Buyer (the other side's client)", "Deal"],
   ["title_company", "title company", "Other people"],
+  ["title_address", "title company address", "Other people"],
+  ["title_where", "title company with its address", "Other people"],
   ["title_processor", "title processor", "Other people"],
   ["escrow_officer", "escrow officer", "Other people"],
   ["title_greeting", "title contact first name", "Other people"],
@@ -143,6 +145,8 @@ export function fieldValues(deal = {}, ctx = {}) {
     other_party_name: text(deal.other_party_name),
     other_party_role: side === "seller" ? "Buyer" : "Seller",
     title_company: text(deal.title_company),
+    title_address: text(deal.title_address),
+    title_where: [text(deal.title_company), text(deal.title_address)].filter(Boolean).join(", "),
     title_processor: text(deal.title_processor_name),
     escrow_officer: text(deal.escrow_officer),
     title_greeting: firstName(deal.escrow_officer) || firstName(deal.title_processor_name) || text(deal.title_company),
@@ -397,7 +401,7 @@ ${SIG}`),
 A quick reminder about the earnest money on {property_address}. It's due to the title company within 3 days of the contract being accepted.
 
 ? - Amount: {earnest_money}
-? - Deliver it to: {title_company}
+? - Deliver it to: {title_where}
 
 Let me know once it's been sent and I'll confirm it arrived.
 
@@ -515,7 +519,7 @@ ${SIG}`),
 Closing on {property_address} is scheduled.
 
 ? - When: {closing_when}
-? - Where: {title_company}
+? - Where: {title_where}
 
 Please let me know right away if that doesn't work for you.
 
@@ -538,7 +542,7 @@ ${SIG}`),
 Great news, we're clear to close on {property_address}!
 
 ? - Closing: {closing_when}
-? - Where: {title_company}
+? - Where: {title_where}
 
 Please avoid any big purchases or changes with your finances until after closing.
 
@@ -549,7 +553,7 @@ ${SIG}`),
 Closing on {property_address} is this coming week.
 
 ? - When: {closing_when}
-? - Where: {title_company}
+? - Where: {title_where}
 
 What to bring: a government-issued photo ID. {title_company} will tell you how to get your funds there. A wire or cashier's check is usual. Please confirm wire instructions by phone before sending anything.
 
@@ -571,7 +575,7 @@ ${SIG}`),
 Attached is the settlement statement for {property_address}, with the closing details.
 
 ? - Closing: {closing_when}
-? - Where: {title_company}
+? - Where: {title_where}
 
 Please look it over and call or text me with any questions before closing.
 
@@ -782,7 +786,7 @@ ${SIG}`),
 Closing on {property_address} is scheduled.
 
 ? - When: {closing_when}
-? - Where: {title_company}
+? - Where: {title_where}
 
 We can set it up a few ways: sign in person at closing, sign ahead of time (pre-signing), have the documents mailed to you, or use a notary near you. Which works best for you?
 
@@ -804,7 +808,7 @@ ${SIG}`),
 Great news, we're clear to close on {property_address}!
 
 ? - Closing: {closing_when}
-? - Where: {title_company}
+? - Where: {title_where}
 
 I'll send a reminder of what to do before closing day.
 
@@ -815,7 +819,7 @@ ${SIG}`),
 Closing on {property_address} is this coming week.
 
 ? - When: {closing_when}
-? - Where: {title_company}
+? - Where: {title_where}
 
 Before closing day:
 - Bring a government-issued photo ID.
@@ -840,7 +844,7 @@ ${SIG}`),
 Attached is the settlement statement for {property_address}, with the closing details.
 
 ? - Closing: {closing_when}
-? - Where: {title_company}
+? - Where: {title_where}
 
 Please look it over, especially your net proceeds, and call or text me with any questions before closing.
 

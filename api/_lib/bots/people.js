@@ -80,6 +80,7 @@ function readFields(body) {
   for (const k of ["other_agent_company", "other_agent2_company", "other_party_name", "financing_type", "escrow_officer"]) set(k, text(body, k, { max: 120 }));
   for (const k of ["other_agent_phone", "other_agent2_phone", "title_phone", "lender_phone"]) set(k, text(body, k, { max: 40 }));
   set("title_company", text(body, "title_company", { max: 120 }));
+  set("title_address", text(body, "title_address", { max: 300 }));
   set("lender", text(body, "lender", { max: 120 }));
   // The people on a deal: names, and an email for each (checked, lower case).
   for (const k of ["client2_name", "other_agent_tc_name", "title_processor_name", "loan_processor_name"]) set(k, text(body, k, { max: 120 }));

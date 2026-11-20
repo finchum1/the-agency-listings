@@ -40,6 +40,7 @@ const TEXT = [
   ["other_agent2_phone", "Second agent's phone"],
   ["other_party_name", "The other side's client"],
   ["title_phone", "Title phone"],
+  ["title_address", "Title company address"],
   ["lender_phone", "Lender phone"],
   ["financing_type", "Loan type"],
   ["other_agent_tc_name", "Other agent's TC"],
