@@ -1,12 +1,15 @@
 import { Link } from "react-router-dom";
 import { useBrokerageSiteContext } from "../../context/BrokerageSiteContext";
+import useLoadMore from "../../hooks/useLoadMore";
+import ShowMoreButton from "../agent-site/ShowMoreButton";
 
 // `preview` caps the list to a teaser row (used on Home); the standalone
-// /brokerage/blog page shows every published post.
+// /brokerage/blog page shows the newest nine (four on a phone) and a "More posts" button for the next batch.
 export default function BlogList({ preview = false, isStandalonePage = false }) {
   const { site } = useBrokerageSiteContext();
+  const load = useLoadMore(site.posts, { phone: 4, desktop: 9 });
   if (site.posts.length === 0) return null;
-  const posts = preview ? site.posts.slice(0, 3) : site.posts;
+  const posts = preview ? site.posts.slice(0, 3) : load.shown;
   const Heading = isStandalonePage ? "h1" : "h2";
 
   return (
@@ -34,6 +37,8 @@ export default function BlogList({ preview = false, isStandalonePage = false }) 
             </Link>
           ))}
         </div>
+
+        {!preview && <ShowMoreButton more={load} label="More posts" className="mt-14" />}
 
         {preview && site.posts.length > posts.length && (
           <div className="mt-14 flex justify-center">
