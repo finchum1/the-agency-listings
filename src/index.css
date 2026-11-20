@@ -768,7 +768,7 @@
 
 /* The paperclip A in the dashboard (The Agency offices). .dash-clip: huge and faint behind the Home page, fixed to the top-right of the window with most of it above
    the top edge, so the loop peeks into the empty band beside the welcome and the rest runs off the page; it sits under the content (the layout root is an isolated stacking context, see DashboardLayout.jsx).
-   .dash-clip-icon: the same mark, small, in the current text color, for the menu button. */
+   .dash-clip-icon: the same mark, small, in The Agency red (the current text color in dark mode), for the menu button. */
 .dash-clip {
   position: fixed;
   z-index: -1;
@@ -789,10 +789,11 @@
   display: block;
   width: 15px;
   height: 12.2px;
-  background: currentColor;
+  background: #D8091B; /* The Agency red in light mode; the current text color in dark mode (below) */
   -webkit-mask: url(/brand/the-agency-icon-red.svg) center / contain no-repeat;
   mask: url(/brand/the-agency-icon-red.svg) center / contain no-repeat;
 }
+.dark .dash-clip-icon { background: currentColor; }
 
 /* The paperclip A in the foot of the open menu (The Agency offices): faint, cropped by the menu's left edge, under the menu items. */
 .dash-clip-nav {
