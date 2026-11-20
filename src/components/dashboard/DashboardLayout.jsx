@@ -107,6 +107,11 @@ const ICON_PATHS = {
       <path d="M15 15l5.5 5.5" />
     </>
   ),
+  cmas: (
+    <>
+      <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+    </>
+  ),
   vendors: (
     <>
       <path d="M14.5 6.5a3.5 3.5 0 0 0-4.6 4.4L4 16.8V20h3.2l5.9-5.9a3.5 3.5 0 0 0 4.4-4.6l-2.3 2.3-2-.6-.6-2z" />
@@ -129,6 +134,7 @@ const NAV_ITEMS = [
   { to: "/dashboard/listings", label: "Listings", icon: "listings", activeWhen: (p) => p === "/dashboard/listings" || p.startsWith("/dashboard/listings/") },
   { to: "/dashboard/marketing", label: "Marketing", icon: "marketing", activeWhen: (p) => p === "/dashboard/marketing" || p.startsWith("/dashboard/marketing/") },
   { to: "/dashboard/upcoming", label: "Upcoming", icon: "upcoming", activeWhen: (p) => p === "/dashboard/upcoming" },
+  { to: "/dashboard/cmas", label: "CMAs", icon: "cmas", activeWhen: (p) => p === "/dashboard/cmas" || p.startsWith("/dashboard/cmas/") },
   { to: "/dashboard/vendors", label: "Vendors", icon: "vendors", activeWhen: (p) => p === "/dashboard/vendors" },
 ];
 

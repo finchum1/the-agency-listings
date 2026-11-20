@@ -25,6 +25,8 @@ const FlyerPage = lazyPage(() => import("./components/dashboard/FlyerPage"));
 const AgentsPage = lazyPage(() => import("./components/dashboard/AgentsPage"));
 const UpcomingModule = lazyPage(() => import("./components/dashboard/UpcomingModule"));
 const VendorsPage = lazyPage(() => import("./components/dashboard/VendorsPage"));
+const CmasPage = lazyPage(() => import("./components/dashboard/CmasPage"));
+const CmaSharePage = lazyPage(() => import("./pages/CmaSharePage"));
 const HomeSearchPage = lazyPage(() => import("./components/dashboard/HomeSearchPage"));
 const ListingAnalyticsPage = lazyPage(() => import("./components/dashboard/ListingAnalyticsPage"));
 const OfficeAnalyticsPage = lazyPage(() => import("./components/dashboard/OfficeAnalyticsPage"));
@@ -234,6 +236,8 @@ function AppRoutes() {
       <Route path="/preview/:token" element={<SitePreviewPage />} />
       {/* A client's private list of recommended vendors: no sign-in, the token in the address is the credential. */}
       <Route path="/vendors/:token" element={<VendorSharePage />} />
+      {/* A CMA an agent shared with a client: same idea, the token is the credential. */}
+      <Route path="/cma/:token" element={<CmaSharePage />} />
       {/* A seller's private activity report for one listing: same idea, token in the address. */}
       <Route path="/report/:token" element={<ListingReportPage />} />
       {/* A buyer's or seller's private closing timeline. */}
@@ -430,6 +434,8 @@ function AppRoutes() {
         <Route path="site/redirects" element={<MySitePage section="redirects" />} />
         <Route path="upcoming" element={<UpcomingModule />} />
         <Route path="vendors" element={<VendorsPage />} />
+        <Route path="cmas" element={<CmasPage />} />
+        <Route path="cmas/:id" element={<CmasPage />} />
         <Route path="search" element={<HomeSearchPage />} />
         <Route path="settings" element={<PeopleGate />}>
           <Route element={<PeopleLayout />}>

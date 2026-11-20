@@ -7,6 +7,7 @@ import { formatNumber, formatPrice } from "../../lib/format";
 import { isSampleListing } from "../../lib/idxSample";
 import IdxMap from "../brokerage-site/IdxMap";
 import HomeSearchPanel from "./HomeSearchPanel";
+import ClientSearches from "./ClientSearches";
 
 const muted = "text-[#1c1a17]/60 dark:text-[#faf9f7]/60";
 const fieldClass =
@@ -101,6 +102,21 @@ export default function HomeSearchPage() {
   const { listings, meta, loading, error } = useRepliersListings(filters);
   const sample = listings.some(isSampleListing);
   const narrowed = Boolean(city || minPrice || maxPrice || beds || baths || ourOnly || boundary);
+  // Filters as the saved-search list stores them (the same names the feed and the public Home Search use), and a saved one put back.
+  const currentParams = { city, minPrice, maxPrice, minBeds: beds, minBaths: baths, sortBy, map: boundary ? JSON.stringify(boundary) : "" };
+  const runSaved = (p) => {
+    setText(p.city || "");
+    setMinPrice(p.minPrice || "");
+    setMaxPrice(p.maxPrice || "");
+    setBeds(p.minBeds || "");
+    setBaths(p.minBaths || "");
+    setSortBy(p.sortBy || "");
+    try {
+      setBoundary(p.map ? JSON.parse(p.map) : null);
+    } catch {
+      setBoundary(null);
+    }
+  };
   const clearAll = () => {
     setText("");
     setMinPrice("");
@@ -157,6 +173,8 @@ export default function HomeSearchPage() {
         <p className={`mt-1 text-sm ${muted}`}>The live MLS feed. Find homes for a client, then open one to share it.</p>
       </div>
 
+      <ClientSearches current={currentParams} narrowed={narrowed} onRun={runSaved} />
+
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <input
           type="search"
@@ -168,6 +186,7 @@ export default function HomeSearchPage() {
         />
         <select value={minPrice} onChange={(e) => setMinPrice(e.target.value)} aria-label="Minimum price" className={fieldClass}>
           <option value="">No min</option>
+          {minPrice && !PRICES.includes(Number(minPrice)) && <option value={minPrice}>{priceLabel(Number(minPrice))}</option>}
           {PRICES.map((n) => (
             <option key={n} value={n}>
               {priceLabel(n)}
@@ -176,6 +195,7 @@ export default function HomeSearchPage() {
         </select>
         <select value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} aria-label="Maximum price" className={fieldClass}>
           <option value="">No max</option>
+          {maxPrice && !PRICES.includes(Number(maxPrice)) && <option value={maxPrice}>{priceLabel(Number(maxPrice))}</option>}
           {PRICES.map((n) => (
             <option key={n} value={n}>
               {priceLabel(n)}

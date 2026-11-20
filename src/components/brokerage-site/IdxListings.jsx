@@ -85,6 +85,18 @@ export default function IdxListings({
   // Signed in: hearts are saved to the account. Otherwise they stay as before (this browser only), and a visitor site asks to sign in first.
   const favorites = visitorSite ? { has: (mls) => visitorStore.isFavorite(mls) } : local.favorites;
   const [priceIdx, setPriceIdx] = useState(priceFromLink > 0 ? priceFromLink : 0);
+  // A price range that isn't one of the five choices (an agent's link made for one client, e.g. $280k to $350k) is kept as its own choice.
+  const digits = (v) => String(v || "").replace(/[^0-9]/g, "").slice(0, 9);
+  const customFrom = (p) => {
+    const min = digits(p.minPrice);
+    const max = digits(p.maxPrice);
+    return (min || max) && !PRICE_OPTIONS.some((o) => o.min === min && o.max === max) ? { min, max } : null;
+  };
+  const [customPrice, setCustomPrice] = useState(() => customFrom({ minPrice: fromLink.get("minPrice"), maxPrice: fromLink.get("maxPrice") }));
+  const customLabel = (c) => {
+    const k = (n) => (n >= 1000000 ? "$" + +(n / 1000000).toFixed(2) + "M" : "$" + Math.round(n / 1000) + "k");
+    return c.min && c.max ? k(c.min) + " – " + k(c.max) : c.min ? k(c.min) + "+" : "Up to " + k(c.max);
+  };
   const [beds, setBeds] = useState(/^[345]$/.test(fromLink.get("minBeds") || "") ? fromLink.get("minBeds") : "");
   const [baths, setBaths] = useState(/^[234]$/.test(fromLink.get("minBaths") || "") ? fromLink.get("minBaths") : "");
   const [city, setCity] = useState(fromLink.get("city") ? fromLink.get("city").slice(0, 80) : initialCity);
@@ -102,7 +114,7 @@ export default function IdxListings({
   const pinnedMlsNumbers = preview ? (brokerageSite?.site.featuredListingMlsNumbers || []).slice(0, 3) : [];
   const usePinned = pinnedMlsNumbers.length > 0;
 
-  const price = PRICE_OPTIONS[priceIdx];
+  const price = customPrice || PRICE_OPTIONS[priceIdx];
   // The filters as they are now (for "Save search"), and a saved search put back on the page.
   const currentParams = () => ({ city, minPrice: price.min, maxPrice: price.max, minBeds: beds, minBaths: baths, sortBy, map: boundary ? JSON.stringify(boundary) : "", office: officeOnly });
   const runSaved = (saved) => {
@@ -110,6 +122,7 @@ export default function IdxListings({
     const at = PRICE_OPTIONS.findIndex((o) => o.min === (p.minPrice || "") && o.max === (p.maxPrice || ""));
     setCity(p.city || "");
     setPriceIdx(at > 0 ? at : 0);
+    setCustomPrice(customFrom(p));
     setBeds(p.minBeds || "");
     setBaths(p.minBaths || "");
     setSortBy(p.sortBy || "");
@@ -174,7 +187,8 @@ export default function IdxListings({
                 placeholder="City, neighborhood, ZIP…"
                 className="flex-1 min-w-[180px] border border-[var(--as-text)]/10 bg-transparent px-4 py-3 text-sm text-[var(--as-text)] placeholder:text-[var(--as-text)]/40 outline-none rounded-full"
               />
-              <select value={priceIdx} onChange={(e) => setPriceIdx(Number(e.target.value))} className={`flex-1 min-w-[140px] ${pillClass}`}>
+              <select value={customPrice ? "custom" : priceIdx} onChange={(e) => { if (e.target.value === "custom") return; setCustomPrice(null); setPriceIdx(Number(e.target.value)); }} className={`flex-1 min-w-[140px] ${pillClass}`}>
+                {customPrice && <option value="custom">{customLabel(customPrice)}</option>}
                 {PRICE_OPTIONS.map((opt, i) => (
                   <option key={opt.label} value={i}>
                     {opt.label}

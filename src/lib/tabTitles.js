@@ -8,6 +8,7 @@ const NAMES = {
   "/dashboard/listings/new": "New listing",
   "/dashboard/upcoming": "Upcoming",
   "/dashboard/vendors": "Vendors",
+  "/dashboard/cmas": "CMAs",
   "/dashboard/search": "Home Search",
   "/dashboard/profile": "My profile",
   "/dashboard/settings": "People settings",
@@ -48,6 +49,7 @@ export function tabTitle(url) {
   if (/^\/dashboard\/listings\/[^/]+\/edit$/.test(path)) return "Edit listing";
   if (/^\/dashboard\/listings\/[^/]+\/flyer$/.test(path)) return "Listing flyer";
   if (/^\/dashboard\/listings\/[^/]+\/analytics$/.test(path)) return "Listing analytics";
+  if (/^\/dashboard\/cmas\/[^/]+$/.test(path)) return "CMA";
   if (/^\/dashboard\/sites\/[^/]+/.test(path)) return "Agent site";
   const last = path.split("/").filter(Boolean).pop() || "Home";
   return last.charAt(0).toUpperCase() + last.slice(1).replace(/-/g, " ");
