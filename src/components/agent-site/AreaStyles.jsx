@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import useShowMore from "../../hooks/useShowMore";
 import ShowMoreButton from "./ShowMoreButton";
@@ -46,48 +45,6 @@ export function AreaPanels({ header }) {
               ))}
             </div>
           ))}
-        </div>
-        <ShowMoreButton more={more} />
-      </div>
-    </section>
-  );
-}
-
-export function AreaIndex({ header }) {
-  const { site } = useAgentSiteContext();
-  const more = useShowMore(site.areas, 5);
-  const [active, setActive] = useState(0);
-  const areas = site.areas;
-  return (
-    <section id="areas" className="px-6 lg:px-10 py-24 bg-[var(--as-bg)] text-[var(--as-text)]">
-      <div className="mx-auto max-w-6xl">
-        {header}
-        <div className="ix">
-          <div className="ix-stage" aria-hidden="true">
-            {areas.map((a, i) => (
-              <img key={a.id} src={a.photo_url || ""} alt="" loading={i === 0 ? "eager" : "lazy"} className={`ix-photo${i === active ? " is-on" : ""}`} />
-            ))}
-          </div>
-          <ol className="ix-list">
-            {more.shown.map((a, i) => (
-              <li key={a.id} className={i === active ? "is-on" : ""} onMouseEnter={() => setActive(i)}>
-                <SiteLink slug={site.slug} path={`/areas/${a.slug}`} className="ix-row" onFocus={() => setActive(i)}>
-                  {a.photo_url && <img src={a.photo_url} alt="" loading="lazy" className="ix-thumb" />}
-                  <span className="ix-num">{String(i + 1).padStart(2, "0")}</span>
-                  <span className="ix-name font-display">{a.name}</span>
-                  <span className="ix-arrow" aria-hidden="true">
-                    →
-                  </span>
-                </SiteLink>
-                <div className="ix-more">
-                  <div>
-                    <p className="ix-meta">{stat(a)}</p>
-                    {a.blurb && <p className="ix-blurb">{a.blurb}</p>}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ol>
         </div>
         <ShowMoreButton more={more} />
       </div>

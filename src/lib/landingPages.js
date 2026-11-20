@@ -78,8 +78,8 @@ export function resolveLanding(landing, agentFirstName = "") {
   });
   return { order, menu: l.menu !== false, compsTask: l.comps_task !== false, animated: l.animated === true,
     panels: l.panels === true,
-    // How the Areas of Expertise section looks: "cards" (the grid, with the animated map when landing.animated is on), "panels" (photo strips) or "index" (a list with a changing photo).
-    areasStyle: ["panels", "index"].includes(l.areas_style) ? l.areas_style : "cards",
+    // How the Areas of Expertise section looks: "cards" (the grid, with the animated map when landing.animated is on) or "panels" (photo strips).
+    areasStyle: l.areas_style === "panels" ? "panels" : "cards",
     // The paperclip A bleeding off the edge of a few sections (see components/agent-site/AgencyClip.jsx; The Agency offices only, on unless turned off).
     paperclip: l.paperclip !== false,
     // The Instagram strip above the footer: a Behold feed address (feeds.behold.so/...) and, optionally, the handle to show and the line above it (default "Follow along").

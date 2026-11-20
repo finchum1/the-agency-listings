@@ -39,6 +39,20 @@
   .pn-intro { grid-column: 1 / -1; }
 }
 
+/* Phones and tablets: no hover, so each panel is a card with the photo on top and its words underneath on the card, instead of over the picture. */
+@media (max-width: 1023px) {
+  .pn { display: flex; flex-direction: column; min-height: 0; background: var(--as-bg-alt); color: var(--as-text); border: 1px solid color-mix(in oklab, var(--as-text) 10%, transparent); }
+  .pn-photo { position: relative; inset: auto; z-index: auto; display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; transform: none; }
+  .pn-shade { inset: auto; top: 0; left: 0; right: 0; z-index: 0; height: auto; aspect-ratio: 16 / 10; background: linear-gradient(to bottom, rgba(12, 11, 9, 0.5), transparent 50%); }
+  .pn-label { top: 14px; left: 16px; color: #fff; }
+  .pn-detail { min-height: 0; height: auto; justify-content: flex-start; padding: 18px 20px 22px; }
+  .pn-eyebrow { color: var(--as-accent-text); }
+  .pn-title { font-size: 26px; }
+  .pn-blurb { max-width: none; color: color-mix(in oklab, var(--as-text) 75%, transparent); }
+  .pn-cta { color: var(--as-accent-text); }
+  .pn-form input { border: 1px solid color-mix(in oklab, var(--as-text) 22%, transparent); }
+}
+
 @media (min-width: 1024px) {
   .pn-row { display: flex; height: clamp(560px, 46vw, 680px); gap: 8px; }
   .pn-intro { flex: 1.5 1 0; min-width: 0; min-height: 0; padding: 36px; transition: flex-grow 0.8s var(--pn-ease); }

@@ -5,7 +5,7 @@ import SiteLink from "./SiteLink";
 import { LAYOUT_SECTIONS } from "./layouts";
 import { journeyPins, resolveMap } from "../../lib/areaMaps";
 import AreasJourney from "./AreasJourney";
-import { AreaIndex, AreaPanels } from "./AreaStyles";
+import { AreaPanels } from "./AreaStyles";
 import { resolveLanding } from "../../lib/landingPages";
 
 export default function ServiceAreas() {
@@ -49,7 +49,6 @@ export default function ServiceAreas() {
   );
 
   if (areasStyle === "panels") return <AreaPanels header={header} />;
-  if (areasStyle === "index") return <AreaIndex header={header} />;
 
   // The animated map (landing.animated, set in Site Details): only when enough of the agent's areas have a place on it.
   const pins = journeyPins(site);
