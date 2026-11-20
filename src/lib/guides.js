@@ -137,3 +137,17 @@ export const GUIDES = {
 };
 
 export const GUIDE_SLUGS = Object.keys(GUIDES);
+
+// The looks a guide's cover and accents can take. `key` is a website theme name (the same palettes as src/index.css; api/_lib/visitors.js has the colors the
+// PDF uses), "site" follows whatever the agent's website uses. `dark` and `accent` are only for the little swatch in the picker. A guide's choice is saved in
+// agent_sites.landing.guide_themes ({ sellers: "velvet", ... }); a ?theme= on the PDF address overrides it.
+export const GUIDE_THEMES = [
+  { key: "site", label: "Match my website" },
+  { key: "classic", label: "Iron", dark: "#1C1C1B", accent: "#D8091B" },
+  { key: "red", label: "Agency Red", dark: "#D8091B", accent: "#1C1C1B" },
+  { key: "velvet", label: "Velvet", dark: "#470300", accent: "#D8091B" },
+  { key: "chambray", label: "Chambray", dark: "#C2D7E6", accent: "#D8091B" },
+  { key: "brownstone", label: "Brownstone", dark: "#906F57", accent: "#F5F1E9" },
+  { key: "linen", label: "Ecru", dark: "#F5F1E9", accent: "#D8091B" },
+];
+export const GUIDE_THEME_KEYS = GUIDE_THEMES.map((t) => t.key).filter((k) => k !== "site");

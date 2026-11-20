@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 import { upcomingHolidays } from "../../lib/holidayPost";
-import { GUIDES } from "../../lib/guides";
+import { GUIDES, GUIDE_THEMES } from "../../lib/guides";
 
 const muted = "text-[#1c1a17]/55 dark:text-[#faf9f7]/55";
 const card = "bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6";
@@ -19,11 +19,29 @@ function GuidesCard() {
   const { user } = useAuth();
   const [site, setSite] = useState(undefined); // undefined = loading, null = none
   const [copied, setCopied] = useState("");
+  const [looks, setLooks] = useState({}); // guide -> theme key, saved in agent_sites.landing.guide_themes
+  const [error, setError] = useState("");
   useEffect(() => {
     if (!user) return;
-    supabase.from("agent_sites").select("slug, status").eq("agent_id", user.id).maybeSingle().then(({ data }) => setSite(data || null));
+    supabase.from("agent_sites").select("slug, status, landing").eq("agent_id", user.id).maybeSingle().then(({ data }) => {
+      setSite(data || null);
+      setLooks(data?.landing?.guide_themes && typeof data.landing.guide_themes === "object" ? data.landing.guide_themes : {});
+    });
   }, [user]);
-  const href = (g) => `${window.location.origin}/api/guide-pdf?site=${encodeURIComponent(site.slug)}&guide=${encodeURIComponent(g.slug)}`;
+  // The look is part of the address too, so a change shows at once (the file is cached for a few minutes) and a copied link keeps it.
+  const href = (g) => `${window.location.origin}/api/guide-pdf?site=${encodeURIComponent(site.slug)}&guide=${encodeURIComponent(g.slug)}${looks[g.slug] ? `&theme=${encodeURIComponent(looks[g.slug])}` : ""}`;
+  const chooseLook = async (g, key) => {
+    const next = { ...looks };
+    if (key === "site") delete next[g.slug];
+    else next[g.slug] = key;
+    setLooks(next);
+    setError("");
+    // Read the current settings first so nothing else in them is overwritten.
+    const { data: row } = await supabase.from("agent_sites").select("landing").eq("agent_id", user.id).maybeSingle();
+    const landing = { ...(row?.landing && typeof row.landing === "object" ? row.landing : {}), guide_themes: next };
+    const { error: err } = await supabase.from("agent_sites").update({ landing }).eq("agent_id", user.id);
+    if (err) setError(err.message);
+  };
   const copy = async (g) => {
     await navigator.clipboard.writeText(href(g));
     setCopied(g.slug);
@@ -34,8 +52,13 @@ function GuidesCard() {
     <section className={`${card} space-y-4 md:col-span-2`}>
       <div>
         <h2 className="font-display text-lg font-semibold">Guides (PDF)</h2>
-        <p className={`mt-1 text-sm ${muted}`}>Your seller, buyer, home value and relocation guides, branded with your photo and contact details. Download one to print or attach, or copy its link to send. Visitors to your website get the same files.</p>
+        <p className={`mt-1 text-sm ${muted}`}>Your seller, buyer, home value and relocation guides, branded with your photo and contact details. Pick a look for each, then download it to print or attach, or copy its link to send. Visitors to your website get the same files in the look you picked.</p>
       </div>
+      {error && (
+        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+          {error}
+        </p>
+      )}
       {site === undefined ? null : !ready ? (
         <p className={`text-sm ${muted}`}>{site ? "Publish your website to make your guides." : "Your guides are made from your website, which isn't set up yet."}</p>
       ) : (
@@ -46,6 +69,17 @@ function GuidesCard() {
                 <p className="text-sm font-semibold">{g.title}</p>
                 <p className={`text-xs ${muted}`}>{g.subtitle}</p>
               </div>
+              <label className="flex items-center gap-2 text-xs">
+                <span className={muted}>Look</span>
+                <span className="inline-block h-4 w-4 rounded-full border border-black/15 dark:border-white/20" style={{ background: GUIDE_THEMES.find((t) => t.key === (looks[g.slug] || "site"))?.dark || "linear-gradient(135deg,#1c1a17 50%,#D8091B 50%)" }} aria-hidden="true" />
+                <select value={looks[g.slug] || "site"} onChange={(e) => chooseLook(g, e.target.value)} aria-label={`Look for ${g.title}`} className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2 py-1.5 text-xs">
+                  {GUIDE_THEMES.map((t) => (
+                    <option key={t.key} value={t.key}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <a href={href(g)} download className={pill}>
                 Download
               </a>

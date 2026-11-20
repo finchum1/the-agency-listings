@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { buildGuidePdf, lightness } from "./guidePdf.js";
 import { emailBrand } from "./visitors.js";
 import { brandFromOrg } from "../../src/lib/brand.js";
-import { GUIDES } from "../../src/lib/guides.js";
+import { GUIDES, GUIDE_THEME_KEYS } from "../../src/lib/guides.js";
 import { SITE_ORIGIN } from "../../src/lib/seo.js";
 
 const MAX_PEOPLE = 6;
@@ -28,22 +28,26 @@ async function picture(src, { height, width, fit = "inside" } = {}) {
 /**
  * @param by        { slug } or { id } of the agent site
  * @param guideKey  a key of GUIDES
+ * @param opts      { theme }: a look to use (a key of GUIDE_THEMES); otherwise the one saved for this guide, otherwise the website's own
  * @returns { pdf, filename, name, first, link } or null when the site is missing, unpublished or the guide is unknown
  */
-export async function makeGuide(admin, by, guideKey) {
+export async function makeGuide(admin, by, guideKey, { theme = "" } = {}) {
   const guide = GUIDES[guideKey];
   if (!guide) return null;
   let query = admin
     .from("agent_sites")
     .select(
-      `id, slug, status, theme, accent_color, custom_domain, agent_id, agent:profiles(${PERSON}, team:teams(name, members:profiles(id, ${PERSON}))), org:organizations(id, slug, name, brand, address_line1, city, state, zip, disclaimer, franchise_disclaimer)`,
+      `id, slug, status, theme, accent_color, landing, custom_domain, agent_id, agent:profiles(${PERSON}, team:teams(name, members:profiles(id, ${PERSON}))), org:organizations(id, slug, name, brand, address_line1, city, state, zip, disclaimer, franchise_disclaimer)`,
     );
   query = by.id ? query.eq("id", by.id) : query.eq("slug", by.slug);
   const { data: site } = await query.maybeSingle();
   if (!site || site.status === "draft" || !site.agent) return null;
 
   const org = brandFromOrg(site.org);
-  const colors = emailBrand(site.theme, site.accent_color, { org: org.name });
+  // The look: the one asked for, else the one saved for this guide, else the website's own theme (and its accent color, if the agent set one).
+  const saved = site.landing && typeof site.landing === "object" ? site.landing.guide_themes?.[guideKey] : "";
+  const chosen = [theme, saved].find((t) => GUIDE_THEME_KEYS.includes(t));
+  const colors = chosen ? emailBrand(chosen, "", { org: org.name }) : emailBrand(site.theme, site.accent_color, { org: org.name });
   const dark = lightness(colors.dark) < 0.6;
   const logoUrl = (dark ? org.logos?.white : org.logos?.iron || org.logos?.black) || org.logo;
 

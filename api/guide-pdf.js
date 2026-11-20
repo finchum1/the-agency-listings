@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server not configured." });
   }
   try {
-    const made = await makeGuide(admin, { slug }, guideKey);
+    const made = await makeGuide(admin, { slug }, guideKey, { theme: String(req.query?.theme || "") });
     if (!made) return res.status(404).json({ error: "That guide isn't available." });
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${made.filename}"`);
