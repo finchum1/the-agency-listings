@@ -39,6 +39,8 @@ export default function MyProfilePage() {
   const [domainAlerts, setDomainAlerts] = useState(false);
   const [domainAlertsError, setDomainAlertsError] = useState("");
   const [dealUpdatesAuto, setDealUpdatesAuto] = useState(true);
+  const [deadlineNudges, setDeadlineNudges] = useState(true);
+  const [deadlineNudgesError, setDeadlineNudgesError] = useState("");
   const [dealUpdatesError, setDealUpdatesError] = useState("");
   const [alertSaving, setAlertSaving] = useState(false);
   const [alertError, setAlertError] = useState("");
@@ -49,7 +51,7 @@ export default function MyProfilePage() {
     let active = true;
     supabase
       .from("agent_notification_settings")
-      .select("lead_alert_email, domain_alerts, deal_updates_auto")
+      .select("lead_alert_email, domain_alerts, deal_updates_auto, deadline_nudges")
       .eq("agent_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -57,6 +59,7 @@ export default function MyProfilePage() {
           setAlertEmail(data?.lead_alert_email || "");
           setDomainAlerts(Boolean(data?.domain_alerts));
           setDealUpdatesAuto(data?.deal_updates_auto !== false);
+          setDeadlineNudges(data?.deadline_nudges !== false);
         }
       });
     return () => {
@@ -81,6 +84,16 @@ export default function MyProfilePage() {
     if (error) {
       setDealUpdatesAuto(!on);
       setDealUpdatesError(error.message);
+    }
+  };
+
+  const toggleDeadlineNudges = async (on) => {
+    setDeadlineNudges(on);
+    setDeadlineNudgesError("");
+    const { error } = await supabase.from("agent_notification_settings").upsert({ agent_id: user.id, deadline_nudges: on, updated_at: new Date().toISOString() });
+    if (error) {
+      setDeadlineNudges(!on);
+      setDeadlineNudgesError(error.message);
     }
   };
 
@@ -281,6 +294,22 @@ export default function MyProfilePage() {
             </span>
           </label>
           {dealUpdatesError && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{dealUpdatesError}</p>}
+        </div>
+      )}
+
+      {profile.people_enabled && (
+        <div className="bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6 mt-6">
+          <h2 className="font-display text-lg font-semibold">Deadline emails</h2>
+          <label className="mt-3 flex items-start gap-2.5 text-sm cursor-pointer">
+            <input type="checkbox" checked={deadlineNudges} onChange={(e) => toggleDeadlineNudges(e.target.checked)} className="mt-0.5" />
+            <span>
+              <span className="font-medium">Email me each morning what's due on my deals</span>
+              <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">
+                One email with the key dates and tasks due today, tomorrow or the day after, plus anything overdue. Nothing is sent on a day when nothing is due.
+              </span>
+            </span>
+          </label>
+          {deadlineNudgesError && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{deadlineNudgesError}</p>}
         </div>
       )}
 

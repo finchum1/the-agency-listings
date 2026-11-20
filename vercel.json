@@ -213,6 +213,10 @@
       "schedule": "0 14 * * *"
     },
     {
+      "path": "/api/deadline-nudges",
+      "schedule": "0 13 * * *"
+    },
+    {
       "path": "/api/plans",
       "schedule": "*/15 * * * *"
     },
