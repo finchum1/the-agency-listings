@@ -633,7 +633,7 @@ export default function DashboardLayout() {
   );
 
   return (
-    <div className="agency-brand min-h-screen bg-[#FAF8F4] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] scheme-light dark:scheme-dark md:flex print:block">
+    <div className="agency-brand isolate min-h-screen bg-[#FAF8F4] dark:bg-[#0d0d0d] text-[#1c1a17] dark:text-[#faf9f7] scheme-light dark:scheme-dark md:flex print:block">
       {/* Desktop sidebar — print:hidden matters beyond just "don't print
           the sidebar": FlyerPage.jsx's #flyer-sheet print isolation
           previously relied on `visibility: hidden` for everything else on
@@ -685,7 +685,8 @@ export default function DashboardLayout() {
               <QuickActions limited={workingElsewhere} onSearch={() => setSearchOpen(true)} />
             </div>
 
-            <nav className="flex-1 overflow-y-auto overflow-x-hidden px-4" aria-label="Main">
+            <nav className="relative isolate flex-1 overflow-y-auto overflow-x-hidden px-4" aria-label="Main">
+              {brokerage.franchise === "the-agency" && <span className="dash-clip-nav" aria-hidden="true" />}
               {NavList({})}
             </nav>
 
@@ -702,9 +703,13 @@ export default function DashboardLayout() {
           title={showRail ? "Open the menu" : "Close the menu to icons"}
           className="absolute -right-3 top-[18px] z-40 flex h-6 w-6 items-center justify-center rounded-full border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] text-[#1c1a17]/60 dark:text-[#faf9f7]/60 shadow-sm hover:text-[#1c1a17] dark:hover:text-[#faf9f7] hover:border-black/25 dark:hover:border-white/30 print:hidden"
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true" className={showRail ? "" : "rotate-180"}>
-            <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          {brokerage.franchise === "the-agency" ? (
+            <span className="dash-clip-icon" aria-hidden="true" />
+          ) : (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true" className={showRail ? "" : "rotate-180"}>
+              <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
         </button>
 
         {/* Grab the right edge to make the menu wider or narrower, or to close it to the icon rail. */}

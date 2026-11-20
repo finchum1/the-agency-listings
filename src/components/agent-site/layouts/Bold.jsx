@@ -207,7 +207,7 @@ export function BoldAreas() {
   );
 }
 
-export function BoldBlog({ posts, hasMore, standalone }) {
+export function BoldBlog({ posts, hasMore, standalone, moreBlock }) {
   const { site } = useAgentSiteContext();
   return (
     <section id="blog" className="px-6 lg:px-10 py-24 sm:py-32 bg-[var(--as-bg)]">
@@ -230,6 +230,7 @@ export function BoldBlog({ posts, hasMore, standalone }) {
             </SiteLink>
           ))}
         </div>
+        {moreBlock}
         {hasMore && (
           <div className="mt-16">
             <SiteLink slug={site.slug} path="/blog" className={ctaClass}>

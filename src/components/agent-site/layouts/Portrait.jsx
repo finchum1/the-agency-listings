@@ -196,7 +196,7 @@ export function PortraitAreas() {
   );
 }
 
-export function PortraitBlog({ posts, hasMore, standalone }) {
+export function PortraitBlog({ posts, hasMore, standalone, moreBlock }) {
   const { site } = useAgentSiteContext();
   const Heading = standalone ? "h1" : "h2";
   return (
@@ -218,6 +218,7 @@ export function PortraitBlog({ posts, hasMore, standalone }) {
             </SiteLink>
           ))}
         </div>
+        {moreBlock}
         {hasMore && (
           <div className="mt-12 text-center">
             <SiteLink slug={site.slug} path="/blog" className={btn}>

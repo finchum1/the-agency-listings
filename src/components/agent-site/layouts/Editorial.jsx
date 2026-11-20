@@ -200,7 +200,7 @@ export function EditorialAreas() {
   );
 }
 
-export function EditorialBlog({ posts, hasMore, standalone }) {
+export function EditorialBlog({ posts, hasMore, standalone, moreBlock }) {
   const { site } = useAgentSiteContext();
   return (
     <section id="blog" className="px-6 lg:px-10 py-28 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
@@ -222,6 +222,7 @@ export function EditorialBlog({ posts, hasMore, standalone }) {
             </SiteLink>
           ))}
         </div>
+        {moreBlock}
         {hasMore && (
           <div className="mt-12 text-center">
             <SiteLink slug={site.slug} path="/blog" className="inline-block text-xs font-medium tracked-wide uppercase text-[var(--as-text)] border-b border-[var(--as-text)] pb-1 transition-colors hover:text-[var(--as-accent-text)] hover:border-[var(--as-accent)]">

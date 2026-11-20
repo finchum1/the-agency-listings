@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "../../../hooks/useAuth";
+import { useOrg } from "../../../context/OrgContext";
 import { useAgentTasks } from "../../../hooks/useAgentTasks";
 import { useLeadAlerts } from "../../../hooks/useLeadAlerts";
 import { usePeopleSummary } from "../../../hooks/usePeopleSummary";
@@ -16,6 +17,7 @@ import { muted } from "./styles";
 // list and (with People on) a closings scorecard. Each part only appears for what that agent's account has switched on.
 export default function DashboardHomePage() {
   const { user, profile } = useAuth();
+  const { brand } = useOrg();
   const tasksApi = useAgentTasks(user?.id);
   const [editTask, setEditTask] = useState(null);
 
@@ -39,6 +41,7 @@ export default function DashboardHomePage() {
 
   return (
     <div className="min-w-0 space-y-6">
+      {brand.franchise === "the-agency" && <span className="dash-clip" aria-hidden="true" />}
       <header>
         <p className={`text-xs font-semibold uppercase tracking-[0.14em] ${muted}`}>{dateLine}</p>
         <h1 className="text-3xl font-display font-semibold mt-1.5">{first ? `Welcome, ${first}` : "Welcome"}</h1>

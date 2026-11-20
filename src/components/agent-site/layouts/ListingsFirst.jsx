@@ -231,7 +231,7 @@ export function ListingsAreas() {
   );
 }
 
-export function ListingsBlog({ posts, hasMore, standalone }) {
+export function ListingsBlog({ posts, hasMore, standalone, moreBlock }) {
   const { site } = useAgentSiteContext();
   const Heading = standalone ? "h1" : "h2";
   const shown = standalone ? posts : posts.slice(0, 3);
@@ -251,6 +251,7 @@ export function ListingsBlog({ posts, hasMore, standalone }) {
             </SiteLink>
           ))}
         </div>
+        {moreBlock}
         {(hasMore || (!standalone && posts.length > 3)) && (
           <div className="mt-10">
             <SiteLink slug={site.slug} path="/blog" className={btn}>

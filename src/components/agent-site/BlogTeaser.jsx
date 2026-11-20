@@ -2,15 +2,17 @@ import { useAgentSiteContext } from "../../context/AgentSiteContext";
 import SiteLink from "./SiteLink";
 import { LAYOUT_SECTIONS } from "./layouts";
 import FeaturedTag from "./FeaturedTag";
+import ShowMoreButton from "./ShowMoreButton";
+import useLoadMore from "../../hooks/useLoadMore";
 
-// On Home, only a taste — the 6 most recent (posts already arrive sorted
+// On Home, only a taste — the 6 most recent, 4 on a phone (posts already arrive sorted
 // newest-first, see useAgentSite.js's own `order("post_date", {ascending:
 // false})`) — with a Read More button down to the real, unrestricted
 // /blog page. The standalone /blog page (isStandalonePage) is that real
-// page, so it keeps showing every post, no cap — with the agent's pinned
-// posts (up to 3, agent_site_posts.featured_order) first, tagged Featured.
-// Home stays the newest posts whatever is pinned.
-const HOME_PREVIEW_COUNT = 6;
+// page: it shows the newest nine (four on a phone) and a "More posts" button
+// for the next batch, so it never turns into one very long page — with the
+// agent's pinned posts (up to 3, agent_site_posts.featured_order) first,
+// tagged Featured. Home stays the newest posts whatever is pinned.
 
 export default function BlogTeaser() {
   const { site, isStandalonePage } = useAgentSiteContext();
@@ -19,12 +21,16 @@ export default function BlogTeaser() {
   // this section IS the page at standalone /blog.
   const Heading = isStandalonePage ? "h1" : "h2";
   const pinned = site.posts.filter((p) => p.featured_order).sort((a, b) => a.featured_order - b.featured_order).map((p) => ({ ...p, featured: true }));
-  const posts = isStandalonePage ? [...pinned, ...site.posts.filter((p) => !p.featured_order)] : site.posts.slice(0, HOME_PREVIEW_COUNT);
-  const hasMore = !isStandalonePage && site.posts.length > HOME_PREVIEW_COUNT;
+  const all = isStandalonePage ? [...pinned, ...site.posts.filter((p) => !p.featured_order)] : site.posts;
+  const load = useLoadMore(all, isStandalonePage ? { phone: 4, desktop: 9 } : { phone: 4, desktop: 6 });
+  const posts = load.shown;
+  // On Home, "Read More" goes to the blog page when there are more posts than the taste; on the blog page itself the "More posts" button adds the next batch.
+  const hasMore = !isStandalonePage && site.posts.length > posts.length;
+  const moreBlock = isStandalonePage ? <ShowMoreButton more={load} label="More posts" className="mt-12" /> : null;
 
 
   const Variant = LAYOUT_SECTIONS[site.layout]?.Blog;
-  if (Variant) return <Variant posts={posts} hasMore={hasMore} standalone={isStandalonePage} />;
+  if (Variant) return <Variant posts={posts} hasMore={hasMore} standalone={isStandalonePage} moreBlock={moreBlock} />;
 
   return (
     <section id="blog" className="px-6 lg:px-10 py-24 bg-[var(--as-bg-alt)] border-y border-[var(--as-text)]/10">
@@ -61,6 +67,7 @@ export default function BlogTeaser() {
           ))}
         </div>
 
+        {moreBlock}
         {hasMore && (
           <div className="mt-12 text-center">
             <SiteLink
