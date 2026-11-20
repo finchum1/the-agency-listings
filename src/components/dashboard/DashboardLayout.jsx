@@ -56,6 +56,21 @@ const FLYOUTS = {
       { to: "/dashboard/deals/board", label: "Deals" },
     ],
   },
+  listings: {
+    title: "Listings",
+    items: [
+      { to: "/dashboard/listings", label: "My listings" },
+      { to: "/dashboard/upcoming", label: "Upcoming" },
+    ],
+  },
+  market: {
+    title: "Market",
+    items: [], // Home Search (only where the office has a live MLS feed) and CMAs: see marketItems
+  },
+  office: {
+    title: "Office",
+    items: [{ to: "/dashboard/vendors", label: "Vendors" }],
+  },
   site: {
     title: "Website",
     items: [
@@ -112,6 +127,8 @@ const ICON_PATHS = {
       <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
     </>
   ),
+  market: <path d="M3 17l6-6 4 4 7-8M15 7h5v5" />,
+  office: <path d="M5 21V5.5A1.5 1.5 0 0 1 6.5 4h7A1.5 1.5 0 0 1 15 5.5V21M15 10h3.5a1.5 1.5 0 0 1 1.5 1.5V21M3 21h18M8.5 8h3M8.5 12h3M8.5 16h3" />,
   vendors: (
     <>
       <path d="M14.5 6.5a3.5 3.5 0 0 0-4.6 4.4L4 16.8V20h3.2l5.9-5.9a3.5 3.5 0 0 0 4.4-4.6l-2.3 2.3-2-.6-.6-2z" />
@@ -130,17 +147,10 @@ function NavIcon({ name, className = "" }) {
 }
 
 // Plain top-level tabs. (The /dashboard index route just redirects to the right first page for each agent, see DashboardHome.jsx.)
-const NAV_ITEMS = [
-  { to: "/dashboard/listings", label: "Listings", icon: "listings", activeWhen: (p) => p === "/dashboard/listings" || p.startsWith("/dashboard/listings/") },
-  { to: "/dashboard/marketing", label: "Marketing", icon: "marketing", activeWhen: (p) => p === "/dashboard/marketing" || p.startsWith("/dashboard/marketing/") },
-  { to: "/dashboard/upcoming", label: "Upcoming", icon: "upcoming", activeWhen: (p) => p === "/dashboard/upcoming" },
-  { to: "/dashboard/cmas", label: "CMAs", icon: "cmas", activeWhen: (p) => p === "/dashboard/cmas" || p.startsWith("/dashboard/cmas/") },
-  { to: "/dashboard/vendors", label: "Vendors", icon: "vendors", activeWhen: (p) => p === "/dashboard/vendors" },
-];
+const NAV_ITEMS = [{ to: "/dashboard/marketing", label: "Marketing", icon: "marketing", activeWhen: (p) => p === "/dashboard/marketing" || p.startsWith("/dashboard/marketing/") }];
 
-// Home Search (the live MLS feed) sits right after Listings, and only for an organization that has IDX switched on.
-const SEARCH_ITEM = { to: "/dashboard/search", label: "Home Search", icon: "search", activeWhen: (p) => p === "/dashboard/search" };
-const withSearch = (items) => [items[0], SEARCH_ITEM, ...items.slice(1)];
+// Listings (with Upcoming), Market (Home Search and CMAs) and Office (Vendors) are menus that open beside the row, like People and Deals; see FLYOUTS.
+// Home Search is in Market only for an organization that has IDX switched on.
 
 // Website is one entry; its pages are the menu inside the page (SiteWorkspace). profiles.site_access decides what an agent gets: "full" = every
 // page, "limited" = Blog Posts only, "none" = no Website entry at all (Listings / Upcoming / People only).
@@ -442,7 +452,15 @@ export default function DashboardLayout() {
   // organization still get theirs, per their own switches.
   const workingElsewhere = Boolean(isPlatformAdmin && org && profile?.org_id && org.id !== profile.org_id);
   const idx = useIdxEnabled(org?.slug);
-  const navItems = idx.enabled && !workingElsewhere ? withSearch(NAV_ITEMS) : NAV_ITEMS;
+  const navItems = NAV_ITEMS;
+  const marketItems = [...(idx.enabled && !workingElsewhere ? [{ to: "/dashboard/search", label: "Home Search" }] : []), { to: "/dashboard/cmas", label: "CMAs" }];
+  const flyoutItems = (kind) => (kind === "admin" ? adminItems : kind === "market" ? marketItems : FLYOUTS[kind].items);
+  const flyoutTitle = (kind) => (kind === "admin" ? "Admin" : FLYOUTS[kind].title);
+  const GROUPS = [
+    { kind: "listings", label: "Listings", icon: "listings", to: "/dashboard/listings", active: (p) => p === "/dashboard/listings" || p.startsWith("/dashboard/listings/") || p === "/dashboard/upcoming" },
+    { kind: "market", label: "Market", icon: "market", to: marketItems[0].to, active: (p) => p === "/dashboard/search" || p === "/dashboard/cmas" || p.startsWith("/dashboard/cmas/") },
+  ];
+  const OFFICE_GROUP = { kind: "office", label: "Office", icon: "office", to: "/dashboard/vendors", active: (p) => p === "/dashboard/vendors" };
   const deals = dealAccess(profile);
   const dealsAttention = useDealAttention(deals.any && !workingElsewhere);
   // Deals' bubble: sent back, waiting for review and unread messages, plus the deal tasks that are overdue or due today.
@@ -528,7 +546,9 @@ export default function DashboardLayout() {
             {!workingElsewhere && siteAccess !== "none" && railItem("Website", "website", inSite, { to: siteHome, extra: siteAccess === "limited" ? undefined : flyTrigger("site", onNavigate) })}
             {!workingElsewhere && profile?.people_enabled && railItem("People", "people", inPeople, { to: "/dashboard/people/overview", badge: peopleAttention.total, extra: flyTrigger("people", onNavigate) })}
             {!workingElsewhere && deals.any && railItem("Deals", "deals", path.startsWith("/dashboard/deals"), { to: "/dashboard/deals", badge: dealsBadge, extra: deals.mine ? flyTrigger("deals", onNavigate) : undefined })}
+            {GROUPS.map((g) => railItem(g.label, g.icon, g.active(path), { to: g.to, extra: flyTrigger(g.kind, onNavigate) }))}
             {navItems.map((item) => railItem(item.label, item.icon, item.activeWhen(path), { to: item.to }))}
+            {railItem(OFFICE_GROUP.label, OFFICE_GROUP.icon, OFFICE_GROUP.active(path), { to: OFFICE_GROUP.to, extra: flyTrigger(OFFICE_GROUP.kind, onNavigate) })}
           </div>
           {isAdmin && (
             <div className="mt-auto pt-3">
@@ -591,14 +611,29 @@ export default function DashboardLayout() {
             </Link>
           </div>
         )}
-        <div className="mt-1 space-y-1">
-          {navItems.map((item) => (
-            <Link key={item.to} to={item.to} onClick={onNavigate} className={`${navLinkClass(item.activeWhen(path))} flex items-center gap-3`}>
-              <NavIcon name={item.icon} />
-              {item.label}
+        {(() => {
+          const groupRow = (g) => (
+            <Link key={g.kind} to={g.to} {...flyTrigger(g.kind, onNavigate)} className={`${navLinkClass(g.active(path))} flex items-center gap-3`}>
+              <NavIcon name={g.icon} />
+              <span className="flex-1">{g.label}</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0 text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
+                <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </Link>
-          ))}
-        </div>
+          );
+          return (
+            <div className="mt-1 space-y-1">
+              {GROUPS.map(groupRow)}
+              {navItems.map((item) => (
+                <Link key={item.to} to={item.to} onClick={onNavigate} className={`${navLinkClass(item.activeWhen(path))} flex items-center gap-3`}>
+                  <NavIcon name={item.icon} />
+                  {item.label}
+                </Link>
+              ))}
+              {groupRow(OFFICE_GROUP)}
+            </div>
+          );
+        })()}
         </div>
         {isAdmin && (
           <div className="mt-auto pt-6">
@@ -843,14 +878,14 @@ export default function DashboardLayout() {
           <div
             data-fly-menu=""
             role="menu"
-            aria-label={flyout.kind === "admin" ? "Admin" : FLYOUTS[flyout.kind].title}
+            aria-label={flyoutTitle(flyout.kind)}
             onPointerEnter={(e) => e.pointerType === "mouse" && clearTimeout(flyTimer.current)}
             onPointerLeave={(e) => e.pointerType === "mouse" && closeFlyout(160)}
-            style={{ left: flyout.x, top: Math.max(8, Math.min(flyout.y, window.innerHeight - ((flyout.kind === "admin" ? adminItems : FLYOUTS[flyout.kind].items).length * 40 + 56))), ...(flyout.w ? { width: flyout.w } : {}) }}
+            style={{ left: flyout.x, top: Math.max(8, Math.min(flyout.y, window.innerHeight - (flyoutItems(flyout.kind).length * 40 + 56))), ...(flyout.w ? { width: flyout.w } : {}) }}
             className="fixed z-[60] min-w-[200px] rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a] p-1.5 text-[#1c1a17] dark:text-[#faf9f7] shadow-xl print:hidden"
           >
-            <p className="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/40 dark:text-[#faf9f7]/40">{flyout.kind === "admin" ? "Admin" : FLYOUTS[flyout.kind].title}</p>
-            {(flyout.kind === "admin" ? adminItems : FLYOUTS[flyout.kind].items).map((item) => (
+            <p className="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider-plus text-[#1c1a17]/40 dark:text-[#faf9f7]/40">{flyoutTitle(flyout.kind)}</p>
+            {flyoutItems(flyout.kind).map((item) => (
               <Link
                 key={item.to}
                 to={item.to}
