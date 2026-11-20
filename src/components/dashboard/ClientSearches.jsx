@@ -28,16 +28,16 @@ export function clientLink(p = {}) {
 
 // Home Search filters saved for a client: name it, attach it to one of your people, put it back on the page later, or copy a link that opens the
 // public Home Search already filtered. Private to the agent.
-export default function ClientSearches({ current, narrowed, onRun }) {
+export default function ClientSearches({ current, narrowed, onRun, forClient = null }) {
   const { profile } = useAuth();
   const [params] = useSearchParams();
   const [rows, setRows] = useState([]);
   const [names, setNames] = useState({});
   const [emails, setEmails] = useState({});
   const [batches, setBatches] = useState([]); // new matches the morning run found, waiting for the agent
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState(Boolean(forClient)); // opened from a person: the save form starts open, for them
   const [name, setName] = useState("");
-  const [person, setPerson] = useState({ id: null, name: "" });
+  const [person, setPerson] = useState(forClient || { id: null, name: "" });
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
   const [open, setOpen] = useState(params.get("matches") === "1");
@@ -138,7 +138,7 @@ export default function ClientSearches({ current, narrowed, onRun }) {
               <ClientPicker personId={person.id} name={person.name} onPick={(id, n) => setPerson({ id, name: n })} />
             </div>
           </div>
-          <button type="submit" className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] px-4 py-2 text-sm font-semibold text-white">Save</button>
+          <button type="submit" disabled={!narrowed} title={narrowed ? "" : "Set the filters first"} className="rounded-full bg-[#1c1a17] dark:bg-[#f2454b] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">Save</button>
         </form>
       )}
       {error && <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}

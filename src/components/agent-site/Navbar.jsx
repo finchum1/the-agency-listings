@@ -6,6 +6,7 @@ import { navPages, splitNav } from "../../lib/siteNav";
 import SiteLink from "./SiteLink";
 import BrandLogo from "../BrandLogo";
 import { LIGHT_HERO_LAYOUTS } from "./layouts";
+import { VisitorAccount } from "../idx/VisitorUI";
 
 // Presentational styles share all the scroll/active-link/mobile-menu logic below (one source of truth for nav links and behavior) and only branch on
 // the actual markup — see SiteForm.jsx's "Header style" picker (agent_sites.header_style, adapted as site.headerStyle):
@@ -20,7 +21,7 @@ import { LIGHT_HERO_LAYOUTS } from "./layouts";
 // header never crowds. A small screen still gets the one menu button with every page in it.
 // The pages and their order come from lib/siteNav.js (the agent can reorder them in the site editor).
 export default function Navbar() {
-  const { site, colorMode } = useAgentSiteContext();
+  const { site, colorMode, siteId } = useAgentSiteContext();
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -131,6 +132,9 @@ export default function Navbar() {
     </button>
   );
 
+  // Visitors sign in here to keep homes and searches, on any page, once the agent has turned Home Search (IDX) on for the site.
+  const accountButton = site.idxEnabled && siteId ? <VisitorAccount site={{ kind: "agent", id: siteId }} /> : null;
+
   const menuButton = (
     <button className={`${hideDesktop} p-2 shrink-0 text-[var(--as-on-dark)]`} onClick={() => setOpen((v) => !v)} aria-label="Toggle menu" aria-expanded={open}>
       {menuIcon}
@@ -213,7 +217,7 @@ export default function Navbar() {
           {barPages.slice(half).map(pageLink)}
           {/* With many pages the phone button would push the logo off-center, so it stays in the menu there. */}
           {!many && contactCta(`${ctaClass} ml-2`)}
-          {modeButton}
+          {accountButton}{modeButton}
           {moreMenu}
         </nav>
       </div>
@@ -223,7 +227,7 @@ export default function Navbar() {
       <nav className={`${showDesktop} items-center justify-center ${gap} w-full`}>
         {barPages.map(pageLink)}
         {contactCta(`${ctaClass} ml-2`)}
-        {modeButton}
+        {accountButton}{modeButton}
           {moreMenu}
       </nav>
     );
@@ -234,7 +238,7 @@ export default function Navbar() {
       <nav className={`${showDesktop} items-center ${gap} shrink-0 ${pill ? "ml-auto" : ""}`}>
         {barPages.map(pageLink)}
         {contactCta(`${ctaClass} ${pill ? "ml-2" : ""}`)}
-        {modeButton}
+        {accountButton}{modeButton}
           {moreMenu}
       </nav>
     );
@@ -271,7 +275,7 @@ export default function Navbar() {
     <div className={`${hideDesktop} flex w-full items-center justify-between`}>
       {logo}
       <div className="flex items-center">
-        {modeButton}
+        {accountButton}{modeButton}
         {menuButton}
       </div>
     </div>
@@ -301,7 +305,7 @@ export default function Navbar() {
         {logo}
         <div className="flex items-center gap-4">
           {minimalPhone}
-          {modeButton}
+          {accountButton}{modeButton}
           {menuButton}
         </div>
       </div>
@@ -312,7 +316,7 @@ export default function Navbar() {
         {logo}
         {desktop}
         <div className={`${hideDesktop} flex items-center`}>
-          {modeButton}
+          {accountButton}{modeButton}
           {menuButton}
         </div>
       </>

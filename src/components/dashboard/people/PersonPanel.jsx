@@ -4,6 +4,7 @@ import { supabase } from "../../../lib/supabaseClient";
 import { BOARDS, ARCHIVE_REASONS, SOURCES } from "../../../lib/peopleStages";
 import ContactButtons from "./ContactButtons";
 import OutreachDrafts from "./OutreachDrafts";
+import PersonSearches from "./PersonSearches";
 import ClientTimelineCard from "./ClientTimelineCard";
 import ChangeAgentForm from "./ChangeAgentForm";
 import DealEmailButton, { DealPartyEmails } from "./DealEmailButton";
@@ -1054,7 +1055,12 @@ export default function PersonPanel({
         >
           {{
             top: <OutreachDrafts person={person} onLogged={() => setActivityKey((k) => k + 1)} onCount={setDraftCount} />,
-            bottom: moveBlock,
+            bottom: (
+              <>
+                <PersonSearches person={person} />
+                {moveBlock}
+              </>
+            ),
           }}
         </ProspectOverview>
       )}

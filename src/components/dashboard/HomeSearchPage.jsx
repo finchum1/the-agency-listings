@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useOrg } from "../../context/OrgContext";
 import { useIdxEnabled } from "../../hooks/useIdxEnabled";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
@@ -74,13 +75,17 @@ export default function HomeSearchPage() {
   const idx = useIdxEnabled(slug);
   const wide = useMediaQuery("(min-width: 1024px)");
 
-  const [text, setText] = useState("");
+  // A link can open the page with filters already set (a saved search's "Run"), and for a client (a person's "New search for…").
+  const [link] = useSearchParams();
+  const [text, setText] = useState(() => (link.get("city") || "").slice(0, 80));
   const city = useDebounced(text.trim());
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [beds, setBeds] = useState("");
-  const [baths, setBaths] = useState("");
-  const [sortBy, setSortBy] = useState("");
+  const whole = (k) => (/^\d{1,9}$/.test(link.get(k) || "") ? link.get(k) : "");
+  const [minPrice, setMinPrice] = useState(() => whole("minPrice"));
+  const [maxPrice, setMaxPrice] = useState(() => whole("maxPrice"));
+  const [beds, setBeds] = useState(() => (/^[1-5]$/.test(link.get("minBeds") || "") ? link.get("minBeds") : ""));
+  const [baths, setBaths] = useState(() => (/^[1-4]$/.test(link.get("minBaths") || "") ? link.get("minBaths") : ""));
+  const [sortBy, setSortBy] = useState(() => (["listPriceDesc", "listPriceAsc", "sqftDesc"].includes(link.get("sortBy")) ? link.get("sortBy") : ""));
+  const forClient = /^[0-9a-f-]{36}$/.test(link.get("client") || "") ? { id: link.get("client"), name: (link.get("clientName") || "").slice(0, 120) } : null;
   const [ourOnly, setOurOnly] = useState(false);
   const [boundary, setBoundary] = useState(null);
   const [paged, setPaged] = useState({ sig: "", page: 1 });
@@ -173,7 +178,7 @@ export default function HomeSearchPage() {
         <p className={`mt-1 text-sm ${muted}`}>The live MLS feed. Find homes for a client, then open one to share it.</p>
       </div>
 
-      <ClientSearches current={currentParams} narrowed={narrowed} onRun={runSaved} />
+      <ClientSearches current={currentParams} narrowed={narrowed} onRun={runSaved} forClient={forClient} />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <input

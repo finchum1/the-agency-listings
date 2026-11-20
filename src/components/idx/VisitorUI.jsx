@@ -207,6 +207,45 @@ function Panel({ store, account, onRun, onClose }) {
   );
 }
 
+// ---------------------------------------------------------------- the header button: sign in, or open what you saved (any page of an agent site)
+const FILTER_KEYS = ["city", "minPrice", "maxPrice", "minBeds", "minBaths", "sortBy"];
+/** A saved search's page with its filters in the address (the search page reads them from there). */
+const searchHref = (s) => {
+  if (!s.pageUrl) return "";
+  const q = new URLSearchParams();
+  for (const k of FILTER_KEYS) if (s.params?.[k]) q.set(k, s.params[k]);
+  return `${s.pageUrl.split("?")[0]}${q.toString() ? `?${q}` : ""}`;
+};
+/** The person icon in an agent site's header. Signed out it opens the sign-in; signed in it opens saved searches and homes. */
+export function VisitorAccount({ site, className = "" }) {
+  const [state, store] = useVisitor(site);
+  useEffect(() => { store.init(); }, [store]);
+  const account = state.account;
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => (account ? store.openPanel() : store.openSignIn(""))}
+        aria-label={account ? "Your saved homes and searches" : "Sign in to save homes and searches"}
+        aria-haspopup="dialog"
+        title={account ? "Saved homes and searches" : "Sign in"}
+        className={`relative p-2 shrink-0 text-[var(--as-on-dark)] opacity-80 hover:opacity-100 transition-opacity ${className}`}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8.5" r="3.6" />
+          <path d="M4.5 20c.8-3.6 3.8-5.6 7.5-5.6s6.7 2 7.5 5.6" />
+        </svg>
+        {account && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[var(--as-accent)]" aria-hidden="true" />}
+      </button>
+      {state.dialog && !state.dialog.panel && !account && <SignIn store={store} reason={state.dialog.reason} onClose={() => store.closeDialog()} />}
+      {state.dialog?.panel && account && (
+        <Panel store={store} account={account} onRun={(s) => { store.closeDialog(); const href = searchHref(s); if (href) window.location.assign(href); }} onClose={() => store.closeDialog()} />
+      )}
+      {state.notice && <div role="status" className="fixed bottom-6 left-1/2 z-[110] -translate-x-1/2 rounded-full bg-[var(--as-dark)] px-5 py-3 text-sm text-[var(--as-on-dark)] shadow-xl">{state.notice}</div>}
+    </>
+  );
+}
+
 // ---------------------------------------------------------------- the buttons beside the filters, and the dialogs they open
 /**
  * `site`: {kind, id?}. `getParams()`: the filters as they are right now. `path`: this page, for the alert email's link. `onRun(savedSearch)`: apply a saved search.
