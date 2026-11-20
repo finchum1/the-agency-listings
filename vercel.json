@@ -244,6 +244,11 @@
     },
     "api/deal-updates.js": {
       "maxDuration": 300
+    },
+    "api/guide-pdf.js": {
+      "maxDuration": 30,
+      "memory": 1024,
+      "includeFiles": "api/_lib/guide-fonts/**"
     }
   }
 }

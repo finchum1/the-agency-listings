@@ -4,6 +4,7 @@ import { HoneypotField } from "../../../lib/spamGuard";
 import SiteLink from "../SiteLink";
 import { AgentCard, Chips, ContactLink, Disclaimer, Eyebrow, Field, Heading, Journey, Lead, PageHero, Section, aboveFooter, inputClass, outlineButton, primaryButton } from "./Parts";
 import { useLandingSubmit } from "./useLandingSubmit";
+import GuideDownload from "./GuideDownload";
 import { RELOCATION_FAQ, RELOCATION_PRIORITIES, RELOCATION_REASONS, RELOCATION_STEPS, RELOCATION_WHEN } from "./content";
 
 // /relocation: for clients moving to Oklahoma from somewhere else. The way a move from a distance works, the areas the agent serves, answers to the
@@ -69,6 +70,8 @@ export default function RelocationPage() {
           ))}
         </div>
       </Section>
+
+      <GuideDownload guide="relocation" tone="alt" />
 
       <MoveForm />
 

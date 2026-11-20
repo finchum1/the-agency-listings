@@ -7,6 +7,7 @@ import SiteLink from "../SiteLink";
 import SoldHomes from "../SoldHomes";
 import { Chips, Eyebrow, Field, Heading, Section, aboveFooter, inputClass, primaryButton } from "./Parts";
 import { useLandingSubmit } from "./useLandingSubmit";
+import GuideDownload from "./GuideDownload";
 import { CONDITIONS, SELL_TIMELINES } from "./content";
 
 const HOW = [
@@ -79,6 +80,8 @@ export default function HomeValuePage() {
           </div>
         </Section>
       )}
+
+      <GuideDownload guide="home-value" tone="alt" />
 
       <Section id="privacy" className={`border-t border-[var(--as-text)]/10 ${aboveFooter(site)}`}>
         <div className="flex flex-wrap items-center justify-between gap-6">

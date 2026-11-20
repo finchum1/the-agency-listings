@@ -4,6 +4,7 @@ import { HoneypotField } from "../../../lib/spamGuard";
 import SiteLink from "../SiteLink";
 import { AgentCard, Chips, ContactLink, Disclaimer, Eyebrow, Field, Heading, Journey, Lead, PageHero, Pillars, Section, aboveFooter, inputClass, outlineButton, primaryButton } from "./Parts";
 import { useLandingSubmit } from "./useLandingSubmit";
+import GuideDownload from "./GuideDownload";
 import { CLOSING_CHECKLIST, OFFER_OPTIONS, PILLARS, SELLER_COSTS, SELLER_PREP, SELLER_STEPS, SELL_TIMELINES } from "./content";
 
 // /sellers: the seller's guide as a page (condensed from The Agency's Seller's Guide), ending in a request for a listing consultation.
@@ -166,6 +167,8 @@ export default function SellersPage() {
           <Pillars items={PILLARS} />
         </Section>
       )}
+
+      <GuideDownload guide="sellers" tone="bg" />
 
       <SellerCta />
     </>

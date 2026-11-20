@@ -3,6 +3,7 @@ import { useAgentSiteContext } from "../../../context/AgentSiteContext";
 import { HoneypotField } from "../../../lib/spamGuard";
 import { AgentCard, Chips, ContactLink, Disclaimer, Eyebrow, Field, Heading, Journey, Lead, PageHero, Pillars, Section, aboveFooter, inputClass, outlineButton, primaryButton } from "./Parts";
 import { useLandingSubmit } from "./useLandingSubmit";
+import GuideDownload from "./GuideDownload";
 import { BUYER_STEPS, CLOSING_STEPS, LENDER_REVIEWS, LOAN_DONTS, OFFER_STEPS, PILLARS, WISH_LOCATIONS, WISH_STYLES, WISH_TYPES } from "./content";
 
 const NEIGHBORHOODS = ["Carlton Landing", "Bricktown", "Downtown Edmond", "Norman", "Arcadia"];
@@ -118,6 +119,8 @@ export default function BuyersPage() {
           ))}
         </div>
       </Section>
+
+      <GuideDownload guide="buyers" tone="alt" />
 
       <WishList />
 
