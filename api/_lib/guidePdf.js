@@ -103,17 +103,26 @@ function Block({ block, accent }) {
 
 /**
  * @param guide   one of GUIDES (src/lib/guides.js)
- * @param agent   { name, first, title, license, phone, email, website }
+ * @param agent   { name, first, team, title, license, phone, email, website, members: [{ name, title, license, phone, email }] }. On a team site `name` is the team's and
+ *                `members` is everyone on it, the site's owner first; otherwise `members` is just the agent.
  * @param brand   { dark, onDark, accent, org, address, disclaimer, franchiseDisclaimer, location }
- * @param images  { logo, photo }: PNG buffers or null
+ * @param images  { logo, photos }: PNG buffers or null; `photos` lines up with `members`
  * @returns Promise<Buffer>
  */
 export async function buildGuidePdf({ guide, agent, brand, images = {} }) {
   const onLight = lightness(brand.dark) > 0.6;
   const title = guide.slug === "relocation" && !/oklahoma/i.test(brand.location || "") ? "Relocating With Me" : guide.title;
   const who = agent.name || brand.org;
+  const members = agent.members?.length ? agent.members : [{ name: agent.name, title: agent.title, license: agent.license, phone: agent.phone, email: agent.email }];
+  const photos = images.photos || [];
+  const solo = members.length === 1;
   const logo = images.logo ? h(Image, { src: { data: images.logo, format: "png" }, style: { height: 46, objectFit: "contain", objectPosition: "left" } }) : h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 20, color: brand.onDark } }, brand.org);
-  const photo = images.photo ? h(Image, { src: { data: images.photo, format: "png" }, style: { width: 64, height: 64, borderRadius: 32, objectFit: "cover" } }) : null;
+  const circle = (i, size, overlap = 0) =>
+    photos[i]
+      ? h(Image, { key: i, src: { data: photos[i], format: "png" }, style: { width: size, height: size, borderRadius: size / 2, objectFit: "cover", marginLeft: i ? overlap : 0, borderWidth: overlap ? 2 : 0, borderColor: brand.dark, borderStyle: "solid" } })
+      : null;
+  const firsts = members.map((m) => (m.name || "").split(" ")[0]).filter(Boolean);
+  const sign = firsts.length > 1 ? `${firsts.slice(0, -1).join(", ")} and ${firsts[firsts.length - 1]}` : firsts[0] || "";
   const contact = [agent.phone, agent.email].filter(Boolean);
 
   const cover = h(
@@ -131,13 +140,15 @@ export async function buildGuidePdf({ guide, agent, brand, images = {} }) {
     h(
       View,
       { style: { position: "absolute", left: 64, right: 64, bottom: 64, flexDirection: "row", alignItems: "center" } },
-      photo ? h(View, { style: { marginRight: 16 } }, photo) : null,
+      photos.some(Boolean) ? h(View, { style: { flexDirection: "row", marginRight: 16 } }, ...members.slice(0, 4).map((_, i) => circle(i, solo ? 64 : 52, solo ? 0 : -14))) : null,
       h(
         View,
-        null,
+        { style: { flex: 1 } },
         h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 18, lineHeight: 1.2, marginBottom: 3, color: brand.onDark } }, who),
-        agent.name && brand.org ? h(Text, { style: { fontSize: 9.5, color: brand.onDark, opacity: 0.75 } }, [agent.title, brand.org].filter(Boolean).join(" · ")) : null,
-        contact.length ? h(Text, { style: { fontSize: 9.5, color: brand.onDark, opacity: 0.75, marginTop: 2 } }, contact.join("   ·   ")) : null,
+        solo
+          ? agent.name && brand.org ? h(Text, { style: { fontSize: 9.5, color: brand.onDark, opacity: 0.75 } }, [agent.title, brand.org].filter(Boolean).join(" · ")) : null
+          : h(Text, { style: { fontSize: 9.5, color: brand.onDark, opacity: 0.75 } }, [members.map((m) => m.name).join(", "), brand.org].filter(Boolean).join(" · ")),
+        solo && contact.length ? h(Text, { style: { fontSize: 9.5, color: brand.onDark, opacity: 0.75, marginTop: 2 } }, contact.join("   ·   ")) : null,
       ),
     ),
   );
@@ -150,14 +161,13 @@ export async function buildGuidePdf({ guide, agent, brand, images = {} }) {
     h(Text, { key: "num", fixed: true, style: { ...foot, left: 54, width: 504, textAlign: "right" }, render: ({ pageNumber }) => `${pageNumber - 1}` }),
   ];
 
-  const first = (agent.first || who || "").split(" ")[0];
   const content = h(
     Page,
     { size: "LETTER", style: styles.page, wrap: true },
     h(Eyebrow, { color: brand.accent }, "Welcome"),
     h(Text, { style: { ...styles.h1, fontSize: 30 } }, `Let's get you where you want to go.`),
     h(Text, { style: { fontFamily: "Garamond", fontSize: 15, lineHeight: 1.5, marginTop: 14, color: "#3b3830" } }, guide.intro),
-    h(Text, { style: { marginTop: 10, color: MUTED } }, `${first ? `— ${first}` : ""}`),
+    h(Text, { style: { marginTop: 10, color: MUTED } }, sign ? `— ${sign}` : ""),
     ...guide.sections.map((s, i) =>
       h(
         View,
@@ -170,26 +180,29 @@ export async function buildGuidePdf({ guide, agent, brand, images = {} }) {
   );
 
   const disclaimers = [brand.disclaimer, brand.franchiseDisclaimer].filter(Boolean);
+  const card = (m, i, wide) =>
+    h(
+      View,
+      { key: i, wrap: false, style: { width: wide ? "100%" : "48.5%", flexDirection: "row", alignItems: "center", backgroundColor: PAPER, padding: wide ? 22 : 14, marginBottom: 12 } },
+      photos[i] ? h(View, { style: { marginRight: wide ? 18 : 12 } }, circle(i, wide ? 64 : 48)) : null,
+      h(
+        View,
+        { style: { flex: 1 } },
+        h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: wide ? 20 : 15, lineHeight: 1.2, marginBottom: 3 } }, m.name),
+        m.title || brand.org ? h(Text, { style: { color: MUTED, fontSize: 9 } }, [m.title, brand.org].filter(Boolean).join(" · ")) : null,
+        m.license ? h(Text, { style: { color: MUTED, fontSize: 8.5 } }, m.license) : null,
+        h(View, { style: { marginTop: 6 } }, ...[m.phone, m.email, solo ? agent.website : ""].filter(Boolean).map((t, k) => h(Text, { key: k, style: { fontSize: wide ? 11 : 9.5 } }, t))),
+      ),
+    );
   const closing = h(
     Page,
     { size: "LETTER", style: styles.page },
     h(Eyebrow, { color: brand.accent }, "Next step"),
     h(Text, { style: { ...styles.h1, fontSize: 30 } }, "Let's talk."),
-    h(Text, { style: { fontFamily: "Garamond", fontSize: 15, lineHeight: 1.5, marginTop: 12, color: "#3b3830" } }, `Every home and every move is different. If you have questions about anything in this guide, or you are ready to take the next step, reach out. I would be glad to help.`),
-    h(
-      View,
-      { style: { marginTop: 28, flexDirection: "row", alignItems: "center", backgroundColor: PAPER, padding: 22 } },
-      photo ? h(View, { style: { marginRight: 18 } }, photo) : null,
-      h(
-        View,
-        null,
-        h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 20, lineHeight: 1.2, marginBottom: 3 } }, who),
-        agent.title || brand.org ? h(Text, { style: { color: MUTED, fontSize: 9.5 } }, [agent.title, brand.org].filter(Boolean).join(" · ")) : null,
-        agent.license ? h(Text, { style: { color: MUTED, fontSize: 9 } }, agent.license) : null,
-        h(View, { style: { marginTop: 8 } }, ...[agent.phone, agent.email, agent.website].filter(Boolean).map((t, i) => h(Text, { key: i, style: { fontSize: 11 } }, t))),
-      ),
-    ),
-    brand.address ? h(Text, { style: { marginTop: 18, color: MUTED, fontSize: 9 } }, brand.address) : null,
+    h(Text, { style: { fontFamily: "Garamond", fontSize: 15, lineHeight: 1.5, marginTop: 12, color: "#3b3830" } }, `Every home and every move is different. If you have questions about anything in this guide, or you are ready to take the next step, reach out. ${solo ? "I would" : "We would"} be glad to help.`),
+    h(View, { style: { marginTop: 28, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" } }, ...members.map((m, i) => card(m, i, solo))),
+    solo || !agent.website ? null : h(Text, { style: { color: MUTED, fontSize: 10 } }, agent.website),
+    brand.address ? h(Text, { style: { marginTop: 10, color: MUTED, fontSize: 9 } }, brand.address) : null,
     disclaimers.length ? h(Text, { style: { marginTop: 22, color: MUTED, fontSize: 7.5, lineHeight: 1.5 } }, disclaimers.join("\n\n")) : null,
     h(Text, { style: { marginTop: 10, color: MUTED, fontSize: 7.5, lineHeight: 1.5 } }, "This guide is general information, not legal, tax or financial advice. Talk with your own attorney, tax professional and lender about your situation. Equal Housing Opportunity."),
     ...footer(),

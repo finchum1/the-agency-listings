@@ -248,7 +248,12 @@
     "api/guide-pdf.js": {
       "maxDuration": 30,
       "memory": 1024,
-      "includeFiles": "api/_lib/guide-fonts/**"
+      "includeFiles": "{api/_lib/guide-fonts/**,node_modules/pdfkit/**,node_modules/@react-pdf/**}"
+    },
+    "api/agent-site-contact.js": {
+      "maxDuration": 30,
+      "memory": 1024,
+      "includeFiles": "{api/_lib/guide-fonts/**,node_modules/pdfkit/**,node_modules/@react-pdf/**}"
     }
   }
 }

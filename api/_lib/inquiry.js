@@ -224,6 +224,42 @@ ${actions.length ? `<tr><td style="padding:16px 28px 0"><p style="margin:0 0 8px
 // A short "we got it" note to the visitor. Never includes anything the
 // visitor typed except their first name, so the form can't be used to push
 // arbitrary text at someone else's inbox. Failures are logged, not fatal.
+/**
+ * The guide a visitor asked for, emailed to them from the agent with the PDF attached (and the download link in case the attachment is stripped).
+ * `attachment` is { filename, pdf: Buffer }. Never throws: a failed email must not fail the request.
+ */
+export async function sendGuideEmail(apiKey, { from, visitor, agentName, agentEmail, guideTitle, noun, link, attachment }) {
+  try {
+    const firstName = String(visitor.name || "").split(" ")[0] || "there";
+    const who = agentName || "your agent";
+    const senderAddress = (from.match(/<([^>]+)>/) || [])[1] || from;
+    const displayName = (agentName || "The Agency").replace(/["<>]/g, "");
+    const text = [
+      `Hi ${firstName},`,
+      "",
+      `Thanks for your interest! Your ${noun} is attached as a PDF.`,
+      `You can also download it here: ${link}`,
+      "",
+      "If anything comes up as you read, just reply to this email.",
+      "",
+      `— ${who}`,
+    ].join("\n");
+    const html = `<!doctype html><html><body style="margin:0;background:#f4f2ee;padding:24px 12px;font-family:Helvetica,Arial,sans-serif;color:#14130f"><div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #e3ded3;padding:28px"><p style="margin:0 0 14px;font-size:16px">Hi ${escapeHtml(firstName)},</p><p style="margin:0 0 14px;font-size:15px;line-height:1.55">Thanks for your interest! Your ${escapeHtml(noun)} is attached to this email as a PDF.</p><p style="margin:0 0 20px"><a href="${escapeHtml(link)}" style="display:inline-block;background:#14130f;color:#fff;text-decoration:none;font-size:14px;padding:12px 20px">Download the ${escapeHtml(guideTitle)}</a></p><p style="margin:0 0 14px;font-size:14px;line-height:1.55;color:#4a463d">If anything comes up as you read, just reply to this email.</p><p style="margin:0;font-size:14px">— ${escapeHtml(who)}</p></div></body></html>`;
+    return await resendSend(apiKey, {
+      from: `${displayName} <${senderAddress}>`,
+      to: visitor.email,
+      ...(agentEmail ? { reply_to: agentEmail } : {}),
+      subject: `Your ${guideTitle}${agentName ? ` from ${agentName}` : ""}`,
+      text,
+      html,
+      attachments: [{ filename: attachment.filename, content: attachment.pdf.toString("base64") }],
+    });
+  } catch (err) {
+    console.error("Guide email failed:", err);
+    return false;
+  }
+}
+
 export async function sendConfirmation(apiKey, { from, visitor, agentName, agentEmail, about, when }) {
   try {
     const firstName = visitor.name.split(" ")[0];

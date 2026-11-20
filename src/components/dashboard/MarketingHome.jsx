@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 import { upcomingHolidays } from "../../lib/holidayPost";
+import { GUIDES } from "../../lib/guides";
 
 const muted = "text-[#1c1a17]/55 dark:text-[#faf9f7]/55";
 const card = "bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/10 rounded-2xl p-6";
@@ -11,6 +12,53 @@ const localToday = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
+
+// The agent's guides as PDF files: download one, or copy its link to send. The same file the "Take the guide with you" blocks on the website hand out,
+// without the form. Needs a published website (api/guide-pdf.js makes them from it).
+function GuidesCard() {
+  const { user } = useAuth();
+  const [site, setSite] = useState(undefined); // undefined = loading, null = none
+  const [copied, setCopied] = useState("");
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("agent_sites").select("slug, status").eq("agent_id", user.id).maybeSingle().then(({ data }) => setSite(data || null));
+  }, [user]);
+  const href = (g) => `${window.location.origin}/api/guide-pdf?site=${encodeURIComponent(site.slug)}&guide=${encodeURIComponent(g.slug)}`;
+  const copy = async (g) => {
+    await navigator.clipboard.writeText(href(g));
+    setCopied(g.slug);
+    setTimeout(() => setCopied((c) => (c === g.slug ? "" : c)), 1800);
+  };
+  const ready = site && site.status !== "draft";
+  return (
+    <section className={`${card} space-y-4 md:col-span-2`}>
+      <div>
+        <h2 className="font-display text-lg font-semibold">Guides (PDF)</h2>
+        <p className={`mt-1 text-sm ${muted}`}>Your seller, buyer, home value and relocation guides, branded with your photo and contact details. Download one to print or attach, or copy its link to send. Visitors to your website get the same files.</p>
+      </div>
+      {site === undefined ? null : !ready ? (
+        <p className={`text-sm ${muted}`}>{site ? "Publish your website to make your guides." : "Your guides are made from your website, which isn't set up yet."}</p>
+      ) : (
+        <ul className="divide-y divide-black/10 dark:divide-white/10">
+          {Object.values(GUIDES).map((g) => (
+            <li key={g.slug} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold">{g.title}</p>
+                <p className={`text-xs ${muted}`}>{g.subtitle}</p>
+              </div>
+              <a href={href(g)} download className={pill}>
+                Download
+              </a>
+              <button type="button" onClick={() => copy(g)} className="rounded-full border border-black/10 dark:border-white/15 px-4 py-2 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
+                {copied === g.slug ? "Copied" : "Copy link"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
 
 // The Marketing module's home: the tools to make something to post. Social posts start from one of the agent's listings; holiday posts do not need one.
 export default function MarketingHome() {
@@ -74,6 +122,7 @@ export default function MarketingHome() {
           </Link>
         </section>
 
+        <GuidesCard />
       </div>
     </div>
   );

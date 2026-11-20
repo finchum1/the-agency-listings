@@ -19,7 +19,7 @@ export default function GuideDownload({ guide, tone = "alt", className = "" }) {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    await submit({ name: f.name, email: f.email, message: `Downloaded the ${g.noun} (PDF) from your website.` });
+    await submit({ name: f.name, email: f.email, message: `Downloaded the ${g.noun} (PDF) from your website.`, guide: g.slug });
   };
 
   return (
@@ -36,7 +36,7 @@ export default function GuideDownload({ guide, tone = "alt", className = "" }) {
             <a href={href} className={`${primaryButton} mt-5`} download>
               Download the PDF
             </a>
-            <p className="mt-4 text-sm opacity-60">{first} has been let know and may follow up.</p>
+            <p className="mt-4 text-sm opacity-60">We also emailed it to you. {first} has been let know and may follow up.</p>
           </div>
         ) : (
           <form onSubmit={onSubmit} className="relative space-y-4 border border-[var(--as-text)]/10 bg-[var(--as-bg-alt)] p-6 sm:p-8">

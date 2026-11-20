@@ -26,9 +26,11 @@ import {
   parseInquiry,
   renderLeadEmailHtml,
   sendConfirmation,
+  sendGuideEmail,
   sendNotification,
 } from "./_lib/inquiry.js";
 import { respondToNewLead } from "./_lib/leadResponse.js";
+import { GUIDES } from "../src/lib/guides.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -149,7 +151,29 @@ export default async function handler(req, res) {
     });
     if (!sent) return res.status(502).json({ error: "Failed to send email." });
 
-    if (!confirmedRecently) {
+    // A guide download: the visitor gets the PDF by email (instead of the general thank-you). Best effort: the page already shows the download link.
+    const guideKey = Object.hasOwn(GUIDES, String(req.body.guide || "")) ? String(req.body.guide) : null;
+    if (guideKey && supabaseAdmin) {
+      try {
+        // Loaded only here: making a PDF pulls in heavy libraries that the plain contact form must never depend on.
+        const { makeGuide } = await import("./_lib/guideFile.js");
+        const made = await makeGuide(supabaseAdmin, { id: agentSiteId }, guideKey);
+        if (made) {
+          await sendGuideEmail(apiKey, {
+            from: fromEmail,
+            visitor: { name, email },
+            agentName: made.name,
+            agentEmail: made.agentEmail || site.agent.email,
+            guideTitle: GUIDES[guideKey].title.replace("What's Your Home Worth?", "Home Value Guide"),
+            noun: GUIDES[guideKey].noun,
+            link: made.link,
+            attachment: { filename: made.filename, pdf: made.pdf },
+          });
+        }
+      } catch (err) {
+        console.error("Guide email failed:", err);
+      }
+    } else if (!confirmedRecently) {
       await sendConfirmation(apiKey, {
         from: fromEmail,
         visitor: { name, email },

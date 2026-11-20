@@ -10,14 +10,14 @@ export function useLandingSubmit(page) {
   const [status, setStatus] = useState("idle"); // idle | sending | sent | error
   const [error, setError] = useState("");
 
-  const submit = async ({ name, email, phone = "", address = "", message = "", details = {} }) => {
+  const submit = async ({ name, email, phone = "", address = "", message = "", details = {}, guide = "" }) => {
     setStatus("sending");
     setError("");
     try {
       const res = await fetch("/api/agent-site-contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentSiteId: siteId, page, name, email, phone, address, message, details, ...guard.fields() }),
+        body: JSON.stringify({ agentSiteId: siteId, page, name, email, phone, address, message, details, ...(guide ? { guide } : {}), ...guard.fields() }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || "Something went wrong.");
