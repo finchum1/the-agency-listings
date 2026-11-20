@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 // The signed-in visitor of the public Home Search, shared by every search on the page (an area page can hold two). One store per site; the token lives in
 // that browser's localStorage and nowhere else. All of it goes through api/visitor.js; see that file and supabase/site-visitors.sql.
@@ -23,7 +23,7 @@ async function call(site, action, { method = "POST", body, token } = {}) {
 }
 
 function create(site) {
-  let state = { ready: false, token: null, account: null, dialog: null, notice: "" };
+  let state = { ready: false, token: null, account: null, dialog: null, notice: "", host: null };
   const listeners = new Set();
   let after = null; // what to do once the visitor is signed in (the heart or save they tapped first)
   const set = (patch) => { state = { ...state, ...patch }; listeners.forEach((l) => l()); };
@@ -44,6 +44,11 @@ function create(site) {
       }
     },
 
+    // A page can hold several things that open the same dialogs (the header's account icon and the search's own buttons). Exactly one of them draws
+    // them: the first to claim it, and the next one when it goes away. `runner` is how a search page applies a saved search in place.
+    runner: null,
+    claim(id) { if (!state.host) set({ host: id }); },
+    release(id) { if (state.host === id) set({ host: null }); },
     isFavorite: (mls) => !!state.account?.favorites.some((f) => f.mls === mls),
     openSignIn(reason = "", then = null) { after = then; set({ dialog: { reason } }); },
     closeDialog() { after = null; set({ dialog: null }); },
@@ -121,4 +126,14 @@ export function useVisitor(site) {
   const store = visitorStore(site);
   const state = useSyncExternalStore(store.subscribe, store.get, store.get);
   return [state, store];
+}
+
+/** Whether this component is the one that draws the sign-in and saved-items dialogs (see `claim` in the store). */
+export function useDialogHost(state, store) {
+  const [id] = useState(() => Math.random().toString(36).slice(2));
+  useEffect(() => {
+    if (!state.host) store.claim(id);
+  }, [state.host, store, id]);
+  useEffect(() => () => store.release(id), [store, id]);
+  return state.host === id;
 }

@@ -8,8 +8,8 @@ const arrow = "text-[#1c1a17]/40 dark:text-[#faf9f7]/40 hover:text-[#1c1a17] dar
 // Sellers / Home Value / Buyers pages while they're off, aren't here). Drag a row or use the arrows; the new order is saved with the rest of the form as
 // agent_sites.nav_order. Each page also says whether it sits in the header bar or in the menu button beside the phone number (agent_sites.nav_menu, the
 // pages in the menu). `homeSections`, `landing`, `value` (nav_order) and `navMenu` come from the form.
-export default function MenuOrderEditor({ homeSections, landing, value, onChange, navMenu = null, onNavMenu, hasSales = false }) {
-  const pages = navPages({ homeSections, landing, navOrder: value, hasSales });
+export default function MenuOrderEditor({ homeSections, landing, value, onChange, navMenu = null, onNavMenu, hasSales = false, idxEnabled = false }) {
+  const pages = navPages({ homeSections, landing, navOrder: value, hasSales, idxEnabled });
   const split = splitNav(pages, navMenu);
   const inMenu = new Set(split.more.map((p) => p.path));
   const place = (path, toMenu) => {

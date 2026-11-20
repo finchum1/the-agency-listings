@@ -7,6 +7,7 @@ export const NAV_PAGES = [
   { path: "/listings", label: "Listings", sectionKey: "listings" },
   { path: "/past-sales", label: "Past Sales", needsSales: true },
   { path: "/areas", label: "Areas", sectionKey: "areas" },
+  { path: "/home-search", label: "Home Search", needsIdx: true },
   { path: "/blog", label: "Blog", sectionKey: "blog" },
   { path: "/contact", label: "Contact" },
 ];
@@ -27,10 +28,10 @@ export function orderByNav(items, navOrder, pathOf = (item) => item.path) {
  * The menu pages for a site: the pages whose sections are on, then Sellers / Home Value / Buyers (while the cards section is on and the agent keeps them
  * in the menu), then Contact, put in the agent's own order. Takes { homeSections, landing, navOrder }, so the site editor can call it with the form.
  */
-export function navPages({ homeSections, landing, navOrder, hasSales = false }) {
+export function navPages({ homeSections, landing, navOrder, hasSales = false, idxEnabled = false }) {
   const cards = resolveLanding(landing);
   const landingPages = homeSections.includes("cards") && cards.menu ? cards.cards.filter((c) => c.on).map((c) => ({ path: c.path, label: c.nav })) : [];
-  const base = NAV_PAGES.filter((page) => (!page.sectionKey || homeSections.includes(page.sectionKey)) && (!page.needsSales || hasSales));
+  const base = NAV_PAGES.filter((page) => (!page.sectionKey || homeSections.includes(page.sectionKey)) && (!page.needsSales || hasSales) && (!page.needsIdx || idxEnabled));
   const standard = [...base.filter((p) => p.path !== "/contact"), ...landingPages, ...base.filter((p) => p.path === "/contact")];
   return orderByNav(standard, navOrder).map(({ path, label }) => ({ path, label }));
 }

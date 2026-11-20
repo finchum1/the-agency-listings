@@ -82,8 +82,25 @@ async function accountFor(admin, v) {
     admin.from("visitor_favorites").select("mls_number, snapshot, created_at").eq("visitor_id", v.id).order("created_at", { ascending: false }).limit(MAX_FAVORITES),
     admin.from("visitor_saved_searches").select("id, name, params, page_url, alerts, created_at").eq("visitor_id", v.id).order("created_at", { ascending: false }).limit(MAX_SEARCHES),
   ]);
+  // Searches the site's agent saved for this person (matched by email to one of the agent's own people): shown to them as "picked for you".
+  let picked = [];
+  let agentFirst = "";
+  if (v.agent_site_id && v.email) {
+    const { data: site } = await admin.from("agent_sites").select("agent_id, agent:profiles(full_name)").eq("id", v.agent_site_id).maybeSingle();
+    if (site?.agent_id) {
+      agentFirst = String(site.agent?.full_name || "").split(" ")[0];
+      const { data: people } = await admin.from("people").select("id").eq("owner_id", site.agent_id).ilike("email", v.email.replace(/[\\%_]/g, (c) => `\\${c}`)).limit(5);
+      const ids = (people || []).map((p) => p.id);
+      if (ids.length) {
+        const { data: made } = await admin.from("client_searches").select("id, name, params").in("person_id", ids).eq("owner_id", site.agent_id).order("created_at", { ascending: false }).limit(20);
+        picked = (made || []).map((s) => ({ id: s.id, name: s.name, params: cleanSearchParams(s.params) }));
+      }
+    }
+  }
   return {
     visitor: { email: v.email, name: v.name || "", phone: v.phone || "", emailsOff: !!v.unsubscribed_at },
+    picked,
+    agentFirst,
     favorites: (favs || []).map((f) => ({ mls: f.mls_number, snapshot: f.snapshot || {} })),
     searches: (searches || []).map((s) => ({ id: s.id, name: s.name, params: s.params || {}, pageUrl: s.page_url || "", alerts: !!s.alerts })),
   };

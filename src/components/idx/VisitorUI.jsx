@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { describeSearch } from "../../lib/visitorSearch";
-import { useVisitor } from "../../lib/visitorStore";
+import { useDialogHost, useVisitor } from "../../lib/visitorStore";
 
 // The visitor's side of the public Home Search: a "Save search" button, the account button, the sign-in by emailed code, and the saved homes and
 // searches. Rendered inside IdxListings; takes the site's colors from the page (--as-*). The state lives in lib/visitorStore.js.
@@ -145,6 +145,21 @@ function Panel({ store, account, onRun, onClose }) {
         <button role="tab" aria-selected={tab === "account"} className={tabClass("account")} onClick={() => setTab("account")}>Account</button>
       </div>
 
+      {tab === "searches" && (account.picked || []).length > 0 && (
+        <div className="mb-6">
+          <p className="text-xs font-medium uppercase tracked text-[var(--as-accent-text)]">Picked for you{account.agentFirst ? ` by ${account.agentFirst}` : ""}</p>
+          <ul className="mt-2 space-y-3">
+            {account.picked.map((s) => (
+              <li key={s.id} className="rounded-xl border border-[var(--as-text)]/10 p-4">
+                <p className="font-medium">{s.name}</p>
+                <p className="mt-0.5 text-xs text-[var(--as-text)]/55">{describeSearch(s.params)}</p>
+                <button type="button" onClick={() => onRun({ ...s, picked: true })} className="mt-3 text-xs font-medium uppercase tracked text-[var(--as-accent-text)]">Run search</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {tab === "searches" &&
         (account.searches.length === 0 ? (
           <p className="text-sm text-[var(--as-text)]/60">No saved searches yet. Set your filters, then choose Save search.</p>
@@ -217,8 +232,9 @@ const searchHref = (s) => {
   return `${s.pageUrl.split("?")[0]}${q.toString() ? `?${q}` : ""}`;
 };
 /** The person icon in an agent site's header. Signed out it opens the sign-in; signed in it opens saved searches and homes. */
-export function VisitorAccount({ site, className = "" }) {
+export function VisitorAccount({ site, searchPath = "", className = "" }) {
   const [state, store] = useVisitor(site);
+  const host = useDialogHost(state, store);
   useEffect(() => { store.init(); }, [store]);
   const account = state.account;
   return (
@@ -237,11 +253,11 @@ export function VisitorAccount({ site, className = "" }) {
         </svg>
         {account && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[var(--as-accent)]" aria-hidden="true" />}
       </button>
-      {state.dialog && !state.dialog.panel && !account && <SignIn store={store} reason={state.dialog.reason} onClose={() => store.closeDialog()} />}
-      {state.dialog?.panel && account && (
-        <Panel store={store} account={account} onRun={(s) => { store.closeDialog(); const href = searchHref(s); if (href) window.location.assign(href); }} onClose={() => store.closeDialog()} />
+      {host && state.dialog && !state.dialog.panel && !account && <SignIn store={store} reason={state.dialog.reason} onClose={() => store.closeDialog()} />}
+      {host && state.dialog?.panel && account && (
+        <Panel store={store} account={account} onRun={(s) => { store.closeDialog(); if (store.runner) return store.runner(s); const href = s.picked ? searchHref({ pageUrl: searchPath, params: s.params }) : searchHref(s); if (href) window.location.assign(href); }} onClose={() => store.closeDialog()} />
       )}
-      {state.notice && <div role="status" className="fixed bottom-6 left-1/2 z-[110] -translate-x-1/2 rounded-full bg-[var(--as-dark)] px-5 py-3 text-sm text-[var(--as-on-dark)] shadow-xl">{state.notice}</div>}
+      {host && state.notice && <div role="status" className="fixed bottom-6 left-1/2 z-[110] -translate-x-1/2 rounded-full bg-[var(--as-dark)] px-5 py-3 text-sm text-[var(--as-on-dark)] shadow-xl">{state.notice}</div>}
     </>
   );
 }
@@ -252,8 +268,10 @@ export function VisitorAccount({ site, className = "" }) {
  */
 export default function VisitorBar({ site, getParams, path, onRun }) {
   const [state, store] = useVisitor(site);
+  const host = useDialogHost(state, store);
   const [saving, setSaving] = useState(false);
   useEffect(() => { store.init(); }, [store]);
+  useEffect(() => { store.runner = onRun; return () => { if (store.runner === onRun) store.runner = null; }; });
   const account = state.account;
   const startSave = () => {
     if (account) setSaving(true);
@@ -269,12 +287,12 @@ export default function VisitorBar({ site, getParams, path, onRun }) {
       ) : (
         <button type="button" onClick={() => store.openSignIn("")} className={btn}>Sign in</button>
       )}
-      {state.dialog && !state.dialog.panel && !account && <SignIn store={store} reason={state.dialog.reason} onClose={() => store.closeDialog()} />}
-      {state.dialog?.panel && account && (
+      {host && state.dialog && !state.dialog.panel && !account && <SignIn store={store} reason={state.dialog.reason} onClose={() => store.closeDialog()} />}
+      {host && state.dialog?.panel && account && (
         <Panel store={store} account={account} onRun={(s) => { store.closeDialog(); onRun(s); }} onClose={() => store.closeDialog()} />
       )}
       {saving && account && <SaveSearch store={store} params={getParams()} path={path} onClose={() => setSaving(false)} />}
-      {state.notice && <div role="status" className="fixed bottom-6 left-1/2 z-[110] -translate-x-1/2 rounded-full bg-[var(--as-dark)] px-5 py-3 text-sm text-[var(--as-on-dark)] shadow-xl">{state.notice}</div>}
+      {host && state.notice && <div role="status" className="fixed bottom-6 left-1/2 z-[110] -translate-x-1/2 rounded-full bg-[var(--as-dark)] px-5 py-3 text-sm text-[var(--as-on-dark)] shadow-xl">{state.notice}</div>}
     </>
   );
 }

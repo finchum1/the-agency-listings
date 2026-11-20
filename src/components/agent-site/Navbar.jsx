@@ -133,7 +133,7 @@ export default function Navbar() {
   );
 
   // Visitors sign in here to keep homes and searches, on any page, once the agent has turned Home Search (IDX) on for the site.
-  const accountButton = site.idxEnabled && siteId ? <VisitorAccount site={{ kind: "agent", id: siteId }} /> : null;
+  const accountButton = site.idxEnabled && siteId ? <VisitorAccount site={{ kind: "agent", id: siteId }} searchPath={agentSiteHref(site.slug, "/home-search")} /> : null;
 
   const menuButton = (
     <button className={`${hideDesktop} p-2 shrink-0 text-[var(--as-on-dark)]`} onClick={() => setOpen((v) => !v)} aria-label="Toggle menu" aria-expanded={open}>

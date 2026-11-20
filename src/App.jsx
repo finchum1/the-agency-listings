@@ -52,6 +52,7 @@ const CustomDomainSitePage = lazyPage(() => import("./pages/CustomDomainSitePage
 const PublicAgentSitePage = lazyPage(() => import("./pages/PublicAgentSitePage"));
 const PublicAgentPostPage = lazyPage(() => import("./pages/PublicAgentPostPage"));
 const PublicAgentAreaPage = lazyPage(() => import("./pages/PublicAgentAreaPage"));
+const AgentHomeSearchPage = lazyPage(() => import("./components/agent-site/HomeSearchPage"));
 const SitePreviewPage = lazyPage(() => import("./pages/SitePreviewPage"));
 const PreviewSite = lazyPage(() => import("./pages/SitePreviewPage").then((m) => ({ default: m.PreviewSite })));
 const NotFoundPage = lazyPage(() => import("./pages/NotFoundPage"));
@@ -225,6 +226,7 @@ function AppRoutes() {
         }
       />
       <Route path="/sites/:slug/past-sales" element={<PublicAgentSitePage pageTitle="Past Sales"><SoldHomes page /></PublicAgentSitePage>} />
+      <Route path="/sites/:slug/home-search" element={<PublicAgentSitePage pageTitle="Home Search"><AgentHomeSearchPage /></PublicAgentSitePage>} />
       <Route path="/sites/:slug/sellers" element={<PublicAgentSitePage pageTitle="Sellers"><SellersPage /></PublicAgentSitePage>} />
       <Route path="/sites/:slug/buyers" element={<PublicAgentSitePage pageTitle="Buyers"><BuyersPage /></PublicAgentSitePage>} />
       <Route path="/sites/:slug/home-value" element={<PublicAgentSitePage pageTitle="Home Value"><HomeValuePage /></PublicAgentSitePage>} />

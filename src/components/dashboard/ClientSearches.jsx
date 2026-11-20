@@ -129,7 +129,7 @@ export default function ClientSearches({ current, narrowed, onRun, forClient = n
       {saving && (
         <form onSubmit={save} className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
           <label className="block text-xs font-medium">
-            Name
+            Name {person.id && <span className={`font-normal ${muted}`}>(they see it if they sign in on your site)</span>}
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} className={`${input} mt-1 w-full`} />
           </label>
           <div className="text-xs font-medium">

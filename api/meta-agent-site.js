@@ -13,7 +13,7 @@ import { brandFromOrg } from "../src/lib/brand.js";
 import { renderMetaPage } from "./_lib/renderMetaPage.js";
 import { TEAM_EMBED } from "../src/lib/teams.js";
 
-const PAGE_LABELS = { about: "About", listings: "Listings", "past-sales": "Past Sales", areas: "Areas", blog: "Blog", contact: "Contact", sellers: "Sellers", buyers: "Buyers", "home-value": "Home Value", relocation: "Relocation" };
+const PAGE_LABELS = { "home-search": "Home Search", about: "About", listings: "Listings", "past-sales": "Past Sales", areas: "Areas", blog: "Blog", contact: "Contact", sellers: "Sellers", buyers: "Buyers", "home-value": "Home Value", relocation: "Relocation" };
 
 export default async function handler(req, res) {
   const slug = req.query.slug;

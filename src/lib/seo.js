@@ -118,7 +118,7 @@ export function buildAgentSiteMeta(site, agent) {
 // Without these, every subpage under one site shared buildAgentSiteMeta's
 // single description verbatim — a classic duplicate-meta-description
 // issue when Google (or anyone) compares pages within the same site.
-const AGENT_SITE_PAGE_LABELS = { about: "About", listings: "Listings", "past-sales": "Past Sales", areas: "Areas", blog: "Blog", contact: "Contact", sellers: "Selling Your Home", buyers: "Buying a Home", "home-value": "What's Your Home Worth?", relocation: "Moving to Oklahoma" };
+const AGENT_SITE_PAGE_LABELS = { "home-search": "Home Search", about: "About", listings: "Listings", "past-sales": "Past Sales", areas: "Areas", blog: "Blog", contact: "Contact", sellers: "Selling Your Home", buyers: "Buying a Home", "home-value": "What's Your Home Worth?", relocation: "Moving to Oklahoma" };
 const AGENT_SITE_PAGE_DESCRIPTIONS = {
   about: (site, agent, brokerage) =>
     `Learn about ${agentLabel(agent) || "this agent"}${
@@ -144,6 +144,8 @@ const AGENT_SITE_PAGE_DESCRIPTIONS = {
     `A step-by-step guide to buying a home with ${agentLabel(agent) || "this agent"} at ${brokerage.name}: pre-approval, the search, the offer and closing.`,
   relocation: (site, agent, brokerage) =>
     `Moving to Oklahoma? ${agentLabel(agent) || "This agent"} at ${brokerage.name} guides relocating buyers from the first question to the keys: choosing an area, touring from a distance, making an offer and closing.`,
+  "home-search": (site, agent, brokerage) =>
+    `Search homes for sale${site.region ? ` in ${site.region}` : ""} with ${agentLabel(agent) || "this agent"} at ${brokerage.name}: filter by price, bedrooms and area, save searches and get an email when new homes match.`,
   "home-value": (site, agent, brokerage) =>
     `Request a free, personal home valuation from ${agentLabel(agent) || "this agent"} at ${brokerage.name}. Real comparable sales, a custom valuation within one business day.`,
 };

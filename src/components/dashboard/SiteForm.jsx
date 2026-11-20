@@ -648,7 +648,7 @@ export default function SiteForm({ site, onSaved, focus, salesCount = 0, areas =
           <div>
             <label className={labelClass}>Menu order</label>
             <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50 mb-2.5">The order of the pages in the header and the footer. Drag a page, or use the arrows. Choose which pages sit in the header and which go in the menu button beside your phone number.</p>
-            <MenuOrderEditor homeSections={form.home_sections} landing={form.landing} value={form.nav_order} navMenu={form.nav_menu} onNavMenu={(v) => set("nav_menu", v)} onChange={(v) => set("nav_order", v)} hasSales={salesCount > 0} />
+            <MenuOrderEditor idxEnabled={form.idx_enabled} homeSections={form.home_sections} landing={form.landing} value={form.nav_order} navMenu={form.nav_menu} onNavMenu={(v) => set("nav_menu", v)} onChange={(v) => set("nav_order", v)} hasSales={salesCount > 0} />
           </div>
 
           <div>
