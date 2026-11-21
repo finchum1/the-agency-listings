@@ -1,6 +1,8 @@
 // A CMA as a PDF file (see api/_lib/cmaPdf.js; it is the client page, laid out as a document).
 //   GET  /api/cma-pdf?token=cm...        a client's own download from a share link: no sign-in, the token is the credential (compared only by its hash)
 //   POST /api/cma-pdf  { cma }           the signed-in agent's download of the CMA they have open, unsaved edits and all (their own profile and brokerage)
+//   POST /api/cma-pdf  { cma, presentation: true, for_name }   the same as a listing presentation: a cover, a note to the sellers, about the agent and the
+//                                        marketing plan (cma.presentation) in front, and the net sheet inside when the agent chose to include it
 // Either way the PDF holds only what the client page shows: unticked comps are left out, and the net sheet only when the agent turned it on.
 import crypto from "node:crypto";
 import { authenticate, serviceClient } from "./_lib/authUser.js";
@@ -8,6 +10,7 @@ import { buildCmaPdf } from "./_lib/cmaPdf.js";
 import { picture } from "./_lib/guideFile.js";
 import { brandFromOrg } from "../src/lib/brand.js";
 import { subjectAddress } from "../src/lib/cma.js";
+import { cleanPresentation } from "../src/lib/presentation.js";
 
 const TOKEN = /^cm[0-9a-f]{64}$/;
 const AGENT = "full_name, title, license, phone, email, photo_url";
@@ -33,6 +36,7 @@ export function cleanCma(raw) {
     suggested_price: o.suggested_price ?? null,
     notes: text(o.notes, 5000),
     net_sheet: o.net_sheet && typeof o.net_sheet === "object" ? o.net_sheet : null,
+    presentation: o.presentation && typeof o.presentation === "object" ? cleanPresentation(o.presentation) : null,
     prepared: o.prepared || new Date().toISOString(),
   };
 }
@@ -54,6 +58,8 @@ export default async function handler(req, res) {
   let cma;
   let agent;
   let orgRow;
+  let wantPresentation = false;
+  let forName = "";
   if (req.method === "GET") {
     const token = String(req.query?.token || "");
     if (!TOKEN.test(token)) return res.status(404).json({ error: "This link isn't valid anymore." });
@@ -77,6 +83,8 @@ export default async function handler(req, res) {
     }
     if (!body?.cma) return res.status(400).json({ error: "Send the CMA to turn into a PDF." });
     cma = cleanCma(body.cma);
+    wantPresentation = body.presentation === true;
+    forName = text(body.for_name, 120);
     const { data: me } = await auth.supabase.from("profiles").select(`${AGENT}, org_id`).eq("id", auth.user.id).maybeSingle();
     agent = me;
     const { data: o } = me?.org_id ? await admin.from("organizations").select(ORG).eq("id", me.org_id).maybeSingle() : { data: null };
@@ -85,7 +93,10 @@ export default async function handler(req, res) {
 
   // What the client page shows: unticked homes out, the net sheet only when switched on.
   cma.comps = cma.comps.filter((c) => c.include !== false);
-  if (!cma.net_sheet?.show) cma.net_sheet = null;
+  // A presentation carries the net sheet when the agent chose to include it (the sellers are the ones holding the document); the client page only when "show" is on.
+  const presentation = wantPresentation ? cma.presentation || cleanPresentation({}) : null;
+  if (presentation) cma.net_sheet = presentation.include_net && cma.net_sheet ? { ...cma.net_sheet, show: true } : null;
+  else if (!cma.net_sheet?.show) cma.net_sheet = null;
 
   try {
     const org = brandFromOrg(orgRow);
@@ -96,8 +107,10 @@ export default async function handler(req, res) {
       agent: agent ? { name: agent.full_name || "", title: agent.title || "", license: agent.license || "", phone: agent.phone || "", email: agent.email || "" } : null,
       brand: { org: org.name, address, disclaimer: org.disclaimer },
       images: { logo, agentPhoto },
+      presentation,
+      forName,
     });
-    const name = `CMA - ${subjectAddress(cma.subject) || cma.title || "Market analysis"}`.replace(/[^\w .,'()-]+/g, "").trim();
+    const name = `${presentation ? "Listing presentation" : "CMA"} - ${subjectAddress(cma.subject) || cma.title || "Market analysis"}`.replace(/[^\w .,'()-]+/g, "").trim();
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${name}.pdf"`);
     return res.status(200).send(pdf);

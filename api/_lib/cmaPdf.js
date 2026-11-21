@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { Document, Font, Image, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 import { adjustedPrice, adjustmentTotal, computeCma, factsLine, pricePerSqft, subjectAddress, toNumber } from "../../src/lib/cma.js";
 import { netScenarios } from "../../src/lib/netSheet.js";
+import { planToShow } from "../../src/lib/presentation.js";
 import { formatPrice } from "../../src/lib/format.js";
 
 const h = React.createElement;
@@ -116,9 +117,11 @@ function CompRow({ comp }) {
  * @param agent   { name, title, license, phone, email } or null
  * @param brand   { org, address, disclaimer }
  * @param images  { logo, agentPhoto }: PNG buffers or null
+ * @param presentation  null for the plain CMA; or { intro, about, plan } (src/lib/presentation.js) to put a cover, a note to the sellers, about the agent and
+ *                      the marketing plan in front of the CMA. `forName` is who it is for.
  * @returns Promise<Buffer>
  */
-export async function buildCmaPdf({ cma, agent, brand, images = {} }) {
+export async function buildCmaPdf({ cma, agent, brand, images = {}, presentation = null, forName = "" }) {
   const m = computeCma(cma);
   const comps = (cma.comps || []).filter((c) => c.include !== false && toNumber(c.price) != null);
   const groups = [["Recently sold", comps.filter((c) => c.status === "sold")], ["Under contract", comps.filter((c) => c.status === "pending")], ["For sale now", comps.filter((c) => c.status === "active")]];
@@ -137,7 +140,7 @@ export async function buildCmaPdf({ cma, agent, brand, images = {} }) {
   const foot = { position: "absolute", bottom: 30, fontSize: 8, color: MUTED };
   const footer = () => [
     h(View, { key: "rule", fixed: true, style: { position: "absolute", left: 54, right: 54, bottom: 44, height: 0.5, backgroundColor: RULE } }),
-    h(Text, { key: "who", fixed: true, style: { ...foot, left: 54 } }, `Comparative market analysis  ·  ${address}`),
+    h(Text, { key: "who", fixed: true, style: { ...foot, left: 54 } }, `${presentation ? "Listing presentation" : "Comparative market analysis"}  ·  ${address}`),
     h(Text, { key: "num", fixed: true, style: { ...foot, left: 54, width: 504, textAlign: "right" }, render: ({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}` }),
   ];
 
@@ -181,6 +184,64 @@ export async function buildCmaPdf({ cma, agent, brand, images = {} }) {
 
   const disclaimer = `This comparative market analysis is an opinion of value prepared by a real estate agent from the sales and listings shown. It is not an appraisal and should not be used as one.${brand.disclaimer ? ` ${brand.disclaimer}` : ""}`;
 
+  // The listing presentation's front matter: a cover, then the note, the agent and the marketing plan.
+  const paragraphs = (t) => String(t).split(/\n+/).map((x) => x.trim()).filter(Boolean).map((x, i) => h(Text, { key: i, style: { color: "#3b3830", lineHeight: 1.5, marginBottom: 3 } }, x));
+  const plan = presentation ? planToShow(presentation) : [];
+  const cover = presentation
+    ? h(
+        Page,
+        { size: "LETTER", style: { backgroundColor: INK, color: "#FFFFFF", padding: 64, fontFamily: "Inter" } },
+        images.logo ? h(Image, { src: { data: images.logo, format: "png" }, style: { height: 46, objectFit: "contain", objectPosition: "left" } }) : brand.org ? h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 20 } }, brand.org) : null,
+        h(
+          View,
+          { style: { marginTop: 190 } },
+          h(Eyebrow, { color: "#B9B3A6" }, "Listing presentation"),
+          h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 44, lineHeight: 1.1, marginTop: 14, color: "#FFFFFF" } }, address),
+          h(View, { style: { width: 56, height: 3, backgroundColor: ACCENT, marginTop: 20, marginBottom: 18 } }),
+          factsLine(cma.subject) ? h(Text, { style: { fontSize: 13, color: "#E4DFD3" } }, factsLine(cma.subject)) : null,
+          forName ? h(Text, { style: { fontSize: 13, color: "#E4DFD3", marginTop: 4 } }, `Prepared for ${forName}`) : null,
+        ),
+        agent?.name
+          ? h(
+              View,
+              { style: { position: "absolute", left: 64, right: 64, bottom: 64, flexDirection: "row", alignItems: "center" } },
+              images.agentPhoto ? h(Image, { src: { data: images.agentPhoto, format: "png" }, style: { width: 64, height: 64, borderRadius: 32, objectFit: "cover", marginRight: 16 } }) : null,
+              h(
+                View,
+                { style: { flex: 1 } },
+                h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 18, lineHeight: 1.2, marginBottom: 3, color: "#FFFFFF" } }, agent.name),
+                h(Text, { style: { fontSize: 9.5, color: "#E4DFD3" } }, [agent.title, brand.org].filter(Boolean).join("  ·  ")),
+                h(Text, { style: { fontSize: 9.5, color: "#E4DFD3", marginTop: 2 } }, [agent.phone, agent.email].filter(Boolean).join("   ·   ")),
+              ),
+            )
+          : null,
+      )
+    : null;
+  const front =
+    presentation && (presentation.intro || presentation.about || plan.length)
+      ? h(
+          Page,
+          { size: "LETTER", style: styles.page, wrap: true },
+          presentation.intro ? h(Section, { title: `A note from ${first}`, first: true }, ...paragraphs(presentation.intro)) : null,
+          presentation.about ? h(Section, { title: `About ${first}`, first: !presentation.intro }, ...paragraphs(presentation.about)) : null,
+          plan.length
+            ? h(
+                Section,
+                { title: "How I'll market your home", first: !presentation.intro && !presentation.about },
+                ...plan.map((it, i) =>
+                  h(
+                    View,
+                    { key: it.id || i, wrap: false, style: { flexDirection: "row", marginBottom: 9 } },
+                    h(View, { style: { width: 16, height: 16, borderRadius: 8, backgroundColor: ACCENT, alignItems: "center", justifyContent: "center", marginRight: 11, marginTop: 1 } }, h(Text, { style: { color: "#FFFFFF", fontSize: 8, lineHeight: 1, fontFamily: "Inter", fontWeight: 600, textAlign: "center" } }, String(i + 1))),
+                    h(View, { style: { flex: 1 } }, h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 13.5, lineHeight: 1.2, marginBottom: 1 } }, it.title), it.detail ? h(Text, { style: { color: "#3b3830" } }, it.detail) : null),
+                  ),
+                ),
+              )
+            : null,
+          ...footer(),
+        )
+      : null;
+
   const doc = h(
     Page,
     { size: "LETTER", style: styles.page, wrap: true },
@@ -207,5 +268,5 @@ export async function buildCmaPdf({ cma, agent, brand, images = {} }) {
     ...footer(),
   );
 
-  return renderToBuffer(h(Document, { title: `Comparative market analysis — ${address}`, author: agent?.name || brand.org || "", subject: "Comparative market analysis" }, doc));
+  return renderToBuffer(h(Document, { title: `${presentation ? "Listing presentation" : "Comparative market analysis"} — ${address}`, author: agent?.name || brand.org || "", subject: presentation ? "Listing presentation" : "Comparative market analysis" }, ...[cover, front, doc].filter(Boolean)));
 }

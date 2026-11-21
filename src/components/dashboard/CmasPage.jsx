@@ -7,6 +7,8 @@ import { ADJUSTMENT_PRESETS, COMP_STATUSES, adjustedPrice, adjustmentTotal, comp
 import { formatPrice } from "../../lib/format";
 import NetSheetPanel from "./NetSheetPanel";
 import CmaListingLink from "./CmaListingLink";
+import PresentationPanel from "./PresentationPanel";
+import { cleanPresentation, savedAbout, withDefaults as presentationDefaults } from "../../lib/presentation";
 import { cleanNetSheet, hasNetSheet, savedFees, withDefaults } from "../../lib/netSheet";
 import CmaReport from "../public/CmaReport";
 import ClientPicker from "./ClientPicker";
@@ -18,7 +20,7 @@ const input =
 const card = "rounded-2xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a]";
 const quiet = "rounded-full border border-black/10 dark:border-white/15 px-3.5 py-1.5 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 const primary = "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] px-4 py-2 text-sm font-semibold text-white";
-const COLUMNS = "id, person_id, title, subject, comps, price_low, price_high, suggested_price, notes, net_sheet, listing_id, attach, share_hint, shared_at, last_viewed_at, view_count, updated_at";
+const COLUMNS = "id, person_id, title, subject, comps, price_low, price_high, suggested_price, notes, net_sheet, presentation, listing_id, attach, share_hint, shared_at, last_viewed_at, view_count, updated_at";
 
 const when = (iso) => (iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "");
 
@@ -123,7 +125,7 @@ function CmaEditor({ id }) {
   const [finding, setFinding] = useState(false);
   const [link, setLink] = useState(""); // the full share address, only known right after it is made
   const [copied, setCopied] = useState(false);
-  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(""); // "", "plain" or "presentation"
   const loaded = useRef(false);
   const timer = useRef(null);
 
@@ -133,7 +135,7 @@ function CmaEditor({ id }) {
       if (!live) return;
       if (err || !data) return setError("That CMA wasn't found.");
       setRow(data);
-      setDoc({ title: data.title, person_id: data.person_id, subject: data.subject || {}, comps: data.comps || [], price_low: data.price_low ?? "", price_high: data.price_high ?? "", suggested_price: data.suggested_price ?? "", notes: data.notes || "", net_sheet: hasNetSheet(data.net_sheet) ? withDefaults(data.net_sheet) : withDefaults(savedFees()) });
+      setDoc({ title: data.title, person_id: data.person_id, subject: data.subject || {}, comps: data.comps || [], price_low: data.price_low ?? "", price_high: data.price_high ?? "", suggested_price: data.suggested_price ?? "", notes: data.notes || "", net_sheet: hasNetSheet(data.net_sheet) ? withDefaults(data.net_sheet) : withDefaults(savedFees()), presentation: presentationDefaults(data.presentation, { about: savedAbout() }) });
       if (data.person_id) {
         const { data: p } = await supabase.from("people").select("name").eq("id", data.person_id).maybeSingle();
         if (live) setPersonName(p?.name || "");
@@ -158,6 +160,7 @@ function CmaEditor({ id }) {
       suggested_price: toNumber(next.suggested_price),
       notes: next.notes,
       net_sheet: cleanNetSheet(next.net_sheet),
+      presentation: cleanPresentation(next.presentation),
     }).eq("id", id);
     setStatus(err ? "" : "Saved");
     setError(err ? err.message : "");
@@ -218,21 +221,21 @@ function CmaEditor({ id }) {
     setTimeout(() => setCopied(false), 1800);
   };
   // The PDF is made from what is on screen right now (saved or not), laid out like the client page.
-  const downloadPdf = async () => {
-    setPdfBusy(true);
+  const downloadPdf = async (asPresentation = false) => {
+    setPdfBusy(asPresentation ? "presentation" : "plain");
     setError("");
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch("/api/cma-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token || ""}` },
-        body: JSON.stringify({ cma: reportCma }),
+        body: JSON.stringify({ cma: { ...reportCma, presentation: doc.presentation }, presentation: asPresentation, for_name: personName }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Couldn't make the PDF.");
       const url = URL.createObjectURL(await res.blob());
       const a = document.createElement("a");
       a.href = url;
-      a.download = `CMA - ${subjectAddress(doc.subject) || doc.title || "Market analysis"}.pdf`.replace(/[\\/:*?"<>|]+/g, "");
+      a.download = `${asPresentation ? "Listing presentation" : "CMA"} - ${subjectAddress(doc.subject) || doc.title || "Market analysis"}.pdf`.replace(/[\\/:*?"<>|]+/g, "");
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -240,7 +243,7 @@ function CmaEditor({ id }) {
     } catch (err) {
       setError(err.message);
     } finally {
-      setPdfBusy(false);
+      setPdfBusy("");
     }
   };
   const remove = async () => {
@@ -258,7 +261,7 @@ function CmaEditor({ id }) {
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Link to="/dashboard/cmas" className={`text-sm underline ${muted}`}>All CMAs</Link>
         <span className={`ml-auto text-xs ${muted}`} aria-live="polite">{status}</span>
-        <button type="button" onClick={downloadPdf} disabled={pdfBusy} className={quiet}>{pdfBusy ? "Making the PDF…" : "Download PDF"}</button>
+        <button type="button" onClick={() => downloadPdf(false)} disabled={Boolean(pdfBusy)} className={quiet}>{pdfBusy === "plain" ? "Making the PDF…" : "Download PDF"}</button>
         <button type="button" onClick={() => setPreview((v) => !v)} className={quiet}>{preview ? "Back to editing" : "Preview client page"}</button>
       </div>
       {error && <p role="alert" className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
@@ -325,6 +328,8 @@ function CmaEditor({ id }) {
             ))}
 
             <NetSheetPanel value={doc.net_sheet} calc={calc} onChange={(net_sheet) => change({ net_sheet })} />
+
+            <PresentationPanel value={doc.presentation} onChange={(presentation) => change({ presentation })} onDownload={() => downloadPdf(true)} busy={pdfBusy === "presentation"} />
 
             <section className={`${card} p-5 space-y-2`}>
               <h2 className="font-display text-lg font-semibold">Notes for the client</h2>
