@@ -27,19 +27,21 @@ export function useContacts() {
   const [cards, setCards] = useState(cached?.cards || []); // { id, contact_id, stage_group, stage }
   const [tasks, setTasks] = useState(cached?.tasks || []); // open follow-ups tied to a contact
   const [lists, setLists] = useState(cached?.lists || []);
+  const [households, setHouseholds] = useState(cached?.households || []); // { id, name }
   const [loading, setLoading] = useState(!cached);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const [c, t, l, p, k, s] = await Promise.all([
+    const [c, t, l, p, k, s, hh] = await Promise.all([
       fetchAll(() => supabase.from("contacts").select("*").order("created_at", { ascending: false }).order("id")),
       supabase.from("contact_tags").select("*").order("name"),
       fetchAll(() => supabase.from("contact_tag_links").select("contact_id, tag_id").order("contact_id").order("tag_id")),
       fetchAll(() => supabase.from("people").select("id, contact_id, stage_group, stage, archived").eq("owner_id", user?.id).not("contact_id", "is", null).eq("archived", false).order("id")),
       fetchAll(() => supabase.from("agent_tasks").select("id, contact_id, title, due_date, recurrence").not("contact_id", "is", null).eq("done", false).order("id")),
       supabase.from("contact_smart_lists").select("*").order("position").order("created_at"),
+      supabase.from("contact_households").select("id, name"),
     ]);
-    const err = c.error || t.error || l.error || p.error || k.error || s.error;
+    const err = c.error || t.error || l.error || p.error || k.error || s.error || hh.error;
     if (err) setError(err.message);
     else setError("");
     setContacts(c.data || []);
@@ -48,7 +50,8 @@ export function useContacts() {
     setCards(p.data || []);
     setTasks(k.data || []);
     setLists(s.data || []);
-    if (!err) cacheSet(`contacts:${user?.id}`, { contacts: c.data || [], tags: t.data || [], links: l.data || [], cards: p.data || [], tasks: k.data || [], lists: s.data || [] });
+    setHouseholds(hh.data || []);
+    if (!err) cacheSet(`contacts:${user?.id}`, { contacts: c.data || [], tags: t.data || [], links: l.data || [], cards: p.data || [], tasks: k.data || [], lists: s.data || [], households: hh.data || [] });
     setLoading(false);
   }, [user?.id]);
 
@@ -185,6 +188,26 @@ export function useContacts() {
     return bad ? fail(bad.error) : true;
   };
 
+  // Households: couples and families linked as one relationship (see supabase/contact-households.sql).
+  const linkHousehold = async (aId, bId) => {
+    const { error: e } = await supabase.rpc("link_household", { p_a: aId, p_b: bId });
+    if (e) return { error: e.message };
+    await load();
+    return {};
+  };
+  const leaveHousehold = async (contactId) => {
+    const { error: e } = await supabase.rpc("leave_household", { p_contact: contactId });
+    if (e) return { error: e.message };
+    await load();
+    return {};
+  };
+  const renameHousehold = async (id, name) => {
+    const clean = name.trim().slice(0, 80);
+    setHouseholds((l) => l.map((h) => (h.id === id ? { ...h, name: clean } : h)));
+    const { error: e } = await supabase.from("contact_households").update({ name: clean }).eq("id", id);
+    return e ? fail(e) : true;
+  };
+
   const merge = async (keepId, removeId) => {
     const { error: e } = await supabase.rpc("merge_contacts", { p_keep: keepId, p_remove: removeId });
     if (e) return { error: e.message };
@@ -192,5 +215,5 @@ export function useContacts() {
     return {};
   };
 
-  return { contacts, tags, cards, tasks, ctx, lists, loading, error, reload: load, addContact, updateContact, updateMany, deleteContact, ensureTag, tagMany, untagMany, updateTag, deleteTag, saveList, deleteList, renameList, reorderLists, merge };
+  return { contacts, tags, cards, tasks, ctx, lists, households, linkHousehold, leaveHousehold, renameHousehold, loading, error, reload: load, addContact, updateContact, updateMany, deleteContact, ensureTag, tagMany, untagMany, updateTag, deleteTag, saveList, deleteList, renameList, reorderLists, merge };
 }

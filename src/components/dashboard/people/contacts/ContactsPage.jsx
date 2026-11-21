@@ -298,7 +298,13 @@ function MergeModal({ pair, onClose, onMerge }) {
 export default function ContactsPage() {
   const crm = useContacts();
   const { stages } = usePeopleStages();
-  const { contacts, tags, cards, ctx, lists, loading, error } = crm;
+  const { contacts, tags, cards, ctx, lists, households, loading, error } = crm;
+  // Who shares a household with whom.
+  const membersByHousehold = useMemo(() => {
+    const m = new Map();
+    for (const c of contacts) if (c.household_id) m.set(c.household_id, [...(m.get(c.household_id) || []), c]);
+    return m;
+  }, [contacts]);
   const [filters, setFilters] = useState(() => ({ ...EMPTY_FILTERS, dates: new URLSearchParams(window.location.search).get("dates") || "" }));
   const [sort, setSort] = useState("name");
   const [desc, setDesc] = useState(false);
@@ -694,6 +700,9 @@ export default function ContactsPage() {
                         </span>
                         <span className={`block text-xs truncate md:hidden ${muted}`}>{[c.company && c.first_name ? c.company : "", c.email || c.phone, cityLine(c)].filter(Boolean).join(" · ") || "No details yet"}</span>
                         {c.company && c.first_name && <span className={`hidden md:block text-xs truncate ${muted}`}>{c.company}</span>}
+                        {c.household_id && (membersByHousehold.get(c.household_id) || []).length > 1 && (
+                          <span className={`hidden md:block text-xs truncate ${muted}`} title="Household">With {(membersByHousehold.get(c.household_id) || []).filter((x) => x.id !== c.id).map((x) => x.first_name || x.company).filter(Boolean).join(", ")}</span>
+                        )}
                       </span>
                     </button>
                     <span className="hidden md:block min-w-0 truncate text-xs">
@@ -739,6 +748,13 @@ export default function ContactsPage() {
           ctx={ctx}
           tags={tags}
           cards={cards}
+          household={households.find((h) => h.id === open.household_id)}
+          members={open.household_id ? membersByHousehold.get(open.household_id) || [] : []}
+          allContacts={contacts}
+          onLinkHousehold={crm.linkHousehold}
+          onLeaveHousehold={crm.leaveHousehold}
+          onRenameHousehold={crm.renameHousehold}
+          onOpenContact={setOpenId}
           onClose={() => setOpenId(null)}
           onUpdate={crm.updateContact}
           onTagAdd={crm.tagMany}

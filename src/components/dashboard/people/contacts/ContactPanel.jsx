@@ -12,6 +12,7 @@ import { NOTE_KINDS, RELATIONSHIPS, TOUCH_OPTIONS, cityLine, digits, fullName, i
 import { TagChip, TagPicker } from "./TagParts";
 import DealTabs from "../DealTabs";
 import PlanSection from "../PlanSection";
+import HouseholdSection from "./HouseholdSection";
 
 const input = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const label = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1";
@@ -77,7 +78,7 @@ function TextSyncRow({ contact, synced, onSet, onCleared }) {
   );
 }
 
-export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpdate, onTagAdd, onTagRemove, onCreateTag, onDelete, onChanged }) {
+export default function ContactPanel({ contact, ctx, tags, cards, household, members = [], allContacts = [], onLinkHousehold, onLeaveHousehold, onRenameHousehold, onOpenContact, onClose, onUpdate, onTagAdd, onTagRemove, onCreateTag, onDelete, onChanged }) {
   const { user } = useAuth();
   const { stages } = usePeopleStages();
   const { tasks, add, complete, remove, error: taskError } = useAgentTasks(user?.id);
@@ -99,21 +100,29 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
   const myTags = tagIds.map((id) => ctx.tagById.get(id)).filter(Boolean);
   const myCards = cards.filter((c) => c.contact_id === contact.id);
 
+  // A household shares one history: everyone's notes, calls, texts and card notes in one scroll, each marked with whose it is.
+  const memberIds = useMemo(() => (members.length > 1 ? members.map((m) => m.id) : [contact.id]), [members, contact.id]);
+  const memberKey = memberIds.join(",");
+  const firstOf = useMemo(() => new Map(members.map((m) => [m.id, m.first_name || m.company || "Someone"])), [members]);
   const loadNotes = useCallback(async () => {
+    const ids = memberKey.split(",");
+    const theirCards = cards.filter((c) => ids.includes(c.contact_id));
     const [a, b, m] = await Promise.all([
-      supabase.from("contact_notes").select("id, kind, body, occurred_at").eq("contact_id", contact.id).order("occurred_at", { ascending: false }).limit(200),
-      cards.some((c) => c.contact_id === contact.id)
-        ? supabase.from("people_notes").select("id, body, created_at, person_id").in("person_id", cards.filter((c) => c.contact_id === contact.id).map((c) => c.id)).order("created_at", { ascending: false }).limit(100)
+      supabase.from("contact_notes").select("id, contact_id, kind, body, occurred_at").in("contact_id", ids).order("occurred_at", { ascending: false }).limit(200),
+      theirCards.length
+        ? supabase.from("people_notes").select("id, body, created_at, person_id").in("person_id", theirCards.map((c) => c.id)).order("created_at", { ascending: false }).limit(100)
         : Promise.resolve({ data: [] }),
-      supabase.from("contact_messages").select("id, kind, direction, body, duration_seconds, occurred_at").eq("contact_id", contact.id).order("occurred_at", { ascending: false }).limit(300),
+      supabase.from("contact_messages").select("id, contact_id, kind, direction, body, duration_seconds, occurred_at").in("contact_id", ids).order("occurred_at", { ascending: false }).limit(300),
     ]);
+    const cardOwner = new Map(theirCards.map((c) => [c.id, c.contact_id]));
+    const whose = (cid) => (cid && cid !== contact.id ? firstOf.get(cid) || "" : "");
     const merged = [
-      ...(m.data || []).map((x) => ({ id: `m${x.id}`, rawId: x.id, mine: true, table: "contact_messages", kind: x.kind === "call" ? "synced_call" : "synced_text", direction: x.direction, secs: x.duration_seconds, body: x.body, at: x.occurred_at })),
-      ...(a.data || []).map((n) => ({ id: `c${n.id}`, rawId: n.id, mine: true, kind: n.kind, body: n.body, at: n.occurred_at })),
-      ...(b.data || []).map((n) => ({ id: `p${n.id}`, kind: "card", body: n.body, at: n.created_at })),
+      ...(m.data || []).map((x) => ({ id: `m${x.id}`, rawId: x.id, mine: true, table: "contact_messages", who: whose(x.contact_id), kind: x.kind === "call" ? "synced_call" : "synced_text", direction: x.direction, secs: x.duration_seconds, body: x.body, at: x.occurred_at })),
+      ...(a.data || []).map((n) => ({ id: `c${n.id}`, rawId: n.id, mine: true, who: whose(n.contact_id), kind: n.kind, body: n.body, at: n.occurred_at })),
+      ...(b.data || []).map((n) => ({ id: `p${n.id}`, who: whose(cardOwner.get(n.person_id)), kind: "card", body: n.body, at: n.created_at })),
     ].sort((x, y) => y.at.localeCompare(x.at));
     setNotes(merged);
-  }, [contact.id, cards]);
+  }, [contact.id, cards, memberKey, firstOf]);
   useEffect(() => {
     loadNotes();
   }, [loadNotes]);
@@ -236,6 +245,8 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
                 </div>
               </section>
 
+              <HouseholdSection contact={contact} household={household} members={members} contacts={allContacts} onLink={onLinkHousehold} onLeave={onLeaveHousehold} onRename={onRenameHousehold} onOpen={onOpenContact} />
+
               <section className="space-y-3">
                 <div className="flex items-baseline justify-between gap-3">
                   <h3 className={heading}>Follow-ups</h3>
@@ -337,7 +348,7 @@ export default function ContactPanel({ contact, ctx, tags, cards, onClose, onUpd
                 <ul className="space-y-2">
                   {notes.map((n) => (
                     <li key={n.id} className="rounded-xl bg-black/[0.03] dark:bg-white/[0.05] p-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{n.kind === "card" ? "From a Leads / Pipeline card" : n.kind.startsWith("synced_") ? syncedLabel(n) : kindLabel(n.kind)}</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{n.who ? `${n.who} · ` : ""}{n.kind === "card" ? "From a Leads / Pipeline card" : n.kind.startsWith("synced_") ? syncedLabel(n) : kindLabel(n.kind)}</p>
                       {n.body && <p className="mt-1 text-sm whitespace-pre-wrap">{n.body}</p>}
                       <div className={`mt-1.5 flex items-center justify-between text-[11px] ${muted}`}>
                         <span>{fmtWhen(n.at)}</span>
