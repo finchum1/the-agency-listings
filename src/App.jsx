@@ -418,6 +418,9 @@ function AppRoutes() {
         <Route path="listings/:id/social" element={<SocialPostPage />} />
         <Route path="marketing" element={<MarketingHome />} />
         <Route path="marketing/holiday" element={<HolidayPostPage />} />
+        <Route path="marketing/plans" element={<PeopleGate />}>
+          <Route index element={<PlansPage />} />
+        </Route>
         <Route path="listings/:id/analytics" element={<ListingAnalyticsPage />} />
         <Route path="profile" element={<MyProfilePage />} />
         <Route path="site" element={<DashboardHome />} />
@@ -439,11 +442,8 @@ function AppRoutes() {
         <Route path="cmas" element={<CmasPage />} />
         <Route path="cmas/:id" element={<CmasPage />} />
         <Route path="search" element={<HomeSearchPage />} />
-        <Route path="settings" element={<PeopleGate />}>
-          <Route element={<PeopleLayout />}>
-            <Route index element={<SettingsPage />} />
-          </Route>
-        </Route>
+        {/* Deal settings moved into Deals, and Plans into Marketing: the old addresses still work. */}
+        <Route path="settings" element={<Navigate to="/dashboard/deals/checklists" replace />} />
         <Route path="people" element={<PeopleGate />}>
           <Route index element={<Navigate to="overview" replace />} />
           <Route element={<PeopleLayout />}>
@@ -451,13 +451,15 @@ function AppRoutes() {
             <Route path="contacts" element={<ContactsPage />} />
             <Route path="leads" element={<ProspectsPage group="lead" />} />
             <Route path="pipeline" element={<ProspectsPage group="pipeline" />} />
-            <Route path="plans" element={<PlansPage />} />
+            <Route path="plans" element={<Navigate to="/dashboard/marketing/plans" replace />} />
           </Route>
           <Route path="transactions" element={<Navigate to="/dashboard/deals" replace />} />
         </Route>
         <Route path="deals" element={<DealsGate />}>
           <Route index element={<DealsPage key="overview" page="overview" />} />
           <Route path="board" element={<DealsPage key="board" page="board" />} />
+          <Route path="checklists" element={<SettingsPage section="checklists" />} />
+          <Route path="emails" element={<SettingsPage section="emails" />} />
         </Route>
         {/* Old separate routes, now combined into one "Upcoming" tab —
             redirect rather than 404 in case either was already bookmarked. */}

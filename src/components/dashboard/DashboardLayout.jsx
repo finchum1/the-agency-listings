@@ -45,8 +45,6 @@ const FLYOUTS = {
       { to: "/dashboard/people/contacts", label: "Contacts" },
       { to: "/dashboard/people/leads", label: "Leads" },
       { to: "/dashboard/people/pipeline", label: "Pipeline" },
-      { to: "/dashboard/people/plans", label: "Plans" },
-      { to: "/dashboard/settings", label: "Settings" },
     ],
   },
   deals: {
@@ -54,6 +52,15 @@ const FLYOUTS = {
     items: [
       { to: "/dashboard/deals", label: "Overview", exact: true },
       { to: "/dashboard/deals/board", label: "Deals" },
+      { to: "/dashboard/deals/checklists", label: "Checklists" },
+      { to: "/dashboard/deals/emails", label: "Email templates" },
+    ],
+  },
+  marketing: {
+    title: "Marketing",
+    items: [
+      { to: "/dashboard/marketing", label: "Make something", exact: true },
+      { to: "/dashboard/marketing/plans", label: "Plans" },
     ],
   },
   listings: {
@@ -452,13 +459,16 @@ export default function DashboardLayout() {
   // organization still get theirs, per their own switches.
   const workingElsewhere = Boolean(isPlatformAdmin && org && profile?.org_id && org.id !== profile.org_id);
   const idx = useIdxEnabled(org?.slug);
-  const navItems = NAV_ITEMS;
+  // Marketing opens a small menu (Make something, Plans) for people who have the People module, since Plans (follow-up that runs itself) needs it; otherwise it is a plain link.
+  const marketingMenu = Boolean(profile?.people_enabled) && !workingElsewhere;
+  const navItems = marketingMenu ? [] : NAV_ITEMS;
   const marketItems = [...(idx.enabled && !workingElsewhere ? [{ to: "/dashboard/search", label: "Home Search" }] : []), { to: "/dashboard/cmas", label: "CMAs" }];
   const flyoutItems = (kind) => (kind === "admin" ? adminItems : kind === "market" ? marketItems : FLYOUTS[kind].items);
   const flyoutTitle = (kind) => (kind === "admin" ? "Admin" : FLYOUTS[kind].title);
   const GROUPS = [
     { kind: "listings", label: "Listings", icon: "listings", to: "/dashboard/listings", active: (p) => p === "/dashboard/listings" || p.startsWith("/dashboard/listings/") || p === "/dashboard/upcoming" },
     { kind: "market", label: "Market", icon: "market", to: marketItems[0].to, active: (p) => p === "/dashboard/search" || p === "/dashboard/cmas" || p.startsWith("/dashboard/cmas/") },
+    ...(marketingMenu ? [{ kind: "marketing", label: "Marketing", icon: "marketing", to: "/dashboard/marketing", active: (p) => p === "/dashboard/marketing" || p.startsWith("/dashboard/marketing/") }] : []),
   ];
   const OFFICE_GROUP = { kind: "office", label: "Office", icon: "office", to: "/dashboard/vendors", active: (p) => p === "/dashboard/vendors" };
   const deals = dealAccess(profile);
@@ -487,7 +497,7 @@ export default function DashboardLayout() {
   const NavList = ({ onNavigate, rail = false }) => {
     const path = location.pathname;
     const inSite = path === "/dashboard/site" || path.startsWith("/dashboard/site/");
-    const inPeople = path === "/dashboard/people" || path.startsWith("/dashboard/people/") || path === "/dashboard/settings";
+    const inPeople = path === "/dashboard/people" || path.startsWith("/dashboard/people/");
 
     // Closed drawer: one icon per main item. A group's icon goes to the first page in that group.
     if (rail) {

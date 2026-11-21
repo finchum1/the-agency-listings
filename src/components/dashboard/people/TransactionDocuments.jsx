@@ -281,7 +281,7 @@ export default function TransactionDocuments({ person, side, onSummary, viewer =
               {viewer === "owner" ? (
                 <p className={`text-xs ${muted}`}>
                   Set up your {SIDE_LABELS[side].toLowerCase()} document list in{" "}
-                  <Link to="/dashboard/settings" className="underline hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
+                  <Link to="/dashboard/deals/checklists" className="underline hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
                     Settings
                   </Link>
                   .

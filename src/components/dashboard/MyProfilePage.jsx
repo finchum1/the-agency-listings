@@ -323,7 +323,7 @@ export default function MyProfilePage() {
             Edit the buyer and seller checklists that get added to your deals.
           </p>
           <Link
-            to="/dashboard/settings"
+            to="/dashboard/deals/checklists"
             className="inline-block rounded-full bg-[#1c1a17] dark:bg-[#f2454b] text-white text-sm font-semibold px-6 py-2.5 hover:bg-[#1c1a17]/90 dark:hover:bg-[#f2454b]/90 transition-colors"
           >
             Deal Checklists

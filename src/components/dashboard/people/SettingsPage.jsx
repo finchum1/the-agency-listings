@@ -1,20 +1,21 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { SIDE_LABELS } from "../../../lib/checklists";
 import ChecklistTemplateEditor from "./ChecklistTemplateEditor";
 import EmailTemplatesEditor from "./EmailTemplatesEditor";
 import { useEmailTemplates } from "../../../hooks/useEmailTemplates";
 
-export default function SettingsPage() {
-  const [section, setSection] = useState("checklists");
+// Deals > Checklists and Deals > Email templates: the lists a deal starts with and the emails it can send. `section` is "checklists" or "emails" (one route each).
+export default function SettingsPage({ section = "checklists" }) {
+  const navigate = useNavigate();
   const [side, setSide] = useState("buyer");
   const [kind, setKind] = useState("tasks");
   const emails = useEmailTemplates();
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <Link to="/dashboard/profile" className="text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
-          ← My Profile
+        <Link to="/dashboard/deals" className="text-xs font-medium text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-[#1c1a17] dark:hover:text-[#faf9f7]">
+          ← Deals
         </Link>
         <h1 className="text-2xl font-display font-semibold mt-2">{section === "checklists" ? "Deal Checklists" : "Deal Email Templates"}</h1>
         <p className="text-sm text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mt-1">
@@ -32,7 +33,7 @@ export default function SettingsPage() {
           <button
             key={key}
             type="button"
-            onClick={() => setSection(key)}
+            onClick={() => navigate(`/dashboard/deals/${key}`)}
             className={`px-4 py-1.5 rounded-full transition-colors ${
               section === key ? "bg-[#1c1a17] dark:bg-[#f2454b] text-white" : "text-[#1c1a17]/60 dark:text-[#faf9f7]/60"
             }`}

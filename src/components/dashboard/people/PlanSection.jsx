@@ -131,7 +131,7 @@ export default function PlanSection({ person, contactId, contact }) {
       })}
       {ready && rows.length === 0 && plans.length === 0 && occasions.length === 0 && (
         <p className={`text-sm ${muted}`}>
-          No plans set up yet. <Link to="/dashboard/people/plans" className="font-semibold underline">Create one in People &gt; Plans</Link> and you can start it here.
+          No plans set up yet. <Link to="/dashboard/marketing/plans" className="font-semibold underline">Create one in Marketing &gt; Plans</Link> and you can start it here.
         </p>
       )}
       {ready && rows.length === 0 && plans.length > 0 && available.length > 0 && <p className={`text-sm ${muted}`}>Not on a plan.</p>}
