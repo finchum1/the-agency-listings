@@ -60,7 +60,7 @@ function CompCard({ comp }) {
 
 // The client-facing CMA: the agent's price opinion, the homes it rests on, and the agent's notes. Used by the share link page and, with the
 // agent's own current numbers, the editor's preview. Light page; "Print / Save as PDF" prints it without the buttons.
-export default function CmaReport({ cma, agent, brand, preview = false }) {
+export default function CmaReport({ cma, agent, brand, preview = false, pdfHref = "" }) {
   const m = computeCma(cma);
   const comps = (cma.comps || []).filter((c) => c.include !== false && toNumber(c.price) != null);
   const sold = comps.filter((c) => c.status === "sold");
@@ -86,9 +86,16 @@ export default function CmaReport({ cma, agent, brand, preview = false }) {
           {factsLine(cma.subject) && <p className="mt-3 text-base text-white/75 print:text-[#1c1a17]/70">{factsLine(cma.subject)}</p>}
           <p className="mt-1 text-sm text-white/50 print:text-[#1c1a17]/50">Prepared {when(cma.prepared || new Date().toISOString())}{agent?.full_name ? ` by ${agent.full_name}` : ""}</p>
           {!preview && (
-            <button type="button" onClick={() => window.print()} className="mt-6 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#1c1a17] print:hidden">
-              Print / Save as PDF
-            </button>
+            <div className="mt-6 flex flex-wrap gap-3 print:hidden">
+              {pdfHref && (
+                <a href={pdfHref} className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#1c1a17]">
+                  Download PDF
+                </a>
+              )}
+              <button type="button" onClick={() => window.print()} className={pdfHref ? "rounded-full border border-white/40 px-5 py-2.5 text-sm font-semibold text-white" : "rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[#1c1a17]"}>
+                {pdfHref ? "Print" : "Print / Save as PDF"}
+              </button>
+            </div>
           )}
         </div>
       </section>

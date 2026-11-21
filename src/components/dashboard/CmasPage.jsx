@@ -123,6 +123,7 @@ function CmaEditor({ id }) {
   const [finding, setFinding] = useState(false);
   const [link, setLink] = useState(""); // the full share address, only known right after it is made
   const [copied, setCopied] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
   const loaded = useRef(false);
   const timer = useRef(null);
 
@@ -216,6 +217,32 @@ function CmaEditor({ id }) {
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
   };
+  // The PDF is made from what is on screen right now (saved or not), laid out like the client page.
+  const downloadPdf = async () => {
+    setPdfBusy(true);
+    setError("");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/cma-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token || ""}` },
+        body: JSON.stringify({ cma: reportCma }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Couldn't make the PDF.");
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `CMA - ${subjectAddress(doc.subject) || doc.title || "Market analysis"}.pdf`.replace(/[\\/:*?"<>|]+/g, "");
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setPdfBusy(false);
+    }
+  };
   const remove = async () => {
     if (!window.confirm("Delete this CMA? Its client link stops working too. This can't be undone.")) return;
     const { error: err } = await supabase.from("cmas").delete().eq("id", id);
@@ -231,6 +258,7 @@ function CmaEditor({ id }) {
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Link to="/dashboard/cmas" className={`text-sm underline ${muted}`}>All CMAs</Link>
         <span className={`ml-auto text-xs ${muted}`} aria-live="polite">{status}</span>
+        <button type="button" onClick={downloadPdf} disabled={pdfBusy} className={quiet}>{pdfBusy ? "Making the PDF…" : "Download PDF"}</button>
         <button type="button" onClick={() => setPreview((v) => !v)} className={quiet}>{preview ? "Back to editing" : "Preview client page"}</button>
       </div>
       {error && <p role="alert" className="mb-3 text-sm text-red-600 dark:text-red-400">{error}</p>}

@@ -11,7 +11,7 @@ const MAX_PEOPLE = 6;
 const PERSON = "full_name, title, license, phone, email, photo_url";
 
 /** A picture as a PNG buffer for the PDF (it can't read SVG or WebP), or null when it can't be had. Only https pictures or our own files. */
-async function picture(src, { height, width, fit = "inside" } = {}) {
+export async function picture(src, { height, width, fit = "inside" } = {}) {
   try {
     const url = new URL(src, SITE_ORIGIN);
     if (url.protocol !== "https:" || /^(localhost|127\.|10\.|192\.168\.|169\.254\.)/i.test(url.hostname)) return null;

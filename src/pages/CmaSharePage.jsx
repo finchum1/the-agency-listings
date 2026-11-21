@@ -43,5 +43,5 @@ export default function CmaSharePage() {
     );
   }
   const { agent, org, ...cma } = state.data;
-  return <CmaReport cma={cma} agent={agent} brand={brandFromOrg(org)} />;
+  return <CmaReport cma={cma} agent={agent} brand={brandFromOrg(org)} pdfHref={`/api/cma-pdf?token=${encodeURIComponent(token)}`} />;
 }
