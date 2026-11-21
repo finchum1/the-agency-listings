@@ -5,6 +5,7 @@ import ListingForm from "./ListingForm";
 import PhotoManager from "./PhotoManager";
 import HeroScrollPhotosManager from "./HeroScrollPhotosManager";
 import OpenHouseManager from "./OpenHouseManager";
+import ListingCmas from "./ListingCmas";
 
 export default function EditListingPage() {
   const { id } = useParams();
@@ -72,6 +73,7 @@ export default function EditListingPage() {
         <HeroScrollPhotosManager listingId={listing.id} photos={photos} onChanged={refresh} />
       )}
       <OpenHouseManager listingId={listing.id} openHouses={openHouses} onChanged={refresh} />
+      <ListingCmas listing={listing} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { useOrg } from "../../context/OrgContext";
 import { ADJUSTMENT_PRESETS, COMP_STATUSES, adjustedPrice, adjustmentTotal, computeCma, factsLine, newComp, pricePerSqft, subjectAddress, toNumber } from "../../lib/cma";
 import { formatPrice } from "../../lib/format";
 import NetSheetPanel from "./NetSheetPanel";
+import CmaListingLink from "./CmaListingLink";
 import { cleanNetSheet, hasNetSheet, savedFees, withDefaults } from "../../lib/netSheet";
 import CmaReport from "../public/CmaReport";
 import ClientPicker from "./ClientPicker";
@@ -17,7 +18,7 @@ const input =
 const card = "rounded-2xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a]";
 const quiet = "rounded-full border border-black/10 dark:border-white/15 px-3.5 py-1.5 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 const primary = "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] px-4 py-2 text-sm font-semibold text-white";
-const COLUMNS = "id, person_id, title, subject, comps, price_low, price_high, suggested_price, notes, net_sheet, share_hint, shared_at, last_viewed_at, view_count, updated_at";
+const COLUMNS = "id, person_id, title, subject, comps, price_low, price_high, suggested_price, notes, net_sheet, listing_id, attach, share_hint, shared_at, last_viewed_at, view_count, updated_at";
 
 const when = (iso) => (iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "");
 
@@ -323,6 +324,8 @@ function CmaEditor({ id }) {
               </details>
             </section>
 
+            <CmaListingLink cmaId={id} cma={doc} row={row} onChanged={(patch) => setRow((r) => ({ ...r, ...patch }))} />
+
             <section className={`${card} p-5 space-y-3`} aria-label="Share with the client">
               <h2 className="font-display text-lg font-semibold">Share with the client</h2>
               {row?.shared_at ? (
@@ -375,6 +378,7 @@ function CmaList() {
     };
   }, []);
   const create = async () => {
+    if (busy) return;
     setBusy(true);
     const subject = params.get("address") ? { address: params.get("address") } : {};
     const { data, error: err } = await supabase.from("cmas").insert({ subject, title: "" }).select("id").single();
@@ -382,6 +386,15 @@ function CmaList() {
     if (err) return setError(err.message);
     navigate(`/dashboard/cmas/${data.id}`);
   };
+  // "New CMA for this home" on a listing page lands here with ?new=1&address=…: start the CMA straight away.
+  const auto = useRef(false);
+  useEffect(() => {
+    if (params.get("new") && !auto.current) {
+      auto.current = true;
+      create();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <div>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
