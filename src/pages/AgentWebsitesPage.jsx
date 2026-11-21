@@ -28,11 +28,11 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with
 // brand red (or its brighter dark-background variant); templates only
 // ever vary neutrals. See DESIGN.md "Brand compliance."
 const THEMES = [
-  { label: "Classic", swatches: ["#f7f4ee", "#14130f", "#ed2127"] },
+  { label: "Classic", swatches: ["#f7f4ee", "#14130f", "#D8091B"] },
   { label: "Dark", swatches: ["#14130f", "#26241d", "#f2454b"] },
-  { label: "Sand", swatches: ["#ddd0ba", "#0d0d0d", "#ed2127"] },
-  { label: "Red", swatches: ["#ffffff", "#ed2127", "#0d0d0d"] },
-  { label: "Linen", swatches: ["#ffffff", "#f0ece4", "#ed2127"] },
+  { label: "Sand", swatches: ["#ddd0ba", "#0d0d0d", "#D8091B"] },
+  { label: "Red", swatches: ["#ffffff", "#D8091B", "#0d0d0d"] },
+  { label: "Linen", swatches: ["#ffffff", "#f0ece4", "#D8091B"] },
 ];
 
 // The six real font pairings (src/index.css [data-font] blocks) — live
@@ -121,7 +121,7 @@ export default function AgentWebsitesPage() {
               {["Your own photo, bio, and stats", "Real client testimonials", "Service areas you actually work"].map(
                 (item) => (
                   <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75 dark:text-[#faf9f7]/75">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D8091B" strokeWidth="2">
                       <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     {item}
@@ -178,7 +178,7 @@ export default function AgentWebsitesPage() {
             {FONT_PAIRINGS.map((f) => (
               <motion.div key={f.label} variants={chip} className="bg-white dark:bg-[#161616] rounded-2xl shadow-xl shadow-black/5 p-5">
                 {f.tag && (
-                  <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-2">{f.tag}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#D8091B] dark:text-[#EBE3D6] mb-2">{f.tag}</p>
                 )}
                 <p className="text-2xl leading-none mb-2.5" style={{ fontFamily: f.display }}>
                   Aa

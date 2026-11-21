@@ -4,9 +4,9 @@
   so nothing here needs to know about either theme.
 */
 .ag-fx {
-  --accent: #ed2127;
-  --accent-hover: #d41b21;
-  --accent-soft: rgba(237, 33, 39, 0.12);
+  --accent: #D8091B;
+  --accent-hover: #b80717;
+  --accent-soft: rgba(216, 9, 27, 0.12);
   --accent-foreground: #ffffff;
   --bg: #faf9f7;
   --bg-elevated: #ffffff;
@@ -18,7 +18,7 @@
   --text-faint: rgba(28, 26, 23, 0.5);
 }
 .dark .ag-fx {
-  --accent-soft: rgba(237, 33, 39, 0.22);
+  --accent-soft: rgba(216, 9, 27, 0.22);
   --bg: #0d0d0d;
   --bg-elevated: #161616;
   --bg-elevated-2: #1f1f1f;

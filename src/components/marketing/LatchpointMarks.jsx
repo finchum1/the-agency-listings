@@ -1,13 +1,13 @@
 // Latchpoint Studios' mark and wordmark, ported from that project's own
 // src/components/logomark.tsx -- same paths, with var(--accent) swapped for
-// the literal ember (#e8623f) since that CSS variable doesn't exist here.
+// The Agency's red (#D8091B) here, since this chrome only ships on The Agency's page.
 // Used only by the Latchpoint-branded header/footer on
 // theagency.latchpointstudios.com (see MarketingNav / MarketingFooter).
 
 import { useId } from "react";
 import "./logo-anim.css";
 
-const EMBER = "#e8623f";
+const EMBER = "#D8091B"; // Agency Red (kept under the old name so the SVG below is untouched)
 
 const RING =
   "M14.5 3.5 A6 6 0 0 1 20.5 9.5 V14.5 A6 6 0 0 1 14.5 20.5 H9.5 A6 6 0 0 1 3.5 14.5 V9.5 A6 6 0 0 1 9.5 3.5 H14.5";
@@ -54,8 +54,8 @@ export function LatchpointLogomark({ className = "" }) {
 // With a context tag, the name ("Studios" by default) steps aside on very narrow screens (below 440px) so the
 // tag next to it still fits inside the header pill. Without a tag the name always shows.
 export function LatchpointWordmark({ tag, name = "Studios", inverse = false }) {
-  const text = inverse ? "text-[#f5f5f4]" : "text-(--lp-text)";
-  const muted = inverse ? "text-[#a4a5ac]" : "text-(--lp-text-muted)";
+  const text = inverse ? "text-[#EBE3D6]" : "text-(--lp-text)";
+  const muted = inverse ? "text-[#b3aa98]" : "text-(--lp-text-muted)";
   return (
     <span className="inline-flex items-center gap-2 font-geist sm:gap-2.5">
       <LatchpointLogomark className={`size-6 ${text}`} />

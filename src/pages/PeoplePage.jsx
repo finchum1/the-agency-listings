@@ -34,7 +34,7 @@ export default function PeoplePage() {
             <h1 className="text-5xl sm:text-6xl font-display font-semibold leading-[1.08] mb-6">
               Every lead. Every deal.
               <br />
-              <span className="italic text-[#ed2127]">Nothing slips.</span>
+              <span className="italic text-[#D8091B] dark:text-[#EBE3D6]">Nothing slips.</span>
             </h1>
             <p className="text-[17px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-8 max-w-md">
               Leads, pipeline and transactions on simple boards — with one-tap calling and texting,
@@ -58,7 +58,7 @@ export default function PeoplePage() {
       <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
           <Reveal variant="fromLeft">
-            <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">Leads</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#D8091B] dark:text-[#EBE3D6] mb-3">Leads</p>
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               A website inquiry becomes a lead the moment it's sent.
             </h2>
@@ -74,7 +74,7 @@ export default function PeoplePage() {
                 "Drag people between stages, and rename the stages to fit how you work",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3 text-sm text-[#1c1a17]/75 dark:text-[#faf9f7]/75">
-                  <svg className="mt-0.5 shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2">
+                  <svg className="mt-0.5 shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D8091B" strokeWidth="2">
                     <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   {item}
@@ -101,7 +101,7 @@ export default function PeoplePage() {
             <p className="text-[11px] text-[#1c1a17]/40 dark:text-[#faf9f7]/40 mt-3 text-center">{SAMPLE}</p>
           </Reveal>
           <Reveal variant="fromRight" delay={0.1} className="order-1 lg:order-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">Pipeline</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#D8091B] dark:text-[#EBE3D6] mb-3">Pipeline</p>
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Know who's ready in a year, and who's ready this week.
             </h2>
@@ -118,7 +118,7 @@ export default function PeoplePage() {
       <section className="px-6 lg:px-10 py-24 lg:py-32 bg-white dark:bg-[#161616] border-y border-black/5 dark:border-white/10">
         <div className="mx-auto max-w-6xl">
           <Reveal className="max-w-2xl mb-12">
-            <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">Transactions</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#D8091B] dark:text-[#EBE3D6] mb-3">Transactions</p>
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Contract to closing, with a checklist that builds itself.
             </h2>
@@ -142,7 +142,7 @@ export default function PeoplePage() {
       <section className="px-6 lg:px-10 py-24 lg:py-32">
         <div className="mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-14 items-center">
           <Reveal variant="fromLeft">
-            <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">Overview</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#D8091B] dark:text-[#EBE3D6] mb-3">Overview</p>
             <h2 className="text-3xl sm:text-4xl font-display font-semibold mb-5 leading-tight">
               Open it in the morning. Know your day.
             </h2>

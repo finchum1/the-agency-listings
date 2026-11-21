@@ -30,7 +30,7 @@ const SAMPLE = "Sample data. Every name, number, and address on these screens is
 
 function Check() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2" className="mt-1 shrink-0">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D8091B" strokeWidth="2" className="mt-1 shrink-0">
       <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -59,7 +59,7 @@ function Phone({ src, alt, className = "" }) {
 }
 
 function Eyebrow({ children }) {
-  return <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127] mb-3">{children}</p>;
+  return <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#D8091B] dark:text-[#EBE3D6] mb-3">{children}</p>;
 }
 
 /** Copy on one side, a visual on the other; `flip` swaps them on large screens. */
@@ -132,7 +132,7 @@ export default function LandingPage() {
         }`}
       >
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute left-1/2 top-[-6%] h-[480px] w-[780px] -translate-x-1/2 rounded-full bg-[#ed2127]/[0.08] blur-[120px] dark:bg-[#ed2127]/[0.12]" />
+          <div className="absolute left-1/2 top-[-6%] h-[480px] w-[780px] -translate-x-1/2 rounded-full bg-[#D8091B]/[0.08] blur-[120px] dark:bg-[#D8091B]/[0.12]" />
         </div>
         <div className="mx-auto max-w-7xl grid lg:grid-cols-[0.85fr_1.15fr] gap-16 items-center">
           <motion.div initial="hidden" animate="show" variants={variants.rise}>
@@ -144,7 +144,7 @@ export default function LandingPage() {
             </div>
             <h1 className="text-5xl sm:text-[3.4rem] font-display font-semibold leading-[1.08] mb-6">
               Your Agency website and back office,{" "}
-              <span className="italic text-[#ed2127]">in one place.</span>
+              <span className="italic text-[#D8091B] dark:text-[#EBE3D6]">in one place.</span>
             </h1>
             <p className="text-[17px] text-[#1c1a17]/70 dark:text-[#faf9f7]/70 leading-relaxed mb-8 max-w-md">
               Your site, contacts, leads, pipeline, deals, and calendar in one dashboard, already running at The Agency.
@@ -153,7 +153,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center gap-4">
               <a
                 href={cta}
-                className="group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-[#ed2127] px-6 py-3 font-geist text-[15px] font-medium leading-none text-white transition-colors hover:bg-[#d41b21]"
+                className="group inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full bg-[#D8091B] px-6 py-3 font-geist text-[15px] font-medium leading-none text-white transition-colors hover:bg-[#b80717]"
               >
                 Request early access
                 <svg width="15" height="15" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-0.5">
@@ -162,14 +162,14 @@ export default function LandingPage() {
               </a>
               <a
                 href="#home"
-                className="font-geist text-[15px] font-medium underline decoration-black/20 decoration-1 underline-offset-[7px] transition-colors duration-300 hover:text-[#ed2127] hover:decoration-[#ed2127] dark:decoration-white/25"
+                className="font-geist text-[15px] font-medium underline decoration-black/20 decoration-1 underline-offset-[7px] transition-colors duration-300 hover:text-[#D8091B] dark:hover:text-[#EBE3D6] hover:decoration-[#D8091B] dark:decoration-white/25"
               >
                 See how it works
               </a>
             </div>
             <p className="mt-5 text-sm text-[#1c1a17]/55 dark:text-[#faf9f7]/55">
               $500 to set up, then $150 a month. No contracts.{" "}
-              <a href="#pricing" className="underline underline-offset-4 hover:text-[#ed2127]">What&rsquo;s included</a>
+              <a href="#pricing" className="underline underline-offset-4 hover:text-[#D8091B] dark:hover:text-[#EBE3D6]">What&rsquo;s included</a>
             </p>
           </motion.div>
 
@@ -197,7 +197,7 @@ export default function LandingPage() {
                 ].map(([name, note, href]) => (
                   <li key={name}>
                     <a href={href} target="_blank" rel="noopener noreferrer" className="group block">
-                      <span className="block text-sm font-semibold group-hover:text-[#ed2127] transition-colors">{name} ↗</span>
+                      <span className="block text-sm font-semibold group-hover:text-[#D8091B] dark:group-hover:text-[#EBE3D6] transition-colors">{name} ↗</span>
                       <span className="block text-xs text-[#1c1a17]/55 dark:text-[#faf9f7]/55">{note}</span>
                     </a>
                   </li>
@@ -633,15 +633,15 @@ export default function LandingPage() {
             ))}
           </Reveal>
           <p className="mt-8 text-xs text-[#1c1a17]/40 dark:text-[#faf9f7]/40">
-            <Link to="/agent-websites" className="hover:text-[#ed2127]">Agent websites</Link>
+            <Link to="/agent-websites" className="hover:text-[#D8091B] dark:hover:text-[#EBE3D6]">Agent websites</Link>
             {" · "}
-            <Link to="/brokerage-website" className="hover:text-[#ed2127]">Brokerage site</Link>
+            <Link to="/brokerage-website" className="hover:text-[#D8091B] dark:hover:text-[#EBE3D6]">Brokerage site</Link>
             {" · "}
-            <Link to="/property-websites" className="hover:text-[#ed2127]">Property sites</Link>
+            <Link to="/property-websites" className="hover:text-[#D8091B] dark:hover:text-[#EBE3D6]">Property sites</Link>
             {" · "}
-            <Link to="/people" className="hover:text-[#ed2127]">People</Link>
+            <Link to="/people" className="hover:text-[#D8091B] dark:hover:text-[#EBE3D6]">People</Link>
             {" · "}
-            <Link to="/upcoming" className="hover:text-[#ed2127]">Upcoming</Link>
+            <Link to="/upcoming" className="hover:text-[#D8091B] dark:hover:text-[#EBE3D6]">Upcoming</Link>
           </p>
         </div>
       </section>

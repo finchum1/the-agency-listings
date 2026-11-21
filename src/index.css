@@ -628,11 +628,15 @@
    component layer so Tailwind utilities (e.g. `absolute`) still win over
    this class's own `position: relative`. */
 :root {
-  --lp-text: #16171a;
-  --lp-text-muted: #55565e;
-  --lp-text-faint: #83848c;
+  --lp-text: #1c1a17;
+  --lp-text-muted: #5a564d;
+  --lp-text-faint: #8a8579;
   --lp-border-strong: rgba(0, 0, 0, 0.14);
   --lp-ember: #e8623f;
+  /* The Agency's marketing chrome (theagency.latchpointstudios.com header/footer): Agency Red + Alabaster cream */
+  --lp-red: #D8091B;
+  --lp-red-hover: #b80717;
+  --lp-cream: #EBE3D6;
   --glass-grad-1: rgba(255, 255, 255, 0.75);
   --glass-grad-2: rgba(255, 255, 255, 0.35);
   --glass-base: rgba(255, 255, 255, 0.55);
@@ -647,9 +651,9 @@
   --glass-dense-base: rgba(251, 251, 250, 0.95);
 }
 .dark {
-  --lp-text: #f5f5f4;
-  --lp-text-muted: #a4a5ac;
-  --lp-text-faint: #6c6e76;
+  --lp-text: #EBE3D6;
+  --lp-text-muted: #b3aa98;
+  --lp-text-faint: #7d7667;
   --lp-border-strong: rgba(255, 255, 255, 0.16);
   --glass-grad-1: rgba(255, 255, 255, 0.1);
   --glass-grad-2: rgba(255, 255, 255, 0.03);

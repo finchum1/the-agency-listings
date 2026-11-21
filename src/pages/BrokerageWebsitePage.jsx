@@ -93,7 +93,7 @@ export default function BrokerageWebsitePage() {
               {["Draw-a-boundary map search", "Full board, not a curated slice", "List and map, side by side"].map(
                 (item) => (
                   <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75 dark:text-[#faf9f7]/75">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D8091B" strokeWidth="2">
                       <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     {item}
@@ -130,7 +130,7 @@ export default function BrokerageWebsitePage() {
               href="https://the-agency-oklahoma.vercel.app/listings"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:text-[#ed2127] transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#1c1a17] dark:text-[#faf9f7] hover:text-[#D8091B] dark:hover:text-[#EBE3D6] transition-colors"
             >
               See it live
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -157,7 +157,7 @@ export default function BrokerageWebsitePage() {
               {["Lands directly in the office inbox", "Built for a real follow-up, not a guess", "One more way a visitor becomes a lead"].map(
                 (item) => (
                   <li key={item} className="flex items-center gap-3 text-sm text-[#1c1a17]/75 dark:text-[#faf9f7]/75">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ed2127" strokeWidth="2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D8091B" strokeWidth="2">
                       <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     {item}

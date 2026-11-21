@@ -14,7 +14,7 @@ const ROLES = ["Agent at The Agency", "Team lead", "Office owner or manager", "S
 const SIZES = ["Just me", "2 to 5 agents", "6 to 20 agents", "21 to 50 agents", "More than 50"];
 
 const input =
-  "w-full rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1b1b1b] px-4 py-3 text-[15px] text-[#1c1a17] dark:text-[#faf9f7] placeholder:text-[#1c1a17]/35 dark:placeholder:text-[#faf9f7]/35 outline-none transition-all focus:border-[#ed2127] focus:ring-4 focus:ring-[#ed2127]/10";
+  "w-full rounded-xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1b1b1b] px-4 py-3 text-[15px] text-[#1c1a17] dark:text-[#faf9f7] placeholder:text-[#1c1a17]/35 dark:placeholder:text-[#faf9f7]/35 outline-none transition-all focus:border-[#D8091B] focus:ring-4 focus:ring-[#D8091B]/10";
 const label = "text-sm font-medium text-[#1c1a17] dark:text-[#faf9f7]";
 
 export default function EarlyAccessSection() {
@@ -62,10 +62,10 @@ export default function EarlyAccessSection() {
     <section id="early-access" className="scroll-mt-28 px-6 pb-24 lg:px-10">
       <Reveal>
         <div className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-black/5 bg-white px-6 py-14 shadow-xl shadow-black/5 dark:border-white/10 dark:bg-[#161616] sm:px-14 sm:py-16">
-          <div className="pointer-events-none absolute left-1/2 top-0 h-[300px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ed2127]/10 blur-[100px]" />
+          <div className="pointer-events-none absolute left-1/2 top-0 h-[300px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#D8091B]/10 blur-[100px]" />
           <div className="relative grid grid-cols-1 gap-12 lg:grid-cols-12">
             <div className="lg:col-span-5">
-              <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#ed2127]">Early access</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider-plus text-[#D8091B] dark:text-[#EBE3D6]">Early access</p>
               <h2 className="mt-3 text-3xl font-display font-semibold leading-tight sm:text-4xl">Get on the list.</h2>
               <p className="mt-4 max-w-md text-[15.5px] leading-relaxed text-[#1c1a17]/70 dark:text-[#faf9f7]/70">
                 We&rsquo;re bringing Agency agents and offices in a few at a time. Tell us who you are and we&rsquo;ll reach out to
@@ -73,7 +73,7 @@ export default function EarlyAccessSection() {
               </p>
               <p className="mt-6 text-sm text-[#1c1a17]/70 dark:text-[#faf9f7]/70">
                 Prefer to ask directly?{" "}
-                <a href="mailto:terrence@latchpointstudios.com" className="font-medium text-[#1c1a17] underline decoration-[#ed2127]/40 underline-offset-4 hover:decoration-[#ed2127] dark:text-[#faf9f7]">
+                <a href="mailto:terrence@latchpointstudios.com" className="font-medium text-[#1c1a17] underline decoration-[#D8091B]/40 underline-offset-4 hover:decoration-[#D8091B] dark:text-[#faf9f7]">
                   terrence@latchpointstudios.com
                 </a>
               </p>
@@ -83,14 +83,14 @@ export default function EarlyAccessSection() {
               {!live ? (
                 <a
                   href={contactMailto("Interested in the dashboard")}
-                  className="inline-flex rounded-full bg-[#ed2127] px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#d41b21]"
+                  className="inline-flex rounded-full bg-[#D8091B] px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#b80717]"
                 >
                   Email us to get started
                 </a>
               ) : status === "success" ? (
                 <div role="status" className="flex flex-col items-start gap-3 rounded-2xl border border-black/10 p-8 dark:border-white/15">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" fill="#ed2127" />
+                    <circle cx="12" cy="12" r="10" fill="#D8091B" />
                     <path d="M7.5 12.5l3 3 6-6.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <h3 className="text-lg font-display font-semibold">You&rsquo;re on the list</h3>
@@ -153,7 +153,7 @@ export default function EarlyAccessSection() {
                     <button
                       type="submit"
                       disabled={status === "submitting"}
-                      className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-[#ed2127] px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#d41b21] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-[#D8091B] px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-[#b80717] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {status === "submitting" ? "Sending..." : "Request early access"}
                     </button>

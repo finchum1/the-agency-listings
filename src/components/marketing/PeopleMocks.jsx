@@ -140,7 +140,7 @@ export function TransactionMock() {
               <li key={text} className="flex items-start gap-1.5 text-[10.5px] leading-snug">
                 <span
                   className={`mt-0.5 h-3 w-3 shrink-0 rounded-[3px] border flex items-center justify-center ${
-                    done ? "bg-[#ed2127] border-[#ed2127]" : "border-black/25"
+                    done ? "bg-[#D8091B] border-[#D8091B]" : "border-black/25"
                   }`}
                 >
                   {done && (

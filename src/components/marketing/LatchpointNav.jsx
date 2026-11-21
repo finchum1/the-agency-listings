@@ -74,7 +74,7 @@ export default function LatchpointNav({ links, open, onToggle, onClose }) {
               <ThemeToggle />
               <a
                 href="/#early-access"
-                className="group ml-1 hidden items-center justify-center gap-2 whitespace-nowrap rounded-full bg-(--lp-ember) px-5 py-2 font-geist text-sm font-medium leading-none text-[#08090b] transition-colors hover:bg-[#f0714f] lg:inline-flex"
+                className="group ml-1 hidden items-center justify-center gap-2 whitespace-nowrap rounded-full bg-(--lp-red) px-5 py-2 font-geist text-sm font-medium leading-none text-(--lp-cream) transition-colors hover:bg-(--lp-red-hover) lg:inline-flex"
               >
                 Request early access
                 <ArrowRight />
@@ -122,7 +122,7 @@ export default function LatchpointNav({ links, open, onToggle, onClose }) {
                   <a
                     href="/#early-access"
                     onClick={onClose}
-                    className="mt-1 rounded-full bg-(--lp-ember) px-5 py-3 text-center font-geist text-[15px] font-medium text-[#08090b]"
+                    className="mt-1 rounded-full bg-(--lp-red) px-5 py-3 text-center font-geist text-[15px] font-medium text-(--lp-cream)"
                   >
                     Request early access
                   </a>

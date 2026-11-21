@@ -22,8 +22,8 @@ const COMPANY = [
   { href: "https://app.latchpointstudios.com/terms", label: "Terms" },
 ];
 
-const heading = "font-geist-mono text-[11px] uppercase tracking-[0.14em] text-[#6c6e76]";
-const link = "text-sm text-[#a4a5ac] transition-colors hover:text-[#f5f5f4]";
+const heading = "font-geist-mono text-[11px] uppercase tracking-[0.14em] text-[#7d7667]";
+const link = "text-sm text-[#b3aa98] transition-colors hover:text-[#EBE3D6]";
 
 // Always dark, like Latchpoint's own footer, on both themes.
 export default function LatchpointFooter() {
@@ -35,7 +35,7 @@ export default function LatchpointFooter() {
             <a href="/" aria-label="Latchpoint Real Estate, home">
               <LatchpointWordmark name="Real Estate" inverse />
             </a>
-            <p className="mt-4 text-sm leading-relaxed text-[#a4a5ac]">
+            <p className="mt-4 text-sm leading-relaxed text-[#b3aa98]">
               The website and back office for real estate agents and brokerages, built and maintained by Latchpoint
               Studios in Edmond, Oklahoma.
             </p>
@@ -70,14 +70,14 @@ export default function LatchpointFooter() {
         </div>
 
         <div className="mt-14 border-t border-white/10 pt-8">
-          <p className="text-xs text-[#6c6e76]">
+          <p className="text-xs text-[#7d7667]">
             &copy; {new Date().getFullYear()} Latchpoint Studios. Edmond, Oklahoma.
           </p>
         </div>
       </div>
       {/* THE AGENCY, huge and ghosted on the bottom edge, in the letters of The Agency's own logo (the same watermark the
           agent sites use). Only here, on the Agency page: realestate.latchpointstudios.com's footer has REAL ESTATE instead. */}
-      <AgencyWordmark tone="soft" flush color="rgba(245, 245, 244, 0.1)" />
+      <AgencyWordmark tone="soft" flush color="rgba(235, 227, 214, 0.1)" />
     </footer>
   );
 }

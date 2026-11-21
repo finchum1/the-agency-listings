@@ -118,7 +118,7 @@ export default function MarketingNav() {
                     key={link.path}
                     to={link.path}
                     className={`text-sm font-medium px-4 py-2 rounded-full transition-colors ${
-                      active ? "bg-[#ed2127] text-white shadow-sm" : "text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-[#ed2127]/10 hover:text-[#ed2127]"
+                      active ? "bg-[#D8091B] text-white shadow-sm" : "text-[#1c1a17]/70 dark:text-[#faf9f7]/70 hover:bg-[#D8091B]/10 hover:text-[#D8091B] dark:hover:text-[#EBE3D6]"
                     }`}
                   >
                     {link.label}
@@ -158,7 +158,7 @@ export default function MarketingNav() {
                   key={link.path}
                   to={link.path}
                   className={`rounded-lg px-3 py-2.5 text-sm font-medium ${
-                    active ? "bg-[#ed2127] text-white" : "text-[#1c1a17]/70 dark:text-[#faf9f7]/70"
+                    active ? "bg-[#D8091B] text-white" : "text-[#1c1a17]/70 dark:text-[#faf9f7]/70"
                   }`}
                 >
                   {link.label}
