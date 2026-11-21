@@ -13,6 +13,8 @@ import { TagChip, TagPicker } from "./TagParts";
 import DealTabs from "../DealTabs";
 import PlanSection from "../PlanSection";
 import HouseholdSection from "./HouseholdSection";
+import TimelineList from "./TimelineList";
+import { KINDS, cardEntries, planEntries, sentEntry, taskEntry } from "../../../../lib/contactTimeline";
 
 const input = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const label = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1";
@@ -107,12 +109,16 @@ export default function ContactPanel({ contact, ctx, tags, cards, household, mem
   const loadNotes = useCallback(async () => {
     const ids = memberKey.split(",");
     const theirCards = cards.filter((c) => ids.includes(c.contact_id));
-    const [a, b, m] = await Promise.all([
-      supabase.from("contact_notes").select("id, contact_id, kind, body, occurred_at").in("contact_id", ids).order("occurred_at", { ascending: false }).limit(200),
-      theirCards.length
-        ? supabase.from("people_notes").select("id, body, created_at, person_id").in("person_id", theirCards.map((c) => c.id)).order("created_at", { ascending: false }).limit(100)
-        : Promise.resolve({ data: [] }),
+    const cardIds = theirCards.map((c) => c.id);
+    const none = Promise.resolve({ data: [] });
+    const [a, b, m, t, o, pe, en] = await Promise.all([
+      supabase.from("contact_notes").select("id, contact_id, kind, body, occurred_at").in("contact_id", ids).order("occurred_at", { ascending: false }).limit(300),
+      cardIds.length ? supabase.from("people_notes").select("id, body, created_at, person_id").in("person_id", cardIds).order("created_at", { ascending: false }).limit(150) : none,
       supabase.from("contact_messages").select("id, contact_id, kind, direction, body, duration_seconds, occurred_at").in("contact_id", ids).order("occurred_at", { ascending: false }).limit(300),
+      supabase.from("agent_tasks").select("id, contact_id, title, done_at, last_done_at").in("contact_id", ids).or("done.eq.true,last_done_at.not.is.null").order("id").limit(150),
+      cardIds.length ? supabase.from("people_outreach").select("id, person_id, channel, subject, body, created_at, resolved_at").in("person_id", cardIds).eq("status", "sent").limit(100) : none,
+      cardIds.length ? supabase.from("people").select("id, contact_id, stage_group, stage, created_at, contract_date, closing_date, property_address").in("id", cardIds) : none,
+      cardIds.length ? supabase.from("plan_enrollments").select("id, person_id, status, stop_reason, created_at, updated_at, plan:plans(name)").in("person_id", cardIds).limit(60) : none,
     ]);
     const cardOwner = new Map(theirCards.map((c) => [c.id, c.contact_id]));
     const whose = (cid) => (cid && cid !== contact.id ? firstOf.get(cid) || "" : "");
@@ -120,7 +126,11 @@ export default function ContactPanel({ contact, ctx, tags, cards, household, mem
       ...(m.data || []).map((x) => ({ id: `m${x.id}`, rawId: x.id, mine: true, table: "contact_messages", who: whose(x.contact_id), kind: x.kind === "call" ? "synced_call" : "synced_text", direction: x.direction, secs: x.duration_seconds, body: x.body, at: x.occurred_at })),
       ...(a.data || []).map((n) => ({ id: `c${n.id}`, rawId: n.id, mine: true, who: whose(n.contact_id), kind: n.kind, body: n.body, at: n.occurred_at })),
       ...(b.data || []).map((n) => ({ id: `p${n.id}`, who: whose(cardOwner.get(n.person_id)), kind: "card", body: n.body, at: n.created_at })),
-    ].sort((x, y) => y.at.localeCompare(x.at));
+      ...(t.data || []).map((x) => taskEntry(x, whose(x.contact_id))),
+      ...(o.data || []).map((x) => sentEntry(x, whose(cardOwner.get(x.person_id)))),
+      ...(pe.data || []).flatMap((c) => cardEntries(c, whose(c.contact_id))),
+      ...(en.data || []).flatMap((x) => planEntries(x, whose(cardOwner.get(x.person_id)))),
+    ].filter((e) => e.at);
     setNotes(merged);
   }, [contact.id, cards, memberKey, firstOf]);
   useEffect(() => {
@@ -342,22 +352,12 @@ export default function ContactPanel({ contact, ctx, tags, cards, household, mem
                   {saving ? "Saving…" : kind === "note" ? "Add note" : `Log ${kindLabel(kind).toLowerCase()}`}
                 </button>
               </form>
-              {notes.length === 0 ? (
-                <p className={`text-sm ${muted}`}>Nothing logged yet.</p>
-              ) : (
-                <ul className="space-y-2">
-                  {notes.map((n) => (
-                    <li key={n.id} className="rounded-xl bg-black/[0.03] dark:bg-white/[0.05] p-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#1c1a17]/50 dark:text-[#faf9f7]/50">{n.who ? `${n.who} · ` : ""}{n.kind === "card" ? "From a Leads / Pipeline card" : n.kind.startsWith("synced_") ? syncedLabel(n) : kindLabel(n.kind)}</p>
-                      {n.body && <p className="mt-1 text-sm whitespace-pre-wrap">{n.body}</p>}
-                      <div className={`mt-1.5 flex items-center justify-between text-[11px] ${muted}`}>
-                        <span>{fmtWhen(n.at)}</span>
-                        {n.mine && <button type="button" onClick={() => deleteNote(n)} className="hover:text-red-600 dark:hover:text-red-400">Delete</button>}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <TimelineList
+                entries={notes}
+                labelOf={(n) => `${n.who ? `${n.who} · ` : ""}${n.kind.startsWith("synced_") ? syncedLabel(n) : KINDS[n.kind]?.label || kindLabel(n.kind)}`}
+                whenOf={(n) => fmtWhen(n.at)}
+                onDelete={deleteNote}
+              />
             </section>
 
           )}
