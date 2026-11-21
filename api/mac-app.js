@@ -61,6 +61,13 @@
 //   POST /api/mac-app?a=deal_link_revoke   {link_id, kind}   turns a link off
 // Contacts beyond the basics (the dashboard's import, repeats, smart lists and bulk actions):
 //   POST /api/mac-app?a=contacts_bulk        {ids, action, ...}   action: tag / untag {tag_id | name}, archive {archived}, followup {title?, due}, board {group, stage}
+// Households (a couple or family linked as one relationship) and review requests (asking clients for a Google review; nothing is ever sent for the agent):
+//   POST /api/mac-app?a=household_link   {contact_id, other_id}   put two contacts in one household (they share one history); returns {household_id}
+//   POST /api/mac-app?a=household_leave  {contact_id}             take one out (a household left with one person is dissolved)
+//   POST /api/mac-app?a=household_rename {household_id, name}
+//   GET  /api/mac-app?a=reviews[&contact_id=]   the agent's review requests with the ready-to-send message for each, and whether their Google link / website are set up
+//   POST /api/mac-app?a=review_add       {contact_id, person_id?}     POST ?a=review_update {review_id, status: asked|skipped|to_ask}
+//   POST /api/mac-app?a=review_record    {review_id, rating, body, reviewer}   POST ?a=review_website {review_id}   put a received review on the website
 //   POST /api/mac-app?a=contact_merge        {keep_id, remove_id}   everything attached to the removed one moves onto the kept one, blanks on it are filled in
 //   POST /api/mac-app?a=contact_duplicates   {}   groups of contacts that share an email, phone or name (the dashboard's Find repeats)
 //   POST /api/mac-app?a=contacts_import_preview  {csv, mapping?, relationship?}   the file's headers, the guessed column for each field, who would be imported or skipped
@@ -83,6 +90,8 @@ import { serviceClient } from "./_lib/authUser.js";
 import { deviceFor } from "./_lib/macDevice.js";
 import { effectiveDue } from "../src/lib/checklistDefaults.js";
 import { dealCardStatus } from "../src/lib/dealCard.js";
+import { HouseholdError, leaveHousehold, linkHousehold } from "./_lib/households.js";
+import { bylineOf, reviewMessage, testimonialHtml } from "../src/lib/reviews.js";
 import { IMPORT_FIELDS, bestToKeep, duplicateGroups, guessMapping, parseCsv, rowToContact, touchDue } from "../src/lib/contacts.js";
 import { nextDue } from "../src/lib/taskRecurrence.js";
 import { cleanList, cleanSteps } from "../src/lib/taskLists.js";
@@ -102,7 +111,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NOTE_KINDS = ["note", "call", "text", "email", "meeting", "showing", "other"];
 const RELATIONSHIPS = ["client", "past_client", "lead", "sphere", "referral_partner", "vendor", "agent", "lender", "other"];
 
-const CONTACT_COLUMNS = "id, first_name, last_name, company, email, phone, other_emails, other_phones, address_line1, city, state, zip, birthday, home_anniversary, relationship, source, about, touch_every_days, last_contacted_at, do_not_contact, archived, text_sync, created_at, updated_at";
+const CONTACT_COLUMNS = "id, first_name, last_name, company, email, phone, other_emails, other_phones, address_line1, city, state, zip, birthday, home_anniversary, relationship, source, about, touch_every_days, last_contacted_at, do_not_contact, archived, text_sync, household_id, created_at, updated_at";
 // What the Mac app may change on a contact, and how each value is cleaned. Anything else in `changes` is ignored.
 const EDITABLE = {
   first_name: (v) => String(v ?? "").trim().slice(0, 80),
@@ -117,7 +126,7 @@ const EDITABLE = {
   do_not_contact: (v) => (typeof v === "boolean" ? v : undefined),
 };
 
-const DEAL_COLUMNS = "id, owner_id, name, email, phone, stage, side, property_address, price, commission, contract_date, inspection_date, inspection_period_end, trr_received_date, trr_days, inspection_time, appraisal_date, closing_date, closing_time, is_cash, financing_type, compliance_status, earnest_money, earnest_money_delivered, earnest_money_delivered_at, seller_concessions, updated_at, contact_id";
+const DEAL_COLUMNS = "id, owner_id, name, email, phone, stage, side, property_address, price, commission, contract_date, inspection_date, inspection_period_end, trr_received_date, trr_days, inspection_time, appraisal_date, closing_date, closing_time, is_cash, financing_type, compliance_status, earnest_money, earnest_money_delivered, earnest_money_delivered_at, seller_concessions, updated_at, contact_id, tc_only";
 const DEAL_PARTY_COLUMNS = "client2_name, client2_email, other_agent, other_agent_email, other_agent_company, other_agent_phone, other_agent2, other_agent2_email, other_agent2_company, other_agent2_phone, other_agent_tc_name, other_agent_tc_email, title_company, title_company_email, title_phone, title_address, title_processor_name, title_processor_email, escrow_officer, escrow_officer_email, lender, lender_email, lender_phone, loan_processor_name, loan_processor_email, other_party_name";
 // What may be edited on a deal, and how each value is cleaned (null = clear it). Anything else in `changes` is ignored.
 const DEAL_TEXT = ["email", "phone", "property_address", "financing_type", "client2_name", "client2_email", "other_party_name", "other_agent", "other_agent_email", "other_agent_phone", "other_agent_company",
@@ -363,7 +372,7 @@ export default async function handler(req, res) {
         if (since && !Number.isNaN(Date.parse(since))) q = q.gte("updated_at", new Date(since).toISOString());
         return q;
       };
-      const [rows, ids, tags, links, tasks, cards, lists] = await Promise.all([
+      const [rows, ids, tags, links, tasks, cards, lists, households] = await Promise.all([
         readAll(changed),
         readAll(() => admin.from("contacts").select("id").eq("owner_id", owner).order("id")),
         admin.from("contact_tags").select("id, name, color").eq("owner_id", owner).order("name"),
@@ -371,13 +380,14 @@ export default async function handler(req, res) {
         readAll(() => admin.from("agent_tasks").select("contact_id, due_date").eq("owner_id", owner).eq("done", false).not("contact_id", "is", null).order("id")),
         readAll(() => admin.from("people").select("contact_id, stage_group").eq("owner_id", owner).eq("archived", false).not("contact_id", "is", null).order("id")),
         admin.from("contact_smart_lists").select("id, name, filters, position").eq("owner_id", owner).order("position").order("created_at"),
+        admin.from("contact_households").select("id, name").eq("owner_id", owner),
       ]);
       const next = new Map();
       for (const t of tasks) {
         const d = t.due_date || "";
         if (!next.has(t.contact_id) || (d && (!next.get(t.contact_id) || d < next.get(t.contact_id)))) next.set(t.contact_id, d);
       }
-      return res.status(200).json({ now, contacts: rows, ids: ids.map((r) => r.id), tags: tags.data || [], links, followups: [...next].map(([contact_id, due]) => ({ contact_id, due })), boards: cards.map((c) => ({ contact_id: c.contact_id, stage_group: c.stage_group })), lists: lists.data || [] });
+      return res.status(200).json({ now, contacts: rows, ids: ids.map((r) => r.id), tags: tags.data || [], links, followups: [...next].map(([contact_id, due]) => ({ contact_id, due })), boards: cards.map((c) => ({ contact_id: c.contact_id, stage_group: c.stage_group })), lists: lists.data || [], households: households.data || [] });
     }
 
     if (req.method === "GET" && a === "tasks") {
@@ -554,21 +564,66 @@ export default async function handler(req, res) {
     if (req.method === "GET" && a === "history") {
       const id = String(req.query?.contact_id || "");
       if (!UUID.test(id)) return bad(res, "Missing contact.");
-      const { data: contact } = await admin.from("contacts").select("id").eq("id", id).eq("owner_id", owner).maybeSingle();
+      const { data: contact } = await admin.from("contacts").select("id, household_id").eq("id", id).eq("owner_id", owner).maybeSingle();
       if (!contact) return bad(res, "Contact not found.", 404);
-      const { data: cards } = await admin.from("people").select("id").eq("owner_id", owner).eq("contact_id", id);
+      // A household shares one history: everyone's entries, each marked with whose it is (`who` is empty for this contact's own).
+      const { data: kin } = contact.household_id ? await admin.from("contacts").select("id, first_name, company").eq("owner_id", owner).eq("household_id", contact.household_id) : { data: [{ id }] };
+      const ids = (kin?.length ? kin : [{ id }]).map((m) => m.id);
+      const firstOf = new Map((kin || []).map((m) => [m.id, m.first_name || m.company || "Someone"]));
+      const whose = (cid) => (cid && cid !== id ? firstOf.get(cid) || "" : "");
+      const { data: cards } = await admin.from("people").select("id, contact_id").eq("owner_id", owner).in("contact_id", ids);
       const cardIds = (cards || []).map((c) => c.id);
+      const cardOwner = new Map((cards || []).map((c) => [c.id, c.contact_id]));
       const [notes, msgs, cardNotes] = await Promise.all([
-        admin.from("contact_notes").select("id, kind, body, occurred_at").eq("contact_id", id).eq("owner_id", owner).order("occurred_at", { ascending: false }).limit(200),
-        admin.from("contact_messages").select("id, kind, direction, body, duration_seconds, occurred_at").eq("contact_id", id).eq("owner_id", owner).order("occurred_at", { ascending: false }).limit(300),
-        cardIds.length ? admin.from("people_notes").select("id, body, created_at").in("person_id", cardIds).order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
+        admin.from("contact_notes").select("id, contact_id, kind, body, occurred_at").in("contact_id", ids).eq("owner_id", owner).order("occurred_at", { ascending: false }).limit(200),
+        admin.from("contact_messages").select("id, contact_id, kind, direction, body, duration_seconds, occurred_at").in("contact_id", ids).eq("owner_id", owner).order("occurred_at", { ascending: false }).limit(300),
+        cardIds.length ? admin.from("people_notes").select("id, person_id, body, created_at").in("person_id", cardIds).order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
       ]);
       const items = [
-        ...(msgs.data || []).map((m) => ({ id: `m${m.id}`, kind: m.kind === "call" ? "synced_call" : "synced_text", direction: m.direction, seconds: m.duration_seconds, body: m.body, at: m.occurred_at })),
-        ...(notes.data || []).map((n) => ({ id: `c${n.id}`, kind: n.kind, direction: null, seconds: null, body: n.body, at: n.occurred_at })),
-        ...(cardNotes.data || []).map((n) => ({ id: `p${n.id}`, kind: "card", direction: null, seconds: null, body: n.body, at: n.created_at })),
+        ...(msgs.data || []).map((m) => ({ id: `m${m.id}`, kind: m.kind === "call" ? "synced_call" : "synced_text", direction: m.direction, seconds: m.duration_seconds, body: m.body, at: m.occurred_at, who: whose(m.contact_id) })),
+        ...(notes.data || []).map((n) => ({ id: `c${n.id}`, kind: n.kind, direction: null, seconds: null, body: n.body, at: n.occurred_at, who: whose(n.contact_id) })),
+        ...(cardNotes.data || []).map((n) => ({ id: `p${n.id}`, kind: "card", direction: null, seconds: null, body: n.body, at: n.created_at, who: whose(cardOwner.get(n.person_id)) })),
       ].sort((x, y) => y.at.localeCompare(x.at));
       return res.status(200).json({ items });
+    }
+
+    if (req.method === "GET" && a === "reviews") {
+      const only = String(req.query?.contact_id || "");
+      const [{ data: prof }, { data: site }] = await Promise.all([
+        admin.from("profiles").select("full_name, review_url, review_message").eq("id", owner).maybeSingle(),
+        admin.from("agent_sites").select("id").eq("agent_id", owner).maybeSingle(),
+      ]);
+      let q = admin.from("contact_reviews").select("id, contact_id, person_id, status, asked_at, received_at, rating, body, reviewer, testimonial_id, created_at").eq("owner_id", owner).order("created_at", { ascending: false }).limit(200);
+      if (UUID.test(only)) q = q.eq("contact_id", only);
+      const { data: rows } = await q;
+      const list = rows || [];
+      const contactIds = [...new Set(list.map((r) => r.contact_id))];
+      const personIds = list.map((r) => r.person_id).filter(Boolean);
+      const [{ data: cs }, { data: ps }] = await Promise.all([
+        contactIds.length ? admin.from("contacts").select("id, first_name, last_name, company, email, phone, do_not_contact").eq("owner_id", owner).in("id", contactIds) : { data: [] },
+        personIds.length ? admin.from("people").select("id, property_address, closing_date").eq("owner_id", owner).in("id", personIds) : { data: [] },
+      ]);
+      const byContact = new Map((cs || []).map((c) => [c.id, c]));
+      const byPerson = new Map((ps || []).map((p) => [p.id, p]));
+      const link = prof?.review_url || "";
+      return res.status(200).json({
+        link_set: Boolean(link),
+        has_site: Boolean(site),
+        items: list.map((r) => {
+          const c = byContact.get(r.contact_id) || {};
+          const d = byPerson.get(r.person_id) || {};
+          return {
+            ...r,
+            name: fullName(c),
+            phone: c.phone || "",
+            email: c.email || "",
+            do_not_contact: Boolean(c.do_not_contact),
+            property_address: d.property_address || "",
+            closing_date: d.closing_date || null,
+            message: link && !c.do_not_contact ? reviewMessage({ template: prof?.review_message, contact: c, agent: prof, link }) : "",
+          };
+        }),
+      });
     }
 
     if (req.method !== "POST") return bad(res, "Not found.", 404);
@@ -1448,6 +1503,12 @@ export default async function handler(req, res) {
           changes[k] = ch[k] || null;
         }
         if ("is_cash" in ch) { if (typeof ch.is_cash !== "boolean") return fail("Cash purchase must be yes or no."); changes.is_cash = ch.is_cash; }
+        // "I'm only coordinating this deal (the client isn't mine)": only the deal's own agent sets it. Closing such a deal sets no home anniversary and asks for no review.
+        if ("tc_only" in ch) {
+          if (typeof ch.tc_only !== "boolean") return fail("Coordinating only must be yes or no.");
+          if (deal.owner_id !== owner) return fail("Only the deal's agent can change that.");
+          changes.tc_only = ch.tc_only;
+        }
         if ("earnest_money_delivered" in ch) {
           if (typeof ch.earnest_money_delivered !== "boolean") return fail("Earnest money delivered must be yes or no.");
           changes.earnest_money_delivered = ch.earnest_money_delivered;
@@ -1471,6 +1532,8 @@ export default async function handler(req, res) {
         }
         if (!Object.keys(changes).length && !column) return fail("Nothing to change.");
         if (Object.keys(changes).length) {
+          // This server writes with the service key, so the database is told who is acting: the closing triggers skip a deal a coordinator moved.
+          changes.touched_by = owner;
           const { error } = await admin.from("people").update(changes).eq("id", deal.id);
           if (error) return bad(res, "Couldn't save it.", 500);
         }
@@ -1684,6 +1747,80 @@ export default async function handler(req, res) {
       const { error } = await admin.from("contact_tag_links").upsert({ contact_id: contact.id, tag_id: tag.id, owner_id: owner }, { onConflict: "contact_id,tag_id", ignoreDuplicates: true });
       if (error) return bad(res, "Couldn't save it.", 500);
       return res.status(200).json({ ok: true, tag });
+    }
+
+    // ---- households
+    if (a === "household_link" || a === "household_leave" || a === "household_rename") {
+      try {
+        if (a === "household_rename") {
+          const hid = String(body.household_id || "");
+          if (!UUID.test(hid)) return bad(res, "Missing household.");
+          const name = String(body.name ?? "").trim().slice(0, 80);
+          const { error } = await admin.from("contact_households").update({ name }).eq("id", hid).eq("owner_id", owner);
+          return error ? bad(res, "Couldn't save it.", 500) : res.status(200).json({ ok: true });
+        }
+        if (!UUID.test(String(body.contact_id || ""))) return bad(res, "Pick a contact.");
+        if (a === "household_leave") {
+          await leaveHousehold(admin, owner, body.contact_id);
+          return res.status(200).json({ ok: true });
+        }
+        if (!UUID.test(String(body.other_id || ""))) return bad(res, "Pick the other person.");
+        const household_id = await linkHousehold(admin, owner, body.contact_id, body.other_id);
+        return res.status(200).json({ ok: true, household_id });
+      } catch (err) {
+        if (err instanceof HouseholdError) return bad(res, err.message);
+        throw err;
+      }
+    }
+
+    // ---- review requests
+    if (a === "review_add" || a === "review_update" || a === "review_record" || a === "review_website") {
+      const mine = async (reviewId) => {
+        if (!UUID.test(String(reviewId || ""))) return null;
+        const { data } = await admin.from("contact_reviews").select("*").eq("id", reviewId).eq("owner_id", owner).maybeSingle();
+        return data || null;
+      };
+      const note = (contact_id, text) => admin.from("contact_notes").insert({ contact_id, owner_id: owner, kind: "other", body: text });
+      if (a === "review_add") {
+        const contact = await ownsContact(body.contact_id);
+        if (!contact) return bad(res, "That contact isn't yours.");
+        const { data: dnc } = await admin.from("contacts").select("do_not_contact").eq("id", contact.id).maybeSingle();
+        if (dnc?.do_not_contact) return bad(res, "That contact is marked do not contact.");
+        const person_id = UUID.test(String(body.person_id || "")) ? body.person_id : null;
+        const { data, error } = await admin.from("contact_reviews").insert({ owner_id: owner, contact_id: contact.id, person_id }).select("id").single();
+        if (error) return bad(res, error.code === "23505" ? "That deal is already on the review list." : "Couldn't save it.", error.code === "23505" ? 409 : 500);
+        return res.status(200).json({ ok: true, id: data.id });
+      }
+      const rev = await mine(body.review_id);
+      if (!rev) return bad(res, "That review request isn't yours.", 404);
+      if (a === "review_update") {
+        if (!["asked", "skipped", "to_ask"].includes(body.status)) return bad(res, "Choose asked, skipped or to ask.");
+        if (rev.status === "received") return bad(res, "That one already got a review.");
+        const { error } = await admin.from("contact_reviews").update({ status: body.status, ...(body.status === "asked" ? { asked_at: new Date().toISOString() } : {}) }).eq("id", rev.id);
+        if (error) return bad(res, "Couldn't save it.", 500);
+        if (body.status === "asked") await note(rev.contact_id, "Asked for a Google review.");
+        return res.status(200).json({ ok: true });
+      }
+      if (a === "review_record") {
+        const rating = Number(body.rating);
+        if (!Number.isInteger(rating) || rating < 1 || rating > 5) return bad(res, "Choose 1 to 5 stars.");
+        const { data: c } = await admin.from("contacts").select("first_name, last_name, company").eq("id", rev.contact_id).maybeSingle();
+        const reviewer = String(body.reviewer || "").trim().slice(0, 120) || bylineOf(fullName(c || {}));
+        const { error } = await admin.from("contact_reviews").update({ status: "received", received_at: new Date().toISOString(), rating, body: String(body.body || "").trim().slice(0, 3000), reviewer }).eq("id", rev.id);
+        if (error) return bad(res, "Couldn't save it.", 500);
+        await note(rev.contact_id, "Left a review.");
+        return res.status(200).json({ ok: true });
+      }
+      // review_website
+      if (rev.status !== "received" || !rev.body) return bad(res, "Only a review that came in with its words can go on the website.");
+      if (rev.testimonial_id) return bad(res, "That review is already on the website.");
+      const { data: site } = await admin.from("agent_sites").select("id").eq("agent_id", owner).maybeSingle();
+      if (!site) return bad(res, "You don't have a website set up yet.");
+      const { data: c } = await admin.from("contacts").select("first_name, last_name, company").eq("id", rev.contact_id).maybeSingle();
+      const { data: t, error } = await admin.from("agent_site_testimonials").insert({ agent_site_id: site.id, quote: testimonialHtml(rev.body), author: rev.reviewer || bylineOf(fullName(c || {})) || "A client", sort_order: 1000 }).select("id").single();
+      if (error) return bad(res, "Couldn't save it.", 500);
+      await admin.from("contact_reviews").update({ testimonial_id: t.id }).eq("id", rev.id);
+      return res.status(200).json({ ok: true });
     }
 
     return bad(res, "Not found.", 404);

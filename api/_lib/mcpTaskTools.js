@@ -1,7 +1,8 @@
 // AI connection tools for the agent's to-do list and Contacts (scope write_tasks to change, read to look). Same rules as the people tools
 // (mcpWriteTools.js): runs as the agent through row-level security, validated, logged, rate limited, nothing deleted, nothing sent.
 //   tasks:     add_task, update_task, complete_task, reopen_task      (the to-do list on the dashboard home page)
-//   contacts:  find_contact, get_contact (read); add_contact, update_contact, add_contact_note, tag_contact, archive_contact, restore_contact
+//   contacts:  find_contact, get_contact (read); add_contact, update_contact, add_contact_note, tag_contact, archive_contact, restore_contact,
+//              link_household, leave_household (a couple or family linked as one relationship, sharing one history)
 import * as people from "./bots/people.js";
 import { HttpError, bad, dateKey, isUuid, number, oneOf, text } from "./bots/util.js";
 import { WRITES, bool, change, ctxFor, dayText, int, obj, plusDays, str, todayKey } from "./mcpWriteTools.js";
@@ -57,16 +58,16 @@ async function reopenTask(sb, userId, a) {
 
 // -------------------------------------------------------------------------------------------------- contacts
 
-async function contactsOn(ctx) {
+export async function contactsOn(ctx) {
   const { data } = await ctx.admin.from("profiles").select("people_enabled").eq("id", ctx.ownerId).maybeSingle();
   if (!data?.people_enabled) throw new HttpError(403, "The People module (which holds Contacts) isn't turned on for this account.");
 }
-const cname = (c) => [c.first_name, c.last_name].filter(Boolean).join(" ") || c.company || "(no name)";
+export const cname = (c) => [c.first_name, c.last_name].filter(Boolean).join(" ") || c.company || "(no name)";
 const rel = (r) => String(r || "").replace(/_/g, " ");
 const contactLine = (c) =>
   `${cname(c)}${c.company && (c.first_name || c.last_name) ? ` (${c.company})` : ""} | ${rel(c.relationship)}${c.email ? ` | ${c.email}` : ""}${c.phone ? ` | ${c.phone}` : ""}${c.archived ? " | archived" : ""} | id ${c.id}`;
 
-async function loadContact(ctx, contactId) {
+export async function loadContact(ctx, contactId) {
   if (!isUuid(contactId)) throw bad("That isn't a valid contact id. Use find_contact to get one.");
   const { data } = await ctx.client.from("contacts").select("*").eq("id", contactId).eq("owner_id", ctx.ownerId).maybeSingle();
   if (!data) throw new HttpError(404, "No contact with that id in your Contacts.");
@@ -117,11 +118,13 @@ async function getContact(sb, userId, a) {
   const ctx = ctxFor(sb, userId, "AI connection");
   await contactsOn(ctx);
   const c = await loadContact(ctx, a.id);
-  const [{ data: links }, { data: notes }, { data: tasks }, { data: cards }] = await Promise.all([
+  const [{ data: links }, { data: notes }, { data: tasks }, { data: cards }, { data: reviews }, { data: family }] = await Promise.all([
     sb.from("contact_tag_links").select("tag:contact_tags(name)").eq("contact_id", c.id),
     sb.from("contact_notes").select("kind, body, occurred_at").eq("contact_id", c.id).order("occurred_at", { ascending: false }).limit(8),
     sb.from("agent_tasks").select("id, title, due_date").eq("contact_id", c.id).eq("done", false).order("due_date", { ascending: true, nullsFirst: false }).limit(10),
     sb.from("people").select("id, name, stage_group, stage").eq("contact_id", c.id).eq("archived", false),
+    sb.from("contact_reviews").select("id, status, rating, asked_at, received_at").eq("contact_id", c.id).order("created_at", { ascending: false }).limit(3),
+    c.household_id ? sb.from("contacts").select("id, first_name, last_name, company, relationship").eq("household_id", c.household_id).neq("id", c.id) : Promise.resolve({ data: [] }),
   ]);
   const lines = [contactLine(c)];
   const addr = [c.address_line1, c.city, [c.state, c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
@@ -132,11 +135,35 @@ async function getContact(sb, userId, a) {
   lines.push(`Keep in touch: ${c.touch_every_days ? `every ${c.touch_every_days} days` : "no reminder"}${c.last_contacted_at ? `; last contacted ${c.last_contacted_at.slice(0, 10)}` : "; never contacted"}${c.do_not_contact ? "; DO NOT CONTACT" : ""}`);
   const tagNames = (links || []).map((l) => l.tag?.name).filter(Boolean);
   if (tagNames.length) lines.push(`Tags: ${tagNames.join(", ")}`);
+  if (family?.length) lines.push(`Household (shares one history; being in touch with one counts for all): ${family.map((m) => `${cname(m)} (id ${m.id})`).join("; ")}`);
   if (c.about) lines.push(`About: ${c.about}`);
+  if (reviews?.length) lines.push(`Reviews: ${reviews.map((v) => `${v.status.replace("_", " ")}${v.rating ? ` (${v.rating} stars)` : ""} [review id ${v.id}]`).join("; ")}`);
   if (cards?.length) lines.push(`On a board: ${cards.map((p) => `${p.name} (${p.stage_group} › ${p.stage}, person id ${p.id})`).join("; ")}`);
   if (tasks?.length) lines.push(`Open follow-ups:\n${tasks.map((t) => `- ${t.title}${t.due_date ? ` (due ${t.due_date})` : ""} [task id ${t.id}]`).join("\n")}`);
   if (notes?.length) lines.push(`Recent activity:\n${notes.map((n) => `- ${n.occurred_at.slice(0, 10)} ${n.kind}: ${n.body.slice(0, 300)}`).join("\n")}`);
   return lines.join("\n");
+}
+
+// Households: two contacts linked as one relationship. Each stays their own contact; the dashboard shows their history together.
+async function linkHousehold(sb, userId, a) {
+  return change("link_household", sb, userId, async (ctx) => {
+    await contactsOn(ctx);
+    const one = await loadContact(ctx, a.contact_id);
+    const two = await loadContact(ctx, a.other_contact_id);
+    const { error } = await sb.rpc("link_household", { p_a: one.id, p_b: two.id });
+    if (error) throw new HttpError(error.message.includes("Pick two") ? 400 : 500, error.message);
+    return { text: `${cname(one)} and ${cname(two)} are now in one household. Their history shows together, and being in touch with one counts for both.`, audit: `contacts ${one.id} and ${two.id} linked` };
+  });
+}
+async function leaveHousehold(sb, userId, a) {
+  return change("leave_household", sb, userId, async (ctx) => {
+    await contactsOn(ctx);
+    const c = await loadContact(ctx, a.contact_id);
+    if (!c.household_id) throw bad(`${cname(c)} isn't in a household.`);
+    const { error } = await sb.rpc("leave_household", { p_contact: c.id });
+    if (error) throw new HttpError(500, error.message);
+    return { text: `${cname(c)} is out of their household. A household with one person left is dissolved.`, audit: `contact ${c.id} left household` };
+  });
 }
 
 async function addContact(sb, userId, a) {
@@ -288,6 +315,16 @@ export const TASK_TOOLS = [
     name: "tag_contact", title: "Tag a contact", scope: "write_tasks", annotations: WRITES, run: tagContact,
     description: "Add and/or remove tags on a contact. New tag names are created.",
     inputSchema: obj({ id: str("Contact id from find_contact"), add: { type: "array", items: { type: "string" } }, remove: { type: "array", items: { type: "string" } } }, ["id"]),
+  },
+  {
+    name: "link_household", title: "Link two contacts as a household", scope: "write_tasks", annotations: WRITES, run: linkHousehold,
+    description: "Put two contacts (a couple or family) in one household. Each keeps their own details; the dashboard then shows their calls, texts and notes together and being in touch with one counts for both. If either already has a household, the other joins it. Check with the agent first.",
+    inputSchema: obj({ contact_id: str("One contact id from find_contact"), other_contact_id: str("The other contact id") }, ["contact_id", "other_contact_id"]),
+  },
+  {
+    name: "leave_household", title: "Take a contact out of their household", scope: "write_tasks", annotations: WRITES, run: leaveHousehold,
+    description: "Remove one contact from their household. If only one person is left, the household is dissolved.",
+    inputSchema: obj({ contact_id: str("Contact id from find_contact") }, ["contact_id"]),
   },
   {
     name: "archive_contact", title: "Archive a contact", scope: "write_tasks", annotations: WRITES, run: (sb, u, a) => setArchived("archive_contact", sb, u, a, true),

@@ -107,6 +107,11 @@ function readFields(body) {
     if (typeof body.is_cash !== "boolean") throw bad("is_cash must be true or false.");
     set("is_cash", body.is_cash);
   }
+  // A deal the agent is only coordinating (the client isn't theirs): closing it sets no home anniversary and asks for no review.
+  if (body.tc_only !== undefined) {
+    if (typeof body.tc_only !== "boolean") throw bad("tc_only must be true or false.");
+    set("tc_only", body.tc_only);
+  }
   const clock = timeKey(body, "inspection_time");
   set("inspection_time", clock === "" ? null : clock);
   const closeClock = timeKey(body, "closing_time");
