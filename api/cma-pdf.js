@@ -11,6 +11,8 @@ import { picture } from "./_lib/guideFile.js";
 import { brandFromOrg } from "../src/lib/brand.js";
 import { subjectAddress } from "../src/lib/cma.js";
 import { cleanPresentation } from "../src/lib/presentation.js";
+import { GUIDE_THEME_KEYS } from "../src/lib/guides.js";
+import { emailBrand } from "./_lib/visitors.js";
 
 const TOKEN = /^cm[0-9a-f]{64}$/;
 const AGENT = "full_name, title, license, phone, email, photo_url";
@@ -41,6 +43,13 @@ export function cleanCma(raw) {
   };
 }
 
+/** The PDF's colors: the look picked for this CMA, or (the default, "Match my website") the agent's own website theme, or the classic dark-and-red. */
+async function colorsFor(admin, ownerId, theme) {
+  if (GUIDE_THEME_KEYS.includes(theme)) return emailBrand(theme, "", {});
+  const { data: site } = ownerId ? await admin.from("agent_sites").select("theme, accent_color").eq("agent_id", ownerId).maybeSingle() : { data: null };
+  return emailBrand(site?.theme || "classic", site?.accent_color || "", {});
+}
+
 export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("X-Robots-Tag", "noindex, nofollow");
@@ -58,15 +67,17 @@ export default async function handler(req, res) {
   let cma;
   let agent;
   let orgRow;
+  let ownerId = "";
   let wantPresentation = false;
   let forName = "";
   if (req.method === "GET") {
     const token = String(req.query?.token || "");
     if (!TOKEN.test(token)) return res.status(404).json({ error: "This link isn't valid anymore." });
     const hash = crypto.createHash("sha256").update(token).digest("hex");
-    const { data } = await admin.from("cmas").select("owner_id, org_id, title, subject, comps, price_low, price_high, suggested_price, notes, net_sheet, updated_at").eq("share_hash", hash).maybeSingle();
+    const { data } = await admin.from("cmas").select("owner_id, org_id, title, subject, comps, price_low, price_high, suggested_price, notes, net_sheet, presentation, updated_at").eq("share_hash", hash).maybeSingle();
     if (!data) return res.status(404).json({ error: "This link isn't valid anymore." });
     cma = cleanCma({ ...data, prepared: data.updated_at });
+    ownerId = data.owner_id;
     const [a, o] = await Promise.all([admin.from("profiles").select(AGENT).eq("id", data.owner_id).maybeSingle(), admin.from("organizations").select(ORG).eq("id", data.org_id).maybeSingle()]);
     agent = a.data;
     orgRow = o.data;
@@ -83,6 +94,7 @@ export default async function handler(req, res) {
     }
     if (!body?.cma) return res.status(400).json({ error: "Send the CMA to turn into a PDF." });
     cma = cleanCma(body.cma);
+    ownerId = auth.user.id;
     wantPresentation = body.presentation === true;
     forName = text(body.for_name, 120);
     const { data: me } = await auth.supabase.from("profiles").select(`${AGENT}, org_id`).eq("id", auth.user.id).maybeSingle();
@@ -105,7 +117,7 @@ export default async function handler(req, res) {
     const pdf = await buildCmaPdf({
       cma,
       agent: agent ? { name: agent.full_name || "", title: agent.title || "", license: agent.license || "", phone: agent.phone || "", email: agent.email || "" } : null,
-      brand: { org: org.name, address, disclaimer: org.disclaimer },
+      brand: { org: org.name, address, disclaimer: org.disclaimer, colors: await colorsFor(admin, ownerId, cma.presentation?.theme) },
       images: { logo, agentPhoto },
       presentation,
       forName,

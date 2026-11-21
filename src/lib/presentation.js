@@ -1,6 +1,7 @@
 // A listing presentation: the words around a CMA for a listing appointment (a note to the sellers, about the agent, the marketing plan). Pure, shared by the
 // CMA editor and the PDF maker (api/_lib/cmaPdf.js). Stored on the CMA as `presentation`:
-//   { intro, about, include_net, plan: [{ id, title, detail, on }] }
+//   { theme, intro, about, include_net, plan: [{ id, title, detail, on }] }
+// `theme` is the look of the PDFs made from this CMA (a key of GUIDE_THEMES in lib/guides.js, or "site" to match the agent's website).
 
 export const MAX_PLAN_ITEMS = 14;
 
@@ -22,6 +23,7 @@ const text = (v, max) => String(v ?? "").slice(0, max);
 export function withDefaults(p, { about = "" } = {}) {
   const o = p && typeof p === "object" ? p : {};
   return {
+    theme: text(o.theme || "site", 20),
     intro: text(o.intro, 1500),
     about: o.about == null ? text(about, 1500) : text(o.about, 1500),
     include_net: o.include_net !== false,
@@ -33,6 +35,7 @@ export function withDefaults(p, { about = "" } = {}) {
 export function cleanPresentation(p) {
   const s = withDefaults(p);
   return {
+    theme: s.theme,
     intro: s.intro,
     about: s.about,
     include_net: Boolean(s.include_net),

@@ -8,6 +8,7 @@ import { formatPrice } from "../../lib/format";
 import NetSheetPanel from "./NetSheetPanel";
 import CmaListingLink from "./CmaListingLink";
 import PresentationPanel from "./PresentationPanel";
+import { GUIDE_THEMES } from "../../lib/guides";
 import { cleanPresentation, savedAbout, withDefaults as presentationDefaults } from "../../lib/presentation";
 import { cleanNetSheet, hasNetSheet, savedFees, withDefaults } from "../../lib/netSheet";
 import CmaReport from "../public/CmaReport";
@@ -261,6 +262,13 @@ function CmaEditor({ id }) {
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Link to="/dashboard/cmas" className={`text-sm underline ${muted}`}>All CMAs</Link>
         <span className={`ml-auto text-xs ${muted}`} aria-live="polite">{status}</span>
+        <label className="flex items-center gap-2 text-xs">
+          <span className={muted}>PDF look</span>
+          <span className="inline-block h-4 w-4 rounded-full border border-black/15 dark:border-white/20" style={{ background: GUIDE_THEMES.find((t) => t.key === (doc.presentation.theme || "site"))?.dark || "linear-gradient(135deg,#1c1a17 50%,#D8091B 50%)" }} aria-hidden="true" />
+          <select value={doc.presentation.theme || "site"} onChange={(e) => change((d) => ({ ...d, presentation: { ...d.presentation, theme: e.target.value } }))} aria-label="Look of the PDFs" className="rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-2 py-1.5 text-xs">
+            {GUIDE_THEMES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
+          </select>
+        </label>
         <button type="button" onClick={() => downloadPdf(false)} disabled={Boolean(pdfBusy)} className={quiet}>{pdfBusy === "plain" ? "Making the PDF…" : "Download PDF"}</button>
         <button type="button" onClick={() => setPreview((v) => !v)} className={quiet}>{preview ? "Back to editing" : "Preview client page"}</button>
       </div>

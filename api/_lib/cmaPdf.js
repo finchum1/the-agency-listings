@@ -59,7 +59,7 @@ function Stat({ label, value, hint }) {
   );
 }
 
-function NetSheet({ rows }) {
+function NetSheet({ rows, colors }) {
   const lines = [];
   for (const s of rows) for (const l of s.lines) if (!lines.some((x) => x.key === l.key)) lines.push({ key: l.key, label: l.label });
   const hasPayoff = rows.some((s) => s.payoff);
@@ -79,11 +79,11 @@ function NetSheet({ rows }) {
     row("price", "Sale price", rows.map((s) => formatPrice(s.price)), {}, { fontFamily: "Garamond", fontWeight: 600, fontSize: 12 }),
     ...lines.map((l) => row(l.key, l.label, rows.map((s) => { const line = s.lines.find((x) => x.key === l.key); return line ? money(-line.amount) : "—"; }), {}, { color: "#3b3830" })),
     hasPayoff ? row("payoff", "Loan payoff", rows.map((s) => money(-s.payoff)), {}, { color: "#3b3830" }) : null,
-    row("net", "What you walk away with", rows.map((s) => money(s.net)), { backgroundColor: INK, borderBottomWidth: 0 }, { color: "#FFFFFF", fontFamily: "Garamond", fontWeight: 600, fontSize: 12 }),
+    row("net", "What you walk away with", rows.map((s) => money(s.net)), { backgroundColor: colors.dark, borderBottomWidth: 0 }, { color: colors.onDark, fontFamily: "Garamond", fontWeight: 600, fontSize: 12 }),
   );
 }
 
-function CompRow({ comp }) {
+function CompRow({ comp, colors }) {
   const price = toNumber(comp.price);
   const adj = adjustmentTotal(comp);
   const ppsf = pricePerSqft(comp);
@@ -92,7 +92,7 @@ function CompRow({ comp }) {
   const adjustments = (comp.adjustments || []).filter((a) => toNumber(a.amount));
   return h(
     View,
-    { wrap: false, style: { marginBottom: 8, padding: 10, backgroundColor: PAPER, borderLeftWidth: 2.5, borderLeftColor: ACCENT, borderLeftStyle: "solid" } },
+    { wrap: false, style: { marginBottom: 8, padding: 10, backgroundColor: PAPER, borderLeftWidth: 2.5, borderLeftColor: colors.accent, borderLeftStyle: "solid" } },
     h(
       View,
       { style: { flexDirection: "row", justifyContent: "space-between" } },
@@ -122,6 +122,8 @@ function CompRow({ comp }) {
  * @returns Promise<Buffer>
  */
 export async function buildCmaPdf({ cma, agent, brand, images = {}, presentation = null, forName = "" }) {
+  const colors = { dark: brand.colors?.dark || INK, onDark: brand.colors?.onDark || onDark, accent: brand.colors?.accent || accent };
+  const { dark, onDark, accent } = colors;
   const m = computeCma(cma);
   const comps = (cma.comps || []).filter((c) => c.include !== false && toNumber(c.price) != null);
   const groups = [["Recently sold", comps.filter((c) => c.status === "sold")], ["Under contract", comps.filter((c) => c.status === "pending")], ["For sale now", comps.filter((c) => c.status === "active")]];
@@ -146,12 +148,12 @@ export async function buildCmaPdf({ cma, agent, brand, images = {}, presentation
 
   const header = h(
     View,
-    { style: { backgroundColor: INK, color: "#FFFFFF", marginHorizontal: -54, marginTop: -48, paddingHorizontal: 54, paddingTop: 34, paddingBottom: 30, marginBottom: 24 } },
+    { style: { backgroundColor: dark, color: onDark, marginHorizontal: -54, marginTop: -48, paddingHorizontal: 54, paddingTop: 34, paddingBottom: 30, marginBottom: 24, borderBottomWidth: 0.5, borderBottomColor: RULE, borderBottomStyle: "solid" } },
     images.logo ? h(Image, { src: { data: images.logo, format: "png" }, style: { height: 34, objectFit: "contain", objectPosition: "left", marginBottom: 22 } }) : brand.org ? h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 16, marginBottom: 22 } }, brand.org) : null,
-    h(Eyebrow, { color: "#B9B3A6" }, "Comparative market analysis"),
-    h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 30, lineHeight: 1.1, marginTop: 6, color: "#FFFFFF" } }, address),
-    factsLine(cma.subject) ? h(Text, { style: { marginTop: 6, fontSize: 10.5, color: "#E4DFD3" } }, factsLine(cma.subject)) : null,
-    h(Text, { style: { marginTop: 3, fontSize: 8.5, color: "#B9B3A6" } }, `Prepared ${day(cma.prepared || new Date().toISOString())}${agent?.name ? ` by ${agent.name}` : ""}`),
+    h(Eyebrow, { color: onDark }, "Comparative market analysis"),
+    h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 30, lineHeight: 1.1, marginTop: 6, color: onDark } }, address),
+    factsLine(cma.subject) ? h(Text, { style: { marginTop: 6, fontSize: 10.5, color: onDark, opacity: 0.8 } }, factsLine(cma.subject)) : null,
+    h(Text, { style: { marginTop: 3, fontSize: 8.5, color: onDark, opacity: 0.7 } }, `Prepared ${day(cma.prepared || new Date().toISOString())}${agent?.name ? ` by ${agent.name}` : ""}`),
   );
 
   const price =
@@ -159,7 +161,7 @@ export async function buildCmaPdf({ cma, agent, brand, images = {}, presentation
       ? h(
           View,
           { wrap: false, style: { borderWidth: 0.5, borderColor: RULE, borderStyle: "solid", padding: 16 } },
-          h(Eyebrow, {}, "Suggested price"),
+          h(Eyebrow, { color: accent }, "Suggested price"),
           h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 38, lineHeight: 1.2, marginTop: 2, marginBottom: 2 } }, formatPrice(m.suggested)),
           m.low != null && m.high != null ? h(Text, { style: { fontSize: 12, color: "#3b3830", marginTop: 2 } }, `Likely range ${formatPrice(m.low)} to ${formatPrice(m.high)}`) : null,
           h(Text, { style: { marginTop: 8, color: MUTED, fontSize: 8.5 } }, `Based on ${m.basisCount} comparable ${basisWord} home${m.basisCount === 1 ? "" : "s"}, each adjusted for how it differs from your home. This is a market opinion from your agent, not an appraisal.`),
@@ -190,16 +192,16 @@ export async function buildCmaPdf({ cma, agent, brand, images = {}, presentation
   const cover = presentation
     ? h(
         Page,
-        { size: "LETTER", style: { backgroundColor: INK, color: "#FFFFFF", padding: 64, fontFamily: "Inter" } },
+        { size: "LETTER", style: { backgroundColor: dark, color: onDark, padding: 64, fontFamily: "Inter" } },
         images.logo ? h(Image, { src: { data: images.logo, format: "png" }, style: { height: 46, objectFit: "contain", objectPosition: "left" } }) : brand.org ? h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 20 } }, brand.org) : null,
         h(
           View,
           { style: { marginTop: 190 } },
-          h(Eyebrow, { color: "#B9B3A6" }, "Listing presentation"),
-          h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 44, lineHeight: 1.1, marginTop: 14, color: "#FFFFFF" } }, address),
-          h(View, { style: { width: 56, height: 3, backgroundColor: ACCENT, marginTop: 20, marginBottom: 18 } }),
-          factsLine(cma.subject) ? h(Text, { style: { fontSize: 13, color: "#E4DFD3" } }, factsLine(cma.subject)) : null,
-          forName ? h(Text, { style: { fontSize: 13, color: "#E4DFD3", marginTop: 4 } }, `Prepared for ${forName}`) : null,
+          h(Eyebrow, { color: onDark }, "Listing presentation"),
+          h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 44, lineHeight: 1.1, marginTop: 14, color: onDark } }, address),
+          h(View, { style: { width: 56, height: 3, backgroundColor: accent, marginTop: 20, marginBottom: 18 } }),
+          factsLine(cma.subject) ? h(Text, { style: { fontSize: 13, color: onDark, opacity: 0.8 } }, factsLine(cma.subject)) : null,
+          forName ? h(Text, { style: { fontSize: 13, color: onDark, opacity: 0.8, marginTop: 4 } }, `Prepared for ${forName}`) : null,
         ),
         agent?.name
           ? h(
@@ -209,9 +211,9 @@ export async function buildCmaPdf({ cma, agent, brand, images = {}, presentation
               h(
                 View,
                 { style: { flex: 1 } },
-                h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 18, lineHeight: 1.2, marginBottom: 3, color: "#FFFFFF" } }, agent.name),
-                h(Text, { style: { fontSize: 9.5, color: "#E4DFD3" } }, [agent.title, brand.org].filter(Boolean).join("  ·  ")),
-                h(Text, { style: { fontSize: 9.5, color: "#E4DFD3", marginTop: 2 } }, [agent.phone, agent.email].filter(Boolean).join("   ·   ")),
+                h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 18, lineHeight: 1.2, marginBottom: 3, color: onDark } }, agent.name),
+                h(Text, { style: { fontSize: 9.5, color: onDark, opacity: 0.8 } }, [agent.title, brand.org].filter(Boolean).join("  ·  ")),
+                h(Text, { style: { fontSize: 9.5, color: onDark, opacity: 0.8, marginTop: 2 } }, [agent.phone, agent.email].filter(Boolean).join("   ·   ")),
               ),
             )
           : null,
@@ -232,7 +234,7 @@ export async function buildCmaPdf({ cma, agent, brand, images = {}, presentation
                   h(
                     View,
                     { key: it.id || i, wrap: false, style: { flexDirection: "row", marginBottom: 9 } },
-                    h(View, { style: { width: 16, height: 16, borderRadius: 8, backgroundColor: ACCENT, alignItems: "center", justifyContent: "center", marginRight: 11, marginTop: 1 } }, h(Text, { style: { color: "#FFFFFF", fontSize: 8, lineHeight: 1, fontFamily: "Inter", fontWeight: 600, textAlign: "center" } }, String(i + 1))),
+                    h(View, { style: { width: 16, height: 16, borderRadius: 8, backgroundColor: accent, alignItems: "center", justifyContent: "center", marginRight: 11, marginTop: 1 } }, h(Text, { style: { color: "#FFFFFF", fontSize: 8, lineHeight: 1, fontFamily: "Inter", fontWeight: 600, textAlign: "center" } }, String(i + 1))),
                     h(View, { style: { flex: 1 } }, h(Text, { style: { fontFamily: "Garamond", fontWeight: 600, fontSize: 13.5, lineHeight: 1.2, marginBottom: 1 } }, it.title), it.detail ? h(Text, { style: { color: "#3b3830" } }, it.detail) : null),
                   ),
                 ),
@@ -248,7 +250,7 @@ export async function buildCmaPdf({ cma, agent, brand, images = {}, presentation
     header,
     h(Section, { title: "Price opinion", first: true }, price),
     stats.length ? h(View, { style: { marginTop: 12, flexDirection: "row", justifyContent: "space-between" } }, ...stats.map((s, i) => h(Stat, { key: i, ...s }))) : null,
-    net.length ? h(Section, { title: "What you'd walk away with", keep: true }, h(NetSheet, { rows: net }), h(Text, { style: { marginTop: 5, fontSize: 7.5, color: MUTED } }, "An estimate from the numbers above, not a closing statement. Actual costs depend on your contract, your loan payoff and your title company.")) : null,
+    net.length ? h(Section, { title: "What you'd walk away with", keep: true }, h(NetSheet, { rows: net, colors }), h(Text, { style: { marginTop: 5, fontSize: 7.5, color: MUTED } }, "An estimate from the numbers above, not a closing statement. Actual costs depend on your contract, your loan payoff and your title company.")) : null,
     adjusted.length && m.suggested != null
       ? h(
           Section,
@@ -256,11 +258,11 @@ export async function buildCmaPdf({ cma, agent, brand, images = {}, presentation
           ...adjusted.map(({ c, v }, i) =>
             h(View, { key: i, wrap: false, style: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 3, borderBottomWidth: 0.5, borderBottomColor: RULE, borderBottomStyle: "solid" } }, h(Text, { style: { flex: 1 } }, String(c.address || "Address not entered")), h(Text, { style: { width: 90, textAlign: "right" } }, formatPrice(v))),
           ),
-          h(View, { key: "sug", wrap: false, style: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 } }, h(Text, { style: { fontWeight: 600, color: ACCENT } }, "Suggested price"), h(Text, { style: { width: 90, textAlign: "right", fontWeight: 600, color: ACCENT } }, formatPrice(m.suggested))),
+          h(View, { key: "sug", wrap: false, style: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 } }, h(Text, { style: { fontWeight: 600, color: accent } }, "Suggested price"), h(Text, { style: { width: 90, textAlign: "right", fontWeight: 600, color: accent } }, formatPrice(m.suggested))),
           h(Text, { key: "note", style: { marginTop: 2, fontSize: 7.5, color: MUTED } }, "Each price is adjusted to match your home."),
         )
       : null,
-    ...groups.map(([label, list]) => (list.length ? h(Section, { key: label, title: label, count: list.length }, ...list.map((c, i) => h(CompRow, { key: c.id || i, comp: c }))) : null)),
+    ...groups.map(([label, list]) => (list.length ? h(Section, { key: label, title: label, count: list.length }, ...list.map((c, i) => h(CompRow, { key: c.id || i, comp: c, colors }))) : null)),
     cma.notes ? h(Section, { title: `Notes from ${first}` }, ...String(cma.notes).split(/\n+/).map((t) => t.trim()).filter(Boolean).map((t, i) => h(Text, { key: i, style: { color: "#3b3830", lineHeight: 1.45, marginBottom: 4 } }, t))) : null,
     agentCard,
     brand.address ? h(Text, { style: { marginTop: 10, color: MUTED, fontSize: 8.5 } }, brand.address) : null,
