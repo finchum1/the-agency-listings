@@ -3,6 +3,7 @@ const NAMES = {
   "/dashboard": "Home",
   "/dashboard/people/plans": "Plans",
   "/dashboard/marketing/plans": "Plans",
+  "/dashboard/marketing/reviews": "Reviews",
   "/dashboard/deals/checklists": "Deal checklists",
   "/dashboard/deals/emails": "Deal email templates",
   "/dashboard/deals": "Deals",

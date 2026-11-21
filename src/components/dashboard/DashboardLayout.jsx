@@ -61,6 +61,7 @@ const FLYOUTS = {
     items: [
       { to: "/dashboard/marketing", label: "Make something", exact: true },
       { to: "/dashboard/marketing/plans", label: "Plans" },
+      { to: "/dashboard/marketing/reviews", label: "Reviews" },
     ],
   },
   listings: {

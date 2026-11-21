@@ -73,6 +73,7 @@ const PeopleGate = lazyPage(() => import("./components/dashboard/people/PeopleGa
 const ProspectsPage = lazyPage(() => import("./components/dashboard/people/ProspectsPage"));
 const PeopleLayout = lazyPage(() => import("./components/dashboard/people/PeopleLayout"));
 const PlansPage = lazyPage(() => import("./components/dashboard/people/PlansPage"));
+const ReviewsPage = lazyPage(() => import("./components/dashboard/people/ReviewsPage"));
 const PeopleOverview = lazyPage(() => import("./components/dashboard/people/PeopleOverview"));
 const SettingsPage = lazyPage(() => import("./components/dashboard/people/SettingsPage"));
 const BrandSettingsPage = lazyPage(() => import("./components/dashboard/BrandSettingsPage"));
@@ -420,6 +421,9 @@ function AppRoutes() {
         <Route path="marketing/holiday" element={<HolidayPostPage />} />
         <Route path="marketing/plans" element={<PeopleGate />}>
           <Route index element={<PlansPage />} />
+        </Route>
+        <Route path="marketing/reviews" element={<PeopleGate />}>
+          <Route index element={<ReviewsPage />} />
         </Route>
         <Route path="listings/:id/analytics" element={<ListingAnalyticsPage />} />
         <Route path="profile" element={<MyProfilePage />} />
