@@ -750,7 +750,7 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
         </div>
         {!overviewOnly && (
           <div className="flex flex-wrap items-center gap-3">
-            {typeof toolbarLeft === "function" ? toolbarLeft({ ownCount: active.length }) : toolbarLeft}
+            {typeof toolbarLeft === "function" ? toolbarLeft({ ownCount: active.length, people, refresh }) : toolbarLeft}
           </div>
         )}
       </div>

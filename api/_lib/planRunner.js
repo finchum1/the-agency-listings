@@ -32,6 +32,22 @@ function draftAsTask(step, ctx, who, suffix = "") {
   };
 }
 
+// Puts a tag on a contact, making the tag (named as typed, matched without regard to case) if the agent doesn't have it yet.
+async function tagContact(admin, ownerId, contactId, name) {
+  if (!contactId) return "skipped: they aren't in Contacts, so there's nothing to tag";
+  const label = String(name || "").trim();
+  if (!label) return "skipped: no tag name";
+  const { data: tags } = await admin.from("contact_tags").select("id, name").eq("owner_id", ownerId);
+  let tag = (tags || []).find((t) => t.name.toLowerCase() === label.toLowerCase());
+  if (!tag) {
+    const { data, error } = await admin.from("contact_tags").insert({ owner_id: ownerId, name: label }).select("id, name").single();
+    if (error) return `couldn't make the tag: ${error.message}`;
+    tag = data;
+  }
+  const { error } = await admin.from("contact_tag_links").upsert({ contact_id: contactId, tag_id: tag.id, owner_id: ownerId }, { onConflict: "contact_id,tag_id", ignoreDuplicates: true });
+  return error ? `couldn't add the tag: ${error.message}` : `tagged ${tag.name}`;
+}
+
 // One step for a contact that is on a plan without a card: to-dos only (a draft is a to-do with the message inside), no moves.
 async function doContactStep(admin, enrollment, plan, contact, owner, step) {
   const today = centralDay();
@@ -43,7 +59,8 @@ async function doContactStep(admin, enrollment, plan, contact, owner, step) {
   else if (step.type === "draft") {
     row = draftAsTask(step, ctx, who);
     if (!row) return "skipped: the message came out empty";
-  } else if (step.type === "move") return "skipped: a contact without a card isn't on a board";
+  } else if (step.type === "tag") return tagContact(admin, enrollment.owner_id, contact.id, step.tag);
+  else if (step.type === "move") return "skipped: a contact without a card isn't on a board";
   else return `skipped: unknown step type ${step.type}`;
   const { error } = await admin.from("agent_tasks").insert({ owner_id: enrollment.owner_id, title: row.title.slice(0, 300), due_date: today, list: cleanList(plan.name), contact_id: contact.id, ...(row.checklist ? { checklist: row.checklist } : {}) });
   return error ? `couldn't add the to-do: ${error.message}` : `to-do added: ${row.title}`;
@@ -87,6 +104,7 @@ async function doStep(admin, enrollment, plan, person, owner, step) {
     const { error } = await admin.from("people").update({ stage_group: step.group, stage: step.stage }).eq("id", person.id);
     return error ? `couldn't move them: ${error.message}` : `moved to ${step.stage}`;
   }
+  if (step.type === "tag") return tagContact(admin, enrollment.owner_id, person.contact_id, step.tag);
   return `skipped: unknown step type ${step.type}`;
 }
 
@@ -175,6 +193,9 @@ async function runOccasionPlan(admin, plan, owner, today) {
       } else if (step.type === "draft") {
         row = draftAsTask(step, ctx, who, ` for their ${occ.noun}${ahead ? ` (${ctx.occasion_date})` : ""}`);
         if (!row) continue;
+      } else if (step.type === "tag") {
+        await tagContact(admin, plan.owner_id, c.contact_id, step.tag);
+        continue;
       } else continue;
       const { error: err } = await admin.from("agent_tasks").insert({ owner_id: plan.owner_id, title: row.title.slice(0, 300), due_date: today, list: cleanList(plan.name), contact_id: c.contact_id, ...(row.checklist ? { checklist: row.checklist } : {}) });
       if (!err) made++;

@@ -1,11 +1,12 @@
 // Follow-up plans: timed steps counted from the day someone enters a plan. Shared by the plan editor, the person card, the server that runs the steps
 // (api/_lib/planRunner.js) and the AI connection tools. A step creates a to-do (`task`), a DRAFT message for the agent to send (`draft`; nothing is sent),
-// or moves the person to another column (`move`).
+// moves the person to another column (`move`), or puts a tag on their contact (`tag`).
 
 export const STEP_TYPES = [
   { value: "task", label: "To-do for me" },
   { value: "draft", label: "Draft a message" },
   { value: "move", label: "Move to a column" },
+  { value: "tag", label: "Tag the contact" },
 ];
 export const CHANNELS = [
   { value: "text", label: "Text" },
@@ -114,6 +115,7 @@ export function startText(startsWhen) {
 }
 
 export const stepSummary = (step) => {
+  if (step.type === "tag") return `Tag: ${step.tag}`;
   if (step.type === "move") return `Move to ${step.group === "pipeline" ? "Pipeline" : "Leads"} › ${step.stage}`;
   if (step.type === "draft") return `${CHANNELS.find((c) => c.value === step.channel)?.label || "Message"} draft${step.subject ? `: ${step.subject}` : ""}`;
   return step.title || "To-do";
@@ -167,7 +169,12 @@ export function cleanPlan(raw) {
       if (!["lead", "pipeline"].includes(s.group) || !String(s.stage || "").trim()) fail(`Step ${n}: a move needs group ("lead" or "pipeline") and stage.`);
       return { day, type: "move", group: s.group, stage: String(s.stage).trim().slice(0, 60) };
     }
-    return fail(`Step ${n}: type must be task, draft or move.`);
+    if (s.type === "tag") {
+      const tag = String(s.tag || "").trim().slice(0, 40);
+      if (!tag) fail(`Step ${n}: a tag step needs the tag's name.`);
+      return { day, type: "tag", tag };
+    }
+    return fail(`Step ${n}: type must be task, draft, move or tag.`);
   });
   return { name, starts_when, steps };
 }

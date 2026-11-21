@@ -22,7 +22,7 @@ const startFrom = (v, was) => {
   }
   return { type: "manual" };
 };
-const newStep = (type, last) => ({ day: last, type, ...(type === "task" ? { title: "" } : type === "draft" ? { channel: "text", body: "" } : { group: "lead", stage: "" }) });
+const newStep = (type, last) => ({ day: last, type, ...(type === "task" ? { title: "" } : type === "draft" ? { channel: "text", body: "" } : type === "tag" ? { tag: "" } : { group: "lead", stage: "" }) });
 
 // One plan: its name, what starts it, and its steps. Saved only when it passes the same checks the AI tools use (cleanPlan).
 function PlanEditor({ plan, stages, onSave, onCancel }) {
@@ -156,6 +156,7 @@ function PlanEditor({ plan, stages, onSave, onCancel }) {
                 <textarea value={s.body} onChange={(e) => setStep(i, { body: e.target.value })} rows={s.channel === "email" ? 5 : 3} maxLength={2000} placeholder="Hi {first_name}, it's {agent_first_name}…" className={control} aria-label={`Step ${i + 1} message`} />
               </>
             )}
+            {s.type === "tag" && <input value={s.tag || ""} onChange={(e) => setStep(i, { tag: e.target.value })} maxLength={40} placeholder="Tag name, e.g. Past client" className={control} aria-label={`Step ${i + 1} tag`} />}
             {s.type === "move" && (
               <select value={`${s.group}:${s.stage}`} onChange={(e) => setStep(i, { group: e.target.value.split(":")[0], stage: e.target.value.split(":").slice(1).join(":") })} className={control} aria-label={`Step ${i + 1} column`}>
                 <option value="lead:">Choose a column…</option>

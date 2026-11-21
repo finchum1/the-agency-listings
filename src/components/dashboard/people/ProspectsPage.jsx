@@ -5,6 +5,7 @@ import { useProspectContacts } from "../../../hooks/useProspectContacts";
 import { TagChip } from "./contacts/TagParts";
 import PeopleBoard from "./PeopleBoard";
 import ProspectsList from "./ProspectsList";
+import PeopleDuplicatesModal, { countRepeats } from "./PeopleDuplicatesModal";
 
 // A setting remembered in this browser (the view below).
 function useRemembered(key, initial, allowed) {
@@ -45,6 +46,7 @@ export default function ProspectsPage({ group }) {
   const [tagId, setTagId] = useState("");
   const [dueOnly, setDueOnly] = useState(false);
   const [q, setQ] = useState("");
+  const [repeatsOpen, setRepeatsOpen] = useState(false);
   const { byPerson, tags, tagById, reload } = useProspectContacts(group);
 
   const filtered = !!(relationship || tagId || dueOnly || q.trim());
@@ -60,7 +62,9 @@ export default function ProspectsPage({ group }) {
       }
     : undefined;
 
-  const toolbar = ({ ownCount }) => (
+  const toolbar = ({ ownCount, people = [], refresh }) => {
+    const repeats = countRepeats(people);
+    return (
     <>
       <div className={seg} role="group" aria-label="View">
         <button type="button" onClick={() => setView("board")} aria-pressed={view === "board"} className={segBtn(view === "board")}>Board</button>
@@ -92,8 +96,15 @@ export default function ProspectsPage({ group }) {
       <span role="status" className="text-xs text-[#1c1a17]/55 dark:text-[#faf9f7]/55">
         {filtered ? `${ownCount} shown` : `${ownCount} ${ownCount === 1 ? "person" : "people"}`}
       </span>
+      {repeats > 0 && (
+        <button type="button" onClick={() => setRepeatsOpen(true)} className="rounded-full border border-amber-500/50 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold">
+          {repeats} possible repeat{repeats === 1 ? "" : "s"}
+        </button>
+      )}
+      {repeatsOpen && <PeopleDuplicatesModal people={people} onClose={() => setRepeatsOpen(false)} onMerged={async () => { await refresh?.(); reload?.(); }} />}
     </>
-  );
+    );
+  };
 
   const cardExtra = (p) => {
     const t = (byPerson.get(p?.id)?.tagIds || []).map((id) => tagById.get(id)).filter(Boolean);
