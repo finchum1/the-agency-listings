@@ -420,6 +420,7 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                       { label: "Earnest money", value: earnestLine({ earnest_money: fresh.earnest_money, earnest_money_delivered: fresh.earnest_money_delivered }, fresh) },
                       { label: "Seller concessions at closing", value: fresh.seller_concessions == null ? "" : money.format(fresh.seller_concessions) },
                       { label: "Financing", value: fresh.is_cash ? "Cash purchase" : fresh.financing_type },
+                      { label: "Client", value: fresh.tc_only && !deal._foreign ? "Not mine: coordinating only" : "" },
                     ]}
                   />
                   {edit && <p className="text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Dates are on the Overview tab.</p>}
@@ -520,6 +521,24 @@ export default function DealPanel({ deal, agentName, viewer, peek: peekProp, onC
                   />
                   <span>Cash purchase (no appraisal or financing)</span>
                 </label>
+                {!deal._foreign && (
+                  <label className="flex items-start gap-2.5 text-sm sm:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={!!fresh.tc_only}
+                      disabled={!edit}
+                      onChange={(e) => {
+                        setFresh((f) => ({ ...f, tc_only: e.target.checked }));
+                        save({ tc_only: e.target.checked });
+                      }}
+                      className="mt-0.5 h-4 w-4 accent-[#D8091B]"
+                    />
+                    <span>
+                      I'm only coordinating this deal (the client isn't mine)
+                      <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Closing it won't set a home anniversary or change the client's contact.</span>
+                    </span>
+                  </label>
+                )}
                 {!fresh.is_cash && (
                   <div className="sm:col-span-2">
                     <label className={labelClass}>Loan type</label>

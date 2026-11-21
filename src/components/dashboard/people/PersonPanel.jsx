@@ -46,7 +46,7 @@ const TEXT_FIELDS = [
   "client2_name", "client2_email", "other_agent_email", "other_agent2_email", "other_agent_company", "other_agent_phone", "other_agent2_company", "other_agent2_phone", "other_party_name", "title_phone", "title_address", "lender_phone", "financing_type", "other_agent_tc_name", "other_agent_tc_email", "escrow_officer", "escrow_officer_email", "title_processor_name", "title_processor_email", "lender_email", "loan_processor_name", "loan_processor_email",
 ];
 // Earnest money is delivered or not; ticking it also stamps when (see flush).
-const FIELDS = [...TEXT_FIELDS, ...DATE_FIELDS, ...NUMBER_FIELDS, "side", "earnest_money_delivered", "is_cash"];
+const FIELDS = [...TEXT_FIELDS, ...DATE_FIELDS, ...NUMBER_FIELDS, "side", "earnest_money_delivered", "is_cash", "tc_only"];
 
 const openPicker = (e) => {
   try {
@@ -69,6 +69,7 @@ function toForm(person) {
   form.side = person.side || "";
   form.earnest_money_delivered = !!person.earnest_money_delivered;
   form.is_cash = !!person.is_cash;
+  form.tc_only = !!person.tc_only;
   return form;
 }
 
@@ -139,7 +140,7 @@ export default function PersonPanel({
       if (cur[key] === saved[key]) continue;
       if (DATE_FIELDS.includes(key) || key === "side") changes[key] = cur[key] || null;
       else if (NUMBER_FIELDS.includes(key)) changes[key] = cur[key] === "" ? null : Number(cur[key]);
-      else if (key === "is_cash") changes[key] = !!cur[key];
+      else if (key === "is_cash" || key === "tc_only") changes[key] = !!cur[key];
       else if (key === "earnest_money_delivered") {
         changes[key] = !!cur[key];
         changes.earnest_money_delivered_at = cur[key] ? new Date().toISOString() : null;
@@ -308,6 +309,13 @@ export default function PersonPanel({
           <label className="flex items-center gap-2.5 text-sm cursor-pointer @md:col-span-2">
             <input type="checkbox" checked={form.is_cash} onChange={(e) => setField("is_cash", true)({ target: { value: e.target.checked } })} className="h-4 w-4 accent-[#D8091B]" />
             <span>Cash purchase (no appraisal or financing)</span>
+          </label>
+          <label className="flex items-start gap-2.5 text-sm cursor-pointer @md:col-span-2">
+            <input type="checkbox" checked={form.tc_only} onChange={(e) => setField("tc_only", true)({ target: { value: e.target.checked } })} className="mt-0.5 h-4 w-4 accent-[#D8091B]" />
+            <span>
+              I'm only coordinating this deal (the client isn't mine)
+              <span className="block text-xs text-[#1c1a17]/50 dark:text-[#faf9f7]/50">Closing it won't set a home anniversary or change the client's contact.</span>
+            </span>
           </label>
           {!form.is_cash && (
             <div className="@md:col-span-2">
@@ -982,6 +990,7 @@ export default function PersonPanel({
                   { label: "Earnest money", value: earnestLine(form, person) },
                   { label: "Seller concessions at closing", value: money(form.seller_concessions) },
                   { label: "Financing", value: form.is_cash ? "Cash purchase" : form.financing_type },
+                  { label: "Client", value: form.tc_only ? "Not mine: coordinating only" : "" },
                 ]}
               />
             </>
