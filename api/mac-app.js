@@ -68,6 +68,13 @@
 //   GET  /api/mac-app?a=reviews[&contact_id=]   the agent's review requests with the ready-to-send message for each, and whether their Google link / website are set up
 //   POST /api/mac-app?a=review_add       {contact_id, person_id?}     POST ?a=review_update {review_id, status: asked|skipped|to_ask}
 //   POST /api/mac-app?a=review_record    {review_id, rating, body, reviewer}   POST ?a=review_website {review_id}   put a received review on the website
+// CMAs (comparative market analyses): read with the numbers worked out, and the parts the Mac can fill in (the dashboard has the full editor for comps):
+//   GET  /api/mac-app?a=cmas            every CMA, newest first: address, suggested price and range, comps, whether attached to a listing
+//   GET  /api/mac-app?a=cma&cma_id=     one CMA in full: price opinion, homes, seller net sheet at each price, listing comparison, listing presentation, your listings
+//   POST /api/mac-app?a=cma_net_sheet   {cma_id, ...fields}   payoff, listing_pct, buyer_pct, concessions, title_fee, stamps_pct, taxes, warranty, repairs, other_costs, extra_prices, show
+//   POST /api/mac-app?a=cma_presentation {cma_id, theme?, intro?, about?, include_net?, marketing_plan?}
+//   POST /api/mac-app?a=cma_attach      {cma_id, listing_id|null}   attach to a listing (numbers frozen today) or detach       POST ?a=cma_sold {cma_id, sold_price|null}
+//   POST /api/mac-app?a=cma_pdf         {cma_id, kind: cma|presentation}   the PDF, as {filename, pdf (base64)}
 //   POST /api/mac-app?a=contact_merge        {keep_id, remove_id}   everything attached to the removed one moves onto the kept one, blanks on it are filled in
 //   POST /api/mac-app?a=contact_duplicates   {}   groups of contacts that share an email, phone or name (the dashboard's Find repeats)
 //   POST /api/mac-app?a=contacts_import_preview  {csv, mapping?, relationship?}   the file's headers, the guessed column for each field, who would be imported or skipped
@@ -92,6 +99,8 @@ import { effectiveDue } from "../src/lib/checklistDefaults.js";
 import { dealCardStatus } from "../src/lib/dealCard.js";
 import { HouseholdError, leaveHousehold, linkHousehold } from "./_lib/households.js";
 import { bylineOf, reviewMessage, testimonialHtml } from "../src/lib/reviews.js";
+import { CMA_COLUMNS, attachCma, cmaDetail, cmaListItem, detachCma, loadCma, myListings, saveNetSheet, savePresentation, setSoldPrice } from "./_lib/cmaOps.js";
+import { HttpError } from "./_lib/bots/util.js";
 import { IMPORT_FIELDS, bestToKeep, duplicateGroups, guessMapping, parseCsv, rowToContact, touchDue } from "../src/lib/contacts.js";
 import { nextDue } from "../src/lib/taskRecurrence.js";
 import { cleanList, cleanSteps } from "../src/lib/taskLists.js";
@@ -585,6 +594,22 @@ export default async function handler(req, res) {
         ...(cardNotes.data || []).map((n) => ({ id: `p${n.id}`, kind: "card", direction: null, seconds: null, body: n.body, at: n.created_at, who: whose(cardOwner.get(n.person_id)) })),
       ].sort((x, y) => y.at.localeCompare(x.at));
       return res.status(200).json({ items });
+    }
+
+    if (req.method === "GET" && (a === "cmas" || a === "cma")) {
+      try {
+        const listings = await myListings(admin, owner);
+        const byId = new Map(listings.map((l) => [l.id, l.address_line1]));
+        if (a === "cmas") {
+          const { data } = await admin.from("cmas").select(CMA_COLUMNS).eq("owner_id", owner).order("updated_at", { ascending: false }).limit(100);
+          return res.status(200).json({ items: (data || []).map((c) => cmaListItem(c, byId)) });
+        }
+        const cma = await loadCma(admin, owner, String(req.query?.cma_id || ""));
+        return res.status(200).json({ cma: cmaDetail(cma, listings.find((l) => l.id === cma.listing_id) || null, listings) });
+      } catch (err) {
+        if (err instanceof HttpError) return bad(res, err.message, err.status);
+        throw err;
+      }
     }
 
     if (req.method === "GET" && a === "reviews") {
@@ -1747,6 +1772,34 @@ export default async function handler(req, res) {
       const { error } = await admin.from("contact_tag_links").upsert({ contact_id: contact.id, tag_id: tag.id, owner_id: owner }, { onConflict: "contact_id,tag_id", ignoreDuplicates: true });
       if (error) return bad(res, "Couldn't save it.", 500);
       return res.status(200).json({ ok: true, tag });
+    }
+
+    // ---- CMAs
+    if (["cma_net_sheet", "cma_presentation", "cma_attach", "cma_sold", "cma_pdf"].includes(a)) {
+      try {
+        const cmaId = String(body.cma_id || "");
+        if (a === "cma_pdf") {
+          const cma = await loadCma(admin, owner, cmaId);
+          const { renderCmaPdf, cleanCma } = await import("./cma-pdf.js");
+          const [{ data: agent }, { data: person }] = await Promise.all([
+            admin.from("profiles").select("full_name, title, license, phone, email, photo_url, org_id").eq("id", owner).maybeSingle(),
+            cma.person_id ? admin.from("people").select("name").eq("id", cma.person_id).eq("owner_id", owner).maybeSingle() : Promise.resolve({ data: null }),
+          ]);
+          const { data: orgRow } = agent?.org_id ? await admin.from("organizations").select("id, slug, name, brand, address_line1, city, state, zip, disclaimer, franchise_disclaimer").eq("id", agent.org_id).maybeSingle() : { data: null };
+          const { pdf, name } = await renderCmaPdf(admin, { cma: cleanCma({ ...cma, prepared: cma.updated_at }), agent, orgRow, ownerId: owner, presentation: body.kind === "presentation", forName: person?.name || "" });
+          return res.status(200).json({ filename: `${name}.pdf`, pdf: Buffer.from(pdf).toString("base64") });
+        }
+        let cma;
+        if (a === "cma_net_sheet") cma = await saveNetSheet(admin, owner, cmaId, body);
+        else if (a === "cma_presentation") cma = await savePresentation(admin, owner, cmaId, body);
+        else if (a === "cma_sold") cma = await setSoldPrice(admin, owner, cmaId, body.sold_price);
+        else cma = body.listing_id ? (await attachCma(admin, owner, cmaId, String(body.listing_id))).cma : await detachCma(admin, owner, cmaId);
+        const listings = await myListings(admin, owner);
+        return res.status(200).json({ ok: true, cma: cmaDetail(cma, listings.find((l) => l.id === cma.listing_id) || null, listings) });
+      } catch (err) {
+        if (err instanceof HttpError) return bad(res, err.message, err.status);
+        throw err;
+      }
     }
 
     // ---- households

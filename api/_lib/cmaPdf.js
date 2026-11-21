@@ -122,7 +122,7 @@ function CompRow({ comp, colors }) {
  * @returns Promise<Buffer>
  */
 export async function buildCmaPdf({ cma, agent, brand, images = {}, presentation = null, forName = "" }) {
-  const colors = { dark: brand.colors?.dark || INK, onDark: brand.colors?.onDark || onDark, accent: brand.colors?.accent || accent };
+  const colors = { dark: brand.colors?.dark || INK, onDark: brand.colors?.onDark || "#FFFFFF", accent: brand.colors?.accent || ACCENT };
   const { dark, onDark, accent } = colors;
   const m = computeCma(cma);
   const comps = (cma.comps || []).filter((c) => c.include !== false && toNumber(c.price) != null);

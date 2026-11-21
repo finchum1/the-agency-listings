@@ -44,10 +44,35 @@ export function cleanCma(raw) {
 }
 
 /** The PDF's colors: the look picked for this CMA, or (the default, "Match my website") the agent's own website theme, or the classic dark-and-red. */
-async function colorsFor(admin, ownerId, theme) {
+export async function colorsFor(admin, ownerId, theme) {
   if (GUIDE_THEME_KEYS.includes(theme)) return emailBrand(theme, "", {});
   const { data: site } = ownerId ? await admin.from("agent_sites").select("theme, accent_color").eq("agent_id", ownerId).maybeSingle() : { data: null };
   return emailBrand(site?.theme || "classic", site?.accent_color || "", {});
+}
+
+/**
+ * Lays out the PDF. `cma` is already cleaned (cleanCma); `presentation` true makes the listing presentation. What the client page shows is all that goes in: unticked
+ * homes out, and the net sheet only when switched on (a presentation carries it when the agent chose to include it: the sellers are the ones holding it).
+ * Returns { pdf (a Buffer), name (a file name without .pdf) }. Shared by the handler below and the Mac app (api/mac-app.js, action cma_pdf).
+ */
+export async function renderCmaPdf(admin, { cma, agent, orgRow, ownerId, presentation: wantPresentation = false, forName = "" }) {
+  const shown = { ...cma, comps: cma.comps.filter((c) => c.include !== false) };
+  const presentation = wantPresentation ? shown.presentation || cleanPresentation({}) : null;
+  if (presentation) shown.net_sheet = presentation.include_net && shown.net_sheet ? { ...shown.net_sheet, show: true } : null;
+  else if (!shown.net_sheet?.show) shown.net_sheet = null;
+  const org = brandFromOrg(orgRow);
+  const address = [org.address.line1, [org.address.city, [org.address.state, org.address.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ")].filter(Boolean).join(", ");
+  const [logo, agentPhoto] = await Promise.all([org.logos?.white || org.logo ? picture(org.logos?.white || org.logo, { height: 120 }) : null, agent?.photo_url ? picture(agent.photo_url, { width: 200, height: 200, fit: "cover" }) : null]);
+  const pdf = await buildCmaPdf({
+    cma: shown,
+    agent: agent ? { name: agent.full_name || "", title: agent.title || "", license: agent.license || "", phone: agent.phone || "", email: agent.email || "" } : null,
+    brand: { org: org.name, address, disclaimer: org.disclaimer, colors: await colorsFor(admin, ownerId, shown.presentation?.theme) },
+    images: { logo, agentPhoto },
+    presentation,
+    forName,
+  });
+  const name = `${presentation ? "Listing presentation" : "CMA"} - ${subjectAddress(shown.subject) || shown.title || "Market analysis"}`.replace(/[^\w .,'()-]+/g, "").trim();
+  return { pdf, name };
 }
 
 export default async function handler(req, res) {
@@ -103,26 +128,8 @@ export default async function handler(req, res) {
     orgRow = o;
   }
 
-  // What the client page shows: unticked homes out, the net sheet only when switched on.
-  cma.comps = cma.comps.filter((c) => c.include !== false);
-  // A presentation carries the net sheet when the agent chose to include it (the sellers are the ones holding the document); the client page only when "show" is on.
-  const presentation = wantPresentation ? cma.presentation || cleanPresentation({}) : null;
-  if (presentation) cma.net_sheet = presentation.include_net && cma.net_sheet ? { ...cma.net_sheet, show: true } : null;
-  else if (!cma.net_sheet?.show) cma.net_sheet = null;
-
   try {
-    const org = brandFromOrg(orgRow);
-    const address = [org.address.line1, [org.address.city, [org.address.state, org.address.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ")].filter(Boolean).join(", ");
-    const [logo, agentPhoto] = await Promise.all([org.logos?.white || org.logo ? picture(org.logos?.white || org.logo, { height: 120 }) : null, agent?.photo_url ? picture(agent.photo_url, { width: 200, height: 200, fit: "cover" }) : null]);
-    const pdf = await buildCmaPdf({
-      cma,
-      agent: agent ? { name: agent.full_name || "", title: agent.title || "", license: agent.license || "", phone: agent.phone || "", email: agent.email || "" } : null,
-      brand: { org: org.name, address, disclaimer: org.disclaimer, colors: await colorsFor(admin, ownerId, cma.presentation?.theme) },
-      images: { logo, agentPhoto },
-      presentation,
-      forName,
-    });
-    const name = `${presentation ? "Listing presentation" : "CMA"} - ${subjectAddress(cma.subject) || cma.title || "Market analysis"}`.replace(/[^\w .,'()-]+/g, "").trim();
+    const { pdf, name } = await renderCmaPdf(admin, { cma, agent, orgRow, ownerId, presentation: wantPresentation, forName });
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="${name}.pdf"`);
     return res.status(200).send(pdf);

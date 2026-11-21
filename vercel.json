@@ -250,6 +250,11 @@
       "memory": 1024,
       "includeFiles": "{api/_lib/guide-fonts/**,node_modules/pdfkit/**,node_modules/@react-pdf/**}"
     },
+    "api/mac-app.js": {
+      "maxDuration": 30,
+      "memory": 1024,
+      "includeFiles": "{api/_lib/guide-fonts/**,node_modules/pdfkit/**,node_modules/@react-pdf/**}"
+    },
     "api/cma-pdf.js": {
       "maxDuration": 30,
       "memory": 1024,

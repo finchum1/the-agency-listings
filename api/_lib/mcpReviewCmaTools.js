@@ -5,10 +5,10 @@
 import { HttpError, bad, isUuid } from "./bots/util.js";
 import { WRITES, bool, change, dayText, int, obj, str } from "./mcpWriteTools.js";
 import { adjustedPrice, computeCma, factsLine, subjectAddress, toNumber } from "../../src/lib/cma.js";
-import { cleanNetSheet, hasNetSheet, netScenarios, withDefaults as netDefaults } from "../../src/lib/netSheet.js";
-import { MAX_PLAN_ITEMS, cleanPresentation, withDefaults as presentationDefaults } from "../../src/lib/presentation.js";
-import { cleanSoldPrice, compareAttached, diffText, makeSnapshot } from "../../src/lib/cmaAttach.js";
-import { GUIDE_THEME_KEYS } from "../../src/lib/guides.js";
+import { hasNetSheet, netScenarios } from "../../src/lib/netSheet.js";
+import { MAX_PLAN_ITEMS, withDefaults as presentationDefaults } from "../../src/lib/presentation.js";
+import { compareAttached, diffText } from "../../src/lib/cmaAttach.js";
+import { attachCma as attachOp, cmaName, detachCma as detachOp, GUIDE_THEME_KEYS, loadCma as loadCmaOp, saveNetSheet, savePresentation, setSoldPrice } from "./cmaOps.js";
 import { bylineOf, reviewMessage, testimonialHtml } from "../../src/lib/reviews.js";
 import { formatPrice } from "../../src/lib/format.js";
 
@@ -115,12 +115,7 @@ async function addReviewToWebsite(sb, userId, a) {
 
 // ------------------------------------------------------------------------------------------------------ CMAs
 
-async function loadCma(sb, userId, cmaId) {
-  const { data } = await sb.from("cmas").select("id, title, person_id, subject, comps, price_low, price_high, suggested_price, notes, net_sheet, presentation, listing_id, attach, share_hint, shared_at, view_count, updated_at").eq("id", id(cmaId, "CMA")).eq("owner_id", userId).maybeSingle();
-  if (!data) throw new HttpError(404, "No CMA with that id. Use list_cmas.");
-  return data;
-}
-const cmaName = (c) => subjectAddress(c.subject) || c.title || "Untitled CMA";
+const loadCma = (sb, userId, cmaId) => loadCmaOp(sb, userId, cmaId);
 
 async function listCmas(sb, userId) {
   const { data, error } = await sb.from("cmas").select("id, title, subject, comps, price_low, price_high, suggested_price, listing_id, attach, shared_at, updated_at").eq("owner_id", userId).order("updated_at", { ascending: false }).limit(40);
@@ -163,97 +158,41 @@ async function getCma(sb, userId, a) {
   return lines.join("\n");
 }
 
-const NET_TEXT = ["payoff", "concessions", "title_fee", "taxes", "warranty", "repairs"];
-const NET_PCT = ["listing_pct", "buyer_pct", "stamps_pct"];
-const amount = (v, name) => {
-  if (v === null || v === "") return "";
-  const n = Number(String(v).replace(/[$,\s]/g, ""));
-  if (!Number.isFinite(n) || n < 0 || n > 1e10) throw bad(`${name} must be a number of dollars (0 or more).`);
-  return String(n);
-};
-const percent = (v, name) => {
-  const n = Number(String(v).replace(/[%\s]/g, ""));
-  if (!Number.isFinite(n) || n < 0 || n > 20) throw bad(`${name} must be a percent from 0 to 20.`);
-  return String(n);
-};
-
 async function updateCmaNetSheet(sb, userId, a) {
   return change("update_cma_net_sheet", sb, userId, async () => {
-    const c = await loadCma(sb, userId, a.id);
-    const next = netDefaults(c.net_sheet);
-    for (const k of NET_TEXT) if (a[k] !== undefined) next[k] = amount(a[k], k);
-    for (const k of NET_PCT) if (a[k] !== undefined) next[k] = percent(a[k], k);
-    if (a.show !== undefined) next.show = a.show === true;
-    if (a.other_costs !== undefined) {
-      if (!Array.isArray(a.other_costs)) throw bad("other_costs must be a list of { label, amount }.");
-      next.other = a.other_costs.slice(0, 8).map((o) => ({ label: String(o?.label || "").slice(0, 60), amount: amount(o?.amount, "other cost amount") }));
-    }
-    if (a.extra_prices !== undefined) {
-      if (!Array.isArray(a.extra_prices)) throw bad("extra_prices must be a list of prices.");
-      next.prices = a.extra_prices.slice(0, 3).map((p) => amount(p, "extra price"));
-    }
-    const clean = cleanNetSheet(next);
-    const { error } = await sb.from("cmas").update({ net_sheet: clean }).eq("id", c.id);
-    if (error) throw new HttpError(500, error.message);
-    const rows = netScenarios(clean, computeCma(c));
+    const c = await saveNetSheet(sb, userId, a.id, a);
+    const rows = netScenarios(c.net_sheet, computeCma(c));
     const summary = rows.map((r) => `${r.label} ${money(r.price)} → seller walks away with ${money(r.net)}`).join("; ");
-    return { text: `Net sheet saved for ${cmaName(c)}. ${summary || "No prices to work out yet."}${clean.show ? " It is shown on the client page." : " It is not shown on the client page (turn that on with show: true)."}`, audit: `cma ${c.id} net sheet` };
+    return { text: `Net sheet saved for ${cmaName(c)}. ${summary || "No prices to work out yet."}${c.net_sheet.show ? " It is shown on the client page." : " It is not shown on the client page (turn that on with show: true)."}`, audit: `cma ${c.id} net sheet` };
   });
 }
 
 async function updateCmaPresentation(sb, userId, a) {
   return change("update_cma_presentation", sb, userId, async () => {
-    const c = await loadCma(sb, userId, a.id);
-    const next = presentationDefaults(c.presentation);
-    if (a.intro !== undefined) next.intro = String(a.intro);
-    if (a.about !== undefined) next.about = String(a.about);
-    if (a.include_net !== undefined) next.include_net = a.include_net === true;
-    if (a.theme !== undefined) {
-      if (a.theme !== "site" && !GUIDE_THEME_KEYS.includes(a.theme)) throw bad(`theme must be "site" (match the website) or one of: ${GUIDE_THEME_KEYS.join(", ")}.`);
-      next.theme = a.theme;
-    }
-    if (a.marketing_plan !== undefined) {
-      if (!Array.isArray(a.marketing_plan) || a.marketing_plan.length > MAX_PLAN_ITEMS) throw bad(`marketing_plan must be a list of up to ${MAX_PLAN_ITEMS} steps, each { title, detail, on }.`);
-      next.plan = a.marketing_plan.map((i, n) => ({ id: `item-${n}-${Date.now().toString(36)}`, title: String(i?.title || ""), detail: String(i?.detail || ""), on: i?.on !== false }));
-    }
-    const clean = cleanPresentation(next);
-    const { error } = await sb.from("cmas").update({ presentation: clean }).eq("id", c.id);
-    if (error) throw new HttpError(500, error.message);
-    return { text: `Listing presentation saved for ${cmaName(c)}: look ${clean.theme}, ${clean.plan.filter((i) => i.on).length} marketing steps. The agent downloads the PDF from the CMA page.`, audit: `cma ${c.id} presentation` };
+    const c = await savePresentation(sb, userId, a.id, a);
+    return { text: `Listing presentation saved for ${cmaName(c)}: look ${c.presentation.theme}, ${c.presentation.plan.filter((i) => i.on).length} marketing steps. The agent downloads the PDF from the CMA page.`, audit: `cma ${c.id} presentation` };
   });
 }
 
 async function attachCma(sb, userId, a) {
   return change("attach_cma_to_listing", sb, userId, async () => {
-    const c = await loadCma(sb, userId, a.id);
-    const { data: listing } = await sb.from("listings").select("id, address_line1, price").eq("id", id(a.listing_id, "listing")).eq("agent_id", userId).maybeSingle();
-    if (!listing) throw new HttpError(404, "No listing of yours with that id. Use list_listings.");
-    const snap = makeSnapshot(c, listing, c.listing_id === listing.id ? c.attach : {});
-    const { error } = await sb.from("cmas").update({ listing_id: listing.id, attach: snap }).eq("id", c.id);
-    if (error) throw new HttpError(500, error.message);
-    return { text: `Attached ${cmaName(c)} to ${listing.address_line1}, frozen today: CMA says ${money(snap.suggested)}, listed at ${money(snap.list_price)}.`, audit: `cma ${c.id} attached` };
+    const { cma, listing } = await attachOp(sb, userId, a.id, a.listing_id);
+    return { text: `Attached ${cmaName(cma)} to ${listing.address_line1}, frozen today: CMA says ${money(cma.attach.suggested)}, listed at ${money(cma.attach.list_price)}.`, audit: `cma ${cma.id} attached` };
   });
 }
 
 async function detachCma(sb, userId, a) {
   return change("detach_cma", sb, userId, async () => {
-    const c = await loadCma(sb, userId, a.id);
-    const { error } = await sb.from("cmas").update({ listing_id: null, attach: {} }).eq("id", c.id);
-    if (error) throw new HttpError(500, error.message);
+    const c = await detachOp(sb, userId, a.id);
     return { text: `${cmaName(c)} is no longer attached to a listing.`, audit: `cma ${c.id} detached` };
   });
 }
 
 async function setCmaSoldPrice(sb, userId, a) {
   return change("set_cma_sold_price", sb, userId, async () => {
-    const c = await loadCma(sb, userId, a.id);
-    if (!c.listing_id) throw bad("Attach the CMA to a listing first (attach_cma_to_listing).");
-    const sold = a.sold_price === null || a.sold_price === "" ? null : cleanSoldPrice(a.sold_price);
-    if (a.sold_price != null && a.sold_price !== "" && sold == null) throw bad("sold_price must be a number of dollars.");
-    const attach = { ...(c.attach || {}), sold_price: sold };
-    const { error } = await sb.from("cmas").update({ attach }).eq("id", c.id);
-    if (error) throw new HttpError(500, error.message);
-    const rows = compareAttached(attach, null).filter((r) => r.label.startsWith("Sold"));
+    const c = await setSoldPrice(sb, userId, a.id, a.sold_price);
+    const sold = c.attach?.sold_price ?? null;
+    const rows = compareAttached(c.attach, null).filter((r) => r.label.startsWith("Sold"));
     return { text: `${sold == null ? "Cleared the sold price" : `Sold price ${money(sold)} saved`} on ${cmaName(c)}.${rows.length ? ` ${rows.map((r) => `${r.label}: ${diffText(r.diff)}`).join("; ")}.` : ""}`, audit: `cma ${c.id} sold price` };
   });
 }
