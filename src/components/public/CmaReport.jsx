@@ -1,6 +1,8 @@
 import { adjustedPrice, adjustmentTotal, computeCma, factsLine, pricePerSqft, subjectAddress, toNumber } from "../../lib/cma";
 import { formatPrice } from "../../lib/format";
+import { netScenarios } from "../../lib/netSheet";
 import { AgentFooter, ClientHeader } from "./ClientPageParts";
+import NetSheetTable from "./NetSheetTable";
 
 const STATUS_STYLE = { sold: "bg-[#1c1a17] text-white", pending: "bg-amber-100 text-amber-900", active: "bg-emerald-100 text-emerald-900" };
 const STATUS_LABEL = { sold: "Sold", pending: "Pending", active: "Active" };
@@ -71,6 +73,8 @@ export default function CmaReport({ cma, agent, brand, preview = false }) {
   const pct = (v) => Math.max(0, Math.min(100, ((v - floor) / Math.max(1, top - floor)) * 100));
   const address = subjectAddress(cma.subject);
   const basisWord = m.basisKind === "pending" ? "pending" : "sold";
+  // The seller's net sheet, only when the agent chose to show it.
+  const net = cma.net_sheet?.show ? netScenarios(cma.net_sheet, m) : [];
 
   return (
     <div className="agency-brand bg-[#F5F1E9] text-[#1C1C1B] print:bg-white">
@@ -115,6 +119,14 @@ export default function CmaReport({ cma, agent, brand, preview = false }) {
             {m.averageDom != null && <Stat label="Average days on market" value={Math.round(m.averageDom)} />}
             {m.saleToList != null && <Stat label="Sold vs. list price" value={`${(m.saleToList * 100).toFixed(1)}%`} hint="Average of the sold homes" />}
             {m.activeCount > 0 && <Stat label="Homes for sale now" value={m.activeCount} hint={m.activeLow != null ? `${formatPrice(m.activeLow)} to ${formatPrice(m.activeHigh)}` : undefined} />}
+          </section>
+        )}
+
+        {net.length > 0 && (
+          <section aria-label="What you would walk away with" className="break-inside-avoid">
+            <h2 className="font-display text-2xl font-semibold mb-3 border-b border-black/10 pb-2">What you'd walk away with</h2>
+            <NetSheetTable scenarios={net} />
+            <p className="mt-2 text-xs text-[#1c1a17]/50">An estimate from the numbers above, not a closing statement. Actual costs depend on your contract, your loan payoff and your title company.</p>
           </section>
         )}
 

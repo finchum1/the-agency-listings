@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   const hash = crypto.createHash("sha256").update(token).digest("hex");
   const { data: cma } = await admin
     .from("cmas")
-    .select("id, owner_id, org_id, title, subject, comps, price_low, price_high, suggested_price, notes, shared_at, updated_at, view_count")
+    .select("id, owner_id, org_id, title, subject, comps, price_low, price_high, suggested_price, notes, net_sheet, shared_at, updated_at, view_count")
     .eq("share_hash", hash)
     .maybeSingle();
   if (!cma) return res.status(404).json({ error: "This link isn't valid anymore." });
@@ -43,6 +43,8 @@ export default async function handler(req, res) {
     price_high: cma.price_high,
     suggested_price: cma.suggested_price,
     notes: cma.notes,
+    // The net sheet goes out only when the agent chose to show it (it holds the seller's loan payoff).
+    net_sheet: cma.net_sheet?.show ? cma.net_sheet : null,
     prepared: cma.updated_at,
     agent: agent || null,
     org: org || null,

@@ -5,6 +5,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { useOrg } from "../../context/OrgContext";
 import { ADJUSTMENT_PRESETS, COMP_STATUSES, adjustedPrice, adjustmentTotal, computeCma, factsLine, newComp, pricePerSqft, subjectAddress, toNumber } from "../../lib/cma";
 import { formatPrice } from "../../lib/format";
+import NetSheetPanel from "./NetSheetPanel";
+import { cleanNetSheet, hasNetSheet, savedFees, withDefaults } from "../../lib/netSheet";
 import CmaReport from "../public/CmaReport";
 import ClientPicker from "./ClientPicker";
 import CmaFindComps from "./CmaFindComps";
@@ -15,7 +17,7 @@ const input =
 const card = "rounded-2xl border border-black/10 dark:border-white/15 bg-white dark:bg-[#1a1a1a]";
 const quiet = "rounded-full border border-black/10 dark:border-white/15 px-3.5 py-1.5 text-xs font-semibold hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
 const primary = "rounded-full bg-[#1c1a17] dark:bg-[#f2454b] px-4 py-2 text-sm font-semibold text-white";
-const COLUMNS = "id, person_id, title, subject, comps, price_low, price_high, suggested_price, notes, share_hint, shared_at, last_viewed_at, view_count, updated_at";
+const COLUMNS = "id, person_id, title, subject, comps, price_low, price_high, suggested_price, notes, net_sheet, share_hint, shared_at, last_viewed_at, view_count, updated_at";
 
 const when = (iso) => (iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "");
 
@@ -129,7 +131,7 @@ function CmaEditor({ id }) {
       if (!live) return;
       if (err || !data) return setError("That CMA wasn't found.");
       setRow(data);
-      setDoc({ title: data.title, person_id: data.person_id, subject: data.subject || {}, comps: data.comps || [], price_low: data.price_low ?? "", price_high: data.price_high ?? "", suggested_price: data.suggested_price ?? "", notes: data.notes || "" });
+      setDoc({ title: data.title, person_id: data.person_id, subject: data.subject || {}, comps: data.comps || [], price_low: data.price_low ?? "", price_high: data.price_high ?? "", suggested_price: data.suggested_price ?? "", notes: data.notes || "", net_sheet: hasNetSheet(data.net_sheet) ? withDefaults(data.net_sheet) : withDefaults(savedFees()) });
       if (data.person_id) {
         const { data: p } = await supabase.from("people").select("name").eq("id", data.person_id).maybeSingle();
         if (live) setPersonName(p?.name || "");
@@ -153,6 +155,7 @@ function CmaEditor({ id }) {
       price_high: toNumber(next.price_high),
       suggested_price: toNumber(next.suggested_price),
       notes: next.notes,
+      net_sheet: cleanNetSheet(next.net_sheet),
     }).eq("id", id);
     setStatus(err ? "" : "Saved");
     setError(err ? err.message : "");
@@ -220,7 +223,7 @@ function CmaEditor({ id }) {
   };
 
   const grouped = COMP_STATUSES.map((s) => ({ ...s, list: doc.comps.filter((c) => c.status === s.value) }));
-  const reportCma = { ...doc, price_low: toNumber(doc.price_low), price_high: toNumber(doc.price_high), suggested_price: toNumber(doc.suggested_price), prepared: row?.updated_at };
+  const reportCma = { ...doc, price_low: toNumber(doc.price_low), price_high: toNumber(doc.price_high), suggested_price: toNumber(doc.suggested_price), prepared: row?.updated_at, net_sheet: doc.net_sheet };
 
   return (
     <div>
@@ -291,6 +294,8 @@ function CmaEditor({ id }) {
                 )}
               </section>
             ))}
+
+            <NetSheetPanel value={doc.net_sheet} calc={calc} onChange={(net_sheet) => change({ net_sheet })} />
 
             <section className={`${card} p-5 space-y-2`}>
               <h2 className="font-display text-lg font-semibold">Notes for the client</h2>
