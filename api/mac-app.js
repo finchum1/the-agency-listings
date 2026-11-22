@@ -97,7 +97,7 @@ import { serviceClient } from "./_lib/authUser.js";
 import { deviceFor } from "./_lib/macDevice.js";
 import { effectiveDue } from "../src/lib/checklistDefaults.js";
 import { dealCardStatus } from "../src/lib/dealCard.js";
-import { HouseholdError, leaveHousehold, linkHousehold } from "./_lib/households.js";
+import { HouseholdError, leaveHousehold, linkHousehold, tidyHousehold } from "./_lib/households.js";
 import { bylineOf, reviewMessage, testimonialHtml } from "../src/lib/reviews.js";
 import { CMA_COLUMNS, attachCma, cmaDetail, cmaListItem, detachCma, loadCma, myListings, saveNetSheet, savePresentation, setSoldPrice } from "./_lib/cmaOps.js";
 import { HttpError } from "./_lib/bots/util.js";
@@ -1291,7 +1291,9 @@ export default async function handler(req, res) {
       if (!k || !d) return bad(res, "Those contacts aren't yours to merge.", 404);
       // Everything attached to the removed contact moves to the kept one. (The dashboard's merge leaves synced texts and calls to go with the removed
       // contact; here they move too, so nothing is lost.)
-      for (const t of ["contact_notes", "contact_messages", "agent_tasks", "people"]) await admin.from(t).update({ contact_id: k.id }).eq("contact_id", d.id).eq("owner_id", owner);
+      for (const t of ["contact_notes", "contact_messages", "agent_tasks", "people", "contact_reviews"]) await admin.from(t).update({ contact_id: k.id }).eq("contact_id", d.id).eq("owner_id", owner);
+      // Their household comes along when the kept contact has none; a household left with one person is dissolved.
+      if (!k.household_id && d.household_id) await admin.from("contacts").update({ household_id: d.household_id }).eq("id", k.id).eq("owner_id", owner);
       const { data: dl } = await admin.from("contact_tag_links").select("tag_id").eq("contact_id", d.id).eq("owner_id", owner);
       if (dl?.length) await admin.from("contact_tag_links").upsert(dl.map((l) => ({ contact_id: k.id, tag_id: l.tag_id, owner_id: owner })), { onConflict: "contact_id,tag_id", ignoreDuplicates: true });
       const blank = (v) => v === "" || v == null;
@@ -1314,6 +1316,7 @@ export default async function handler(req, res) {
       if (upErr) return bad(res, "Couldn't merge them.", 500);
       const { error: delErr } = await admin.from("contacts").delete().eq("id", d.id).eq("owner_id", owner);
       if (delErr) return bad(res, "Couldn't merge them.", 500);
+      await tidyHousehold(admin, owner, d.household_id);
       const { data: merged } = await admin.from("contacts").select(CONTACT_COLUMNS).eq("id", k.id).single();
       return res.status(200).json({ ok: true, contact: merged });
     }
