@@ -80,6 +80,8 @@
     <script>
       (function () {
         try {
+          // A gift drop-off link is opened by someone who has never visited, so there is nothing remembered yet: name it from the address.
+          if (/^\/dropoff\//.test(location.pathname)) document.title = "Drop Off List";
           var t = localStorage.getItem("pageTitle:" + location.host + location.pathname);
           if (t) document.title = t;
         } catch (e) {}

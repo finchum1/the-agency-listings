@@ -13,7 +13,7 @@ export default function DropOffPage() {
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    document.title = "Drop-off list";
+    document.title = "Drop Off List";
     const meta = document.createElement("meta");
     meta.name = "robots";
     meta.content = "noindex, nofollow";
@@ -72,7 +72,7 @@ export default function DropOffPage() {
     <div className="min-h-screen bg-[#F5F1E9] text-[#1C1C1B]">
       <header className="bg-[#1c1a17] text-white">
         <div className="mx-auto max-w-2xl px-5 py-8">
-          <p className="text-[11px] font-semibold tracking-[0.28em] uppercase text-white/60">Drop-off list{from ? ` · from ${from}` : ""}</p>
+          <p className="text-[11px] font-semibold tracking-[0.28em] uppercase text-white/60">Drop Off List{from ? ` · from ${from}` : ""}</p>
           <h1 className="mt-2 text-3xl font-semibold leading-tight">{title || "Gift drop-offs"}</h1>
           <p className="mt-3 text-sm text-white/75">
             <span className="font-semibold text-white">{done.length}</span> of {stops.length} delivered
