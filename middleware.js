@@ -147,8 +147,7 @@ export default async function middleware(request) {
   if (BOT_UA_PATTERN.test(userAgent)) {
     return rewrite(new URL("/api/meta-custom-domain", request.url));
   }
-  if (domain?.google_site_verification) {
-    return rewrite(new URL("/api/meta-custom-domain?verify=1", request.url));
-  }
-  return next();
+  // Everyone else gets the page with this site's own title already in it (see handleTitle in api/meta-custom-domain.js), plus the
+  // Search Console token for a domain that has one.
+  return rewrite(new URL(`/api/meta-custom-domain?title=1${domain?.google_site_verification ? "&verify=1" : ""}`, request.url));
 }

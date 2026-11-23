@@ -53,13 +53,18 @@ export default async function handler(req, res) {
   let brokerage = defaultBrokerage;
   const host = bareHost(req.headers.host);
 
-  if (req.query.verify) {
-    await handleVerification(req, res, host);
+  if (req.query.marketing) {
+    await handleMarketing(req, res);
     return;
   }
 
-  if (req.query.marketing) {
-    await handleMarketing(req, res);
+  if (req.query.title) {
+    await handleTitle(req, res, host);
+    return;
+  }
+
+  if (req.query.verify) {
+    await handleVerification(req, res, host);
     return;
   }
 
@@ -420,6 +425,67 @@ async function handleVerification(req, res, host) {
   }
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400");
+  res.status(200).send(html);
+}
+
+// The root of a custom domain for an ordinary visitor: the same index.html everyone gets, but with this site's own <title> already in it. index.html
+// ships a generic title, and the real one is only known once the app has loaded the site, so the tab used to say "Latchpoint" for a moment.
+// Any problem finding the title just serves the page untouched, never an error (the title is a nicety, the page is the point).
+async function handleTitle(req, res, host) {
+  let html = "";
+  for (let attempt = 0; attempt < 3 && !html; attempt++) {
+    try {
+      const upstream = await fetch(`${SITE_ORIGIN}/index.html`);
+      if (upstream.ok) html = await upstream.text();
+    } catch {
+      // retry
+    }
+  }
+  if (!html) {
+    res.status(502).send("Page temporarily unavailable.");
+    return;
+  }
+
+  let title = "";
+  const supabaseUrl = process.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+  if (supabaseUrl && supabaseAnonKey) {
+    try {
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      // Same order the page itself uses: a listing's own domain, then an agent's site, then the brokerage site.
+      const { data: listing } = await supabase.from("listings").select("*, agent:profiles(*), org:organizations(*)").ilike("custom_domain", host).maybeSingle();
+      if (listing) {
+        title = buildListingMeta(listing, listing.agent, "").title;
+      } else {
+        const { data: site } = await supabase
+          .from("agent_sites")
+          .select(`*, agent:profiles(*, ${TEAM_EMBED}), org:organizations(*)`)
+          .ilike("custom_domain", host)
+          .maybeSingle();
+        if (site) {
+          title = buildAgentSiteMeta(site, site.agent).title;
+        } else {
+          const { data: brokerageSite } = await supabase.from("brokerage_site").select("*, org:organizations!inner(*)").ilike("custom_domain", host).maybeSingle();
+          if (brokerageSite) title = buildBrokerageSiteMeta(brokerageSite).title;
+        }
+      }
+    } catch {
+      title = "";
+    }
+  }
+  if (title) html = html.replace(/<title>[^<]*<\/title>/, () => `<title>${escapeHtml(title)}</title>`);
+  // A domain with a Google Search Console token still needs it in the page itself (see handleVerification).
+  if (req.query.verify && supabaseUrl && supabaseAnonKey) {
+    try {
+      const { data } = await createClient(supabaseUrl, supabaseAnonKey).from("org_domains").select("google_site_verification").eq("domain", host).maybeSingle();
+      if (data?.google_site_verification) html = html.replace("</head>", () => `    <meta name="google-site-verification" content="${escapeHtml(data.google_site_verification)}" />\n  </head>`);
+    } catch {
+      // the page is still served; Search Console just can't re-verify until the next request
+    }
+  }
+
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Cache-Control", "public, max-age=0, s-maxage=300, stale-while-revalidate=86400");
   res.status(200).send(html);
 }
 
