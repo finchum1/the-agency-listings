@@ -233,6 +233,9 @@
     "api/admin/agents.js": {
       "maxDuration": 30
     },
+    "api/calendar.js": {
+      "maxDuration": 40
+    },
     "api/plans.js": {
       "maxDuration": 60
     },

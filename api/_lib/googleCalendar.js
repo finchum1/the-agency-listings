@@ -176,12 +176,28 @@ export const forgetAccessToken = (connectionId) => accessCache.delete(connection
 
 async function api(token, path, { method = "GET", query, body } = {}) {
   const url = `${API}${path}${query ? `?${new URLSearchParams(query)}` : ""}`;
-  const res = await fetch(url, {
-    method,
-    headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  });
+  const send = () =>
+    fetch(url, {
+      method,
+      headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+  // Google now and then answers a read very slowly (a busy calendar is the usual case) or with a brief 5xx/429. Reading is safe to repeat,
+  // so a GET gets one more try before the calendar is reported as unreadable; changes are never repeated.
+  const slowOrBusy = (r) => r.status === 429 || r.status >= 500;
+  let res;
+  if (method === "GET") {
+    try {
+      res = await send();
+      if (slowOrBusy(res)) res = await send();
+    } catch (err) {
+      if (!/timeout|abort/i.test(`${err?.name} ${err?.message}`)) throw err;
+      res = await send();
+    }
+  } else {
+    res = await send();
+  }
   if (res.status === 204) return {};
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
