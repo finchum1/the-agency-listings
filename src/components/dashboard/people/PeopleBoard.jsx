@@ -356,6 +356,14 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [foreignOpenId]);
+  // Ticking tasks off in a deal you coordinate happens in the page's own panel, so when that panel closes the cards' task counts and "overdue" are read again
+  // (otherwise a finished deal keeps its red edge until the page is reloaded).
+  const wasForeignOpen = useRef(null);
+  useEffect(() => {
+    if (wasForeignOpen.current && !foreignOpenId) reloadProgress();
+    wasForeignOpen.current = foreignOpenId;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [foreignOpenId]);
   useEffect(() => {
     if (selectedId) onOwnOpened?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
