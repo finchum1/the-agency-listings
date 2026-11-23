@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
 import { useContacts } from "../../../../hooks/useContacts";
 import { addDays, dayLabel, toKey } from "../../../../lib/homeDates";
@@ -314,6 +314,7 @@ export default function ContactsPage() {
   const [selected, setSelected] = useState(() => new Set());
   const [openId, setOpenId] = useState(() => new URLSearchParams(window.location.search).get("contact"));
   useUrlParamSync("contact", openId);
+  const dropMade = useRef(false); // a drop-off list was just made: clear the ticked contacts when its window closes, not before (the window needs them to stay open)
   const [modal, setModal] = useState(() => (new URLSearchParams(window.location.search).get("new") ? "add" : null)); // add | import | tags | followup | merge | dropoff | droplists
   const [shown, setShown] = useState(PAGE);
   const [note, setNote] = useState("");
@@ -778,7 +779,7 @@ export default function ContactsPage() {
       )}
       {modal === "import" && <ImportContacts existing={contacts} tags={tags} ensureTag={crm.ensureTag} onClose={() => setModal(null)} onDone={crm.reload} />}
       {modal === "tags" && <ManageTags tags={tags} links={crm.ctx.tagsByContact ? [...crm.ctx.tagsByContact].flatMap(([c, ts]) => ts.map((t) => ({ contact_id: c, tag_id: t }))) : []} onClose={() => setModal(null)} onUpdate={crm.updateTag} onDelete={crm.deleteTag} />}
-      {modal === "dropoff" && picked.length > 0 && <DropOffCreate picked={picked} onClose={() => setModal(null)} onCreated={() => setSelected(new Set())} />}
+      {modal === "dropoff" && picked.length > 0 && <DropOffCreate picked={picked} onClose={() => { setModal(null); if (dropMade.current) { dropMade.current = false; setSelected(new Set()); } }} onCreated={() => { dropMade.current = true; }} />}
       {modal === "droplists" && <DropOffLists onClose={() => setModal(null)} />}
       {modal === "plan" && <StartPlanModal contactIds={picked.map((c) => c.id)} onClose={() => setModal(null)} onDone={() => setSelected(new Set())} />}
       {modal === "board" && <AddToBoardModal picked={picked} cards={cards} stages={stages} onClose={() => setModal(null)} onAdd={addToBoard} />}
