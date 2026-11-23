@@ -15,6 +15,7 @@ import PlanSection from "../PlanSection";
 import HouseholdSection from "./HouseholdSection";
 import TimelineList from "./TimelineList";
 import { KINDS, cardEntries, planEntries, sentEntry, taskEntry } from "../../../../lib/contactTimeline";
+import { appleDirectionsUrl, googleDirectionsUrl, mapAddress } from "../../../../lib/directions";
 
 const input = "w-full rounded-lg border border-black/10 dark:border-white/15 bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#D8091B]/40 dark:focus:ring-[#f2454b]/40";
 const label = "block text-xs font-medium text-[#1c1a17]/60 dark:text-[#faf9f7]/60 mb-1";
@@ -386,7 +387,15 @@ export default function ContactPanel({ contact, ctx, tags, cards, household, mem
                     <label className={label}>Other phones</label>
                     <textarea defaultValue={contact.other_phones.join("\n")} key={`op${contact.id}${contact.other_phones.join()}`} rows={2} onBlur={(e) => lines(e.target.value).join() !== contact.other_phones.join() && set({ other_phones: lines(e.target.value) })} placeholder="One per line" className={input} />
                   </div>
-                  <Field title="Address" value={contact.address_line1} onCommit={(v) => set({ address_line1: v })} className="col-span-2" />
+                  <div className="col-span-2">
+                    <Field title="Address" value={contact.address_line1} onCommit={(v) => set({ address_line1: v })} />
+                    {mapAddress(contact) && (
+                      <p className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs font-semibold">
+                        <a href={googleDirectionsUrl(mapAddress(contact))} target="_blank" rel="noreferrer" className="underline">Directions (Google Maps)</a>
+                        <a href={appleDirectionsUrl(mapAddress(contact))} target="_blank" rel="noreferrer" className="underline">Apple Maps</a>
+                      </p>
+                    )}
+                  </div>
                   <Field title="City" value={contact.city} onCommit={(v) => set({ city: v })} />
                   <div className="grid grid-cols-2 gap-3">
                     <Field title="State" value={contact.state} onCommit={(v) => set({ state: v })} />

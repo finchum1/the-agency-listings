@@ -8,6 +8,8 @@ import { ManageTags, TagChip, TagPicker } from "./TagParts";
 import ContactPanel from "./ContactPanel";
 import ImportContacts from "./ImportContacts";
 import TextSyncModal from "./TextSyncModal";
+import { DropOffCreate, DropOffLists } from "./DropOffModals";
+import { googleDirectionsUrl, mapAddress } from "../../../../lib/directions";
 import useUrlParamSync from "../../../../hooks/useUrlParamSync";
 import StartPlanModal from "../StartPlanModal";
 import { usePeopleStages } from "../../../../hooks/usePeopleStages";
@@ -312,7 +314,7 @@ export default function ContactsPage() {
   const [selected, setSelected] = useState(() => new Set());
   const [openId, setOpenId] = useState(() => new URLSearchParams(window.location.search).get("contact"));
   useUrlParamSync("contact", openId);
-  const [modal, setModal] = useState(() => (new URLSearchParams(window.location.search).get("new") ? "add" : null)); // add | import | tags | followup | merge
+  const [modal, setModal] = useState(() => (new URLSearchParams(window.location.search).get("new") ? "add" : null)); // add | import | tags | followup | merge | dropoff | droplists
   const [shown, setShown] = useState(PAGE);
   const [note, setNote] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -490,6 +492,7 @@ export default function ContactsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" onClick={() => setModal("tags")} className={pill}>Tags</button>
+          <button type="button" onClick={() => setModal("droplists")} className={pill} title="Gift-delivery lists you have sent, and which stops are done">Drop-off lists</button>
           <button type="button" onClick={() => setModal("import")} className={pill}>Import</button>
           <button type="button" onClick={() => setModal("textsync")} className={pill} title="Show your texts and calls with contacts in their History">Text sync{syncCount ? ` (${syncCount.toLocaleString()})` : ""}</button>
           <button type="button" onClick={() => exportCsv(filtered)} className={pill}>Export</button>
@@ -617,6 +620,7 @@ export default function ContactsPage() {
           {picked.some((c) => c.text_sync) && <button type="button" onClick={() => crm.updateMany(picked.map((c) => c.id), { text_sync: false }).then(() => flash(`Stopped syncing for ${picked.length}.`))} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Stop syncing</button>}
           {!filters.archived && <button type="button" onClick={() => setModal("board")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Add to Leads / Pipeline</button>}
           {!filters.archived && <button type="button" onClick={() => setModal("plan")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Start a plan</button>}
+          <button type="button" onClick={() => setModal("dropoff")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20" title="Send a helper a list of addresses to deliver to">Drop-off list</button>
           {picked.length === 2 && <button type="button" onClick={() => setModal("merge")} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Merge</button>}
           <button type="button" onClick={() => exportCsv(picked)} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">Export</button>
           <button type="button" onClick={() => crm.updateMany(picked.map((c) => c.id), { archived: !filters.archived }).then(() => { setSelected(new Set()); flash(filters.archived ? "Restored." : "Archived."); })} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">{filters.archived ? "Restore" : "Archive"}</button>
@@ -711,7 +715,9 @@ export default function ContactsPage() {
                     <span className="hidden md:block min-w-0 truncate text-xs">
                       {c.email ? <a href={`mailto:${c.email}`} title={c.email} className="hover:underline">{c.email}</a> : <span className={muted}>–</span>}
                     </span>
-                    <span className={`hidden md:block min-w-0 truncate text-xs ${addressLine(c) ? "" : muted}`} title={addressLine(c)}>{addressLine(c) || "–"}</span>
+                    <span className={`hidden md:block min-w-0 truncate text-xs ${addressLine(c) ? "" : muted}`}>
+                      {mapAddress(c) ? <a href={googleDirectionsUrl(mapAddress(c))} target="_blank" rel="noreferrer" title={`Directions to ${addressLine(c)}`} className="hover:underline">{addressLine(c)}</a> : "–"}
+                    </span>
                     <div className="col-start-2 md:col-start-auto flex flex-wrap gap-1 min-w-0">
                       {mine.slice(0, 3).map((t) => (
                         <TagChip key={t.id} tag={t} size="sm" />
@@ -772,6 +778,8 @@ export default function ContactsPage() {
       )}
       {modal === "import" && <ImportContacts existing={contacts} tags={tags} ensureTag={crm.ensureTag} onClose={() => setModal(null)} onDone={crm.reload} />}
       {modal === "tags" && <ManageTags tags={tags} links={crm.ctx.tagsByContact ? [...crm.ctx.tagsByContact].flatMap(([c, ts]) => ts.map((t) => ({ contact_id: c, tag_id: t }))) : []} onClose={() => setModal(null)} onUpdate={crm.updateTag} onDelete={crm.deleteTag} />}
+      {modal === "dropoff" && picked.length > 0 && <DropOffCreate picked={picked} onClose={() => setModal(null)} onCreated={() => setSelected(new Set())} />}
+      {modal === "droplists" && <DropOffLists onClose={() => setModal(null)} />}
       {modal === "plan" && <StartPlanModal contactIds={picked.map((c) => c.id)} onClose={() => setModal(null)} onDone={() => setSelected(new Set())} />}
       {modal === "board" && <AddToBoardModal picked={picked} cards={cards} stages={stages} onClose={() => setModal(null)} onAdd={addToBoard} />}
       {modal === "dupes" && <DuplicatesModal groups={duplicateGroups(contacts)} boardsByContact={ctx.boardsByContact} onClose={() => setModal(null)} onMerge={crm.merge} />}

@@ -42,6 +42,7 @@ const BuyersPage = lazyPage(() => import("./components/agent-site/landing/Buyers
 const HomeValuePage = lazyPage(() => import("./components/agent-site/landing/HomeValuePage"));
 const RelocationPage = lazyPage(() => import("./components/agent-site/landing/RelocationPage"));
 const VendorSharePage = lazyPage(() => import("./pages/VendorSharePage"));
+const DropOffPage = lazyPage(() => import("./pages/DropOffPage"));
 const MyProfilePage = lazyPage(() => import("./components/dashboard/MyProfilePage"));
 const MySitePage = lazyPage(() => import("./components/dashboard/MySitePage"));
 const DashboardHome = lazyPage(() => import("./components/dashboard/DashboardHome"));
@@ -239,6 +240,8 @@ function AppRoutes() {
       <Route path="/preview/:token" element={<SitePreviewPage />} />
       {/* A client's private list of recommended vendors: no sign-in, the token in the address is the credential. */}
       <Route path="/vendors/:token" element={<VendorSharePage />} />
+      {/* A gift-delivery helper's list of stops: same idea, the token is the credential. */}
+      <Route path="/dropoff/:token" element={<DropOffPage />} />
       {/* A CMA an agent shared with a client: same idea, the token is the credential. */}
       <Route path="/cma/:token" element={<CmaSharePage />} />
       {/* A seller's private activity report for one listing: same idea, token in the address. */}
