@@ -62,6 +62,16 @@ export function DropOffCreate({ picked, onClose, onCreated }) {
   const [token, setToken] = useState("");
 
   const edit = (key, patch) => setRows((r) => r.map((x) => (x.key === key ? { ...x, ...patch } : x)));
+  // Moves a stop one place up or down (your helper sees the stops in this order).
+  const move = (key, by) =>
+    setRows((r) => {
+      const i = r.findIndex((x) => x.key === key);
+      const j = i + by;
+      if (i < 0 || j < 0 || j >= r.length) return r;
+      const next = [...r];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
   const thin = rows.filter((r) => addressIsThin(r.address)).length;
 
   const submit = async () => {
@@ -122,11 +132,16 @@ export function DropOffCreate({ picked, onClose, onCreated }) {
         )}
 
         <ul className="space-y-2">
-          {rows.map((r) => {
+          {rows.map((r, i) => {
             const bad = addressIsThin(r.address);
             return (
               <li key={r.key} className="rounded-xl border border-black/10 dark:border-white/10 p-3 space-y-2">
                 <div className="flex items-center gap-2">
+                  <span className="flex flex-col shrink-0">
+                    <button type="button" onClick={() => move(r.key, -1)} disabled={i === 0} aria-label={`Move ${r.name} up`} className="px-1.5 text-xs leading-none text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] disabled:opacity-25">▲</button>
+                    <button type="button" onClick={() => move(r.key, 1)} disabled={i === rows.length - 1} aria-label={`Move ${r.name} down`} className="px-1.5 text-xs leading-none text-[#1c1a17]/60 dark:text-[#faf9f7]/60 hover:text-[#1c1a17] disabled:opacity-25">▼</button>
+                  </span>
+                  <span className={`text-xs font-semibold w-5 text-right shrink-0 ${muted}`}>{i + 1}</span>
                   <input value={r.name} onChange={(e) => edit(r.key, { name: e.target.value })} aria-label="Name" className={`${field} font-semibold`} />
                   <button type="button" onClick={() => setRows((x) => x.filter((y) => y.key !== r.key))} aria-label={`Remove ${r.name}`} className="p-2 text-[#1c1a17]/50 dark:text-[#faf9f7]/50 hover:text-red-600">✕</button>
                 </div>
@@ -141,7 +156,7 @@ export function DropOffCreate({ picked, onClose, onCreated }) {
             );
           })}
         </ul>
-        <p className={`text-xs ${muted}`}>Stops are grouped by zip code so nearby ones sit together. Your helper can also plan a whole run in Google Maps from the list.</p>
+        <p className={`text-xs ${muted}`}>Stops start grouped by zip code so nearby ones sit together; use the arrows to put them in the order you want. Your helper can also plan a whole run in Google Maps from the list.</p>
 
         {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <button type="button" disabled={busy || rows.every((r) => !r.address.trim())} onClick={submit} className={primary}>

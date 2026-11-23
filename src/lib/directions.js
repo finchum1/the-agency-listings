@@ -21,7 +21,7 @@ export function addressIsThin(address) {
   const a = clean(address);
   if (!a) return true;
   if (!/\d/.test(a)) return true;
-  const hasZip = /\b\d{5}\b/.test(a);
+  const hasZip = /(?:,|\s[A-Za-z]{2}\.?)\s*\d{5}(?:-\d{4})?$/.test(a); // a zip at the END, not a five-digit street number
   const hasState = /\b(ok|oklahoma|tx|texas|ks|kansas|ar|arkansas|mo|missouri|co|colorado|nm|new mexico)\b/i.test(a);
   const hasCity = /,\s*[a-z][a-z .'-]{2,}(,|$)/i.test(a); // "street, City" at least
   return !(hasZip || hasState || hasCity);
@@ -49,7 +49,11 @@ export function routeChunks(stops, size = 10) {
 }
 
 /** The zip in an address, for grouping stops that are near each other. */
-export const zipOf = (address) => (String(address).match(/\b(\d{5})(?:-\d{4})?\b/) || [])[1] || "";
+// The LAST five-digit number: a street number can be five digits too ("19816 Taggert Dr, Edmond, OK, 73012").
+export const zipOf = (address) => {
+  const all = [...String(address).matchAll(/\b(\d{5})(?:-\d{4})?\b/g)].filter((m) => m.index > 0); // never the street number at the very start
+  return all.length ? all[all.length - 1][1] : "";
+};
 
 /** Nearby stops together: by zip, then by street. Stops with no zip go last. */
 export function sortForRoute(stops) {

@@ -65,6 +65,10 @@
 //   POST /api/mac-app?a=household_link   {contact_id, other_id}   put two contacts in one household (they share one history); returns {household_id}
 //   POST /api/mac-app?a=household_leave  {contact_id}             take one out (a household left with one person is dissolved)
 //   POST /api/mac-app?a=household_rename {household_id, name}
+//   GET  /api/mac-app?a=drop_lists        gift drop-off lists (a private link for a helper who delivers gifts), each with its stops, how many are delivered and the link
+//   POST /api/mac-app?a=drop_prepare      {contact_ids}   the stops those contacts would make (name, address, whether it looks too thin for a map), nearby ones together, and who is left out for having no address
+//   POST /api/mac-app?a=drop_create       {title, note, days, stops: [{contact_id, name, address, note}]}   makes the list in the order given; returns {id, link}
+//   POST /api/mac-app?a=drop_active       {id, on, days?}   turn a list's link off, or back on
 //   GET  /api/mac-app?a=reviews[&contact_id=]   the agent's review requests with the ready-to-send message for each, and whether their Google link / website are set up
 //   POST /api/mac-app?a=review_add       {contact_id, person_id?}     POST ?a=review_update {review_id, status: asked|skipped|to_ask}
 //   POST /api/mac-app?a=review_record    {review_id, rating, body, reviewer}   POST ?a=review_website {review_id}   put a received review on the website
@@ -112,6 +116,8 @@ import { runPlans } from "./_lib/planRunner.js";
 import { expandEvents, feedName, loadFeedText, normalizeIcsUrl } from "./_lib/calendarFeed.js";
 import { accessTokenFor, createEvent, deleteEvent, googleConfigured, listCalendars, listEvents, updateEvent } from "./_lib/googleCalendar.js";
 import { SITE_ORIGIN } from "../src/lib/seo.js";
+import * as drop from "./_lib/dropOff.js";
+import { HttpError as DropError } from "./_lib/bots/util.js";
 
 const TZ = "America/Chicago";
 const DAY = 24 * 60 * 60 * 1000;
@@ -610,6 +616,17 @@ export default async function handler(req, res) {
         if (err instanceof HttpError) return bad(res, err.message, err.status);
         throw err;
       }
+    }
+
+    if (req.method === "GET" && a === "drop_lists") {
+      const lists = await drop.listLists(admin, owner);
+      const ids = lists.map((l) => l.id);
+      const { data: stops } = ids.length ? await admin.from("drop_off_stops").select("id, list_id, position, name, address, note, done_at").in("list_id", ids).order("position") : { data: [] };
+      const by = new Map();
+      for (const x of stops || []) by.set(x.list_id, [...(by.get(x.list_id) || []), { id: x.id, position: x.position, name: x.name, address: x.address, note: x.note, done_at: x.done_at }]);
+      return res.status(200).json({
+        items: lists.map((l) => ({ id: l.id, title: l.title, note: l.note, status: l.status, total: l.total, done: l.done, views: l.view_count || 0, created_at: l.created_at, expires_at: l.expires_at, link: drop.dropOffLink(SITE_ORIGIN, l.token), stops: by.get(l.id) || [] })),
+      });
     }
 
     if (req.method === "GET" && a === "reviews") {
@@ -1877,6 +1894,27 @@ export default async function handler(req, res) {
       if (error) return bad(res, "Couldn't save it.", 500);
       await admin.from("contact_reviews").update({ testimonial_id: t.id }).eq("id", rev.id);
       return res.status(200).json({ ok: true });
+    }
+
+    // ---- gift drop-off lists
+    if (a === "drop_prepare" || a === "drop_create" || a === "drop_active") {
+      try {
+        if (a === "drop_prepare") {
+          const { rows, leftOut } = await drop.prepareStops(admin, owner, Array.isArray(body.contact_ids) ? body.contact_ids : []);
+          return res.status(200).json({ rows, left_out: leftOut });
+        }
+        if (a === "drop_create") {
+          const made = await drop.createList(admin, owner, { title: body.title, note: body.note, days: body.days, stops: Array.isArray(body.stops) ? body.stops : [] });
+          return res.status(200).json({ id: made.id, link: drop.dropOffLink(SITE_ORIGIN, made.token), stops: made.stops });
+        }
+        if (a === "drop_active") {
+          const l = await drop.setActive(admin, owner, body.id, body.on === true, body.days);
+          return res.status(200).json({ ok: true, status: l.status, expires_at: l.expires_at });
+        }
+      } catch (err) {
+        if (err instanceof DropError) return bad(res, err.message, err.status || 400);
+        throw err;
+      }
     }
 
     return bad(res, "Not found.", 404);
