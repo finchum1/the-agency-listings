@@ -75,6 +75,16 @@
       rel="stylesheet"
     />
     <title>Latchpoint</title>
+    <!-- Tab title before the app loads: every site's real title is only known once its data arrives, so until then the tab said "Latchpoint" on
+         agents' own sites. lib/pageMeta.js remembers each page's title in this browser; this puts it back before first paint on the next visit. -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("pageTitle:" + location.host + location.pathname);
+          if (t) document.title = t;
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

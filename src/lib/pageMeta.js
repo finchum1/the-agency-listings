@@ -27,7 +27,15 @@ function upsertLink(rel, href) {
 }
 
 export function applyPageMeta({ title, description, image, url }) {
-  if (title) document.title = title;
+  if (title) {
+    document.title = title;
+    // Remembered so index.html can show it straight away on the next visit instead of the generic "Latchpoint".
+    try {
+      localStorage.setItem(`pageTitle:${window.location.host}${window.location.pathname}`, title);
+    } catch {
+      /* private mode / storage full: the title is just not remembered */
+    }
+  }
   upsertMeta("name", "description", description);
   upsertMeta("property", "og:type", "website");
   upsertMeta("property", "og:title", title);
