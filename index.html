@@ -20,8 +20,13 @@
     <!-- The Agency's own red mark, white-on-brand-red — applies to every
          hostname this app serves (the dashboard, and every agent's/
          listing's own custom domain), since it's all one SPA/index.html. -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <!-- Google's search results want a square favicon whose side is a multiple of 48px (48, 96, 144, 192); without one it shows a grey globe. -->
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png" />
     <!-- Explicit sizes here matters more than it looks: without it, some
          iOS versions have been seen picking the plain sizes="512x512"
