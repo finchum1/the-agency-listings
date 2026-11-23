@@ -108,3 +108,11 @@ export async function setActive(db, owner, listId, on, days = 30) {
   if (error) throw new HttpError(500, error.message);
   return { ...l, ...patch, status: on ? "open" : "off" };
 }
+
+/** Permanently removes a list and its stops (the stops go with it). */
+export async function deleteList(db, owner, listId) {
+  const l = await getList(db, owner, listId);
+  const { error } = await db.from("drop_off_lists").delete().eq("id", l.id).eq("owner_id", owner);
+  if (error) throw new HttpError(500, error.message);
+  return l;
+}

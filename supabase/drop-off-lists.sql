@@ -101,3 +101,13 @@ end;
 $$;
 revoke all on function public.extend_drop_off_list(uuid, integer) from public, anon;
 grant execute on function public.extend_drop_off_list(uuid, integer) to authenticated;
+
+-- Permanently removes the agent's own list and its stops (the stops go with it). The link stops working at once.
+create or replace function public.delete_drop_off_list(p_id uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  delete from public.drop_off_lists where id = p_id and owner_id = auth.uid();
+end;
+$$;
+revoke all on function public.delete_drop_off_list(uuid) from public, anon;
+grant execute on function public.delete_drop_off_list(uuid) to authenticated;

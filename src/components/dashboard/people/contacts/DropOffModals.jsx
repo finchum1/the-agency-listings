@@ -227,6 +227,15 @@ export function DropOffLists({ onClose }) {
                 ) : (
                   <button type="button" className={ghost} onClick={() => act("extend_drop_off_list", { p_id: l.id, p_days: 30 })}>Turn on for 30 days</button>
                 )}
+                <button
+                  type="button"
+                  className={`${ghost} text-red-600 dark:text-red-400`}
+                  onClick={() => {
+                    if (window.confirm(`Delete "${l.title || "Gift drop-offs"}" for good? Its link stops working right away and the list, with its ${s.length} stop${s.length === 1 ? "" : "s"} and which ones were delivered, can't be brought back.`)) act("delete_drop_off_list", { p_id: l.id });
+                  }}
+                >
+                  Delete
+                </button>
               </div>
               {open === l.id && (
                 <ul className="mt-3 divide-y divide-black/5 dark:divide-white/10 text-sm">

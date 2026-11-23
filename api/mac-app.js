@@ -69,6 +69,7 @@
 //   POST /api/mac-app?a=drop_prepare      {contact_ids}   the stops those contacts would make (name, address, whether it looks too thin for a map), nearby ones together, and who is left out for having no address
 //   POST /api/mac-app?a=drop_create       {title, note, days, stops: [{contact_id, name, address, note}]}   makes the list in the order given; returns {id, link}
 //   POST /api/mac-app?a=drop_active       {id, on, days?}   turn a list's link off, or back on
+//   POST /api/mac-app?a=drop_delete       {id, confirm: true}   deletes a list and its stops for good
 //   GET  /api/mac-app?a=reviews[&contact_id=]   the agent's review requests with the ready-to-send message for each, and whether their Google link / website are set up
 //   POST /api/mac-app?a=review_add       {contact_id, person_id?}     POST ?a=review_update {review_id, status: asked|skipped|to_ask}
 //   POST /api/mac-app?a=review_record    {review_id, rating, body, reviewer}   POST ?a=review_website {review_id}   put a received review on the website
@@ -1897,7 +1898,7 @@ export default async function handler(req, res) {
     }
 
     // ---- gift drop-off lists
-    if (a === "drop_prepare" || a === "drop_create" || a === "drop_active") {
+    if (a === "drop_prepare" || a === "drop_create" || a === "drop_active" || a === "drop_delete") {
       try {
         if (a === "drop_prepare") {
           const { rows, leftOut } = await drop.prepareStops(admin, owner, Array.isArray(body.contact_ids) ? body.contact_ids : []);
@@ -1906,6 +1907,11 @@ export default async function handler(req, res) {
         if (a === "drop_create") {
           const made = await drop.createList(admin, owner, { title: body.title, note: body.note, days: body.days, stops: Array.isArray(body.stops) ? body.stops : [] });
           return res.status(200).json({ id: made.id, link: drop.dropOffLink(SITE_ORIGIN, made.token), stops: made.stops });
+        }
+        if (a === "drop_delete") {
+          if (body.confirm !== true) return bad(res, "Say confirm: true to delete a list for good.");
+          await drop.deleteList(admin, owner, body.id);
+          return res.status(200).json({ ok: true });
         }
         if (a === "drop_active") {
           const l = await drop.setActive(admin, owner, body.id, body.on === true, body.days);
