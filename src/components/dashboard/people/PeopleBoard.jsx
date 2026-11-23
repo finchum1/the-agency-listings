@@ -457,6 +457,8 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
   const onCardPointerDown = (e, p) => {
     if (dragRef.current) return;
     if (e.pointerType === "mouse" && e.button !== 0) return;
+    // Pressing on a card must not start a text selection that the drag then stretches across the column titles. (A click still opens the card.)
+    if (e.pointerType === "mouse") e.preventDefault();
     const rect = e.currentTarget.getBoundingClientRect();
     const d = {
       id: p.id,
@@ -519,6 +521,7 @@ export default function PeopleBoard({ group, overviewOnly = false, renderOvervie
       suppressClickRef.current = true;
       document.body.style.userSelect = "none";
       document.body.style.cursor = "grabbing";
+      window.getSelection()?.removeAllRanges();
       window.addEventListener("touchmove", stopTouchScroll, { passive: false });
       setDrag({ id: d.id, origin: d.origin, hoverStage: d.origin, hoverIndex: d.originIndex, w: d.w, h: d.h, ox: d.ox, oy: d.oy });
       raf = requestAnimationFrame(loop);
